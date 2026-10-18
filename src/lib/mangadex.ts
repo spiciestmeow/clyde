@@ -130,6 +130,7 @@ export async function fetchMangaDexDetails(rawInput: string): Promise<MangaDexIm
   const authors: string[] = [];
   const artists: string[] = [];
   let coverFileName = '';
+  let coverRelId = '';
 
   if (Array.isArray(manga.relationships)) {
     for (const rel of manga.relationships) {
@@ -137,9 +138,32 @@ export async function fetchMangaDexDetails(rawInput: string): Promise<MangaDexIm
         authors.push(rel.attributes.name.trim());
       } else if (rel.type === 'artist' && rel.attributes?.name) {
         artists.push(rel.attributes.name.trim());
-      } else if (rel.type === 'cover_art' && rel.attributes?.fileName) {
-        coverFileName = rel.attributes.fileName;
+      } else if (rel.type === 'cover_art') {
+        if (rel.attributes?.fileName) {
+          coverFileName = rel.attributes.fileName;
+        } else if (rel.id) {
+          coverRelId = rel.id;
+        }
       }
+    }
+  }
+
+  // If cover_art attributes weren't included in the response, fetch cover file name directly
+  if (!coverFileName && coverRelId) {
+    try {
+      let coverRes = await fetch(`/api/mangadex/cover/${coverRelId}`).catch(() => null);
+      if (!coverRes || !coverRes.ok) {
+        coverRes = await fetch(`https://api.mangadex.org/cover/${coverRelId}`).catch(() => null);
+      }
+      if (!coverRes || !coverRes.ok) {
+        coverRes = await fetch(`https://corsproxy.io/?url=${encodeURIComponent(`https://api.mangadex.org/cover/${coverRelId}`)}`).catch(() => null);
+      }
+      if (coverRes && coverRes.ok) {
+        const coverJson = await coverRes.json();
+        coverFileName = coverJson?.data?.attributes?.fileName || '';
+      }
+    } catch {
+      // ignore
     }
   }
 

@@ -246,6 +246,7 @@ export default function SeriesCatalogManager() {
         genres: data.genres.length ? Array.from(new Set([...current.genres, ...data.genres])) : current.genres,
         formats: data.formats.length ? Array.from(new Set([...current.formats, ...data.formats])) : current.formats,
         tags: data.tags.length ? Array.from(new Set([...current.tags, ...data.tags])) : current.tags,
+        cover: data.coverUrl || current.cover,
         trackers: data.trackerUrl && !current.trackers.some((t) => t.url.includes(data.id))
           ? [...current.trackers, { name: 'MangaDex', url: data.trackerUrl, logo: '', isSample: false }]
           : current.trackers,
@@ -403,7 +404,7 @@ export default function SeriesCatalogManager() {
           <section className="form-card-section">
             <h2 className="section-title">Import from source</h2>
             <p className="section-description">
-              Paste a MangaDex or MangaBaka link to auto-fill the fields below. The cover isn't imported — upload your own.
+              Paste a MangaDex link to auto-fill title, cover, and details. You can also upload your own cover.
             </p>
 
             <div className="import-row">
