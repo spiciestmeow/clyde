@@ -202,6 +202,27 @@ function HomePage() {
   const [showPeriodDropdown, setShowPeriodDropdown] = useState(false);
   const periodDropdownRef = useRef<HTMLDivElement>(null);
   const [releasePage, setReleasePage] = useState(1);
+  const [copiedShare, setCopiedShare] = useState(false);
+
+  const handleShare = async () => {
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: 'Vortex Scans',
+          url: window.location.href,
+        });
+        return;
+      } catch {
+        // Fallback to clipboard if share was cancelled or failed
+      }
+    }
+    if (navigator.clipboard) {
+      await navigator.clipboard.writeText(window.location.href);
+      setCopiedShare(true);
+      setTimeout(() => setCopiedShare(false), 2000);
+    }
+  };
+
   const catalogQuery = useSeriesCatalog();
   const seriesItems = catalogQuery.items;
   const searchItems = useMemo(() => toSiteSearchItems(seriesItems), [seriesItems]);
@@ -460,11 +481,101 @@ function HomePage() {
           {slides.length > 1 && <button className="hero-control next" aria-label="Next slide" onClick={() => moveCarousel(1)}><ChevronRight /></button>}
           {slides.length > 1 && <div className="hero-dots">{slides.map((item, i) => <button key={item.title || i} aria-label={`Go to slide ${i + 1}`} className={i === slide ? 'active' : ''} onClick={() => setSlide(i)} />)}</div>}
         </section>}
-        {homepageVisibility.socialPromos && <div className="social-row">
-          <div className="social-card"><div><span>Share Vortex Scans</span><small>to your friends</small></div><button className="share-btn" onClick={() => navigator.clipboard?.writeText(window.location.href)}><Share2 size={14} />Share</button></div>
-          <div className="social-card"><span>Join Our Socials</span><a className="discord-btn" href="https://discord.gg/2PuMt62fRN"><img src={assetUrl(manifest[5].src, 64)} alt="" />Discord</a></div>
-        </div>}
-        {homepageVisibility.issueBanner && <section className="issue-banner"><div className="issue-icon">!</div><div className="issue-text"><strong>Need Help or Found an Issue?</strong><span>Report bugs, payment issues, or other problems • Get rewards</span></div><a href="/community/report" className="report-btn">△ &nbsp;Report Issue</a></section>}
+        {(homepageVisibility.socialPromos || homepageVisibility.issueBanner) && (
+          <div className="social-promo-container">
+            {homepageVisibility.socialPromos && (
+              <div className="social-promo-grid">
+                {/* Share Card */}
+                <div className="social-card">
+                  <div className="social-card-left">
+                    <div className="social-card-text">
+                      <span className="social-card-title">Share Vortex Scans</span>
+                      <span className="social-card-sub">to your friends</span>
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    className="social-action-btn share-btn"
+                    onClick={handleShare}
+                    title="Share Vortex Scans"
+                  >
+                    <svg className="social-btn-icon" width="18" height="18" fill="currentColor" viewBox="0 0 512 512">
+                      <path d="M307 34.8c-11.5 5.1-19 16.6-19 29.2v64H176C78.8 128 0 206.8 0 304C0 417.3 81.5 467.9 100.2 478.1c2.5 1.4 5.3 1.9 8.1 1.9c10.9 0 19.7-8.9 19.7-19.7c0-7.5-4.3-14.4-9.8-19.5C108.8 431.9 96 414.4 96 384c0-53 43-96 96-96h96v64c0 12.6 7.4 24.1 19 29.2s25 3 34.4-5.4l160-144c6.7-6.1 10.6-14.7 10.6-23.8s-3.8-17.7-10.6-23.8l-160-144c-9.4-8.5-22.9-10.6-34.4-5.4z" />
+                    </svg>
+                    <span>{copiedShare ? 'Copied!' : 'Share'}</span>
+                  </button>
+                </div>
+
+                {/* Discord Card */}
+                <div className="social-card">
+                  <div className="social-card-left">
+                    <div className="social-card-text">
+                      <span className="social-card-title">Join Our Socials</span>
+                    </div>
+                  </div>
+                  <a
+                    href="https://discord.gg/2PuMt62fRN"
+                    target="_blank"
+                    rel="noreferrer"
+                    className="social-action-btn discord-btn"
+                    title="Join our Discord"
+                  >
+                    <svg className="social-btn-icon" width="18" height="18" viewBox="0 0 127.14 96.36" fill="currentColor">
+                      <path d="M107.7,8.07A105.15,105.15,0,0,0,81.47,0a72.06,72.06,0,0,0-3.36,6.83A97.68,97.68,0,0,0,49,6.83,72.37,72.37,0,0,0,45.64,0,105.89,105.89,0,0,0,19.39,8.09C2.79,32.65-1.71,56.6.54,80.21h0A105.73,105.73,0,0,0,32.71,96.36,77.7,77.7,0,0,0,39.6,85.25a68.42,68.42,0,0,1-10.85-5.18c.91-.66,1.8-1.34,2.66-2a75.57,75.57,0,0,0,64.32,0c.87.71,1.76,1.39,2.66,2a68.68,68.68,0,0,1-10.87,5.19,77,77,0,0,0,6.89,11.1A105.25,105.25,0,0,0,126.6,80.22h0C129.24,52.84,122.09,29.11,107.7,8.07ZM42.45,65.69C36.18,65.69,31,60,31,53s5-12.74,11.43-12.74S54,46,53.89,53,48.84,65.69,42.45,65.69Zm42.24,0C78.41,65.69,73.25,60,73.25,53s5-12.74,11.44-12.74S96.23,46,96.12,53,91.08,65.69,84.69,65.69Z" />
+                    </svg>
+                    <span>Discord</span>
+                  </a>
+                </div>
+
+                {/* Mobile-only Report Issue button (matches vortexscans.org layout) */}
+                {homepageVisibility.issueBanner && (
+                  <div className="social-mobile-report">
+                    <a
+                      href="/community/report"
+                      className="social-action-btn report-btn"
+                      title="Report Issue"
+                    >
+                      <svg className="social-btn-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3" />
+                        <path d="M12 9v4" />
+                        <path d="M12 17h.01" />
+                      </svg>
+                      <span>Report Issue</span>
+                    </a>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Desktop Issue Banner */}
+            {homepageVisibility.issueBanner && (
+              <section className="desktop-issue-banner">
+                <div className="issue-banner-card">
+                  <div className="issue-banner-left">
+                    <span className="issue-banner-accent" aria-hidden="true" />
+                    <span className="issue-banner-icon">
+                      <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                        <path fillRule="evenodd" d="M8.478 1.6a.75.75 0 0 1 .273 1.026 3.72 3.72 0 0 0-.425 1.121c.058.058.118.114.18.168A4.491 4.491 0 0 1 12 2.25c1.413 0 2.673.651 3.497 1.668.06-.054.12-.11.178-.167a3.717 3.717 0 0 0-.426-1.125.75.75 0 1 1 1.298-.752 5.22 5.22 0 0 1 .671 2.046.75.75 0 0 1-.187.582c-.241.27-.505.52-.787.749a4.494 4.494 0 0 1 .216 2.1c-.106.792-.753 1.295-1.417 1.403-.182.03-.364.057-.547.081.152.227.273.476.359.742a23.122 23.122 0 0 0 3.832-.803 23.241 23.241 0 0 0-.345-2.634.75.75 0 0 1 1.474-.28c.21 1.115.348 2.256.404 3.418a.75.75 0 0 1-.516.75c-1.527.499-3.119.854-4.76 1.049-.074.38-.22.735-.423 1.05 2.066.209 4.058.672 5.943 1.358a.75.75 0 0 1 .492.75 24.665 24.665 0 0 1-1.189 6.25.75.75 0 0 1-1.425-.47 23.14 23.14 0 0 0 1.077-5.306c-.5-.169-1.009-.32-1.524-.455.068.234.104.484.104.746 0 3.956-2.521 7.5-6 7.5-3.478 0-6-3.544-6-7.5 0-.262.037-.511.104-.746-.514.135-1.022.286-1.522.455.154 1.838.52 3.616 1.077 5.307a.75.75 0 1 1-1.425.468 24.662 24.662 0 0 1-1.19-6.25.75.75 0 0 1 .493-.749 24.586 24.586 0 0 1 4.964-1.24h.01c.321-.046.644-.085.969-.118a2.983 2.983 0 0 1-.424-1.05 24.614 24.614 0 0 1-4.76-1.05.75.75 0 0 1-.516-.75c.057-1.16.194-2.302.405-3.417a.75.75 0 0 1 1.474.28c-.164.862-.28 1.74-.345 2.634 1.237.371 2.517.642 3.832.803.085-.266.207-.515.359-.742a18.698 18.698 0 0 1-.547-.08c-.664-.11-1.311-.612-1.417-1.404a4.535 4.535 0 0 1 .217-2.103 6.788 6.788 0 0 1-.788-.751.75.75 0 0 1-.187-.583 5.22 5.22 0 0 1 .67-2.04.75.75 0 0 1 1.026-.273Z" clipRule="evenodd" />
+                      </svg>
+                    </span>
+                    <div className="issue-banner-text">
+                      <h2 className="issue-banner-title">Need Help or Found an Issue?</h2>
+                      <p className="issue-banner-sub">Report bugs, payment issues, or other problems • Get rewards</p>
+                    </div>
+                  </div>
+                  <a href="/community/report" className="social-action-btn report-btn">
+                    <svg className="social-btn-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3" />
+                      <path d="M12 9v4" />
+                      <path d="M12 17h.01" />
+                    </svg>
+                    <span>Report Issue</span>
+                  </a>
+                </div>
+              </section>
+            )}
+          </div>
+        )}
 
         {homepageVisibility.popularToday && <section className="popular-section content-width">
           <SectionTitle icon>Popular Today</SectionTitle>
