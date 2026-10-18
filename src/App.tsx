@@ -28,14 +28,7 @@ const MAX_MOST_POPULAR_SERIES = 9;
 const MAX_POPULAR_SERIES = 20;
 const collections = manifest.slice(82, 87);
 type ContinueReadingSeed = Omit<ContinueReadingItem, 'coverSrc' | 'href'>;
-const continueReadingSeeds: ContinueReadingSeed[] = [
-  { title: 'The Crazy Villain Regains His Sanity', chapter: 14, progressPercent: 5, lastRead: '3 minutes ago', chaptersLeft: 20 },
-  { title: 'Devely’s Healing Time', chapter: 22, progressPercent: 3, lastRead: '33 minutes ago', chaptersLeft: 32 },
-  { title: 'Became the Patron of Villains', chapter: 53, progressPercent: 2, lastRead: '34 minutes ago', chaptersLeft: 56 },
-  { title: 'Got a Gallery in the Wild', chapter: 9, progressPercent: 10, lastRead: '34 minutes ago', chaptersLeft: 9 },
-  { title: 'Sovereign of a Hundred Blades: Heir to the Strongest Style', chapter: 8, progressPercent: 9, lastRead: '34 minutes ago', chaptersLeft: 10 },
-  { title: 'The Academy’s Weapon Copycat', chapter: 20, progressPercent: 4, lastRead: '34 minutes ago', chaptersLeft: 22 },
-];
+const continueReadingSeeds: ContinueReadingSeed[] = [];
 type PaginationItem = number | 'ellipsis';
 function getPaginationItems(pageCount: number, currentPage: number): PaginationItem[] {
   if (pageCount <= 7) {

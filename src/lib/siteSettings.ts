@@ -1,4 +1,4 @@
-import { supabase } from './supabase';
+﻿import { supabase } from './supabase';
 
 export type HeaderVisibility = {
   home: boolean;
@@ -49,26 +49,7 @@ export type HeroSlide = {
   href: string;
 };
 
-export const DEFAULT_HERO_SLIDES: HeroSlide[] = [
-  {
-    id: 'hero-1',
-    title: "The Hero’s Ballad",
-    src: 'https://storage.vortexscans.org/upload/series/featured/4/d6f63312-9876-41e9-a499-afa31d177add.png',
-    href: "/series/the-hero's-ballad",
-  },
-  {
-    id: 'hero-2',
-    title: 'Barbarian’s Adventure in a Fantasy World',
-    src: 'https://storage.vortexscans.org/upload/series/featured/lxJf4GmfzvG3XexqIAuF8KOjIGtbS5BK/b06b011f-579b-49b1-96ea-abe52ff70ccd.png',
-    href: "/series/barbarian's-adventure-in-a-fantasy-world",
-  },
-  {
-    id: 'hero-3',
-    title: 'Contract Killer Enrollment',
-    src: 'https://storage.vortexscans.org/upload/series/featured/4/d6f63312-9876-41e9-a499-afa31d177add.png',
-    href: '/series/contract-killer-enrollment',
-  },
-];
+export const DEFAULT_HERO_SLIDES: HeroSlide[] = [];
 
 export type SiteSettings = {
   header: HeaderVisibility;

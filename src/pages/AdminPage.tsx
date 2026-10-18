@@ -48,8 +48,6 @@ import {
 } from '../lib/siteSettings';
 import { supabase, supabaseConfigReady } from '../lib/supabase';
 import { useSeriesCatalog } from '../hooks/useSeriesCatalog';
-import { importOriginalCatalog } from '../lib/seriesCatalog';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
 import './admin-comix.css';
 
 type SidebarTab =
@@ -338,14 +336,6 @@ function ComixDashboard({
   const [savingSettings, setSavingSettings] = useState(false);
   const [saveMessage, setSaveMessage] = useState('Saved');
 
-  // Import catalog mutation
-  const queryClient = useQueryClient();
-  const importCatalogMutation = useMutation({
-    mutationFn: importOriginalCatalog,
-    onSuccess: async () => {
-      await queryClient.invalidateQueries();
-    },
-  });
 
   useEffect(() => {
     let active = true;
@@ -778,23 +768,7 @@ function ComixDashboard({
                 </p>
 
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-                  <div className="comix-setting-item" style={{ border: '1px solid var(--cx-border)', borderRadius: 8, padding: 16 }}>
-                    <div>
-                      <strong style={{ fontSize: 15, display: 'block', marginBottom: 4 }}>Restore missing baseline series</strong>
-                      <span style={{ fontSize: 13, color: 'var(--cx-text-muted)' }}>
-                        Fills in default titles if your database was freshly reset.
-                      </span>
-                    </div>
-                    <button
-                      type="button"
-                      className="btn-dark"
-                      onClick={() => importCatalogMutation.mutate()}
-                      disabled={importCatalogMutation.isPending}
-                    >
-                      {importCatalogMutation.isPending ? <LoaderCircle className="spin-icon" size={15} /> : <RefreshCw size={15} />}
-                      {importCatalogMutation.isPending ? 'Importing...' : 'Restore catalog'}
-                    </button>
-                  </div>
+                  {/* Export Catalog */}
 
                   <div className="comix-setting-item" style={{ border: '1px solid var(--cx-border)', borderRadius: 8, padding: 16 }}>
                     <div>
