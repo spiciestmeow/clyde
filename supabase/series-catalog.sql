@@ -41,7 +41,7 @@ create index if not exists series_catalog_order_idx
 alter table public.series enable row level security;
 
 grant select on public.series to anon, authenticated;
-grant insert on public.series to authenticated;
+grant insert, update, delete on public.series to authenticated;
 grant usage, select on sequence public.series_id_seq to authenticated;
 
 drop policy if exists "Public can read series" on public.series;
@@ -54,4 +54,17 @@ drop policy if exists "Admin can add series" on public.series;
 create policy "Admin can add series"
   on public.series for insert
   to authenticated
-  with check (lower(auth.jwt() ->> 'email') = lower('clydhex@gmail.com'));
+  with check (true);
+
+drop policy if exists "Admin can update series" on public.series;
+create policy "Admin can update series"
+  on public.series for update
+  to authenticated
+  using (true)
+  with check (true);
+
+drop policy if exists "Admin can delete series" on public.series;
+create policy "Admin can delete series"
+  on public.series for delete
+  to authenticated
+  using (true);

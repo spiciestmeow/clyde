@@ -320,6 +320,7 @@ export async function updateSeriesRecord(input: UpdateSeriesRequest): Promise<Se
   if (input.tags !== undefined) updateData.tags = input.tags;
   if (input.trackers !== undefined) updateData.trackers = input.trackers;
   if (input.sources !== undefined) updateData.sources = input.sources;
+  updateData.updated_at = new Date().toISOString();
 
   const { data, error } = await client
     .from('series')
@@ -329,7 +330,7 @@ export async function updateSeriesRecord(input: UpdateSeriesRequest): Promise<Se
     .maybeSingle();
 
   if (error) throw error;
-  if (!data) throw new Error('Series not found or update returned no rows.');
+  if (!data) throw new Error('Series not found or update returned no rows. Please ensure the Supabase UPDATE policy is executed.');
   return toSeriesRecord(data);
 }
 

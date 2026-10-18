@@ -64,6 +64,26 @@ export default function NavigationProgress() {
   }, [clearTimers, finishProgress]);
 
   useEffect(() => {
+    startProgress();
+
+    const handleInitialLoad = () => {
+      finishProgress();
+    };
+
+    if (document.readyState === 'complete') {
+      const timer = window.setTimeout(finishProgress, 350);
+      return () => window.clearTimeout(timer);
+    } else {
+      window.addEventListener('load', handleInitialLoad);
+      const timer = window.setTimeout(finishProgress, 1200);
+      return () => {
+        window.removeEventListener('load', handleInitialLoad);
+        window.clearTimeout(timer);
+      };
+    }
+  }, [startProgress, finishProgress]);
+
+  useEffect(() => {
     const currentPath = currentBrowserPath();
 
     if (lastPathRef.current === null) {

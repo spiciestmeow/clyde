@@ -83,14 +83,10 @@ export default function SiteHeader({
     };
   }, [visibility, visibilityReady]);
 
-  const useProvidedVisibility = visibility !== undefined && visibilityReady === true;
-  const headerVisibility = useProvidedVisibility ? visibility : savedVisibility;
-  const isVisibilityReady = useProvidedVisibility || savedVisibilityReady;
+  const headerVisibility = visibility ?? savedVisibility ?? DEFAULT_HEADER_VISIBILITY;
   const isSeriesPage = activeSection === 'series';
-  const showMenu = isVisibilityReady && (
-    headerVisibility.home || headerVisibility.series || headerVisibility.shop || headerVisibility.community
-  );
-  const navigation = isVisibilityReady ? (
+  const showMenu = headerVisibility.home || headerVisibility.series || headerVisibility.shop || headerVisibility.community;
+  const navigation = (
     <nav className={`main-nav${mobileMenuOpen ? ' open' : ''}`}>
       {headerVisibility.home && (
         <Link className={`nav-pill${activeSection === 'home' ? ' selected' : ''}`} href="/">
@@ -115,11 +111,9 @@ export default function SiteHeader({
         </Link>
       )}
     </nav>
-  ) : null;
-  const searchContent = isVisibilityReady && headerVisibility.search && search
-    ? search
-    : null;
-  const actions = isVisibilityReady ? (
+  );
+  const searchContent = headerVisibility.search && search ? search : null;
+  const actions = (
     <>
       {headerVisibility.bookmarks && (
         <Link className="bookmark-pill" href="/bookmarks">
@@ -153,7 +147,7 @@ export default function SiteHeader({
         </Link>
       )}
     </>
-  ) : null;
+  );
 
   return (
     <header className={`topbar${isSeriesPage ? ' series-topbar' : ''}`}>

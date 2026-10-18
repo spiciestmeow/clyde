@@ -1,4 +1,4 @@
-﻿import { supabase } from './supabase';
+import { supabase } from './supabase';
 
 export type HeaderVisibility = {
   home: boolean;
@@ -109,14 +109,22 @@ export const DEFAULT_SITE_SETTINGS: SiteSettings = {
 function parseBooleanSettings<T extends Record<string, boolean>>(
   value: unknown,
   defaults: T,
-): T | null {
-  if (!value || typeof value !== 'object' || Array.isArray(value)) return null;
+): T {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) {
+    return { ...defaults };
+  }
 
   const candidate = value as Record<string, unknown>;
   const keys = Object.keys(defaults) as (keyof T)[];
-  if (keys.some((key) => typeof candidate[key as string] !== 'boolean')) return null;
+  const result = { ...defaults };
 
-  return Object.fromEntries(keys.map((key) => [key, candidate[key as string]])) as T;
+  for (const key of keys) {
+    if (typeof candidate[key as string] === 'boolean') {
+      result[key] = candidate[key as string] as T[keyof T];
+    }
+  }
+
+  return result;
 }
 
 export function parseHeroSlides(value: unknown): HeroSlide[] {
@@ -140,18 +148,8 @@ function parseSiteSettings(value: unknown): SiteSettings | null {
 
   const stored = value as Record<string, unknown>;
   const header = parseBooleanSettings(stored, DEFAULT_HEADER_VISIBILITY);
-  if (!header) return null;
-
-  const homepage = stored.homepage_sections === undefined
-    ? { ...DEFAULT_HOMEPAGE_VISIBILITY }
-    : parseBooleanSettings(stored.homepage_sections, DEFAULT_HOMEPAGE_VISIBILITY);
-  if (!homepage) return null;
-
-  const seriesPage = stored.series_page_sections === undefined
-    ? { ...DEFAULT_SERIES_PAGE_VISIBILITY }
-    : parseBooleanSettings(stored.series_page_sections, DEFAULT_SERIES_PAGE_VISIBILITY);
-  if (!seriesPage) return null;
-
+  const homepage = parseBooleanSettings(stored.homepage_sections, DEFAULT_HOMEPAGE_VISIBILITY);
+  const seriesPage = parseBooleanSettings(stored.series_page_sections, DEFAULT_SERIES_PAGE_VISIBILITY);
   const heroSlides = stored.hero_slides !== undefined
     ? parseHeroSlides(stored.hero_slides)
     : [...DEFAULT_HERO_SLIDES];
@@ -175,11 +173,7 @@ export function getCachedSiteSettings(): SiteSettings | null {
     const cached = value as Record<string, unknown>;
     const header = parseBooleanSettings(cached.header, DEFAULT_HEADER_VISIBILITY);
     const homepage = parseBooleanSettings(cached.homepage, DEFAULT_HOMEPAGE_VISIBILITY);
-    const seriesPage = cached.seriesPage === undefined
-      ? { ...DEFAULT_SERIES_PAGE_VISIBILITY }
-      : parseBooleanSettings(cached.seriesPage, DEFAULT_SERIES_PAGE_VISIBILITY);
-    if (!header || !homepage || !seriesPage) return null;
-
+    const seriesPage = parseBooleanSettings(cached.seriesPage, DEFAULT_SERIES_PAGE_VISIBILITY);
     const heroSlides = cached.heroSlides ? parseHeroSlides(cached.heroSlides) : [...DEFAULT_HERO_SLIDES];
 
     return { header, homepage, seriesPage, heroSlides };
