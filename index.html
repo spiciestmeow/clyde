@@ -32,7 +32,7 @@
         transform-origin: left center;
         background: #f78745;
         box-shadow: 0 0 16px rgba(247, 135, 69, 0.65);
-        transition: transform 220ms ease, opacity 160ms ease;
+        transition: transform 180ms cubic-bezier(0.1, 0.7, 0.1, 1), opacity 150ms ease;
       }
       [dir="rtl"] #vcomics-navigation-progress { transform-origin: right center; }
       @media (prefers-reduced-motion: reduce) {
@@ -48,14 +48,20 @@
         const w = window;
         if (w[key]?.initialized) return;
 
-        const state = {
-          initialized: true,
-          active: false,
-          value: 0,
-          trickleTimer: 0,
-          hideTimer: 0,
-          resetTimer: 0,
-          safetyTimer: 0,
+        let seqId = 0;
+        let activeTimers = [];
+
+        const clearAllTimers = () => {
+          for (let i = 0; i < activeTimers.length; i++) {
+            clearTimeout(activeTimers[i]);
+            clearInterval(activeTimers[i]);
+          }
+          activeTimers = [];
+        };
+
+        const addTimer = (id) => {
+          activeTimers.push(id);
+          return id;
         };
 
         const getBar = () => {
@@ -69,75 +75,111 @@
           return bar;
         };
 
-        const clearTimers = () => {
-          if (state.trickleTimer) { window.clearInterval(state.trickleTimer); state.trickleTimer = 0; }
-          if (state.hideTimer) { window.clearTimeout(state.hideTimer); state.hideTimer = 0; }
-          if (state.resetTimer) { window.clearTimeout(state.resetTimer); state.resetTimer = 0; }
-          if (state.safetyTimer) { window.clearTimeout(state.safetyTimer); state.safetyTimer = 0; }
-        };
-
-        const setProgress = (val, instant) => {
-          state.value = Math.max(0, Math.min(val, 100));
+        const setScale = (ratio, instant) => {
           const bar = getBar();
           if (instant) {
             bar.style.transition = "none";
-            bar.style.transform = "scaleX(" + (state.value / 100) + ")";
-            void bar.offsetWidth; // Force layout reflow
+            bar.style.transform = "scaleX(" + Math.max(0, Math.min(ratio, 1)) + ")";
+            void bar.offsetWidth; // Force synchronous reflow
             bar.style.transition = "";
           } else {
-            bar.style.transform = "scaleX(" + (state.value / 100) + ")";
+            bar.style.transform = "scaleX(" + Math.max(0, Math.min(ratio, 1)) + ")";
           }
         };
 
-        const start = () => {
-          clearTimers();
-          state.active = true;
+        const trigger = () => {
+          const currentSeq = ++seqId;
+          clearAllTimers();
+
           const bar = getBar();
           bar.style.opacity = "1";
-          setProgress(0, true);
+          setScale(0, true);
 
+          // Step 1: Rapid start to 38%
           window.requestAnimationFrame(() => {
-            if (!state.active) return;
-            setProgress(15);
+            if (seqId !== currentSeq) return;
+            setScale(0.38, false);
           });
 
-          state.trickleTimer = window.setInterval(() => {
-            if (!state.active) return;
-            const next = state.value + (state.value < 70 ? 8 : state.value < 88 ? 3 : 0.75);
-            setProgress(Math.min(next, 92));
-          }, 200);
+          // Step 2: Smooth mid advance to 78%
+          addTimer(setTimeout(() => {
+            if (seqId !== currentSeq) return;
+            setScale(0.78, false);
+          }, 110));
 
-          // Absolute fail-safe: automatically complete after 2.5s if not already finished
-          state.safetyTimer = window.setTimeout(() => {
-            if (state.active) done();
-          }, 2500);
+          // Step 3: Complete to 100%
+          addTimer(setTimeout(() => {
+            if (seqId !== currentSeq) return;
+            setScale(1.0, false);
+          }, 240));
+
+          // Step 4: Fade out
+          addTimer(setTimeout(() => {
+            if (seqId !== currentSeq) return;
+            bar.style.opacity = "0";
+          }, 380));
+
+          // Step 5: Reset back to 0
+          addTimer(setTimeout(() => {
+            if (seqId !== currentSeq) return;
+            setScale(0, true);
+          }, 520));
+        };
+
+        const start = () => {
+          const currentSeq = ++seqId;
+          clearAllTimers();
+
+          const bar = getBar();
+          bar.style.opacity = "1";
+          setScale(0, true);
+
+          window.requestAnimationFrame(() => {
+            if (seqId !== currentSeq) return;
+            setScale(0.2, false);
+          });
+
+          let val = 0.2;
+          const trickle = setInterval(() => {
+            if (seqId !== currentSeq) return;
+            val += val < 0.7 ? 0.08 : val < 0.88 ? 0.03 : 0.008;
+            setScale(Math.min(val, 0.92), false);
+          }, 180);
+          addTimer(trickle);
+
+          // Guaranteed fail-safe: automatically complete after 1.8s
+          addTimer(setTimeout(() => {
+            if (seqId !== currentSeq) return;
+            done();
+          }, 1800));
         };
 
         const done = () => {
-          if (!state.active) return;
-          state.active = false;
-          if (state.trickleTimer) { window.clearInterval(state.trickleTimer); state.trickleTimer = 0; }
-          if (state.safetyTimer) { window.clearTimeout(state.safetyTimer); state.safetyTimer = 0; }
+          const currentSeq = ++seqId;
+          clearAllTimers();
 
-          setProgress(100);
+          const bar = getBar();
+          setScale(1.0, false);
 
-          state.hideTimer = window.setTimeout(() => {
-            const bar = getBar();
+          addTimer(setTimeout(() => {
+            if (seqId !== currentSeq) return;
             bar.style.opacity = "0";
-            state.resetTimer = window.setTimeout(() => {
-              setProgress(0, true);
-              state.value = 0;
-            }, 180);
-          }, 220);
+          }, 180));
+
+          addTimer(setTimeout(() => {
+            if (seqId !== currentSeq) return;
+            setScale(0, true);
+          }, 360));
         };
 
         w[key] = {
-          ...state,
+          initialized: true,
+          trigger,
           start,
           done,
         };
 
-        // Start immediately on initial page load / refresh
+        // Start on page refresh
         start();
       })();
     </script>

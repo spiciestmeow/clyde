@@ -5,12 +5,7 @@ declare global {
   interface Window {
     __vcomicsNavigationProgress?: {
       initialized: boolean;
-      active: boolean;
-      value: number;
-      trickleTimer: number;
-      hideTimer: number;
-      resetTimer: number;
-      safetyTimer: number;
+      trigger: () => void;
       start: () => void;
       done: () => void;
     };
@@ -20,17 +15,22 @@ declare global {
 function getGlobalProgress() {
   if (typeof window === 'undefined') return null;
   const w = window;
+
   if (!w.__vcomicsNavigationProgress) {
-    const state = {
-      initialized: true,
-      active: false,
-      value: 0,
-      trickleTimer: 0,
-      hideTimer: 0,
-      resetTimer: 0,
-      safetyTimer: 0,
-      start: () => {},
-      done: () => {},
+    let seqId = 0;
+    let activeTimers: number[] = [];
+
+    const clearAllTimers = () => {
+      for (let i = 0; i < activeTimers.length; i++) {
+        clearTimeout(activeTimers[i]);
+        clearInterval(activeTimers[i]);
+      }
+      activeTimers = [];
+    };
+
+    const addTimer = (id: number) => {
+      activeTimers.push(id);
+      return id;
     };
 
     const getBar = () => {
@@ -44,70 +44,124 @@ function getGlobalProgress() {
       return bar;
     };
 
-    const clearTimers = () => {
-      if (state.trickleTimer) { window.clearInterval(state.trickleTimer); state.trickleTimer = 0; }
-      if (state.hideTimer) { window.clearTimeout(state.hideTimer); state.hideTimer = 0; }
-      if (state.resetTimer) { window.clearTimeout(state.resetTimer); state.resetTimer = 0; }
-      if (state.safetyTimer) { window.clearTimeout(state.safetyTimer); state.safetyTimer = 0; }
-    };
-
-    const setProgress = (val: number, instant?: boolean) => {
-      state.value = Math.max(0, Math.min(val, 100));
+    const setScale = (ratio: number, instant?: boolean) => {
       const bar = getBar();
       if (instant) {
         bar.style.transition = 'none';
-        bar.style.transform = `scaleX(${state.value / 100})`;
+        bar.style.transform = `scaleX(${Math.max(0, Math.min(ratio, 1))})`;
         void bar.offsetWidth;
         bar.style.transition = '';
       } else {
-        bar.style.transform = `scaleX(${state.value / 100})`;
+        bar.style.transform = `scaleX(${Math.max(0, Math.min(ratio, 1))})`;
       }
     };
 
-    state.start = () => {
-      clearTimers();
-      state.active = true;
+    const trigger = () => {
+      const currentSeq = ++seqId;
+      clearAllTimers();
+
       const bar = getBar();
       bar.style.opacity = '1';
-      setProgress(0, true);
+      setScale(0, true);
 
       window.requestAnimationFrame(() => {
-        if (!state.active) return;
-        setProgress(15);
+        if (seqId !== currentSeq) return;
+        setScale(0.38, false);
       });
 
-      state.trickleTimer = window.setInterval(() => {
-        if (!state.active) return;
-        const next = state.value + (state.value < 70 ? 8 : state.value < 88 ? 3 : 0.75);
-        setProgress(Math.min(next, 92));
-      }, 200);
+      addTimer(
+        window.setTimeout(() => {
+          if (seqId !== currentSeq) return;
+          setScale(0.78, false);
+        }, 110)
+      );
 
-      state.safetyTimer = window.setTimeout(() => {
-        if (state.active) state.done();
-      }, 2500);
+      addTimer(
+        window.setTimeout(() => {
+          if (seqId !== currentSeq) return;
+          setScale(1.0, false);
+        }, 240)
+      );
+
+      addTimer(
+        window.setTimeout(() => {
+          if (seqId !== currentSeq) return;
+          bar.style.opacity = '0';
+        }, 380)
+      );
+
+      addTimer(
+        window.setTimeout(() => {
+          if (seqId !== currentSeq) return;
+          setScale(0, true);
+        }, 520)
+      );
     };
 
-    state.done = () => {
-      if (!state.active) return;
-      state.active = false;
-      if (state.trickleTimer) { window.clearInterval(state.trickleTimer); state.trickleTimer = 0; }
-      if (state.safetyTimer) { window.clearTimeout(state.safetyTimer); state.safetyTimer = 0; }
+    const start = () => {
+      const currentSeq = ++seqId;
+      clearAllTimers();
 
-      setProgress(100);
+      const bar = getBar();
+      bar.style.opacity = '1';
+      setScale(0, true);
 
-      state.hideTimer = window.setTimeout(() => {
-        const bar = getBar();
-        bar.style.opacity = '0';
-        state.resetTimer = window.setTimeout(() => {
-          setProgress(0, true);
-          state.value = 0;
-        }, 180);
-      }, 220);
+      window.requestAnimationFrame(() => {
+        if (seqId !== currentSeq) return;
+        setScale(0.2, false);
+      });
+
+      let val = 0.2;
+      const trickle = window.setInterval(() => {
+        if (seqId !== currentSeq) return;
+        val += val < 0.7 ? 0.08 : val < 0.88 ? 0.03 : 0.008;
+        setScale(Math.min(val, 0.92), false);
+      }, 180);
+      addTimer(trickle);
+
+      addTimer(
+        window.setTimeout(() => {
+          if (seqId !== currentSeq) return;
+          done();
+        }, 1800)
+      );
     };
 
-    w.__vcomicsNavigationProgress = state;
+    const done = () => {
+      const currentSeq = ++seqId;
+      clearAllTimers();
+
+      const bar = getBar();
+      setScale(1.0, false);
+
+      addTimer(
+        window.setTimeout(() => {
+          if (seqId !== currentSeq) return;
+          bar.style.opacity = '0';
+        }, 180)
+      );
+
+      addTimer(
+        window.setTimeout(() => {
+          if (seqId !== currentSeq) return;
+          setScale(0, true);
+        }, 360)
+      );
+    };
+
+    w.__vcomicsNavigationProgress = {
+      initialized: true,
+      trigger,
+      start,
+      done,
+    };
   }
+
   return w.__vcomicsNavigationProgress;
+}
+
+export function triggerNavigationProgress() {
+  getGlobalProgress()?.trigger();
 }
 
 export function startNavigationProgress() {
@@ -121,17 +175,13 @@ export function finishNavigationProgress() {
 export default function NavigationProgress() {
   const [location] = useLocation();
   const isFirstMountRef = useRef(true);
-  const routeTimerRef = useRef<number | null>(null);
 
   // Initial page mount / refresh: complete progress smoothly
   useEffect(() => {
     const progress = getGlobalProgress();
-    if (!progress?.active) {
-      progress?.start();
-    }
     const timer = window.setTimeout(() => {
       progress?.done();
-    }, 400);
+    }, 380);
 
     return () => window.clearTimeout(timer);
   }, []);
@@ -144,30 +194,15 @@ export default function NavigationProgress() {
     }
 
     const progress = getGlobalProgress();
-    if (routeTimerRef.current !== null) {
-      window.clearTimeout(routeTimerRef.current);
-    }
-
-    // Ensure progress is started for this transition
-    if (!progress?.active) {
-      progress?.start();
-    }
-
-    // Finish when the new view is rendered
-    routeTimerRef.current = window.setTimeout(() => {
+    // Complete the progress smoothly when route renders
+    const timer = window.setTimeout(() => {
       progress?.done();
-      routeTimerRef.current = null;
-    }, 280);
+    }, 180);
 
-    return () => {
-      if (routeTimerRef.current !== null) {
-        window.clearTimeout(routeTimerRef.current);
-        routeTimerRef.current = null;
-      }
-    };
+    return () => window.clearTimeout(timer);
   }, [location]);
 
-  // Intercept clicks on links
+  // Intercept all internal clicks: supports infinite rapid tapping on any menu link!
   useEffect(() => {
     const handleClick = (event: MouseEvent) => {
       if (
@@ -199,21 +234,21 @@ export default function NavigationProgress() {
       const destPath = normalize(destination.pathname);
       const currPath = normalize(window.location.pathname);
 
-      // If user double-taps or clicks the already active route link, do not trigger an orphan progress
+      // If user taps the active route link, scroll smoothly to top
       if (destPath === currPath && destination.search === window.location.search) {
-        return;
+        window.scrollTo({ top: 0, left: 0, behavior: 'smooth' });
+        document.documentElement.scrollTop = 0;
+        document.body.scrollTop = 0;
       }
 
-      // Start progress immediately on internal route link click
-      getGlobalProgress()?.start();
+      // Every tap resets immediately from 0, shoots across, and never freezes
+      const progress = getGlobalProgress();
+      progress?.trigger();
     };
 
     const handlePopState = () => {
       const progress = getGlobalProgress();
-      progress?.start();
-      window.setTimeout(() => {
-        progress?.done();
-      }, 280);
+      progress?.trigger();
     };
 
     document.addEventListener('click', handleClick, { capture: true });
@@ -222,9 +257,6 @@ export default function NavigationProgress() {
     return () => {
       document.removeEventListener('click', handleClick, { capture: true });
       window.removeEventListener('popstate', handlePopState);
-      if (routeTimerRef.current !== null) {
-        window.clearTimeout(routeTimerRef.current);
-      }
     };
   }, []);
 
