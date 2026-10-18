@@ -1,5 +1,6 @@
 import { useEffect, useRef } from 'react';
 import { useLocation } from 'wouter';
+import { refreshActiveData } from '../lib/dataRefresh';
 
 declare global {
   interface Window {
@@ -234,11 +235,12 @@ export default function NavigationProgress() {
       const destPath = normalize(destination.pathname);
       const currPath = normalize(window.location.pathname);
 
-      // If user taps the active route link, scroll smoothly to top
+      // If user taps the active route link, scroll smoothly to top and re-fetch real data from Supabase
       if (destPath === currPath && destination.search === window.location.search) {
         window.scrollTo({ top: 0, left: 0, behavior: 'smooth' });
         document.documentElement.scrollTop = 0;
         document.body.scrollTop = 0;
+        void refreshActiveData();
       }
 
       // Every tap resets immediately from 0, shoots across, and never freezes
