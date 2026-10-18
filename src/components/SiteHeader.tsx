@@ -12,6 +12,7 @@ import {
   Sun,
   UserRound,
   UsersRound,
+  Upload,
 } from 'lucide-react';
 import { Link } from 'wouter';
 import HeroSpider from './HeroSpider';
@@ -102,6 +103,9 @@ export default function SiteHeader({
           <Grid2X2 size={15} />Series
         </Link>
       )}
+      <Link className="nav-pill" href="/uploads">
+        <Upload size={15} />Upload
+      </Link>
       {headerVisibility.shop && (
         <Link className="nav-pill" href="/shop">
           <ShoppingBag size={15} />Shop

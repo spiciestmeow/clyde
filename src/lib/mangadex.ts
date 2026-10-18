@@ -93,13 +93,13 @@ export async function fetchMangaDexDetails(rawInput: string): Promise<MangaDexIm
   ).trim();
 
   // Alternative titles
-  const altTitles: string[] = [];
+  const alternateTitles: string[] = [];
   if (Array.isArray(attributes.altTitles)) {
     for (const altObj of attributes.altTitles) {
       if (altObj && typeof altObj === 'object') {
         for (const val of Object.values(altObj)) {
-          if (typeof val === 'string' && val.trim() && !altTitles.includes(val.trim())) {
-            altTitles.push(val.trim());
+          if (typeof val === 'string' && val.trim() && !alternateTitles.includes(val.trim())) {
+            alternateTitles.push(val.trim());
           }
         }
       }
