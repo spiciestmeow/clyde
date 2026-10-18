@@ -363,7 +363,7 @@ function HomePage() {
                 suppressRailClickUntilRef.current = 0;
               }
             }}
-          >{[0, 1, 2].flatMap((copyIndex) => popularCards.map((card) => (
+          >{(popularCards.length >= 4 ? [0, 1, 2] : [0]).flatMap((copyIndex) => popularCards.map((card) => (
             <PopularNowCard
               key={`${copyIndex}-${card.title}`}
               item={card}
