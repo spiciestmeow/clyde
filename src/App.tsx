@@ -12,7 +12,6 @@ import { ContinueReadingSection, type ContinueReadingItem } from './components/C
 import AdminPage from './pages/AdminPage';
 import SeriesDetailPage from './pages/SeriesDetailPage';
 import SeriesBrowsePage from './pages/SeriesBrowsePage';
-import UploadsPage from './pages/UploadsPage';
 import { toSiteSearchItems, toTrendingSiteSearchItems } from './data/seriesSearchCatalog';
 import { useThemeMode } from './hooks/useThemeMode';
 import { useSeriesCatalog } from './hooks/useSeriesCatalog';
@@ -476,7 +475,6 @@ function App() {
       <NavigationProgress />
       <Switch>
         <Route path="/admin" component={AdminPage} />
-        <Route path="/uploads" component={UploadsPage} />
         <Route path="/series" component={SeriesBrowsePage} />
         <Route path="/series/:slug" component={SeriesDetailPage} />
         <Route component={HomePage} />
