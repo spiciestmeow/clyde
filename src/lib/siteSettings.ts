@@ -79,7 +79,7 @@ export const DEFAULT_HOMEPAGE_VISIBILITY: HomepageVisibility = {
   continueReading: true,
   latestReleases: true,
   collections: true,
-  communityActivity: true,
+  communityActivity: false,
   mostPopular: true,
   footer: true,
 };
@@ -186,7 +186,14 @@ function cacheSiteSettings(settings: SiteSettings): void {
   if (typeof window === 'undefined') return;
 
   try {
-    window.localStorage.setItem(SITE_SETTINGS_CACHE_KEY, JSON.stringify(settings));
+    const safeSettings: SiteSettings = {
+      ...settings,
+      heroSlides: (settings.heroSlides || []).map((slide) => ({
+        ...slide,
+        src: slide.src && slide.src.startsWith('data:') && slide.src.length > 50000 ? '' : slide.src,
+      })),
+    };
+    window.localStorage.setItem(SITE_SETTINGS_CACHE_KEY, JSON.stringify(safeSettings));
   } catch {
     // The remote settings remain authoritative if browser storage is unavailable.
   }

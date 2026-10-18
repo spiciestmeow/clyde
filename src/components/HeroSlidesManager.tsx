@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState, type ChangeEvent, type FormEvent } from 'react';
+import { useEffect, useMemo, useRef, useState, type ChangeEvent, type FormEvent } from 'react';
 import {
   AlertCircle,
   ArrowDown,
@@ -44,6 +44,12 @@ export default function HeroSlidesManager({
       ? settings.heroSlides
       : [...DEFAULT_HERO_SLIDES];
   });
+
+  useEffect(() => {
+    if (settings?.heroSlides !== undefined) {
+      setSlides(settings.heroSlides);
+    }
+  }, [settings?.heroSlides]);
 
   const [isEditing, setIsEditing] = useState(false);
   const [editingIndex, setEditingIndex] = useState<number | null>(null);
