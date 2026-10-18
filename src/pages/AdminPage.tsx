@@ -1,6 +1,39 @@
-import { useEffect, useState, type FormEvent } from 'react';
+import { useEffect, useMemo, useState, type FormEvent } from 'react';
 import type { Session } from '@supabase/supabase-js';
-import { ArrowLeft, BookOpen, Check, Eye, EyeOff, LayoutDashboard, LoaderCircle, LockKeyhole, LogOut, Menu, Rows3, ShieldCheck, SlidersHorizontal } from 'lucide-react';
+import {
+  ArrowLeft,
+  Bell,
+  BookOpen,
+  Bookmark,
+  Check,
+  Clock,
+  Database,
+  Download,
+  Eye,
+  EyeOff,
+  FileText,
+  FolderKanban,
+  History,
+  LayoutDashboard,
+  LoaderCircle,
+  LockKeyhole,
+  LogOut,
+  Menu,
+  MessageSquare,
+  Moon,
+  Radio,
+  RefreshCw,
+  Rss,
+  Search,
+  Settings,
+  ShieldAlert,
+  ShieldCheck,
+  Sun,
+  Upload,
+  UserCheck,
+  UserX,
+  Users,
+} from 'lucide-react';
 import SeriesCatalogManager from '../components/SeriesCatalogManager';
 import {
   DEFAULT_SITE_SETTINGS,
@@ -12,19 +45,26 @@ import {
   type SiteSettings,
 } from '../lib/siteSettings';
 import { supabase, supabaseConfigReady } from '../lib/supabase';
+import { useSeriesCatalog } from '../hooks/useSeriesCatalog';
+import { importOriginalCatalog } from '../lib/seriesCatalog';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
+import './admin-comix.css';
 
-const visibilityOptions: { key: keyof HeaderVisibility; label: string; description: string; group: string }[] = [
-  { key: 'home', label: 'Home', description: 'Primary route back to the Vortex Scans homepage.', group: 'Navigation' },
-  { key: 'series', label: 'Series', description: 'Browse the full catalogue of manga and comics.', group: 'Navigation' },
-  { key: 'shop', label: 'Shop', description: 'Link to the Vortex Scans shop.', group: 'Navigation' },
-  { key: 'community', label: 'Community', description: 'Community hub and discussion entry point.', group: 'Navigation' },
-  { key: 'search', label: 'Search', description: 'Quick search field in the site header.', group: 'Reader tools' },
-  { key: 'bookmarks', label: 'Bookmarks', description: 'A reader’s saved series and reading list.', group: 'Reader tools' },
-  { key: 'notifications', label: 'Notifications', description: 'Updates and activity notifications.', group: 'Reader tools' },
-  { key: 'theme', label: 'Theme control', description: 'Light and dark appearance control.', group: 'Reader tools' },
-  { key: 'account', label: 'Account', description: 'Sign in and account access.', group: 'Reader tools' },
-  { key: 'discord', label: 'Discord', description: 'Direct link to the Vortex Scans Discord.', group: 'Community' },
-];
+type SidebarTab =
+  | 'edit-profile'
+  | 'followed-titles'
+  | 'followed-users'
+  | 'followed-groups'
+  | 'read-history'
+  | 'collections'
+  | 'feed'
+  | 'notifications'
+  | 'comments'
+  | 'posts'
+  | 'uploads'
+  | 'import-export'
+  | 'blocked-users'
+  | 'settings';
 
 const homepageVisibilityOptions: { key: keyof HomepageVisibility; label: string; description: string; group: string }[] = [
   { key: 'featuredSeries', label: 'Featured series', description: 'Featured-series carousel at the top of the homepage.', group: 'Featured content' },
@@ -37,6 +77,19 @@ const homepageVisibilityOptions: { key: keyof HomepageVisibility; label: string;
   { key: 'mostPopular', label: 'Most Popular', description: 'Ranked popular series list.', group: 'Discovery' },
   { key: 'communityActivity', label: 'Community activity', description: 'Latest comments and top members panels.', group: 'Community' },
   { key: 'footer', label: 'Site footer', description: 'Brand information and policy links at the bottom of the page.', group: 'Site information' },
+];
+
+const headerVisibilityOptions: { key: keyof HeaderVisibility; label: string; description: string; group: string }[] = [
+  { key: 'home', label: 'Home', description: 'Primary route back to the Vortex Scans homepage.', group: 'Navigation' },
+  { key: 'series', label: 'Series', description: 'Browse the full catalogue of manga and comics.', group: 'Navigation' },
+  { key: 'shop', label: 'Shop', description: 'Link to the Vortex Scans shop.', group: 'Navigation' },
+  { key: 'community', label: 'Community', description: 'Community hub and discussion entry point.', group: 'Navigation' },
+  { key: 'search', label: 'Search', description: 'Quick search field in the site header.', group: 'Reader tools' },
+  { key: 'bookmarks', label: 'Bookmarks', description: 'A reader’s saved series and reading list.', group: 'Reader tools' },
+  { key: 'notifications', label: 'Notifications', description: 'Updates and activity notifications.', group: 'Reader tools' },
+  { key: 'theme', label: 'Theme control', description: 'Light and dark appearance control.', group: 'Reader tools' },
+  { key: 'account', label: 'Account', description: 'Sign in and account access.', group: 'Reader tools' },
+  { key: 'discord', label: 'Discord', description: 'Direct link to the Vortex Scans Discord.', group: 'Community' },
 ];
 
 const seriesPageVisibilityOptions: { key: keyof SeriesPageVisibility; label: string; description: string; group: string }[] = [
@@ -54,67 +107,122 @@ const seriesPageVisibilityOptions: { key: keyof SeriesPageVisibility; label: str
   { key: 'footer', label: 'Series page footer', description: 'Brand information and policy links below the series page.', group: 'Community and discovery' },
 ];
 
-function VisibilityRow({
-  label,
-  description,
-  enabled,
-  onToggle,
-  testId,
-  disabled,
+export default function AdminPage() {
+  const [session, setSession] = useState<Session | null>(null);
+  const [checkingSession, setCheckingSession] = useState(true);
+
+  // Theme toggle state (light / dark)
+  const [theme, setTheme] = useState<'dark' | 'light'>(() => {
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('comix-admin-theme');
+      return saved === 'light' ? 'light' : 'dark';
+    }
+    return 'dark';
+  });
+
+  const toggleTheme = () => {
+    setTheme((curr) => {
+      const next = curr === 'dark' ? 'light' : 'dark';
+      localStorage.setItem('comix-admin-theme', next);
+      return next;
+    });
+  };
+
+  useEffect(() => {
+    if (!supabase) {
+      setCheckingSession(false);
+      return;
+    }
+
+    let active = true;
+    void supabase.auth
+      .getSession()
+      .then(({ data }) => {
+        if (active) setSession(data.session ?? null);
+      })
+      .finally(() => {
+        if (active) setCheckingSession(false);
+      });
+
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, currentSession) => {
+      setSession(currentSession);
+    });
+
+    return () => {
+      active = false;
+      subscription.unsubscribe();
+    };
+  }, []);
+
+  if (checkingSession) {
+    return (
+      <div className={`comix-admin-wrapper theme-${theme} comix-login-screen`}>
+        <LoaderCircle className="spin-icon" size={32} style={{ color: 'var(--cx-teal)' }} />
+      </div>
+    );
+  }
+
+  if (!supabaseConfigReady) {
+    return (
+      <div className={`comix-admin-wrapper theme-${theme} comix-login-screen`}>
+        <div className="comix-login-card">
+          <div className="comix-login-header">
+            <div className="comix-logo" style={{ justifyContent: 'center', marginBottom: 12 }}>
+              <span className="comix-logo-badge">X</span>
+              <span>COMIX ADMIN</span>
+            </div>
+            <h1>Connect Supabase</h1>
+            <p>Add VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY to your environment variables.</p>
+          </div>
+          <a href="/" className="btn-dark" style={{ width: '100%', justifyContent: 'center' }}>
+            <ArrowLeft size={15} /> Back to website
+          </a>
+        </div>
+      </div>
+    );
+  }
+
+  if (!session) {
+    return (
+      <ComixLoginScreen
+        theme={theme}
+        onToggleTheme={toggleTheme}
+        onSignedIn={(s) => setSession(s)}
+      />
+    );
+  }
+
+  return (
+    <ComixDashboard
+      session={session}
+      theme={theme}
+      onToggleTheme={toggleTheme}
+      onLogout={() => setSession(null)}
+    />
+  );
+}
+
+// ====================================================
+// COMIX LOGIN SCREEN
+// ====================================================
+function ComixLoginScreen({
+  theme,
+  onToggleTheme,
+  onSignedIn,
 }: {
-  label: string;
-  description: string;
-  enabled: boolean;
-  onToggle: () => void;
-  testId: string;
-  disabled: boolean;
+  theme: 'dark' | 'light';
+  onToggleTheme: () => void;
+  onSignedIn: (session: Session) => void;
 }) {
-  return (
-    <div className={`admin-setting-row ${enabled ? '' : 'is-hidden'}`}>
-      <div className="admin-setting-symbol" aria-hidden="true">{enabled ? <Eye size={17} /> : <EyeOff size={17} />}</div>
-      <div className="admin-setting-copy"><strong>{label}</strong><span>{description}</span></div>
-      <span className={`admin-state-label ${enabled ? 'is-on' : ''}`}>{enabled ? 'Visible' : 'Hidden'}</span>
-      <button
-        type="button"
-        className={`admin-switch ${enabled ? 'is-on' : ''}`}
-        role="switch"
-        aria-checked={enabled}
-        aria-label={`${enabled ? 'Hide' : 'Show'} ${label}`}
-        onClick={onToggle}
-        disabled={disabled}
-        data-testid={testId}
-      ><span /></button>
-    </div>
-  );
-}
-
-function SupabaseSetupNotice() {
-  return (
-    <main className="admin-auth-main">
-      <section className="admin-auth-card">
-        <div className="admin-auth-mark"><LockKeyhole size={22} /></div>
-        <span className="admin-eyebrow">VORTEX SCANS / CONTROL ROOM</span>
-        <h1>Connect Supabase</h1>
-        <p className="admin-auth-copy">
-          Add your project URL and public anon key to <code>.env.local</code>, then restart Vite.
-          Never put a Supabase service-role key in this file.
-        </p>
-        <a className="admin-back-link" href="/"><ArrowLeft size={15} /> Back to Vortex Scans</a>
-      </section>
-      <div className="admin-auth-footer"><span className="admin-status-dot" /> Supabase setup required</div>
-    </main>
-  );
-}
-
-function AdminSignIn({ onSignedIn }: { onSignedIn: (session: Session) => void }) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [showPassword, setShowPassword] = useState(false);
   const [busy, setBusy] = useState(false);
   const [formError, setFormError] = useState('');
 
-  const submit = async (event: FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
+  const submit = async (e: FormEvent) => {
+    e.preventDefault();
     if (!supabase) return;
     setBusy(true);
     setFormError('');
@@ -130,362 +238,630 @@ function AdminSignIn({ onSignedIn }: { onSignedIn: (session: Session) => void })
       return;
     }
 
-    setPassword('');
     onSignedIn(data.session);
     setBusy(false);
   };
 
   return (
-    <main className="admin-auth-main">
-      <section className="admin-auth-card">
-        <div className="admin-auth-mark"><LockKeyhole size={22} /></div>
-        <span className="admin-eyebrow">VORTEX SCANS / CONTROL ROOM</span>
-        <h1>Admin sign in</h1>
-        <p className="admin-auth-copy">Sign in with the admin account created in Supabase.</p>
-        <form onSubmit={submit} className="admin-login-form">
-          <label htmlFor="admin-email">Admin email</label>
-          <div className="admin-password-wrap">
-            <input
-              id="admin-email"
-              type="email"
-              autoComplete="username"
-              value={email}
-              onChange={(event) => setEmail(event.target.value)}
-              placeholder="you@example.com"
-              required
-            />
+    <div className={`comix-admin-wrapper theme-${theme} comix-login-screen`}>
+      <div className="comix-login-card">
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+          <div className="comix-logo">
+            <span className="comix-logo-badge">X</span>
+            <span>COMIX</span>
           </div>
-          <label htmlFor="admin-password">Password</label>
-          <div className="admin-password-wrap">
-            <input
-              id="admin-password"
-              data-testid="input-admin-password"
-              type={showPassword ? 'text' : 'password'}
-              autoComplete="current-password"
-              value={password}
-              onChange={(event) => setPassword(event.target.value)}
-              placeholder="Enter your password"
-              required
-              maxLength={1024}
-            />
-            <button type="button" className="admin-password-reveal" onClick={() => setShowPassword((current) => !current)} aria-label={showPassword ? 'Hide password' : 'Show password'} data-testid="button-toggle-password">
-              {showPassword ? <EyeOff size={17} /> : <Eye size={17} />}
-            </button>
-          </div>
-          {formError && <p className="admin-form-error" role="alert" data-testid="status-login-error">{formError}</p>}
-          <button className="admin-primary-button admin-login-submit" type="submit" disabled={!email || !password || busy} data-testid="button-admin-sign-in">
-            {busy ? <><LoaderCircle className="admin-spin" size={16} /> Signing in</> : <><ShieldCheck size={16} /> Sign in securely</>}
-          </button>
-        </form>
-        <a className="admin-back-link" href="/"><ArrowLeft size={15} /> Back to Vortex Scans</a>
-      </section>
-      <div className="admin-auth-footer"><span className="admin-status-dot" /> Supabase-secured admin access</div>
-    </main>
-  );
-}
-
-function SettingsConsole({ session, onLogout }: { session: Session; onLogout: () => void }) {
-  const [settings, setSettings] = useState<SiteSettings | null>(null);
-  const [activePanel, setActivePanel] = useState<'homepage' | 'header' | 'series' | 'catalog'>('homepage');
-  const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
-  const [signingOut, setSigningOut] = useState(false);
-  const [settingsError, setSettingsError] = useState('');
-  const [saveMessage, setSaveMessage] = useState('Synced');
-  const homepageEnabledCount = settings ? Object.values(settings.homepage).filter(Boolean).length : 0;
-  const headerEnabledCount = settings ? Object.values(settings.header).filter(Boolean).length : 0;
-  const seriesPageEnabledCount = settings ? Object.values(settings.seriesPage).filter(Boolean).length : 0;
-  const enabledCount = activePanel === 'homepage'
-    ? homepageEnabledCount
-    : activePanel === 'header' ? headerEnabledCount : seriesPageEnabledCount;
-  const itemCount = activePanel === 'homepage'
-    ? Object.keys(DEFAULT_SITE_SETTINGS.homepage).length
-      : activePanel === 'header'
-      ? Object.keys(DEFAULT_SITE_SETTINGS.header).length
-      : Object.keys(DEFAULT_SITE_SETTINGS.seriesPage).length;
-  const itemLabel = activePanel === 'homepage' ? 'SECTIONS' : activePanel === 'series' ? 'FEATURES' : 'ITEMS';
-
-  useEffect(() => {
-    let active = true;
-    setLoading(true);
-    setSettingsError('');
-
-    void getSiteSettings()
-      .then((savedSettings) => {
-        if (active) setSettings(savedSettings);
-      })
-      .catch(() => {
-        if (active) setSettingsError('Could not load settings. Confirm the Supabase SQL setup has been run.');
-      })
-      .finally(() => {
-        if (active) setLoading(false);
-      });
-
-    return () => {
-      active = false;
-    };
-  }, []);
-
-  const persistSettings = async (previous: SiteSettings, next: SiteSettings) => {
-    if (saving) return;
-    setSettings(next);
-    setSaving(true);
-    setSaveMessage('Saving');
-    setSettingsError('');
-
-    try {
-      const saved = await saveSiteSettings(next);
-      setSettings(saved);
-      setSaveMessage('Saved');
-    } catch {
-      setSettings(previous);
-      setSaveMessage('Not saved');
-      setSettingsError('Could not save this change. Check the admin email in your Supabase SQL policy.');
-    } finally {
-      setSaving(false);
-    }
-  };
-
-  const toggleHeaderVisibility = (key: keyof HeaderVisibility) => {
-    if (!settings || saving) return;
-    const previous = settings;
-    const next: SiteSettings = {
-      ...settings,
-      header: { ...settings.header, [key]: !settings.header[key] },
-    };
-    void persistSettings(previous, next);
-  };
-
-  const toggleHomepageVisibility = (key: keyof HomepageVisibility) => {
-    if (!settings || saving) return;
-    const previous = settings;
-    const next: SiteSettings = {
-      ...settings,
-      homepage: { ...settings.homepage, [key]: !settings.homepage[key] },
-    };
-    void persistSettings(previous, next);
-  };
-
-  const toggleSeriesPageVisibility = (key: keyof SeriesPageVisibility) => {
-    if (!settings || saving) return;
-    const previous = settings;
-    const next: SiteSettings = {
-      ...settings,
-      seriesPage: { ...settings.seriesPage, [key]: !settings.seriesPage[key] },
-    };
-    void persistSettings(previous, next);
-  };
-
-  const leave = async () => {
-    if (!supabase) return;
-    setSigningOut(true);
-    const { error } = await supabase.auth.signOut();
-    setSigningOut(false);
-    if (!error) onLogout();
-  };
-
-  return (
-    <div className="admin-console">
-      <header className="admin-topbar">
-        <a href="/" className="admin-brand" aria-label="Vortex Scans home">
-          <span className="admin-brand-symbol">V</span>
-          <span>VORTEX<span className="admin-brand-light">SCANS</span><small>CONTROL ROOM</small></span>
-        </a>
-        <div className="admin-topbar-right">
-          <span className="admin-session-label"><i /> Admin session active</span>
-          <button className="admin-logout-button" onClick={() => void leave()} disabled={signingOut} data-testid="button-admin-logout">
-            <LogOut size={15} /> {signingOut ? 'Signing out' : 'Sign out'}
+          <button type="button" className="comix-icon-btn" onClick={onToggleTheme} title="Toggle theme">
+            {theme === 'dark' ? <Sun size={18} /> : <Moon size={18} />}
           </button>
         </div>
-      </header>
 
-      <main className="admin-content">
-        <div className="admin-breadcrumb"><span>VORTEX SCANS</span><b>/</b><span>ADMIN</span></div>
-        <section className="admin-intro">
-          <div>
-            <div className="admin-eyebrow"><span className="admin-live-dot" /> SITE CONFIGURATION</div>
-            <h1>{activePanel === 'catalog' ? 'Series catalog' : 'Site controls'}</h1>
-            <p>{activePanel === 'catalog'
-              ? 'Add complete series entries to the catalog. Saved titles appear for every visitor.'
-              : 'Manage homepage content, public navigation, and series page features. Saved changes are shared with every visitor.'}</p>
-          </div>
-          {activePanel !== 'catalog' && <div className="admin-intro-stat"><span>{settings ? String(enabledCount).padStart(2, '0') : '—'}</span><small>OF {itemCount} {itemLabel}<br />VISIBLE</small></div>}
-        </section>
+        <div className="comix-login-header">
+          <h1>Admin sign in</h1>
+          <p>Manage titles, chapters, and site settings.</p>
+        </div>
 
-        {loading && (
-          <section className="admin-settings-card" aria-label="Loading settings">
-            <div className="admin-loading-line"><span /><span /><span /></div>
-            <div className="admin-skeleton-row" /><div className="admin-skeleton-row" /><div className="admin-skeleton-row" />
-          </section>
-        )}
-        {settingsError && (
-          <section className="admin-error-panel" role="alert">
-            <div><strong>Settings need attention</strong><p>{settingsError}</p></div>
-          </section>
-        )}
-        {!loading && settings && (
-          <div className="admin-workspace">
-            <nav className="admin-view-tabs" aria-label="Site settings">
-              <div className="admin-view-tabs-label">Control room</div>
-              <button
-                type="button"
-                className={`admin-view-tab ${activePanel === 'homepage' ? 'is-active' : ''}`}
-                aria-current={activePanel === 'homepage' ? 'page' : undefined}
-                onClick={() => setActivePanel('homepage')}
-                data-testid="tab-homepage-settings"
-              >
-                <span className="admin-view-tab-icon"><LayoutDashboard size={17} /></span>
-                <span className="admin-view-tab-copy"><strong>Homepage sections</strong><small>Control visible page content</small></span>
-                <span className="admin-view-tab-count">{homepageEnabledCount}/{Object.keys(DEFAULT_SITE_SETTINGS.homepage).length}</span>
-              </button>
-              <button
-                type="button"
-                className={`admin-view-tab ${activePanel === 'header' ? 'is-active' : ''}`}
-                aria-current={activePanel === 'header' ? 'page' : undefined}
-                onClick={() => setActivePanel('header')}
-                data-testid="tab-header-settings"
-              >
-                <span className="admin-view-tab-icon"><Menu size={17} /></span>
-                <span className="admin-view-tab-copy"><strong>Header items</strong><small>Control navigation and tools</small></span>
-                <span className="admin-view-tab-count">{headerEnabledCount}/{Object.keys(DEFAULT_SITE_SETTINGS.header).length}</span>
-              </button>
-              <button
-                type="button"
-                className={`admin-view-tab ${activePanel === 'series' ? 'is-active' : ''}`}
-                aria-current={activePanel === 'series' ? 'page' : undefined}
-                onClick={() => setActivePanel('series')}
-                data-testid="tab-series-page-settings"
-              >
-                <span className="admin-view-tab-icon"><Rows3 size={17} /></span>
-                <span className="admin-view-tab-copy"><strong>Series page</strong><small>Control detail-page features</small></span>
-                <span className="admin-view-tab-count">{seriesPageEnabledCount}/{Object.keys(DEFAULT_SITE_SETTINGS.seriesPage).length}</span>
-              </button>
-              <button
-                type="button"
-                className={`admin-view-tab ${activePanel === 'catalog' ? 'is-active' : ''}`}
-                aria-current={activePanel === 'catalog' ? 'page' : undefined}
-                onClick={() => setActivePanel('catalog')}
-                data-testid="tab-series-catalog"
-              >
-                <span className="admin-view-tab-icon"><BookOpen size={17} /></span>
-                <span className="admin-view-tab-copy"><strong>Series catalog</strong><small>Add and manage public titles</small></span>
-                <span className="admin-view-tab-count">LIVE</span>
-              </button>
-            </nav>
-            <div className="admin-workspace-main">
-              {activePanel === 'catalog' ? <SeriesCatalogManager /> : <section className="admin-settings-card">
-                <div className="admin-card-heading">
-                  <div className="admin-card-heading-icon"><SlidersHorizontal size={18} /></div>
-                  <div>
-                    <h2>{activePanel === 'homepage' ? 'Homepage sections' : activePanel === 'header' ? 'Public header items' : 'Series page features'}</h2>
-                    <p>{activePanel === 'homepage'
-                      ? 'Hide sections from the homepage for all visitors.'
-                      : activePanel === 'header'
-                        ? 'Hidden items are removed from the navigation, not just disabled.'
-                        : 'Hide features from every series detail page for all visitors.'}</p>
-                  </div>
-                  <div className={`admin-save-indicator ${saving ? 'saving' : ''}`} data-testid="status-settings-save">
-                    {saving ? <><LoaderCircle className="admin-spin" size={14} /> Saving</> : <><Check size={14} /> {saveMessage}</>}
-                  </div>
-                </div>
-                {activePanel === 'homepage'
-                  ? ['Featured content', 'Promotions', 'Discovery', 'Community', 'Site information'].map((group) => (
-                    <div className="admin-setting-group" key={group}>
-                      <div className="admin-group-label"><span>{group}</span><i /></div>
-                      {homepageVisibilityOptions.filter((option) => option.group === group).map((option) => (
-                        <VisibilityRow
-                          key={option.key}
-                          label={option.label}
-                          description={option.description}
-                          enabled={settings.homepage[option.key]}
-                          onToggle={() => toggleHomepageVisibility(option.key)}
-                          testId={`switch-homepage-${option.key}`}
-                          disabled={saving}
-                        />
-                      ))}
-                    </div>
-                  ))
-                  : activePanel === 'header'
-                    ? ['Navigation', 'Reader tools', 'Community'].map((group) => (
-                    <div className="admin-setting-group" key={group}>
-                      <div className="admin-group-label"><span>{group}</span><i /></div>
-                      {visibilityOptions.filter((option) => option.group === group).map((option) => (
-                        <VisibilityRow
-                          key={option.key}
-                          label={option.label}
-                          description={option.description}
-                          enabled={settings.header[option.key]}
-                          onToggle={() => toggleHeaderVisibility(option.key)}
-                          testId={`switch-header-${option.key}`}
-                          disabled={saving}
-                        />
-                      ))}
-                    </div>
-                  ))
-                    : ['Series overview', 'Information tabs', 'Community and discovery'].map((group) => (
-                      <div className="admin-setting-group" key={group}>
-                        <div className="admin-group-label"><span>{group}</span><i /></div>
-                        {seriesPageVisibilityOptions.filter((option) => option.group === group).map((option) => (
-                          <VisibilityRow
-                            key={option.key}
-                            label={option.label}
-                            description={option.description}
-                            enabled={settings.seriesPage[option.key]}
-                            onToggle={() => toggleSeriesPageVisibility(option.key)}
-                            testId={`switch-series-${option.key}`}
-                            disabled={saving}
-                          />
-                        ))}
-                      </div>
-                    ))}
-              </section>}
-              {activePanel !== 'catalog' && <div className="admin-note"><ShieldCheck size={16} /><span>These settings are shared across all visitors and devices.</span><span className="admin-note-code">SITE SETTINGS · GLOBAL</span></div>}
-            </div>
+        {formError && <div className="comix-login-error" role="alert">{formError}</div>}
+
+        <form onSubmit={submit}>
+          <div className="comix-login-field">
+            <label htmlFor="login-email">Admin email</label>
+            <input
+              id="login-email"
+              type="email"
+              className="comix-login-input"
+              placeholder="you@example.com"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              required
+            />
           </div>
-        )}
-      </main>
-      <footer className="admin-console-footer"><span>VORTEX SCANS ADMIN</span><span>{session.user.email}</span></footer>
+
+          <div className="comix-login-field">
+            <label htmlFor="login-password">Password</label>
+            <input
+              id="login-password"
+              type="password"
+              className="comix-login-input"
+              placeholder="••••••••"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              required
+            />
+          </div>
+
+          <button type="submit" className="btn-teal comix-login-btn" disabled={busy || !email || !password}>
+            {busy ? <LoaderCircle className="spin-icon" size={16} /> : <ShieldCheck size={16} />}
+            {busy ? 'Signing in...' : 'Sign in to Admin'}
+          </button>
+        </form>
+
+        <div style={{ textAlign: 'center', marginTop: 20 }}>
+          <a href="/" style={{ color: 'var(--cx-text-muted)', fontSize: 13, textDecoration: 'none' }}>
+            ← Back to website
+          </a>
+        </div>
+      </div>
     </div>
   );
 }
 
-export default function AdminPage() {
-  const [session, setSession] = useState<Session | null>(null);
-  const [checkingSession, setCheckingSession] = useState(true);
+// ====================================================
+// COMIX DASHBOARD (MATCHING IMAGE b295b4a2.png)
+// ====================================================
+function ComixDashboard({
+  session,
+  theme,
+  onToggleTheme,
+  onLogout,
+}: {
+  session: Session;
+  theme: 'dark' | 'light';
+  onToggleTheme: () => void;
+  onLogout: () => void;
+}) {
+  const [activeTab, setActiveTab] = useState<SidebarTab>('uploads');
+  const [settingsSubTab, setSettingsSubTab] = useState<'homepage' | 'header' | 'series'>('homepage');
+  const [topSearch, setTopSearch] = useState('');
+
+  // Series catalog stats
+  const catalogQuery = useSeriesCatalog();
+  const catalogItems = catalogQuery.items;
+  const totalChapters = useMemo(() => {
+    return catalogItems.reduce((acc, s) => acc + (s.chapters?.length || 0), 0);
+  }, [catalogItems]);
+
+  // Site settings state
+  const [settings, setSettings] = useState<SiteSettings | null>(null);
+  const [savingSettings, setSavingSettings] = useState(false);
+  const [saveMessage, setSaveMessage] = useState('Saved');
+
+  // Import catalog mutation
+  const queryClient = useQueryClient();
+  const importCatalogMutation = useMutation({
+    mutationFn: importOriginalCatalog,
+    onSuccess: async () => {
+      await queryClient.invalidateQueries();
+    },
+  });
 
   useEffect(() => {
-    if (!supabase) {
-      setCheckingSession(false);
-      return;
-    }
-
     let active = true;
-    void supabase.auth.getSession().then(({ data }) => {
-      if (!active) return;
-      setSession(data.session);
-      setCheckingSession(false);
+    void getSiteSettings().then((s) => {
+      if (active) setSettings(s);
     });
-
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, nextSession) => {
-      if (!active) return;
-      setSession(nextSession);
-      setCheckingSession(false);
-    });
-
     return () => {
       active = false;
-      subscription.unsubscribe();
     };
   }, []);
 
-  if (!supabaseConfigReady) {
-    return <div className="admin-auth-shell"><SupabaseSetupNotice /></div>;
-  }
-  if (checkingSession) {
-    return <div className="admin-auth-shell"><div className="admin-auth-loading"><div className="admin-loading-mark" /><span>Checking admin session</span></div></div>;
-  }
-  if (!session) {
-    return <div className="admin-auth-shell"><AdminSignIn onSignedIn={setSession} /></div>;
-  }
-  return <SettingsConsole session={session} onLogout={() => setSession(null)} />;
+  const handleToggle = async (
+    category: 'homepage' | 'header' | 'seriesPage',
+    key: string,
+  ) => {
+    if (!settings || savingSettings) return;
+    const currentCategory = { ...settings[category] };
+    const nextCategory = {
+      ...currentCategory,
+      [key]: !currentCategory[key],
+    };
+    const nextSettings: SiteSettings = {
+      ...settings,
+      [category]: nextCategory,
+    };
+
+    setSettings(nextSettings);
+    setSavingSettings(true);
+    setSaveMessage('Saving...');
+
+    try {
+      const saved = await saveSiteSettings(nextSettings);
+      setSettings(saved);
+      setSaveMessage('Saved');
+    } catch {
+      setSaveMessage('Error saving');
+    } finally {
+      setSavingSettings(false);
+    }
+  };
+
+  const handleSignOut = async () => {
+    if (supabase) {
+      await supabase.auth.signOut();
+    }
+    onLogout();
+  };
+
+  // User display name from email or metadata
+  const userInitial = (session.user.email?.[0] || 'S').toUpperCase();
+  const displayName = session.user.user_metadata?.full_name || 'Spain Crew';
+
+  return (
+    <div className={`comix-admin-wrapper theme-${theme}`}>
+      {/* Top Navbar */}
+      <header className="comix-topbar">
+        <div className="comix-topbar-left">
+          <a href="/" className="comix-logo" title="Back to home">
+            <span className="comix-logo-badge">X</span>
+            <span>COMIX</span>
+          </a>
+
+          <div className="comix-search-wrap">
+            <Search className="comix-search-icon" size={15} />
+            <input
+              type="text"
+              className="comix-search-input"
+              placeholder="Search any title..."
+              value={topSearch}
+              onChange={(e) => setTopSearch(e.target.value)}
+            />
+            <a href="/series" className="comix-browse-pill">
+              Browse
+            </a>
+          </div>
+        </div>
+
+        <div className="comix-topbar-right">
+          <button
+            type="button"
+            className="comix-icon-btn"
+            onClick={onToggleTheme}
+            title={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
+          >
+            {theme === 'dark' ? <Sun size={18} /> : <Moon size={18} />}
+          </button>
+          <a href="/" className="comix-icon-btn" title="View public website">
+            <ArrowLeft size={18} />
+          </a>
+          <button type="button" className="comix-icon-btn" onClick={() => setActiveTab('settings')} title="Settings">
+            <Settings size={18} />
+          </button>
+          <button type="button" className="comix-icon-btn" onClick={() => setActiveTab('notifications')} title="Notifications">
+            <Bell size={18} />
+          </button>
+          <div className="comix-user-circle" title={session.user.email || 'Admin user'}>
+            {userInitial}
+          </div>
+        </div>
+      </header>
+
+      <div className="comix-container">
+        {/* Profile Banner Card */}
+        <div className="comix-profile-card">
+          <div className="comix-profile-user">
+            <div className="comix-profile-avatar">{userInitial}</div>
+            <div className="comix-profile-details">
+              <h2>{displayName}</h2>
+              <span className="comix-profile-role">Admin / Scanlator</span>
+            </div>
+          </div>
+
+          <div className="comix-stats-row">
+            <div className="comix-stat-col">
+              <span className="comix-stat-number">{catalogItems.length}</span>
+              <span className="comix-stat-label">Titles</span>
+            </div>
+            <div className="comix-stat-col">
+              <span className="comix-stat-number">1</span>
+              <span className="comix-stat-label">Groups</span>
+            </div>
+            <div className="comix-stat-col">
+              <span className="comix-stat-number">{totalChapters}</span>
+              <span className="comix-stat-label">Chapters</span>
+            </div>
+            <div className="comix-stat-col">
+              <span className="comix-stat-number">0</span>
+              <span className="comix-stat-label">Comments</span>
+            </div>
+            <div className="comix-stat-col">
+              <span className="comix-stat-number">5</span>
+              <span className="comix-stat-label">Collections</span>
+            </div>
+            <div className="comix-stat-col">
+              <span className="comix-stat-number">0</span>
+              <span className="comix-stat-label">Likes</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Dashboard 2-Column Grid */}
+        <div className="comix-layout-grid">
+          {/* Left Sidebar */}
+          <aside className="comix-sidebar">
+            <button
+              type="button"
+              className={`comix-nav-item ${activeTab === 'edit-profile' ? 'is-active' : ''}`}
+              onClick={() => setActiveTab('edit-profile')}
+            >
+              <UserCheck size={16} className="nav-icon" />
+              <span>Edit Profile</span>
+            </button>
+            <button
+              type="button"
+              className={`comix-nav-item ${activeTab === 'followed-titles' ? 'is-active' : ''}`}
+              onClick={() => setActiveTab('followed-titles')}
+            >
+              <Bookmark size={16} className="nav-icon" />
+              <span>Followed Titles</span>
+            </button>
+            <button
+              type="button"
+              className={`comix-nav-item ${activeTab === 'followed-users' ? 'is-active' : ''}`}
+              onClick={() => setActiveTab('followed-users')}
+            >
+              <Users size={16} className="nav-icon" />
+              <span>Followed Users</span>
+            </button>
+            <button
+              type="button"
+              className={`comix-nav-item ${activeTab === 'followed-groups' ? 'is-active' : ''}`}
+              onClick={() => setActiveTab('followed-groups')}
+            >
+              <Users size={16} className="nav-icon" />
+              <span>Followed Groups</span>
+            </button>
+            <button
+              type="button"
+              className={`comix-nav-item ${activeTab === 'read-history' ? 'is-active' : ''}`}
+              onClick={() => setActiveTab('read-history')}
+            >
+              <History size={16} className="nav-icon" />
+              <span>Read History</span>
+            </button>
+            <button
+              type="button"
+              className={`comix-nav-item ${activeTab === 'collections' ? 'is-active' : ''}`}
+              onClick={() => setActiveTab('collections')}
+            >
+              <FolderKanban size={16} className="nav-icon" />
+              <span>Collections</span>
+            </button>
+            <button
+              type="button"
+              className={`comix-nav-item ${activeTab === 'feed' ? 'is-active' : ''}`}
+              onClick={() => setActiveTab('feed')}
+            >
+              <Rss size={16} className="nav-icon" />
+              <span>Feed</span>
+            </button>
+            <button
+              type="button"
+              className={`comix-nav-item ${activeTab === 'notifications' ? 'is-active' : ''}`}
+              onClick={() => setActiveTab('notifications')}
+            >
+              <Bell size={16} className="nav-icon" />
+              <span>Notifications</span>
+            </button>
+            <button
+              type="button"
+              className={`comix-nav-item ${activeTab === 'comments' ? 'is-active' : ''}`}
+              onClick={() => setActiveTab('comments')}
+            >
+              <MessageSquare size={16} className="nav-icon" />
+              <span>Comments</span>
+            </button>
+            <button
+              type="button"
+              className={`comix-nav-item ${activeTab === 'posts' ? 'is-active' : ''}`}
+              onClick={() => setActiveTab('posts')}
+            >
+              <FileText size={16} className="nav-icon" />
+              <span>Posts</span>
+            </button>
+
+            {/* Active primary tab: Uploaded Chapters / Uploads */}
+            <button
+              type="button"
+              className={`comix-nav-item ${activeTab === 'uploads' ? 'is-active' : ''}`}
+              onClick={() => setActiveTab('uploads')}
+            >
+              <Upload size={16} className="nav-icon" />
+              <span>Uploaded Chapters</span>
+              <span className="nav-badge">{catalogItems.length}</span>
+            </button>
+
+            <button
+              type="button"
+              className={`comix-nav-item ${activeTab === 'import-export' ? 'is-active' : ''}`}
+              onClick={() => setActiveTab('import-export')}
+            >
+              <Database size={16} className="nav-icon" />
+              <span>Import / Export</span>
+            </button>
+            <button
+              type="button"
+              className={`comix-nav-item ${activeTab === 'blocked-users' ? 'is-active' : ''}`}
+              onClick={() => setActiveTab('blocked-users')}
+            >
+              <UserX size={16} className="nav-icon" />
+              <span>Blocked Users</span>
+            </button>
+
+            <div className="comix-sidebar-divider" />
+
+            <button
+              type="button"
+              className={`comix-nav-item ${activeTab === 'settings' ? 'is-active' : ''}`}
+              onClick={() => setActiveTab('settings')}
+            >
+              <Settings size={16} className="nav-icon" />
+              <span>Settings</span>
+            </button>
+            <button
+              type="button"
+              className="comix-nav-item"
+              onClick={handleSignOut}
+              style={{ color: 'var(--cx-text-subtle)' }}
+            >
+              <LogOut size={16} className="nav-icon" />
+              <span>Sign out</span>
+            </button>
+          </aside>
+
+          {/* Right Main Content */}
+          <main className="comix-main-panel">
+            {/* 1. UPLOADS / SERIES CATALOG (Default) */}
+            {activeTab === 'uploads' && <SeriesCatalogManager />}
+
+            {/* 2. SETTINGS (Homepage, Header, Series Page toggles) */}
+            {activeTab === 'settings' && (
+              <div className="comix-settings-card">
+                <div className="comix-card-header">
+                  <div>
+                    <h3>Site Configuration</h3>
+                    <p>Turn on or hide sections on your public pages.</p>
+                  </div>
+                  <div className={`comix-save-badge ${savingSettings ? 'saving' : ''}`}>
+                    {savingSettings ? <LoaderCircle className="spin-icon" size={14} /> : <Check size={14} />}
+                    {saveMessage}
+                  </div>
+                </div>
+
+                <div className="comix-tab-pill-row">
+                  <button
+                    type="button"
+                    className={`comix-sub-tab ${settingsSubTab === 'homepage' ? 'is-active' : ''}`}
+                    onClick={() => setSettingsSubTab('homepage')}
+                  >
+                    Homepage Sections
+                  </button>
+                  <button
+                    type="button"
+                    className={`comix-sub-tab ${settingsSubTab === 'header' ? 'is-active' : ''}`}
+                    onClick={() => setSettingsSubTab('header')}
+                  >
+                    Header Items
+                  </button>
+                  <button
+                    type="button"
+                    className={`comix-sub-tab ${settingsSubTab === 'series' ? 'is-active' : ''}`}
+                    onClick={() => setSettingsSubTab('series')}
+                  >
+                    Series Page Features
+                  </button>
+                </div>
+
+                {settings && settingsSubTab === 'homepage' && (
+                  <div>
+                    {['Featured content', 'Promotions', 'Discovery', 'Community', 'Site information'].map((group) => {
+                      const options = homepageVisibilityOptions.filter((o) => o.group === group);
+                      if (!options.length) return null;
+                      return (
+                        <div key={group} className="comix-setting-group">
+                          <div className="comix-group-title">{group}</div>
+                          {options.map((opt) => (
+                            <div key={opt.key} className="comix-setting-item">
+                              <div className="comix-setting-info">
+                                <strong>{opt.label}</strong>
+                                <span>{opt.description}</span>
+                              </div>
+                              <button
+                                type="button"
+                                className={`comix-switch ${settings.homepage[opt.key] ? 'is-active' : ''}`}
+                                onClick={() => handleToggle('homepage', opt.key)}
+                                aria-label={`Toggle ${opt.label}`}
+                              >
+                                <span className="comix-switch-knob" />
+                              </button>
+                            </div>
+                          ))}
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+
+                {settings && settingsSubTab === 'header' && (
+                  <div>
+                    {['Navigation', 'Reader tools', 'Community'].map((group) => {
+                      const options = headerVisibilityOptions.filter((o) => o.group === group);
+                      if (!options.length) return null;
+                      return (
+                        <div key={group} className="comix-setting-group">
+                          <div className="comix-group-title">{group}</div>
+                          {options.map((opt) => (
+                            <div key={opt.key} className="comix-setting-item">
+                              <div className="comix-setting-info">
+                                <strong>{opt.label}</strong>
+                                <span>{opt.description}</span>
+                              </div>
+                              <button
+                                type="button"
+                                className={`comix-switch ${settings.header[opt.key] ? 'is-active' : ''}`}
+                                onClick={() => handleToggle('header', opt.key)}
+                                aria-label={`Toggle ${opt.label}`}
+                              >
+                                <span className="comix-switch-knob" />
+                              </button>
+                            </div>
+                          ))}
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+
+                {settings && settingsSubTab === 'series' && (
+                  <div>
+                    {['Series overview', 'Information tabs', 'Community and discovery'].map((group) => {
+                      const options = seriesPageVisibilityOptions.filter((o) => o.group === group);
+                      if (!options.length) return null;
+                      return (
+                        <div key={group} className="comix-setting-group">
+                          <div className="comix-group-title">{group}</div>
+                          {options.map((opt) => (
+                            <div key={opt.key} className="comix-setting-item">
+                              <div className="comix-setting-info">
+                                <strong>{opt.label}</strong>
+                                <span>{opt.description}</span>
+                              </div>
+                              <button
+                                type="button"
+                                className={`comix-switch ${settings.seriesPage[opt.key] ? 'is-active' : ''}`}
+                                onClick={() => handleToggle('seriesPage', opt.key)}
+                                aria-label={`Toggle ${opt.label}`}
+                              >
+                                <span className="comix-switch-knob" />
+                              </button>
+                            </div>
+                          ))}
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* 3. IMPORT / EXPORT */}
+            {activeTab === 'import-export' && (
+              <div className="comix-settings-card" style={{ padding: 24 }}>
+                <h3 style={{ margin: '0 0 8px', fontSize: 18 }}>Import & Export Data</h3>
+                <p style={{ color: 'var(--cx-text-muted)', marginBottom: 24, fontSize: 14 }}>
+                  Backup catalog data or restore missing series from the baseline catalog.
+                </p>
+
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+                  <div className="comix-setting-item" style={{ border: '1px solid var(--cx-border)', borderRadius: 8, padding: 16 }}>
+                    <div>
+                      <strong style={{ fontSize: 15, display: 'block', marginBottom: 4 }}>Restore missing baseline series</strong>
+                      <span style={{ fontSize: 13, color: 'var(--cx-text-muted)' }}>
+                        Fills in default titles if your database was freshly reset.
+                      </span>
+                    </div>
+                    <button
+                      type="button"
+                      className="btn-dark"
+                      onClick={() => importCatalogMutation.mutate()}
+                      disabled={importCatalogMutation.isPending}
+                    >
+                      {importCatalogMutation.isPending ? <LoaderCircle className="spin-icon" size={15} /> : <RefreshCw size={15} />}
+                      {importCatalogMutation.isPending ? 'Importing...' : 'Restore catalog'}
+                    </button>
+                  </div>
+
+                  <div className="comix-setting-item" style={{ border: '1px solid var(--cx-border)', borderRadius: 8, padding: 16 }}>
+                    <div>
+                      <strong style={{ fontSize: 15, display: 'block', marginBottom: 4 }}>Export Catalog JSON</strong>
+                      <span style={{ fontSize: 13, color: 'var(--cx-text-muted)' }}>
+                        Download a full snapshot of your current series database.
+                      </span>
+                    </div>
+                    <button
+                      type="button"
+                      className="btn-dark"
+                      onClick={() => {
+                        const blob = new Blob([JSON.stringify(catalogItems, null, 2)], { type: 'application/json' });
+                        const url = URL.createObjectURL(blob);
+                        const a = document.createElement('a');
+                        a.href = url;
+                        a.download = `catalog-export-${new Date().toISOString().slice(0, 10)}.json`;
+                        a.click();
+                        URL.revokeObjectURL(url);
+                      }}
+                    >
+                      <Download size={15} /> Export JSON
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* 4. EDIT PROFILE */}
+            {activeTab === 'edit-profile' && (
+              <div className="comix-settings-card" style={{ padding: 24 }}>
+                <h3 style={{ margin: '0 0 8px', fontSize: 18 }}>Admin Profile</h3>
+                <p style={{ color: 'var(--cx-text-muted)', marginBottom: 24, fontSize: 14 }}>
+                  Connected through Supabase authentication.
+                </p>
+
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+                  <div className="field-group">
+                    <label className="field-label">Email address</label>
+                    <input
+                      type="text"
+                      className="text-input"
+                      value={session.user.email || ''}
+                      readOnly
+                      style={{ opacity: 0.8 }}
+                    />
+                  </div>
+
+                  <div className="field-group">
+                    <label className="field-label">User ID</label>
+                    <input
+                      type="text"
+                      className="text-input"
+                      value={session.user.id}
+                      readOnly
+                      style={{ opacity: 0.8, fontFamily: 'monospace', fontSize: 12 }}
+                    />
+                  </div>
+
+                  <div style={{ paddingTop: 12 }}>
+                    <button type="button" className="btn-cancel" onClick={handleSignOut}>
+                      <LogOut size={15} style={{ marginRight: 6 }} /> Sign out
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* 5. PLACEHOLDER FOR OTHER TABS */}
+            {activeTab !== 'uploads' &&
+              activeTab !== 'settings' &&
+              activeTab !== 'import-export' &&
+              activeTab !== 'edit-profile' && (
+                <div className="comix-placeholder-card">
+                  <div className="comix-placeholder-icon">
+                    <FolderKanban size={26} />
+                  </div>
+                  <h3>{activeTab.replace('-', ' ').toUpperCase()}</h3>
+                  <p>You can manage this section directly from the dashboard.</p>
+                </div>
+              )}
+          </main>
+        </div>
+      </div>
+    </div>
+  );
 }

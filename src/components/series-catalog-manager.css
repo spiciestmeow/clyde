@@ -26,8 +26,29 @@
   width: 100%;
   max-width: 1200px;
   margin: 0 auto;
-  padding: 24px 16px 80px;
+  padding: 0 0 60px;
   box-sizing: border-box;
+}
+
+.theme-light .uploads-theme-container,
+.comix-admin-wrapper.theme-light .uploads-theme-container {
+  --up-bg: #f8fafc;
+  --up-card-bg: #ffffff;
+  --up-input-bg: #f1f5f9;
+  --up-border: #e2e8f0;
+  --up-border-light: #cbd5e1;
+  --up-text: #0f172a;
+  --up-text-muted: #475569;
+  --up-text-subtle: #94a3b8;
+  --up-teal: #0d9488;
+  --up-teal-hover: #0f766e;
+  --up-teal-text: #ffffff;
+  --up-danger: #ef4444;
+  --up-danger-bg: #fee2e2;
+  --up-danger-border: #fca5a5;
+  --up-warning: #b45309;
+  --up-warning-bg: #fef3c7;
+  --up-warning-border: #fde68a;
 }
 
 .uploads-theme-container * {

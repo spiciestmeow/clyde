@@ -1,0 +1,660 @@
+/* ====================================================
+   COMIX ADMIN THEME (LIGHT & DARK MODE)
+   ==================================================== */
+
+.comix-admin-wrapper {
+  --cx-bg: #0e1217;
+  --cx-surface: #151b22;
+  --cx-surface-hover: #1c242e;
+  --cx-border: #1f2833;
+  --cx-border-light: #2b3746;
+  --cx-text: #f1f5f9;
+  --cx-text-muted: #8b98a5;
+  --cx-text-subtle: #64748b;
+  --cx-teal: #2dd4bf;
+  --cx-teal-hover: #14b8a6;
+  --cx-teal-text: #042f2e;
+  --cx-avatar-bg: #9d174d;
+  --cx-avatar-text: #ffffff;
+  --cx-input-bg: #151b22;
+  --cx-input-border: #212c38;
+  --cx-active-item: #1c242e;
+
+  min-height: 100vh;
+  background-color: var(--cx-bg);
+  color: var(--cx-text);
+  font-family: inherit;
+  transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+.comix-admin-wrapper.theme-light {
+  --cx-bg: #f8fafc;
+  --cx-surface: #ffffff;
+  --cx-surface-hover: #f1f5f9;
+  --cx-border: #e2e8f0;
+  --cx-border-light: #cbd5e1;
+  --cx-text: #0f172a;
+  --cx-text-muted: #475569;
+  --cx-text-subtle: #94a3b8;
+  --cx-teal: #0d9488;
+  --cx-teal-hover: #0f766e;
+  --cx-teal-text: #ffffff;
+  --cx-avatar-bg: #be185d;
+  --cx-avatar-text: #ffffff;
+  --cx-input-bg: #f1f5f9;
+  --cx-input-border: #cbd5e1;
+  --cx-active-item: #f1f5f9;
+}
+
+.comix-admin-wrapper * {
+  box-sizing: border-box;
+}
+
+/* ====================================================
+   TOP NAVBAR
+   ==================================================== */
+.comix-topbar {
+  height: 60px;
+  background-color: var(--cx-bg);
+  border-bottom: 1px solid var(--cx-border);
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 24px;
+}
+
+.comix-topbar-left {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+}
+
+.comix-logo {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 17px;
+  font-weight: 800;
+  color: var(--cx-text);
+  text-decoration: none;
+  letter-spacing: 0.04em;
+}
+
+.comix-logo-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1.5px solid var(--cx-teal);
+  color: var(--cx-teal);
+  font-size: 13px;
+  font-weight: 900;
+  padding: 1px 5px;
+  border-radius: 4px;
+}
+
+.comix-search-wrap {
+  display: flex;
+  align-items: center;
+  background-color: var(--cx-input-bg);
+  border: 1px solid var(--cx-input-border);
+  border-radius: 8px;
+  height: 36px;
+  width: 320px;
+  padding: 0 6px 0 12px;
+  gap: 8px;
+}
+
+.comix-search-icon {
+  color: var(--cx-text-subtle);
+  flex-shrink: 0;
+}
+
+.comix-search-input {
+  flex: 1;
+  background: transparent;
+  border: none;
+  outline: none;
+  color: var(--cx-text);
+  font-size: 13px;
+}
+
+.comix-search-input::placeholder {
+  color: var(--cx-text-subtle);
+}
+
+.comix-browse-pill {
+  background-color: var(--cx-surface-hover);
+  color: var(--cx-text-muted);
+  border: 1px solid var(--cx-border);
+  font-size: 11px;
+  font-weight: 600;
+  padding: 3px 10px;
+  border-radius: 6px;
+  cursor: pointer;
+  text-decoration: none;
+  transition: all 0.15s ease;
+}
+
+.comix-browse-pill:hover {
+  color: var(--cx-text);
+  border-color: var(--cx-border-light);
+}
+
+.comix-topbar-right {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.comix-icon-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
+  background: transparent;
+  border: none;
+  color: var(--cx-text-muted);
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.comix-icon-btn:hover {
+  background-color: var(--cx-surface);
+  color: var(--cx-text);
+}
+
+.comix-user-circle {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background-color: var(--cx-avatar-bg);
+  color: var(--cx-avatar-text);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 14px;
+}
+
+/* ====================================================
+   PROFILE HEADER CARD
+   ==================================================== */
+.comix-container {
+  max-width: 1320px;
+  margin: 0 auto;
+  padding: 24px 20px 80px;
+}
+
+.comix-profile-card {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background-color: var(--cx-surface);
+  border: 1px solid var(--cx-border);
+  border-radius: 12px;
+  padding: 20px 28px;
+  margin-bottom: 28px;
+  flex-wrap: wrap;
+  gap: 20px;
+}
+
+.comix-profile-user {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+}
+
+.comix-profile-avatar {
+  width: 68px;
+  height: 68px;
+  border-radius: 50%;
+  background-color: var(--cx-avatar-bg);
+  color: var(--cx-avatar-text);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 28px;
+  font-weight: 800;
+  box-shadow: 0 4px 12px rgba(157, 23, 77, 0.25);
+}
+
+.comix-profile-details h2 {
+  margin: 0 0 4px;
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--cx-text);
+}
+
+.comix-profile-role {
+  display: inline-block;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  color: var(--cx-teal);
+  text-transform: uppercase;
+}
+
+.comix-stats-row {
+  display: flex;
+  align-items: center;
+  gap: 32px;
+  flex-wrap: wrap;
+}
+
+.comix-stat-col {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.comix-stat-number {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--cx-text);
+  line-height: 1;
+}
+
+.comix-stat-label {
+  font-size: 9px;
+  font-weight: 750;
+  letter-spacing: 0.1em;
+  color: var(--cx-text-subtle);
+  margin-top: 5px;
+  text-transform: uppercase;
+}
+
+/* ====================================================
+   TWO-COLUMN DASHBOARD LAYOUT
+   ==================================================== */
+.comix-layout-grid {
+  display: grid;
+  grid-template-columns: 240px minmax(0, 1fr);
+  gap: 28px;
+  align-items: start;
+}
+
+/* Left Sidebar */
+.comix-sidebar {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  position: sticky;
+  top: 84px;
+}
+
+.comix-nav-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 14px;
+  border-radius: 8px;
+  background: transparent;
+  border: 1px solid transparent;
+  color: var(--cx-text-muted);
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  text-align: left;
+  transition: all 0.14s ease;
+  width: 100%;
+}
+
+.comix-nav-item:hover {
+  background-color: var(--cx-surface);
+  color: var(--cx-text);
+}
+
+.comix-nav-item.is-active {
+  background-color: var(--cx-active-item);
+  border-color: var(--cx-border);
+  color: var(--cx-text);
+  font-weight: 600;
+}
+
+.comix-nav-item.is-active .nav-icon {
+  color: var(--cx-teal);
+}
+
+.nav-icon {
+  color: var(--cx-text-subtle);
+  flex-shrink: 0;
+  transition: color 0.14s ease;
+}
+
+.nav-badge {
+  margin-left: auto;
+  font-size: 10px;
+  font-weight: 700;
+  padding: 2px 6px;
+  border-radius: 4px;
+  background-color: var(--cx-surface-hover);
+  color: var(--cx-text-muted);
+}
+
+.comix-nav-item.is-active .nav-badge {
+  background-color: var(--cx-teal);
+  color: var(--cx-teal-text);
+}
+
+.comix-sidebar-divider {
+  height: 1px;
+  background-color: var(--cx-border);
+  margin: 8px 12px;
+}
+
+/* Right Content Area */
+.comix-main-panel {
+  min-width: 0;
+}
+
+/* Settings Card & Groups (Site toggles) */
+.comix-settings-card {
+  background-color: var(--cx-surface);
+  border: 1px solid var(--cx-border);
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.comix-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20px 24px;
+  border-bottom: 1px solid var(--cx-border);
+}
+
+.comix-card-header h3 {
+  margin: 0 0 4px;
+  font-size: 17px;
+  font-weight: 700;
+  color: var(--cx-text);
+}
+
+.comix-card-header p {
+  margin: 0;
+  font-size: 13px;
+  color: var(--cx-text-muted);
+}
+
+.comix-tab-pill-row {
+  display: flex;
+  gap: 8px;
+  padding: 16px 24px;
+  border-bottom: 1px solid var(--cx-border);
+  background-color: var(--cx-bg);
+}
+
+.comix-sub-tab {
+  background: transparent;
+  border: 1px solid var(--cx-border);
+  color: var(--cx-text-muted);
+  font-size: 13px;
+  font-weight: 600;
+  padding: 6px 14px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.14s ease;
+}
+
+.comix-sub-tab:hover {
+  color: var(--cx-text);
+  border-color: var(--cx-border-light);
+}
+
+.comix-sub-tab.is-active {
+  background-color: var(--cx-teal);
+  border-color: var(--cx-teal);
+  color: var(--cx-teal-text);
+}
+
+.comix-setting-group {
+  padding: 16px 24px;
+  border-bottom: 1px solid var(--cx-border);
+}
+
+.comix-setting-group:last-child {
+  border-bottom: none;
+}
+
+.comix-group-title {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  color: var(--cx-text-subtle);
+  text-transform: uppercase;
+  margin-bottom: 12px;
+}
+
+.comix-setting-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 0;
+  border-bottom: 1px solid var(--cx-border);
+}
+
+.comix-setting-item:last-child {
+  border-bottom: none;
+}
+
+.comix-setting-info strong {
+  display: block;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--cx-text);
+  margin-bottom: 3px;
+}
+
+.comix-setting-info span {
+  font-size: 12px;
+  color: var(--cx-text-muted);
+}
+
+/* Toggle Switch */
+.comix-switch {
+  position: relative;
+  width: 44px;
+  height: 24px;
+  background-color: #2b3644;
+  border: none;
+  border-radius: 20px;
+  cursor: pointer;
+  padding: 2px;
+  transition: background-color 0.18s ease;
+  flex-shrink: 0;
+}
+
+.comix-admin-wrapper.theme-light .comix-switch {
+  background-color: #cbd5e1;
+}
+
+.comix-switch.is-active {
+  background-color: var(--cx-teal);
+}
+
+.comix-switch-knob {
+  display: block;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background-color: #ffffff;
+  transition: transform 0.18s ease;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+}
+
+.comix-switch.is-active .comix-switch-knob {
+  transform: translateX(20px);
+}
+
+/* Save status indicator */
+.comix-save-badge {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  color: #10b981;
+}
+
+.comix-save-badge.saving {
+  color: #f59e0b;
+}
+
+/* Generic Placeholder State (for extra sidebar tabs) */
+.comix-placeholder-card {
+  background-color: var(--cx-surface);
+  border: 1px solid var(--cx-border);
+  border-radius: 12px;
+  padding: 60px 24px;
+  text-align: center;
+}
+
+.comix-placeholder-icon {
+  width: 56px;
+  height: 56px;
+  border-radius: 12px;
+  background-color: var(--cx-surface-hover);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--cx-text-subtle);
+  margin: 0 auto 16px;
+}
+
+.comix-placeholder-card h3 {
+  margin: 0 0 6px;
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--cx-text);
+}
+
+.comix-placeholder-card p {
+  margin: 0;
+  font-size: 13px;
+  color: var(--cx-text-muted);
+}
+
+/* ====================================================
+   LOGIN CARD (COMIX STYLE)
+   ==================================================== */
+.comix-login-screen {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  background-color: var(--cx-bg);
+}
+
+.comix-login-card {
+  width: 100%;
+  max-width: 420px;
+  background-color: var(--cx-surface);
+  border: 1px solid var(--cx-border);
+  border-radius: 14px;
+  padding: 32px 28px;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
+}
+
+.comix-login-header {
+  text-align: center;
+  margin-bottom: 24px;
+}
+
+.comix-login-header h1 {
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--cx-text);
+  margin: 10px 0 4px;
+}
+
+.comix-login-header p {
+  font-size: 13px;
+  color: var(--cx-text-muted);
+  margin: 0;
+}
+
+.comix-login-field {
+  margin-bottom: 18px;
+}
+
+.comix-login-field label {
+  display: block;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--cx-text);
+  margin-bottom: 6px;
+}
+
+.comix-login-input-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.comix-login-input {
+  width: 100%;
+  height: 42px;
+  background-color: var(--cx-input-bg);
+  border: 1px solid var(--cx-border);
+  border-radius: 8px;
+  padding: 0 14px;
+  color: var(--cx-text);
+  font-size: 14px;
+  outline: none;
+}
+
+.comix-login-input:focus {
+  border-color: var(--cx-teal);
+}
+
+.comix-login-btn {
+  width: 100%;
+  height: 44px;
+  margin-top: 10px;
+  font-size: 14px;
+}
+
+.comix-login-error {
+  background-color: #2d1616;
+  border: 1px solid #7f1d1d;
+  color: #f87171;
+  padding: 10px 14px;
+  border-radius: 6px;
+  font-size: 12px;
+  margin-bottom: 16px;
+}
+
+/* ====================================================
+   RESPONSIVE DESIGN
+   ==================================================== */
+@media (max-width: 900px) {
+  .comix-layout-grid {
+    grid-template-columns: 1fr;
+  }
+  .comix-sidebar {
+    position: static;
+    flex-direction: row;
+    overflow-x: auto;
+    padding-bottom: 10px;
+  }
+  .comix-nav-item {
+    white-space: nowrap;
+    width: auto;
+  }
+  .comix-sidebar-divider {
+    display: none;
+  }
+  .comix-search-wrap {
+    display: none;
+  }
+  .comix-profile-card {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}
