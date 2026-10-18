@@ -318,20 +318,22 @@ function HomePage() {
       {catalogQuery.isLoading && <div className="series-data-status" role="status"><p>Loading the series catalog…</p></div>}
       {catalogQuery.isError && <div className="series-data-status" role="alert"><p>The series catalog could not be loaded. Please try again.</p><button type="button" onClick={() => void catalogQuery.refetch()}>Try again</button></div>}
       <main>
-        {homepageVisibility.featuredSeries && <section className="hero-area" aria-label="Featured series">
-          {slides.length > 1 && <a className="hero-peek peek-left" href={slides[(slide + slides.length - 1) % slides.length].href} onClick={(event) => { event.preventDefault(); moveCarousel(-1); }}>
-            <img src={assetUrl(slides[(slide + slides.length - 1) % slides.length].src, 480)} alt={slides[(slide + slides.length - 1) % slides.length].title} loading="lazy" />
+        {homepageVisibility.featuredSeries && slides.length > 0 && <section className="hero-area" aria-label="Featured series">
+          {slides.length > 1 && <a className="hero-peek peek-left" href={slides[(slide + slides.length - 1) % slides.length]?.href || '/'} onClick={(event) => { event.preventDefault(); moveCarousel(-1); }}>
+            <img src={assetUrl(slides[(slide + slides.length - 1) % slides.length]?.src || '', 480)} alt={slides[(slide + slides.length - 1) % slides.length]?.title || ''} loading="lazy" />
           </a>}
-          {slides.length > 1 && <a className="hero-peek peek-right" href={slides[(slide + 1) % slides.length].href} onClick={(event) => { event.preventDefault(); moveCarousel(1); }}>
-            <img src={assetUrl(slides[(slide + 1) % slides.length].src, 480)} alt={slides[(slide + 1) % slides.length].title} loading="lazy" />
+          {slides.length > 1 && <a className="hero-peek peek-right" href={slides[(slide + 1) % slides.length]?.href || '/'} onClick={(event) => { event.preventDefault(); moveCarousel(1); }}>
+            <img src={assetUrl(slides[(slide + 1) % slides.length]?.src || '', 480)} alt={slides[(slide + 1) % slides.length]?.title || ''} loading="lazy" />
           </a>}
           {slides.length > 1 && <button className="hero-control prev" aria-label="Previous slide" onClick={() => moveCarousel(-1)}><ChevronLeft /></button>}
-          <a className="hero-slide" href={slides[slide].href} key={slide}>
-            <img className="hero-banner" src={slides[slide].src} srcSet={slides[slide].srcset || undefined} sizes="68vw" alt={slides[slide].title} loading="eager" fetchPriority="high" decoding="async" />
-            <h1 className="visually-hidden">Read Manga, Manhwa &amp; Manhua Online</h1>
-          </a>
+          {slides[slide] && (
+            <a className="hero-slide" href={slides[slide].href} key={slide}>
+              <img className="hero-banner" src={slides[slide].src} srcSet={slides[slide].srcset || undefined} sizes="68vw" alt={slides[slide].title} loading="eager" fetchPriority="high" decoding="async" />
+              <h1 className="visually-hidden">Read Manga, Manhwa &amp; Manhua Online</h1>
+            </a>
+          )}
           {slides.length > 1 && <button className="hero-control next" aria-label="Next slide" onClick={() => moveCarousel(1)}><ChevronRight /></button>}
-          {slides.length > 1 && <div className="hero-dots">{slides.map((item, i) => <button key={item.title} aria-label={`Go to slide ${i + 1}`} className={i === slide ? 'active' : ''} onClick={() => setSlide(i)} />)}</div>}
+          {slides.length > 1 && <div className="hero-dots">{slides.map((item, i) => <button key={item.title || i} aria-label={`Go to slide ${i + 1}`} className={i === slide ? 'active' : ''} onClick={() => setSlide(i)} />)}</div>}
         </section>}
         {homepageVisibility.socialPromos && <div className="social-row">
           <div className="social-card"><div><span>Share Vortex Scans</span><small>to your friends</small></div><button className="share-btn" onClick={() => navigator.clipboard?.writeText(window.location.href)}><Share2 size={14} />Share</button></div>
