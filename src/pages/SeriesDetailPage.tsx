@@ -134,6 +134,64 @@ function readSet(key: string): string[] {
   }
 }
 
+function formatRelativeTime(timestamp: number): string {
+  const diffMs = Date.now() - timestamp;
+  const diffMin = Math.floor(diffMs / 60000);
+  if (diffMin < 1) return 'Just now';
+  if (diffMin < 60) return `${diffMin} min ago`;
+  const diffHours = Math.floor(diffMin / 60);
+  if (diffHours < 24) return `${diffHours} hour${diffHours > 1 ? 's' : ''} ago`;
+  const diffDays = Math.floor(diffHours / 24);
+  if (diffDays === 1) return 'Yesterday';
+  if (diffDays < 7) return `${diffDays} days ago`;
+  const diffWeeks = Math.floor(diffDays / 7);
+  if (diffWeeks < 5) return `${diffWeeks} week${diffWeeks > 1 ? 's' : ''} ago`;
+  const diffMonths = Math.floor(diffDays / 30);
+  if (diffMonths < 12) return `${diffMonths} month${diffMonths > 1 ? 's' : ''} ago`;
+  const diffYears = Math.floor(diffDays / 365);
+  return `${diffYears} year${diffYears > 1 ? 's' : ''} ago`;
+}
+
+function getLatestSeriesUpdate(series: SeriesRecord): string {
+  const factUpdate = (series.facts?.lastUpdate || series.facts?.['Last update'] || '').trim();
+  if (factUpdate && factUpdate.toLowerCase() !== 'not provided') {
+    const parsed = Date.parse(factUpdate);
+    if (!Number.isNaN(parsed) && factUpdate.includes('T')) {
+      return formatRelativeTime(parsed);
+    }
+    return factUpdate;
+  }
+
+  const newestChapterStatus = series.chapters?.[0]?.status?.trim();
+  if (newestChapterStatus) {
+    const s = newestChapterStatus.toLowerCase();
+    if (s === 'new' || s === 'just now' || s === 'free now') return 'Just now';
+    if (s === 'today') return 'Today';
+    if (s === 'yesterday') return 'Yesterday';
+    if (/^\d+\s*(?:min|hour|hr|day|week|month)s?$/.test(s)) {
+      return `${newestChapterStatus} ago`;
+    }
+    if (s.includes('ago')) {
+      return newestChapterStatus;
+    }
+    const parsed = Date.parse(newestChapterStatus);
+    if (!Number.isNaN(parsed)) {
+      return formatRelativeTime(parsed);
+    }
+    return newestChapterStatus;
+  }
+
+  const timestamp = series.updatedAt || series.createdAt;
+  if (timestamp) {
+    const parsed = Date.parse(timestamp);
+    if (!Number.isNaN(parsed)) {
+      return formatRelativeTime(parsed);
+    }
+  }
+
+  return 'Recently';
+}
+
 export default function SeriesDetailPage() {
   const params = useParams<{ slug: string }>();
   const [, setLocation] = useLocation();
@@ -402,13 +460,13 @@ export default function SeriesDetailPage() {
   const hasExpandableSynopsis = synopsis.length > 180;
   const newestChapter = series.chapters[0];
   const firstChapter = series.chapters[series.chapters.length - 1] || newestChapter;
-  const latestSeriesUpdate = detail?.facts?.lastUpdate || newestChapter?.status || '';
+  const latestSeriesUpdate = getLatestSeriesUpdate(series);
   const factEntries: [string, string][] = [
     ['Status', series.status || detail?.facts?.status || ''],
     ['Type', series.category || detail?.facts?.type || ''],
     ['Author', detail?.author || ''],
     ['Artist', detail?.artist || ''],
-    ['Released', detail?.facts?.released || ''],
+    ['Released', detail?.facts?.released || (series.year ? String(series.year) : '')],
     ['Chapters', String(series.chapters.length)],
     ['Last update', latestSeriesUpdate],
   ];
