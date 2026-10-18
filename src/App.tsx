@@ -18,7 +18,15 @@ import { useSeriesCatalog } from './hooks/useSeriesCatalog';
 import type { SeriesRecord } from './lib/seriesCatalog';
 import vortexLogo from './assets/vortex-logo.webp';
 import assets from '../clone-data/asset-references.json';
-import { DEFAULT_SITE_SETTINGS, DEFAULT_HERO_SLIDES, type HeroSlide } from './lib/siteSettings';
+import {
+  DEFAULT_SITE_SETTINGS,
+  DEFAULT_HERO_SLIDES,
+  getCachedSiteSettings,
+  getSiteSettings,
+  SITE_SETTINGS_UPDATED_EVENT,
+  type HeroSlide,
+  type SiteSettings,
+} from './lib/siteSettings';
 import './series-data-status.css';
 
 type Asset = { src: string; srcset: string; alt: string };
@@ -298,7 +306,7 @@ function HomePage() {
   }, [seriesItems]);
   const { dark, toggleTheme } = useThemeMode();
   const [mobileMenu, setMobileMenu] = useState(false);
-  const [siteSettings, setSiteSettings] = useState(DEFAULT_SITE_SETTINGS);
+  const [siteSettings, setSiteSettings] = useState<SiteSettings>(() => getCachedSiteSettings() ?? DEFAULT_SITE_SETTINGS);
   const { header: headerVisibility, homepage: homepageVisibility } = siteSettings;
   const railRef = useRef<HTMLDivElement>(null);
   const railGestureRef = useRef<RailGesture | null>(null);
@@ -319,24 +327,21 @@ function HomePage() {
   useEffect(() => {
     let active = true;
 
-    void import('./lib/siteSettings')
-      .then(({ getSiteSettings, SITE_SETTINGS_UPDATED_EVENT }) => {
-        getSiteSettings().then((settings) => {
-          if (active) setSiteSettings(settings);
-        });
-
-        const handleUpdate = (e: any) => {
-          if (active && e.detail) setSiteSettings(e.detail);
-        };
-        window.addEventListener(SITE_SETTINGS_UPDATED_EVENT, handleUpdate);
-        return () => window.removeEventListener(SITE_SETTINGS_UPDATED_EVENT, handleUpdate);
+    getSiteSettings()
+      .then((settings) => {
+        if (active) setSiteSettings(settings);
       })
       .catch(() => {
         // Keep the default navigation if Supabase is unavailable.
       });
 
+    const handleUpdate = (e: any) => {
+      if (active && e.detail) setSiteSettings(e.detail);
+    };
+    window.addEventListener(SITE_SETTINGS_UPDATED_EVENT, handleUpdate);
     return () => {
       active = false;
+      window.removeEventListener(SITE_SETTINGS_UPDATED_EVENT, handleUpdate);
     };
   }, []);
 
@@ -435,7 +440,7 @@ function HomePage() {
           />
         }
       />
-      {catalogQuery.isLoading && <div className="series-data-status" role="status"><p>Loading the series catalog…</p></div>}
+      {catalogQuery.isLoading && seriesItems.length === 0 && <div className="series-data-status" role="status"><p>Loading the series catalog…</p></div>}
       {catalogQuery.isError && <div className="series-data-status" role="alert"><p>The series catalog could not be loaded. Please try again.</p><button type="button" onClick={() => void catalogQuery.refetch()}>Try again</button></div>}
       <main>
         {homepageVisibility.featuredSeries && slides.length > 0 && <section className="hero-area" aria-label="Featured series">

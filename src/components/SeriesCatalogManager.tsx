@@ -32,6 +32,7 @@ import {
 } from '../lib/seriesCatalog';
 import { useSeriesCatalog } from '../hooks/useSeriesCatalog';
 import { fetchMangaDexDetails } from '../lib/mangadex';
+import { uploadOrCompressCover } from '../lib/imageUpload';
 import './series-catalog-manager.css';
 
 type LinkDraft = { name: string; url: string; logo: string; isSample: boolean };
@@ -299,8 +300,8 @@ export default function SeriesCatalogManager() {
     }
   };
 
-  // Cover file upload handler
-  const handleFileChange = (event: ChangeEvent<HTMLInputElement>) => {
+  // Cover file upload handler (compresses to ~25KB or uploads to Supabase Storage)
+  const handleFileChange = async (event: ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file) return;
 
@@ -309,14 +310,15 @@ export default function SeriesCatalogManager() {
       return;
     }
 
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      const dataUrl = e.target?.result as string;
-      if (dataUrl) {
-        setDraft((curr) => ({ ...curr, cover: dataUrl }));
+    try {
+      const coverResult = await uploadOrCompressCover(file, draft.title || 'cover');
+      if (coverResult) {
+        setDraft((curr) => ({ ...curr, cover: coverResult }));
       }
-    };
-    reader.readAsDataURL(file);
+    } catch (err: any) {
+      console.error('Failed to process image cover:', err);
+      alert('Failed to process cover image. Please try another image.');
+    }
   };
 
   // Tag & array helpers

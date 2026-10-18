@@ -180,6 +180,32 @@ function arrayValue(value: unknown): string[] {
   return Array.isArray(value) ? value.filter((item): item is string => typeof item === 'string') : [];
 }
 
+const CATALOG_CACHE_KEY = 'vortex-series-catalog-cache';
+
+export function getCachedSeriesCatalog(): SeriesCatalogResponse | null {
+  if (typeof window === 'undefined') return null;
+  try {
+    const raw = window.localStorage.getItem(CATALOG_CACHE_KEY);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw);
+    if (parsed && Array.isArray(parsed.items) && parsed.items.length > 0) {
+      return parsed as SeriesCatalogResponse;
+    }
+  } catch {
+    // ignore storage errors
+  }
+  return null;
+}
+
+export function cacheSeriesCatalog(data: SeriesCatalogResponse): void {
+  if (typeof window === 'undefined') return;
+  try {
+    window.localStorage.setItem(CATALOG_CACHE_KEY, JSON.stringify(data));
+  } catch {
+    // ignore storage quota errors
+  }
+}
+
 export async function getSeriesCatalog(): Promise<SeriesCatalogResponse> {
   const client = requireSupabase();
   const { data, error } = await client
@@ -191,7 +217,9 @@ export async function getSeriesCatalog(): Promise<SeriesCatalogResponse> {
 
   if (error) throw error;
   const items = (data ?? []).map(toSeriesRecord);
-  return { totalCount: items.length, items };
+  const result = { totalCount: items.length, items };
+  cacheSeriesCatalog(result);
+  return result;
 }
 
 export async function createSeriesRecord(input: CreateSeriesRequest): Promise<SeriesRecord> {

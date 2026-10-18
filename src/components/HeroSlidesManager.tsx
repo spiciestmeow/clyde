@@ -27,6 +27,7 @@ import {
   type SiteSettings,
 } from '../lib/siteSettings';
 import { useSeriesCatalog } from '../hooks/useSeriesCatalog';
+import { compressImageFile } from '../lib/imageUpload';
 
 export default function HeroSlidesManager({
   settings,
@@ -97,7 +98,7 @@ export default function HeroSlidesManager({
     setSeriesSearch('');
   };
 
-  const handleFileChange = (e: ChangeEvent<HTMLInputElement>) => {
+  const handleFileChange = async (e: ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
@@ -106,14 +107,15 @@ export default function HeroSlidesManager({
       return;
     }
 
-    const reader = new FileReader();
-    reader.onload = (event) => {
-      const dataUrl = event.target?.result as string;
-      if (dataUrl) {
-        setDraftSrc(dataUrl);
+    try {
+      const compressed = await compressImageFile(file, 1400, 700, 0.82);
+      if (compressed) {
+        setDraftSrc(compressed);
       }
-    };
-    reader.readAsDataURL(file);
+    } catch (err) {
+      console.error('Failed to compress banner image:', err);
+      alert('Failed to process image file. Please try another image.');
+    }
   };
 
   const handleSaveSlide = (e: FormEvent) => {

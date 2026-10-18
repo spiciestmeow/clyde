@@ -1,6 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import {
   getSeriesCatalog,
+  getCachedSeriesCatalog,
   SERIES_CATALOG_QUERY_KEY,
   type SeriesCatalogResponse,
 } from '../lib/seriesCatalog';
@@ -9,8 +10,9 @@ export function useSeriesCatalog() {
   const query = useQuery<SeriesCatalogResponse>({
     queryKey: SERIES_CATALOG_QUERY_KEY,
     queryFn: getSeriesCatalog,
-    staleTime: 30_000,
-    refetchOnWindowFocus: true,
+    initialData: () => getCachedSeriesCatalog() ?? undefined,
+    staleTime: 60_000,
+    refetchOnWindowFocus: false,
   });
 
   return {
