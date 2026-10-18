@@ -57,14 +57,30 @@ export function extractMangaDexId(rawInput: string): string {
 export async function fetchMangaDexDetails(rawInput: string): Promise<MangaDexImportData> {
   const id = extractMangaDexId(rawInput);
 
-  let response: Response;
+  let response: Response | null = null;
+  const endpoint = `/manga/${id}?includes[]=author&includes[]=artist&includes[]=cover_art`;
+  
+  // Try internal proxy route (/api/mangadex) first (supported via Vercel rewrites and Vite proxy)
   try {
-    response = await fetch(`https://api.mangadex.org/manga/${id}?includes[]=author&includes[]=artist&includes[]=cover_art`);
+    response = await fetch(`/api/mangadex${endpoint}`);
   } catch {
-    throw new Error(`Unable to read api: ${id}`);
+    // ignore and try fallback
   }
 
-  if (!response.ok) {
+  // Fallback to corsproxy if running in direct environment without server rewrite
+  if (!response || !response.ok) {
+    try {
+      response = await fetch(`https://api.mangadex.org${endpoint}`);
+    } catch {
+      try {
+        response = await fetch(`https://corsproxy.io/?url=${encodeURIComponent(`https://api.mangadex.org${endpoint}`)}`);
+      } catch {
+        throw new Error(`Unable to read api: ${id}`);
+      }
+    }
+  }
+
+  if (!response || !response.ok) {
     throw new Error(`Unable to read api: ${id}`);
   }
 

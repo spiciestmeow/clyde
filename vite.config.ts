@@ -23,9 +23,23 @@ export default defineConfig({
   server: {
     host: '0.0.0.0',
     allowedHosts: true,
+    proxy: {
+      '/api/mangadex': {
+        target: 'https://api.mangadex.org',
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/api\/mangadex/, ''),
+      },
+    },
   },
   preview: {
     host: '0.0.0.0',
     allowedHosts: true,
+    proxy: {
+      '/api/mangadex': {
+        target: 'https://api.mangadex.org',
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/api\/mangadex/, ''),
+      },
+    },
   },
 });
