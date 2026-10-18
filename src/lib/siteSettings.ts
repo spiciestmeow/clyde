@@ -49,7 +49,26 @@ export type HeroSlide = {
   href: string;
 };
 
-export const DEFAULT_HERO_SLIDES: HeroSlide[] = [];
+export const DEFAULT_HERO_SLIDES: HeroSlide[] = [
+  {
+    id: 'hero-1',
+    title: 'Absolute Domination',
+    src: 'https://i0.wp.com/storage.vortexscans.org/upload/series/banner/4/d25511d1-e472-470b-9d22-a82776081885.png?w=1920&quality=85&strip=all&ssl=1',
+    href: '/series/absolute-domination',
+  },
+  {
+    id: 'hero-2',
+    title: "The Hero’s Ballad",
+    src: 'https://i0.wp.com/storage.vortexscans.org/upload/series/banner/4/1dded1a3-837a-4a47-ac03-d9b739005baa.png?w=1920&quality=85&strip=all&ssl=1',
+    href: "/series/the-hero's-ballad",
+  },
+  {
+    id: 'hero-3',
+    title: 'Contract Killer Enrollment',
+    src: 'https://i0.wp.com/storage.vortexscans.org/upload/series/banner/4/2c3128b5-e8c3-4168-a243-b7c869c22367.png?w=1920&quality=85&strip=all&ssl=1',
+    href: '/series/contract-killer-enrollment',
+  },
+];
 
 export type SiteSettings = {
   header: HeaderVisibility;

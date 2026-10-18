@@ -16,8 +16,86 @@
     <meta property="og:type" content="website" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <title>Vortex Scans</title>
+    <style id="vcomics-progress-style">
+      #vcomics-navigation-progress {
+        position: fixed;
+        inset-inline-start: 0;
+        top: 0;
+        z-index: 2147483647;
+        width: 100%;
+        height: 3px;
+        pointer-events: none;
+        opacity: 0;
+        transform: scaleX(0);
+        transform-origin: left center;
+        background: #f78745;
+        box-shadow: 0 0 16px rgba(247, 135, 69, 0.65);
+        transition: transform 220ms ease, opacity 160ms ease;
+      }
+      [dir="rtl"] #vcomics-navigation-progress { transform-origin: right center; }
+      @media (prefers-reduced-motion: reduce) {
+        #vcomics-navigation-progress { transition: none; }
+      }
+    </style>
   </head>
   <body>
+    <div id="vcomics-navigation-progress" aria-hidden="true"></div>
+    <script>
+      (() => {
+        const key = "__vcomicsNavigationProgress";
+        const w = window;
+        if (w[key]?.initialized) return;
+        const state = (w[key] = { initialized: true, active: false, value: 0, trickleTimer: 0, hideTimer: 0 });
+        const getBar = () => {
+          let bar = document.getElementById("vcomics-navigation-progress");
+          if (!bar) {
+            bar = document.createElement("div");
+            bar.id = "vcomics-navigation-progress";
+            bar.setAttribute("aria-hidden", "true");
+            (document.body || document.documentElement).appendChild(bar);
+          }
+          return bar;
+        };
+        const setValue = (value) => {
+          state.value = Math.max(state.value, Math.min(value, 100));
+          const bar = getBar();
+          bar.style.opacity = "1";
+          bar.style.transform = "scaleX(" + (state.value / 100) + ")";
+        };
+        const clearTimers = () => {
+          if (state.trickleTimer) { window.clearInterval(state.trickleTimer); state.trickleTimer = 0; }
+          if (state.hideTimer) { window.clearTimeout(state.hideTimer); state.hideTimer = 0; }
+        };
+        const start = () => {
+          clearTimers();
+          state.active = true;
+          state.value = 0;
+          setValue(15);
+          state.trickleTimer = window.setInterval(() => {
+            if (!state.active) return;
+            const next = state.value + (state.value < 70 ? 8 : state.value < 88 ? 3 : 0.75);
+            setValue(Math.min(next, 92));
+          }, 200);
+        };
+        const done = () => {
+          if (!state.active) return;
+          state.active = false;
+          if (state.trickleTimer) { window.clearInterval(state.trickleTimer); state.trickleTimer = 0; }
+          setValue(100);
+          state.hideTimer = window.setTimeout(() => {
+            const bar = getBar();
+            bar.style.opacity = "0";
+            bar.style.transform = "scaleX(0)";
+            state.value = 0;
+            state.hideTimer = 0;
+          }, 200);
+        };
+        w[key].start = start;
+        w[key].done = done;
+        // Trigger on every refresh immediately
+        start();
+      })();
+    </script>
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
   </body>

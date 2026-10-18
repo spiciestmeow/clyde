@@ -5,6 +5,7 @@ import SiteSearch from './components/SiteSearch';
 import SiteFooter from './components/SiteFooter';
 import SiteHeader from './components/SiteHeader';
 import NavigationProgress from './components/NavigationProgress';
+import HeroSlider from './components/HeroSlider';
 import { PopularNowCard, type PopularNowCardItem } from './components/PopularNowCard';
 import { MostPopularCard, type MostPopularCardItem } from './components/MostPopularCard';
 import { LatestReleaseCard } from './components/LatestReleaseCard';
@@ -464,23 +465,9 @@ function HomePage() {
       {catalogQuery.isLoading && seriesItems.length === 0 && <div className="series-data-status" role="status"><p>Loading the series catalog…</p></div>}
       {catalogQuery.isError && <div className="series-data-status" role="alert"><p>The series catalog could not be loaded. Please try again.</p><button type="button" onClick={() => void catalogQuery.refetch()}>Try again</button></div>}
       <main>
-        {homepageVisibility.featuredSeries && slides.length > 0 && <section className="hero-area" aria-label="Featured series">
-          {slides.length > 1 && <a className="hero-peek peek-left" href={slides[(slide + slides.length - 1) % slides.length]?.href || '/'} onClick={(event) => { event.preventDefault(); moveCarousel(-1); }}>
-            <img src={assetUrl(slides[(slide + slides.length - 1) % slides.length]?.src || '', 480)} alt={slides[(slide + slides.length - 1) % slides.length]?.title || ''} loading="lazy" />
-          </a>}
-          {slides.length > 1 && <a className="hero-peek peek-right" href={slides[(slide + 1) % slides.length]?.href || '/'} onClick={(event) => { event.preventDefault(); moveCarousel(1); }}>
-            <img src={assetUrl(slides[(slide + 1) % slides.length]?.src || '', 480)} alt={slides[(slide + 1) % slides.length]?.title || ''} loading="lazy" />
-          </a>}
-          {slides.length > 1 && <button className="hero-control prev" aria-label="Previous slide" onClick={() => moveCarousel(-1)}><ChevronLeft /></button>}
-          {slides[slide] && (
-            <a className="hero-slide" href={slides[slide].href} key={slide}>
-              <img className="hero-banner" src={slides[slide].src} srcSet={slides[slide].srcset || undefined} sizes="68vw" alt={slides[slide].title} loading="eager" fetchPriority="high" decoding="async" />
-              <h1 className="visually-hidden">Read Manga, Manhwa &amp; Manhua Online</h1>
-            </a>
-          )}
-          {slides.length > 1 && <button className="hero-control next" aria-label="Next slide" onClick={() => moveCarousel(1)}><ChevronRight /></button>}
-          {slides.length > 1 && <div className="hero-dots">{slides.map((item, i) => <button key={item.title || i} aria-label={`Go to slide ${i + 1}`} className={i === slide ? 'active' : ''} onClick={() => setSlide(i)} />)}</div>}
-        </section>}
+        {homepageVisibility.featuredSeries && slides.length > 0 && (
+          <HeroSlider slides={slides} />
+        )}
         {(homepageVisibility.socialPromos || homepageVisibility.issueBanner) && (
           <div className="social-promo-container">
             {homepageVisibility.socialPromos && (

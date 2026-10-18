@@ -1,102 +1,141 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useEffect, useRef } from 'react';
 import { useLocation } from 'wouter';
 
-type ProgressState = 'idle' | 'loading' | 'complete';
+declare global {
+  interface Window {
+    __vcomicsNavigationProgress?: {
+      initialized: boolean;
+      active: boolean;
+      value: number;
+      trickleTimer: number;
+      hideTimer: number;
+      start: () => void;
+      done: () => void;
+    };
+  }
+}
 
-const MIN_VISIBLE_MS = 220;
-const COMPLETE_VISIBLE_MS = 170;
-const FALLBACK_MS = 8000;
+function getGlobalProgress() {
+  if (typeof window === 'undefined') return null;
+  const w = window;
+  if (!w.__vcomicsNavigationProgress) {
+    const state = {
+      initialized: true,
+      active: false,
+      value: 0,
+      trickleTimer: 0,
+      hideTimer: 0,
+      start: () => {},
+      done: () => {},
+    };
 
-function currentBrowserPath() {
-  return `${window.location.pathname}${window.location.search}`;
+    const getBar = () => {
+      let bar = document.getElementById('vcomics-navigation-progress');
+      if (!bar) {
+        bar = document.createElement('div');
+        bar.id = 'vcomics-navigation-progress';
+        bar.setAttribute('aria-hidden', 'true');
+        (document.body || document.documentElement).appendChild(bar);
+      }
+      return bar;
+    };
+
+    const setValue = (val: number) => {
+      state.value = Math.max(state.value, Math.min(val, 100));
+      const bar = getBar();
+      bar.style.opacity = '1';
+      bar.style.transform = `scaleX(${state.value / 100})`;
+    };
+
+    const clearTimers = () => {
+      if (state.trickleTimer) {
+        window.clearInterval(state.trickleTimer);
+        state.trickleTimer = 0;
+      }
+      if (state.hideTimer) {
+        window.clearTimeout(state.hideTimer);
+        state.hideTimer = 0;
+      }
+    };
+
+    state.start = () => {
+      clearTimers();
+      state.active = true;
+      state.value = 0;
+      setValue(15);
+      state.trickleTimer = window.setInterval(() => {
+        if (!state.active) return;
+        const next = state.value + (state.value < 70 ? 8 : state.value < 88 ? 3 : 0.75);
+        setValue(Math.min(next, 92));
+      }, 200);
+    };
+
+    state.done = () => {
+      if (!state.active) return;
+      state.active = false;
+      if (state.trickleTimer) {
+        window.clearInterval(state.trickleTimer);
+        state.trickleTimer = 0;
+      }
+      setValue(100);
+      state.hideTimer = window.setTimeout(() => {
+        const bar = getBar();
+        bar.style.opacity = '0';
+        bar.style.transform = 'scaleX(0)';
+        state.value = 0;
+        state.hideTimer = 0;
+      }, 200);
+    };
+
+    w.__vcomicsNavigationProgress = state;
+  }
+  return w.__vcomicsNavigationProgress;
+}
+
+export function startNavigationProgress() {
+  getGlobalProgress()?.start();
+}
+
+export function finishNavigationProgress() {
+  getGlobalProgress()?.done();
 }
 
 export default function NavigationProgress() {
-  const [location, setLocation] = useLocation();
-  const [state, setState] = useState<ProgressState>('idle');
-  const lastPathRef = useRef<string | null>(null);
-  const isActiveRef = useRef(false);
-  const startedAtRef = useRef(0);
-  const fallbackTimerRef = useRef<number | null>(null);
-  const completeTimerRef = useRef<number | null>(null);
-  const hideTimerRef = useRef<number | null>(null);
+  const [location] = useLocation();
+  const isFirstMountRef = useRef(true);
 
-  const clearTimers = useCallback(() => {
-    if (fallbackTimerRef.current !== null) window.clearTimeout(fallbackTimerRef.current);
-    if (completeTimerRef.current !== null) window.clearTimeout(completeTimerRef.current);
-    if (hideTimerRef.current !== null) window.clearTimeout(hideTimerRef.current);
-    fallbackTimerRef.current = null;
-    completeTimerRef.current = null;
-    hideTimerRef.current = null;
+  // Initial page mount / refresh: finish progress after a clean display window
+  useEffect(() => {
+    const progress = getGlobalProgress();
+    // If progress isn't already active from index.html, start it
+    if (!progress?.active) {
+      progress?.start();
+    }
+    const timer = window.setTimeout(() => {
+      progress?.done();
+    }, 450);
+
+    return () => window.clearTimeout(timer);
   }, []);
 
-  const finishProgress = useCallback(() => {
-    if (!isActiveRef.current) return;
-
-    if (fallbackTimerRef.current !== null) {
-      window.clearTimeout(fallbackTimerRef.current);
-      fallbackTimerRef.current = null;
-    }
-
-    const remainingMinimum = Math.max(
-      0,
-      MIN_VISIBLE_MS - (performance.now() - startedAtRef.current),
-    );
-
-    completeTimerRef.current = window.setTimeout(() => {
-      setState('complete');
-      completeTimerRef.current = null;
-
-      hideTimerRef.current = window.setTimeout(() => {
-        isActiveRef.current = false;
-        setState('idle');
-        hideTimerRef.current = null;
-      }, COMPLETE_VISIBLE_MS);
-    }, remainingMinimum);
-  }, []);
-
-  const startProgress = useCallback(() => {
-    clearTimers();
-    isActiveRef.current = true;
-    startedAtRef.current = performance.now();
-    setState('loading');
-    fallbackTimerRef.current = window.setTimeout(finishProgress, FALLBACK_MS);
-  }, [clearTimers, finishProgress]);
-
+  // Every route change or redirect in wouter
   useEffect(() => {
-    startProgress();
-
-    const handleInitialLoad = () => {
-      finishProgress();
-    };
-
-    if (document.readyState === 'complete') {
-      const timer = window.setTimeout(finishProgress, 350);
-      return () => window.clearTimeout(timer);
-    } else {
-      window.addEventListener('load', handleInitialLoad);
-      const timer = window.setTimeout(finishProgress, 1200);
-      return () => {
-        window.removeEventListener('load', handleInitialLoad);
-        window.clearTimeout(timer);
-      };
-    }
-  }, [startProgress, finishProgress]);
-
-  useEffect(() => {
-    const currentPath = currentBrowserPath();
-
-    if (lastPathRef.current === null) {
-      lastPathRef.current = currentPath;
+    if (isFirstMountRef.current) {
+      isFirstMountRef.current = false;
       return;
     }
 
-    if (lastPathRef.current !== currentPath) {
-      lastPathRef.current = currentPath;
-      finishProgress();
-    }
-  }, [location, finishProgress]);
+    const progress = getGlobalProgress();
+    progress?.start();
 
+    const timer = window.setTimeout(() => {
+      progress?.done();
+    }, 350);
+
+    return () => window.clearTimeout(timer);
+  }, [location]);
+
+  // Intercept all internal link clicks and popstate (browser back/forward)
   useEffect(() => {
     const handleClick = (event: MouseEvent) => {
       if (
@@ -118,51 +157,32 @@ export default function NavigationProgress() {
         return;
       }
 
+      const href = link.getAttribute('href');
+      if (!href || href.startsWith('#')) return;
+
       const destination = new URL(link.href, window.location.href);
       if (destination.origin !== window.location.origin) return;
 
-      const destinationPath = `${destination.pathname}${destination.search}`;
-      const currentPath = currentBrowserPath();
-
-      if (event.defaultPrevented) {
-        // Wouter links have already updated history by the time this bubbles here.
-        if (destinationPath === currentPath && currentPath !== lastPathRef.current) {
-          startProgress();
-        }
-        return;
-      }
-
-      // Leave same-page anchors to the browser so normal in-page scrolling works.
-      if (destinationPath === currentPath) return;
-
-      event.preventDefault();
-      startProgress();
-      setLocation(`${destination.pathname}${destination.search}${destination.hash}`);
+      // Start progress immediately on internal link click
+      getGlobalProgress()?.start();
     };
 
     const handlePopState = () => {
-      const currentPath = currentBrowserPath();
-      if (lastPathRef.current !== null && currentPath !== lastPathRef.current) {
-        startProgress();
-      }
+      const progress = getGlobalProgress();
+      progress?.start();
+      window.setTimeout(() => {
+        progress?.done();
+      }, 350);
     };
 
-    document.addEventListener('click', handleClick);
+    document.addEventListener('click', handleClick, { capture: true });
     window.addEventListener('popstate', handlePopState);
 
     return () => {
-      document.removeEventListener('click', handleClick);
+      document.removeEventListener('click', handleClick, { capture: true });
       window.removeEventListener('popstate', handlePopState);
-      clearTimers();
-      isActiveRef.current = false;
     };
-  }, [clearTimers, setLocation, startProgress]);
+  }, []);
 
-  if (state === 'idle') return null;
-
-  return (
-    <div className="navigation-progress" data-state={state} aria-hidden="true">
-      <span className="navigation-progress__bar" />
-    </div>
-  );
+  return null;
 }
