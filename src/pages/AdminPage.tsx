@@ -15,6 +15,7 @@ import {
   FolderKanban,
   History,
   LayoutDashboard,
+  LayoutTemplate,
   LoaderCircle,
   LockKeyhole,
   LogOut,
@@ -35,6 +36,7 @@ import {
   Users,
 } from 'lucide-react';
 import SeriesCatalogManager from '../components/SeriesCatalogManager';
+import HeroSlidesManager from '../components/HeroSlidesManager';
 import {
   DEFAULT_SITE_SETTINGS,
   getSiteSettings,
@@ -62,6 +64,7 @@ type SidebarTab =
   | 'comments'
   | 'posts'
   | 'uploads'
+  | 'hero-slides'
   | 'import-export'
   | 'blocked-users'
   | 'settings';
@@ -359,7 +362,7 @@ function ComixDashboard({
     key: string,
   ) => {
     if (!settings || savingSettings) return;
-    const currentCategory = { ...settings[category] };
+    const currentCategory = { ...settings[category] } as Record<string, boolean>;
     const nextCategory = {
       ...currentCategory,
       [key]: !currentCategory[key],
@@ -581,6 +584,15 @@ function ComixDashboard({
 
             <button
               type="button"
+              className={`comix-nav-item ${activeTab === 'hero-slides' ? 'is-active' : ''}`}
+              onClick={() => setActiveTab('hero-slides')}
+            >
+              <LayoutTemplate size={16} className="nav-icon" />
+              <span>Hero Slides</span>
+            </button>
+
+            <button
+              type="button"
               className={`comix-nav-item ${activeTab === 'import-export' ? 'is-active' : ''}`}
               onClick={() => setActiveTab('import-export')}
             >
@@ -622,7 +634,12 @@ function ComixDashboard({
             {/* 1. UPLOADS / SERIES CATALOG (Default) */}
             {activeTab === 'uploads' && <SeriesCatalogManager />}
 
-            {/* 2. SETTINGS (Homepage, Header, Series Page toggles) */}
+            {/* 2. HERO SLIDES MANAGER */}
+            {activeTab === 'hero-slides' && (
+              <HeroSlidesManager settings={settings} onSave={(updated) => setSettings(updated)} />
+            )}
+
+            {/* 3. SETTINGS (Homepage, Header, Series Page toggles) */}
             {activeTab === 'settings' && (
               <div className="comix-settings-card">
                 <div className="comix-card-header">
@@ -848,6 +865,7 @@ function ComixDashboard({
 
             {/* 5. PLACEHOLDER FOR OTHER TABS */}
             {activeTab !== 'uploads' &&
+              activeTab !== 'hero-slides' &&
               activeTab !== 'settings' &&
               activeTab !== 'import-export' &&
               activeTab !== 'edit-profile' && (

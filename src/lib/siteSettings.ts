@@ -41,10 +41,40 @@ export type SeriesPageVisibility = {
   footer: boolean;
 };
 
+export type HeroSlide = {
+  id: string;
+  title: string;
+  src: string;
+  srcset?: string;
+  href: string;
+};
+
+export const DEFAULT_HERO_SLIDES: HeroSlide[] = [
+  {
+    id: 'hero-1',
+    title: "The Hero’s Ballad",
+    src: 'https://storage.vortexscans.org/upload/series/featured/4/d6f63312-9876-41e9-a499-afa31d177add.png',
+    href: "/series/the-hero's-ballad",
+  },
+  {
+    id: 'hero-2',
+    title: 'Barbarian’s Adventure in a Fantasy World',
+    src: 'https://storage.vortexscans.org/upload/series/featured/lxJf4GmfzvG3XexqIAuF8KOjIGtbS5BK/b06b011f-579b-49b1-96ea-abe52ff70ccd.png',
+    href: "/series/barbarian's-adventure-in-a-fantasy-world",
+  },
+  {
+    id: 'hero-3',
+    title: 'Contract Killer Enrollment',
+    src: 'https://storage.vortexscans.org/upload/series/featured/4/d6f63312-9876-41e9-a499-afa31d177add.png',
+    href: '/series/contract-killer-enrollment',
+  },
+];
+
 export type SiteSettings = {
   header: HeaderVisibility;
   homepage: HomepageVisibility;
   seriesPage: SeriesPageVisibility;
+  heroSlides: HeroSlide[];
 };
 
 export const DEFAULT_HEADER_VISIBILITY: HeaderVisibility = {
@@ -92,6 +122,7 @@ export const DEFAULT_SITE_SETTINGS: SiteSettings = {
   header: DEFAULT_HEADER_VISIBILITY,
   homepage: DEFAULT_HOMEPAGE_VISIBILITY,
   seriesPage: DEFAULT_SERIES_PAGE_VISIBILITY,
+  heroSlides: DEFAULT_HERO_SLIDES,
 };
 
 function parseBooleanSettings<T extends Record<string, boolean>>(
@@ -105,6 +136,22 @@ function parseBooleanSettings<T extends Record<string, boolean>>(
   if (keys.some((key) => typeof candidate[key as string] !== 'boolean')) return null;
 
   return Object.fromEntries(keys.map((key) => [key, candidate[key as string]])) as T;
+}
+
+export function parseHeroSlides(value: unknown): HeroSlide[] {
+  if (!Array.isArray(value)) return [...DEFAULT_HERO_SLIDES];
+  const slides = value
+    .filter((item): item is Record<string, unknown> => Boolean(item && typeof item === 'object'))
+    .map((item, index) => ({
+      id: typeof item.id === 'string' && item.id.trim() ? item.id.trim() : `slide-${index + 1}`,
+      title: typeof item.title === 'string' ? item.title.trim() : '',
+      src: typeof item.src === 'string' ? item.src.trim() : '',
+      srcset: typeof item.srcset === 'string' ? item.srcset.trim() : undefined,
+      href: typeof item.href === 'string' && item.href.trim() ? item.href.trim() : '/',
+    }))
+    .filter((item) => Boolean(item.src));
+
+  return slides.length > 0 ? slides : [...DEFAULT_HERO_SLIDES];
 }
 
 function parseSiteSettings(value: unknown): SiteSettings | null {
@@ -124,7 +171,11 @@ function parseSiteSettings(value: unknown): SiteSettings | null {
     : parseBooleanSettings(stored.series_page_sections, DEFAULT_SERIES_PAGE_VISIBILITY);
   if (!seriesPage) return null;
 
-  return { header, homepage, seriesPage };
+  const heroSlides = stored.hero_slides !== undefined
+    ? parseHeroSlides(stored.hero_slides)
+    : [...DEFAULT_HERO_SLIDES];
+
+  return { header, homepage, seriesPage, heroSlides };
 }
 
 export const SITE_SETTINGS_CACHE_KEY = 'vortex-site-settings';
@@ -148,7 +199,9 @@ export function getCachedSiteSettings(): SiteSettings | null {
       : parseBooleanSettings(cached.seriesPage, DEFAULT_SERIES_PAGE_VISIBILITY);
     if (!header || !homepage || !seriesPage) return null;
 
-    return { header, homepage, seriesPage };
+    const heroSlides = cached.heroSlides ? parseHeroSlides(cached.heroSlides) : [...DEFAULT_HERO_SLIDES];
+
+    return { header, homepage, seriesPage, heroSlides };
   } catch {
     return null;
   }
@@ -171,6 +224,7 @@ export async function getSiteSettings(): Promise<SiteSettings> {
       header: { ...DEFAULT_HEADER_VISIBILITY },
       homepage: { ...DEFAULT_HOMEPAGE_VISIBILITY },
       seriesPage: { ...DEFAULT_SERIES_PAGE_VISIBILITY },
+      heroSlides: [...DEFAULT_HERO_SLIDES],
     };
   }
   const { data, error } = await supabase
@@ -198,6 +252,7 @@ export async function saveSiteSettings(settings: SiteSettings): Promise<SiteSett
         ...settings.header,
         homepage_sections: settings.homepage,
         series_page_sections: settings.seriesPage,
+        hero_slides: settings.heroSlides,
       },
       updated_at: new Date().toISOString(),
     })

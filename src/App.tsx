@@ -18,7 +18,7 @@ import { useSeriesCatalog } from './hooks/useSeriesCatalog';
 import type { SeriesRecord } from './lib/seriesCatalog';
 import vortexLogo from './assets/vortex-logo.webp';
 import assets from '../clone-data/asset-references.json';
-import { DEFAULT_SITE_SETTINGS } from './lib/siteSettings';
+import { DEFAULT_SITE_SETTINGS, DEFAULT_HERO_SLIDES, type HeroSlide } from './lib/siteSettings';
 import './series-data-status.css';
 
 type Asset = { src: string; srcset: string; alt: string };
@@ -96,22 +96,34 @@ function normalizeRailScrollPosition(rail: HTMLDivElement, gesture?: RailGesture
   }
 }
 function assetUrl(src: string, width = 400) {
+  if (!src) return '';
+  if (src.startsWith('data:')) return src;
   if (src.startsWith('/theme/')) return `https://vortexscans.org${src}`;
   if (src.startsWith('https://i0.wp.com/')) {
-    const url = new URL(src);
-    if (url.searchParams.has('w')) url.searchParams.set('w', String(width));
-    return url.toString();
+    try {
+      const url = new URL(src);
+      if (url.searchParams.has('w')) url.searchParams.set('w', String(width));
+      return url.toString();
+    } catch {
+      return src;
+    }
   }
   if (src.startsWith('https://storage.vortexscans.org/')) {
-    const url = new URL(src);
-    url.searchParams.set('w', String(width));
-    return url.toString();
+    try {
+      const url = new URL(src);
+      url.searchParams.set('w', String(width));
+      return url.toString();
+    } catch {
+      return src;
+    }
   }
   return src;
 }
 function recoverImage(event: SyntheticEvent<HTMLDivElement>) {
   const image = event.target as HTMLImageElement;
   if (image.tagName !== 'IMG') return;
+  const failedUrl = image.currentSrc || image.src;
+  if (failedUrl.startsWith('data:')) return;
   if (image.dataset.fallbackAttempted) {
     image.hidden = true;
     if (image.parentElement?.classList.contains('brand')) {
@@ -119,7 +131,6 @@ function recoverImage(event: SyntheticEvent<HTMLDivElement>) {
     }
     return;
   }
-  const failedUrl = image.currentSrc || image.src;
   image.dataset.fallbackAttempted = 'true';
   image.removeAttribute('srcset');
   let fallback = '';
@@ -212,9 +223,16 @@ function HomePage() {
     let active = true;
 
     void import('./lib/siteSettings')
-      .then(({ getSiteSettings }) => getSiteSettings())
-      .then((settings) => {
-        if (active) setSiteSettings(settings);
+      .then(({ getSiteSettings, SITE_SETTINGS_UPDATED_EVENT }) => {
+        getSiteSettings().then((settings) => {
+          if (active) setSiteSettings(settings);
+        });
+
+        const handleUpdate = (e: any) => {
+          if (active && e.detail) setSiteSettings(e.detail);
+        };
+        window.addEventListener(SITE_SETTINGS_UPDATED_EVENT, handleUpdate);
+        return () => window.removeEventListener(SITE_SETTINGS_UPDATED_EVENT, handleUpdate);
       })
       .catch(() => {
         // Keep the default navigation if Supabase is unavailable.
@@ -234,11 +252,9 @@ function HomePage() {
     currentReleasePage * RELEASES_PER_PAGE,
   );
   const paginationItems = getPaginationItems(releasePageCount, currentReleasePage);
-  const slides = [
-    { title: 'The Hero’s Ballad', src: assetUrl(manifest[3].src, 1920), srcset: manifest[3].srcset, href: "/series/the-hero's-ballad" },
-    { title: 'Barbarian’s Adventure in a Fantasy World', src: assetUrl(manifest[4].src, 1920), srcset: manifest[4].srcset, href: "/series/barbarian's-adventure-in-a-fantasy-world" },
-    { title: 'Contract Killer Enrollment', src: assetUrl(manifest[2].src, 1920), srcset: '', href: '/series/contract-killer-enrollment' },
-  ];
+  const slides = (siteSettings.heroSlides && siteSettings.heroSlides.length > 0)
+    ? siteSettings.heroSlides
+    : DEFAULT_HERO_SLIDES;
   const moveCarousel = (direction: number) => setSlide((current) => (current + direction + slides.length) % slides.length);
   const startRailGesture = (event: ReactPointerEvent<HTMLDivElement>) => {
     if (event.pointerType !== 'mouse' || event.button !== 0) return;
