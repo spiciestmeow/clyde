@@ -1,0 +1,30 @@
+.series-data-status {
+  display: grid;
+  justify-items: center;
+  gap: 8px;
+  margin: 32px auto;
+  padding: 22px;
+  max-width: 620px;
+  border: 1px solid rgba(139, 159, 170, .2);
+  border-radius: 10px;
+  background: rgba(21, 27, 31, .82);
+  color: #dce4e7;
+  text-align: center;
+}
+
+.series-data-status p {
+  margin: 0;
+  color: #aeb8bd;
+  line-height: 1.55;
+}
+
+.series-data-status button {
+  min-height: 34px;
+  padding: 0 13px;
+  border: 1px solid #56d8e8;
+  border-radius: 6px;
+  background: #56d8e8;
+  color: #08272b;
+  font: inherit;
+  font-weight: 700;
+}

@@ -1,0 +1,965 @@
+[
+  {
+    "src": "https://storage.vortexscans.org/upload/settings/logo/cmgwxmqgh0000mj0p26cruyru/2a9fd079-94f5-4463-808b-4ce327ff7639.png",
+    "srcset": "",
+    "alt": "Vortex Scans logo",
+    "width": "180",
+    "height": "48",
+    "loading": null,
+    "class": "h-full w-full object-contain"
+  },
+  {
+    "src": "/theme/img/halloween/trick-pumpkin.webp",
+    "srcset": "",
+    "alt": "",
+    "width": "130",
+    "height": "133",
+    "loading": null,
+    "class": "halloween-tot__img"
+  },
+  {
+    "src": "https://storage.vortexscans.org/upload/series/featured/4/d6f63312-9876-41e9-a499-afa31d177add.png",
+    "srcset": "",
+    "alt": "Contract Killer Enrollment",
+    "width": "1920",
+    "height": "1080",
+    "loading": "lazy",
+    "class": "h-full w-full object-contain"
+  },
+  {
+    "src": "https://i0.wp.com/storage.vortexscans.org/upload/series/banner/4/1dded1a3-837a-4a47-ac03-d9b739005baa.png?w=1920&quality=85&strip=all&ssl=1",
+    "srcset": "https://i0.wp.com/storage.vortexscans.org/upload/series/banner/4/1dded1a3-837a-4a47-ac03-d9b739005baa.png?w=480&quality=85&strip=all&ssl=1 480w, https://i0.wp.com/storage.vortexscans.org/upload/series/banner/4/1dded1a3-837a-4a47-ac03-d9b739005baa.png?w=768&quality=85&strip=all&ssl=1 768w, https://i0.wp.com/storage.vortexscans.org/upload/series/banner/4/1dded1a3-837a-4a47-ac03-d9b739005baa.png?w=1024&quality=85&strip=all&ssl=1 1024w, https://i0.wp.com/storage.vortexscans.org/upload/series/banner/4/1dded1a3-837a-4a47-ac03-d9b739005baa.png?w=1440&quality=85&strip=all&ssl=1 1440w, https://i0.wp.com/storage.vortexscans.org/upload/series/banner/4/1dded1a3-837a-4a47-ac03-d9b739005baa.png?w=1920&quality=85&strip=all&ssl=1 1920w",
+    "alt": "The Hero’s Ballad",
+    "width": "1920",
+    "height": "1080",
+    "loading": "eager",
+    "class": "h-full w-full object-contain"
+  },
+  {
+    "src": "https://i0.wp.com/storage.vortexscans.org/upload/series/banner/4/dee1546c-a293-4773-b5b9-4bce7cbf64db.png?w=1920&quality=85&strip=all&ssl=1",
+    "srcset": "https://i0.wp.com/storage.vortexscans.org/upload/series/banner/4/dee1546c-a293-4773-b5b9-4bce7cbf64db.png?w=480&quality=85&strip=all&ssl=1 480w, https://i0.wp.com/storage.vortexscans.org/upload/series/banner/4/dee1546c-a293-4773-b5b9-4bce7cbf64db.png?w=768&quality=85&strip=all&ssl=1 768w, https://i0.wp.com/storage.vortexscans.org/upload/series/banner/4/dee1546c-a293-4773-b5b9-4bce7cbf64db.png?w=1024&quality=85&strip=all&ssl=1 1024w, https://i0.wp.com/storage.vortexscans.org/upload/series/banner/4/dee1546c-a293-4773-b5b9-4bce7cbf64db.png?w=1440&quality=85&strip=all&ssl=1 1440w, https://i0.wp.com/storage.vortexscans.org/upload/series/banner/4/dee1546c-a293-4773-b5b9-4bce7cbf64db.png?w=1920&quality=85&strip=all&ssl=1 1920w",
+    "alt": "Barbarian’s Adventure in a Fantasy World",
+    "width": "1920",
+    "height": "1080",
+    "loading": "lazy",
+    "class": "h-full w-full object-contain"
+  },
+  {
+    "src": "https://api.iconify.design/cbi:discord.svg?color=%23ffffff",
+    "srcset": "",
+    "alt": "Discord Image Link",
+    "width": "24",
+    "height": "24",
+    "loading": null,
+    "class": "h-[18px] w-[18px] shrink-0 sm:h-6 sm:w-6"
+  },
+  {
+    "src": "https://i0.wp.com/storage.vortexscans.org/upload/series/featured/4/3aa790ec-6d3c-4615-ac02-e765fe455c8d.png?w=400&quality=85&strip=all&ssl=1",
+    "srcset": "",
+    "alt": "Cover of The Sword Saint Reincarnated into a Noble Mage Family",
+    "width": "405",
+    "height": "595",
+    "loading": "lazy",
+    "class": "shared-slider-style-1__cover-image object-cover object-center h-[260px] rounded-[10px]"
+  },
+  {
+    "src": "/theme/flags/manhwa.png",
+    "srcset": "",
+    "alt": "MANHWA",
+    "width": "250",
+    "height": "167",
+    "loading": "lazy",
+    "class": "h-4 w-6 rounded-[3px] object-contain"
+  },
+  {
+    "src": "https://i0.wp.com/storage.vortexscans.org/upload/series/featured/4/6fffdda4-f438-4a96-98aa-600d6a6e97a6.png?w=400&quality=85&strip=all&ssl=1",
+    "srcset": "",
+    "alt": "Cover of The Crazy Villain Regains His Sanity",
+    "width": "405",
+    "height": "595",
+    "loading": "lazy",
+    "class": "shared-slider-style-1__cover-image object-cover object-center h-[260px] rounded-[10px]"
+  },
+  {
+    "src": "/theme/flags/manhwa.png",
+    "srcset": "",
+    "alt": "MANHWA",
+    "width": "250",
+    "height": "167",
+    "loading": "lazy",
+    "class": "h-4 w-6 rounded-[3px] object-contain"
+  },
+  {
+    "src": "https://i0.wp.com/storage.vortexscans.org/upload/series/featured/lxJf4GmfzvG3XexqIAuF8KOjIGtbS5BK/08a8b9ee-5281-4272-996b-1b9dd5a4cfc0.png?w=400&quality=85&strip=all&ssl=1",
+    "srcset": "",
+    "alt": "Cover of The Hero’s Ballad",
+    "width": "405",
+    "height": "595",
+    "loading": "lazy",
+    "class": "shared-slider-style-1__cover-image object-cover object-center h-[260px] rounded-[10px]"
+  },
+  {
+    "src": "/theme/flags/manhwa.png",
+    "srcset": "",
+    "alt": "MANHWA",
+    "width": "250",
+    "height": "167",
+    "loading": "lazy",
+    "class": "h-4 w-6 rounded-[3px] object-contain"
+  },
+  {
+    "src": "https://i0.wp.com/storage.vortexscans.org/upload/2026/03/18/3850d28c-e5fc-4a24-b1ce-adbb25ec8474.webp?w=400&quality=85&strip=all&ssl=1",
+    "srcset": "",
+    "alt": "Cover of Resurrection Boy",
+    "width": "405",
+    "height": "595",
+    "loading": "lazy",
+    "class": "shared-slider-style-1__cover-image object-cover object-center h-[260px] rounded-[10px]"
+  },
+  {
+    "src": "/theme/flags/manhwa.png",
+    "srcset": "",
+    "alt": "MANHWA",
+    "width": "250",
+    "height": "167",
+    "loading": "lazy",
+    "class": "h-4 w-6 rounded-[3px] object-contain"
+  },
+  {
+    "src": "https://i0.wp.com/storage.vortexscans.org/upload/series/featured/4/d6f63312-9876-41e9-a499-afa31d177add.png?w=400&quality=85&strip=all&ssl=1",
+    "srcset": "",
+    "alt": "Cover of Contract Killer Enrollment",
+    "width": "405",
+    "height": "595",
+    "loading": "lazy",
+    "class": "shared-slider-style-1__cover-image object-cover object-center h-[260px] rounded-[10px]"
+  },
+  {
+    "src": "/theme/flags/manhwa.png",
+    "srcset": "",
+    "alt": "MANHWA",
+    "width": "250",
+    "height": "167",
+    "loading": "lazy",
+    "class": "h-4 w-6 rounded-[3px] object-contain"
+  },
+  {
+    "src": "https://i0.wp.com/storage.vortexscans.org/upload/series/featured/lxJf4GmfzvG3XexqIAuF8KOjIGtbS5BK/bddefe46-1f3e-439f-aaf1-a80edcd7d882.png?w=400&quality=85&strip=all&ssl=1",
+    "srcset": "",
+    "alt": "Cover of National-Level Big Shots Flock to My Farm",
+    "width": "405",
+    "height": "595",
+    "loading": "lazy",
+    "class": "shared-slider-style-1__cover-image object-cover object-center h-[260px] rounded-[10px]"
+  },
+  {
+    "src": "/theme/flags/manhwa.png",
+    "srcset": "",
+    "alt": "MANHWA",
+    "width": "250",
+    "height": "167",
+    "loading": "lazy",
+    "class": "h-4 w-6 rounded-[3px] object-contain"
+  },
+  {
+    "src": "https://i0.wp.com/storage.vortexscans.org/upload/series/featured/lxJf4GmfzvG3XexqIAuF8KOjIGtbS5BK/99d8ca5e-acfe-4900-ba2b-ec6ee4ffbbf1.jpg?w=400&quality=85&strip=all&ssl=1",
+    "srcset": "",
+    "alt": "Cover of The Genius Blacksmith’s Game",
+    "width": "405",
+    "height": "595",
+    "loading": "lazy",
+    "class": "shared-slider-style-1__cover-image object-cover object-center h-[260px] rounded-[10px]"
+  },
+  {
+    "src": "/theme/flags/manhwa.png",
+    "srcset": "",
+    "alt": "MANHWA",
+    "width": "250",
+    "height": "167",
+    "loading": "lazy",
+    "class": "h-4 w-6 rounded-[3px] object-contain"
+  },
+  {
+    "src": "https://i0.wp.com/storage.vortexscans.org/upload/series/featured/lxJf4GmfzvG3XexqIAuF8KOjIGtbS5BK/c0b2479e-cbb2-42bc-a19a-645433e092b9.jpg?w=400&quality=85&strip=all&ssl=1",
+    "srcset": "",
+    "alt": "Cover of There Is No Great King in My Kingdom",
+    "width": "405",
+    "height": "595",
+    "loading": "lazy",
+    "class": "shared-slider-style-1__cover-image object-cover object-center h-[260px] rounded-[10px]"
+  },
+  {
+    "src": "/theme/flags/manhwa.png",
+    "srcset": "",
+    "alt": "MANHWA",
+    "width": "250",
+    "height": "167",
+    "loading": "lazy",
+    "class": "h-4 w-6 rounded-[3px] object-contain"
+  },
+  {
+    "src": "https://i0.wp.com/storage.vortexscans.org/upload/series/featured/4/69af3c29-4246-46f9-9724-6d7189ccb5c0.png?w=400&quality=85&strip=all&ssl=1",
+    "srcset": "",
+    "alt": "Cover of World Extinction War",
+    "width": "405",
+    "height": "595",
+    "loading": "lazy",
+    "class": "shared-slider-style-1__cover-image object-cover object-center h-[260px] rounded-[10px]"
+  },
+  {
+    "src": "/theme/flags/manhwa.png",
+    "srcset": "",
+    "alt": "MANHWA",
+    "width": "250",
+    "height": "167",
+    "loading": "lazy",
+    "class": "h-4 w-6 rounded-[3px] object-contain"
+  },
+  {
+    "src": "https://i0.wp.com/storage.vortexscans.org/upload/2025/06/24/f956e16a-5a34-4839-a9b3-8645a09e6fe6.webp?w=400&quality=85&strip=all&ssl=1",
+    "srcset": "",
+    "alt": "Cover of Hardcore Leveling Warrior: Earth Game",
+    "width": "405",
+    "height": "595",
+    "loading": "lazy",
+    "class": "shared-slider-style-1__cover-image object-cover object-center h-[260px] rounded-[10px]"
+  },
+  {
+    "src": "/theme/flags/manhwa.png",
+    "srcset": "",
+    "alt": "MANHWA",
+    "width": "250",
+    "height": "167",
+    "loading": "lazy",
+    "class": "h-4 w-6 rounded-[3px] object-contain"
+  },
+  {
+    "src": "https://i0.wp.com/storage.vortexscans.org/upload/series/featured/lxJf4GmfzvG3XexqIAuF8KOjIGtbS5BK/45bbe898-09bb-4538-b103-da2da149afbc.jpg?w=400&quality=85&strip=all&ssl=1",
+    "srcset": "",
+    "alt": "Cover of Spend More, Earn More",
+    "width": "405",
+    "height": "595",
+    "loading": "lazy",
+    "class": "shared-slider-style-1__cover-image object-cover object-center h-[260px] rounded-[10px]"
+  },
+  {
+    "src": "/theme/flags/manhwa.png",
+    "srcset": "",
+    "alt": "MANHWA",
+    "width": "250",
+    "height": "167",
+    "loading": "lazy",
+    "class": "h-4 w-6 rounded-[3px] object-contain"
+  },
+  {
+    "src": "https://i0.wp.com/storage.vortexscans.org/upload/series/featured/lxJf4GmfzvG3XexqIAuF8KOjIGtbS5BK/ccbe149a-8f67-4c33-a562-457b917ed6c8.jpg?w=400&quality=85&strip=all&ssl=1",
+    "srcset": "",
+    "alt": "Cover of Barbarian’s Adventure in a Fantasy World",
+    "width": "405",
+    "height": "595",
+    "loading": "lazy",
+    "class": "shared-slider-style-1__cover-image object-cover object-center h-[260px] rounded-[10px]"
+  },
+  {
+    "src": "/theme/flags/manhwa.png",
+    "srcset": "",
+    "alt": "MANHWA",
+    "width": "250",
+    "height": "167",
+    "loading": "lazy",
+    "class": "h-4 w-6 rounded-[3px] object-contain"
+  },
+  {
+    "src": "https://i0.wp.com/storage.vortexscans.org/upload/series/featured/4/17fca25a-5ee2-4b9c-a7da-345739b48585.png?w=400&quality=85&strip=all&ssl=1",
+    "srcset": "",
+    "alt": "Cover of The Ruined World Was Mistaken for a Game",
+    "width": "405",
+    "height": "595",
+    "loading": "lazy",
+    "class": "shared-slider-style-1__cover-image object-cover object-center h-[260px] rounded-[10px]"
+  },
+  {
+    "src": "/theme/flags/manhwa.png",
+    "srcset": "",
+    "alt": "MANHWA",
+    "width": "250",
+    "height": "167",
+    "loading": "lazy",
+    "class": "h-4 w-6 rounded-[3px] object-contain"
+  },
+  {
+    "src": "https://i0.wp.com/storage.vortexscans.org/upload/series/featured/lxJf4GmfzvG3XexqIAuF8KOjIGtbS5BK/fec0baf7-238b-4475-9a66-2cf02024bd99.jpg?w=400&quality=85&strip=all&ssl=1",
+    "srcset": "",
+    "alt": "Cover of The Great Heavenly Demon Sovereign",
+    "width": "405",
+    "height": "595",
+    "loading": "lazy",
+    "class": "shared-slider-style-1__cover-image object-cover object-center h-[260px] rounded-[10px]"
+  },
+  {
+    "src": "/theme/flags/manhwa.png",
+    "srcset": "",
+    "alt": "MANHWA",
+    "width": "250",
+    "height": "167",
+    "loading": "lazy",
+    "class": "h-4 w-6 rounded-[3px] object-contain"
+  },
+  {
+    "src": "https://i0.wp.com/storage.vortexscans.org/upload/2025/12/03/074e3b63-301e-4381-ac3c-78be5801d963.webp?w=400&quality=85&strip=all&ssl=1",
+    "srcset": "",
+    "alt": "Cover of The Mad Dog of the Duke's Estate",
+    "width": "405",
+    "height": "595",
+    "loading": "lazy",
+    "class": "shared-slider-style-1__cover-image object-cover object-center h-[260px] rounded-[10px]"
+  },
+  {
+    "src": "/theme/flags/manhwa.png",
+    "srcset": "",
+    "alt": "MANHWA",
+    "width": "250",
+    "height": "167",
+    "loading": "lazy",
+    "class": "h-4 w-6 rounded-[3px] object-contain"
+  },
+  {
+    "src": "https://i0.wp.com/storage.vortexscans.org/upload/series/featured/lxJf4GmfzvG3XexqIAuF8KOjIGtbS5BK/5e7efd3a-edc0-4f6c-8be5-0393ea1a560a.jpg?w=400&quality=85&strip=all&ssl=1",
+    "srcset": "",
+    "alt": "Cover of Copying Skills with Affection!",
+    "width": "405",
+    "height": "595",
+    "loading": "lazy",
+    "class": "shared-slider-style-1__cover-image object-cover object-center h-[260px] rounded-[10px]"
+  },
+  {
+    "src": "/theme/flags/manhwa.png",
+    "srcset": "",
+    "alt": "MANHWA",
+    "width": "250",
+    "height": "167",
+    "loading": "lazy",
+    "class": "h-4 w-6 rounded-[3px] object-contain"
+  },
+  {
+    "src": "https://i0.wp.com/storage.vortexscans.org/upload/series/featured/lxJf4GmfzvG3XexqIAuF8KOjIGtbS5BK/a3052083-361b-4102-be97-20cb17149d8f.jpg?w=400&quality=85&strip=all&ssl=1",
+    "srcset": "",
+    "alt": "Cover of Survival Story of a Sword King in a Fantasy World",
+    "width": "405",
+    "height": "595",
+    "loading": "lazy",
+    "class": "shared-slider-style-1__cover-image object-cover object-center h-[260px] rounded-[10px]"
+  },
+  {
+    "src": "/theme/flags/manhwa.png",
+    "srcset": "",
+    "alt": "MANHWA",
+    "width": "250",
+    "height": "167",
+    "loading": "lazy",
+    "class": "h-4 w-6 rounded-[3px] object-contain"
+  },
+  {
+    "src": "https://i0.wp.com/storage.vortexscans.org/upload/2026/03/15/810bbe94-84a4-472d-8790-9b2c9bb02210.webp?w=400&quality=85&strip=all&ssl=1",
+    "srcset": "",
+    "alt": "Cover of A Wimp's Strategy Guide to Conquer the Tower",
+    "width": "405",
+    "height": "595",
+    "loading": "lazy",
+    "class": "shared-slider-style-1__cover-image object-cover object-center h-[260px] rounded-[10px]"
+  },
+  {
+    "src": "/theme/flags/manhwa.png",
+    "srcset": "",
+    "alt": "MANHWA",
+    "width": "250",
+    "height": "167",
+    "loading": "lazy",
+    "class": "h-4 w-6 rounded-[3px] object-contain"
+  },
+  {
+    "src": "https://i0.wp.com/storage.vortexscans.org/upload/series/featured/lxJf4GmfzvG3XexqIAuF8KOjIGtbS5BK/15a39ac0-4d4b-4896-82bd-584597354608.jpg?w=400&quality=85&strip=all&ssl=1",
+    "srcset": "",
+    "alt": "Cover of Reincarnator’s Stream",
+    "width": "405",
+    "height": "595",
+    "loading": "lazy",
+    "class": "shared-slider-style-1__cover-image object-cover object-center h-[260px] rounded-[10px]"
+  },
+  {
+    "src": "/theme/flags/manhwa.png",
+    "srcset": "",
+    "alt": "MANHWA",
+    "width": "250",
+    "height": "167",
+    "loading": "lazy",
+    "class": "h-4 w-6 rounded-[3px] object-contain"
+  },
+  {
+    "src": "https://i0.wp.com/storage.vortexscans.org/upload/series/featured/4/4c4f8eeb-d13e-4019-9a75-329971c57ace.png?w=400&quality=85&strip=all&ssl=1",
+    "srcset": "",
+    "alt": "Cover of The Lord Who Levels Up by Absorbing Powers",
+    "width": "405",
+    "height": "595",
+    "loading": "lazy",
+    "class": "shared-slider-style-1__cover-image object-cover object-center h-[260px] rounded-[10px]"
+  },
+  {
+    "src": "/theme/flags/manhwa.png",
+    "srcset": "",
+    "alt": "MANHWA",
+    "width": "250",
+    "height": "167",
+    "loading": "lazy",
+    "class": "h-4 w-6 rounded-[3px] object-contain"
+  },
+  {
+    "src": "https://i0.wp.com/storage.vortexscans.org/upload/series/featured/lxJf4GmfzvG3XexqIAuF8KOjIGtbS5BK/08a8b9ee-5281-4272-996b-1b9dd5a4cfc0.png?w=300&quality=85&strip=all&ssl=1",
+    "srcset": "",
+    "alt": "The Hero’s Ballad",
+    "width": null,
+    "height": null,
+    "loading": "lazy",
+    "class": "object-cover w-full h-full transition-transform duration-300 hover:scale-105"
+  },
+  {
+    "src": "https://i0.wp.com/storage.vortexscans.org/upload/series/featured/4/4c4f8eeb-d13e-4019-9a75-329971c57ace.png?w=300&quality=85&strip=all&ssl=1",
+    "srcset": "",
+    "alt": "The Lord Who Levels Up by Absorbing Powers",
+    "width": null,
+    "height": null,
+    "loading": "lazy",
+    "class": "object-cover w-full h-full transition-transform duration-300 hover:scale-105"
+  },
+  {
+    "src": "https://i0.wp.com/storage.vortexscans.org/upload/series/featured/4/7f169a14-a7fa-42d5-912a-0863229cfbc0.png?w=300&quality=85&strip=all&ssl=1",
+    "srcset": "",
+    "alt": "Heroes Never Rest",
+    "width": null,
+    "height": null,
+    "loading": "lazy",
+    "class": "object-cover w-full h-full transition-transform duration-300 hover:scale-105"
+  },
+  {
+    "src": "https://i0.wp.com/storage.vortexscans.org/upload/series/featured/lxJf4GmfzvG3XexqIAuF8KOjIGtbS5BK/5e7efd3a-edc0-4f6c-8be5-0393ea1a560a.jpg?w=300&quality=85&strip=all&ssl=1",
+    "srcset": "",
+    "alt": "Copying Skills with Affection!",
+    "width": null,
+    "height": null,
+    "loading": "lazy",
+    "class": "object-cover w-full h-full transition-transform duration-300 hover:scale-105"
+  },
+  {
+    "src": "https://i0.wp.com/storage.vortexscans.org/upload/series/featured/4/58acc130-c652-45c5-94f3-9e413e120a7c.png?w=300&quality=85&strip=all&ssl=1",
+    "srcset": "",
+    "alt": "Got a Gallery in the Wild",
+    "width": null,
+    "height": null,
+    "loading": "lazy",
+    "class": "object-cover w-full h-full transition-transform duration-300 hover:scale-105"
+  },
+  {
+    "src": "https://i0.wp.com/storage.vortexscans.org/upload/series/featured/lxJf4GmfzvG3XexqIAuF8KOjIGtbS5BK/a86ac517-a6b3-4074-acde-d8b67aca463d.jpg?w=300&quality=85&strip=all&ssl=1",
+    "srcset": "",
+    "alt": "Became the Patron of Villains",
+    "width": null,
+    "height": null,
+    "loading": "lazy",
+    "class": "object-cover w-full h-full transition-transform duration-300 hover:scale-105"
+  },
+  {
+    "src": "https://i0.wp.com/storage.vortexscans.org/upload/series/featured/lxJf4GmfzvG3XexqIAuF8KOjIGtbS5BK/ccbe149a-8f67-4c33-a562-457b917ed6c8.jpg?w=300&quality=85&strip=all&ssl=1",
+    "srcset": "",
+    "alt": "Barbarian’s Adventure in a Fantasy World",
+    "width": null,
+    "height": null,
+    "loading": "lazy",
+    "class": "object-cover w-full h-full transition-transform duration-300 hover:scale-105"
+  },
+  {
+    "src": "https://i0.wp.com/storage.vortexscans.org/upload/series/featured/4/94e4781a-a277-4ce1-bcee-c4a50bb89ac5.png?w=300&quality=85&strip=all&ssl=1",
+    "srcset": "",
+    "alt": "Shadow Slave",
+    "width": null,
+    "height": null,
+    "loading": "lazy",
+    "class": "object-cover w-full h-full transition-transform duration-300 hover:scale-105"
+  },
+  {
+    "src": "https://i0.wp.com/storage.vortexscans.org/upload/series/featured/lxJf4GmfzvG3XexqIAuF8KOjIGtbS5BK/b06b011f-579b-49b1-96ea-abe52ff70ccd.png?w=300&quality=85&strip=all&ssl=1",
+    "srcset": "",
+    "alt": "Archmage Curriculum",
+    "width": null,
+    "height": null,
+    "loading": "lazy",
+    "class": "object-cover w-full h-full transition-transform duration-300 hover:scale-105"
+  },
+  {
+    "src": "https://i0.wp.com/storage.vortexscans.org/upload/series/featured/4/670c4415-00e4-4e4d-97cc-b4d6557b5745.png?w=300&quality=85&strip=all&ssl=1",
+    "srcset": "",
+    "alt": "Solo Swordmaster",
+    "width": null,
+    "height": null,
+    "loading": "lazy",
+    "class": "object-cover w-full h-full transition-transform duration-300 hover:scale-105"
+  },
+  {
+    "src": "https://i0.wp.com/storage.vortexscans.org/upload/series/featured/lxJf4GmfzvG3XexqIAuF8KOjIGtbS5BK/d078354b-bfd8-4f2d-b52b-2471e6cf4a5b.png?w=300&quality=85&strip=all&ssl=1",
+    "srcset": "",
+    "alt": "The Academy’s Weapon Copycat",
+    "width": null,
+    "height": null,
+    "loading": "lazy",
+    "class": "object-cover w-full h-full transition-transform duration-300 hover:scale-105"
+  },
+  {
+    "src": "https://i0.wp.com/storage.vortexscans.org/upload/series/featured/lxJf4GmfzvG3XexqIAuF8KOjIGtbS5BK/7cdb5cbb-0d1d-488b-be6d-ca29899855f5.jpg?w=300&quality=85&strip=all&ssl=1",
+    "srcset": "",
+    "alt": "My Girlfriend Returned as a Dragon",
+    "width": null,
+    "height": null,
+    "loading": "lazy",
+    "class": "object-cover w-full h-full transition-transform duration-300 hover:scale-105"
+  },
+  {
+    "src": "https://i0.wp.com/storage.vortexscans.org/upload/series/featured/4/80904857-bcf9-437f-ba9b-78f5ba113798.png?w=300&quality=85&strip=all&ssl=1",
+    "srcset": "",
+    "alt": "The Crimson Dragon Martial Emperor",
+    "width": null,
+    "height": null,
+    "loading": "lazy",
+    "class": "object-cover w-full h-full transition-transform duration-300 hover:scale-105"
+  },
+  {
+    "src": "https://i0.wp.com/storage.vortexscans.org/upload/series/featured/4/dc2785d4-9238-4d77-90a4-99725138f890.png?w=300&quality=85&strip=all&ssl=1",
+    "srcset": "",
+    "alt": "Sovereign of a Hundred Blades: Heir to the Strongest Style",
+    "width": null,
+    "height": null,
+    "loading": "lazy",
+    "class": "object-cover w-full h-full transition-transform duration-300 hover:scale-105"
+  },
+  {
+    "src": "https://i0.wp.com/storage.vortexscans.org/upload/series/featured/lxJf4GmfzvG3XexqIAuF8KOjIGtbS5BK/bddefe46-1f3e-439f-aaf1-a80edcd7d882.png?w=300&quality=85&strip=all&ssl=1",
+    "srcset": "",
+    "alt": "National-Level Big Shots Flock to My Farm",
+    "width": null,
+    "height": null,
+    "loading": "lazy",
+    "class": "object-cover w-full h-full transition-transform duration-300 hover:scale-105"
+  },
+  {
+    "src": "https://i0.wp.com/storage.vortexscans.org/upload/series/featured/4/5c28950b-bd40-42b7-9a37-82f1e62ae323.png?w=300&quality=85&strip=all&ssl=1",
+    "srcset": "",
+    "alt": "I Became the Youngest Martial God",
+    "width": null,
+    "height": null,
+    "loading": "lazy",
+    "class": "object-cover w-full h-full transition-transform duration-300 hover:scale-105"
+  },
+  {
+    "src": "https://i0.wp.com/storage.vortexscans.org/upload/series/featured/lxJf4GmfzvG3XexqIAuF8KOjIGtbS5BK/45bbe898-09bb-4538-b103-da2da149afbc.jpg?w=300&quality=85&strip=all&ssl=1",
+    "srcset": "",
+    "alt": "Spend More, Earn More",
+    "width": null,
+    "height": null,
+    "loading": "lazy",
+    "class": "object-cover w-full h-full transition-transform duration-300 hover:scale-105"
+  },
+  {
+    "src": "https://i0.wp.com/storage.vortexscans.org/upload/series/featured/lxJf4GmfzvG3XexqIAuF8KOjIGtbS5BK/5798564e-9f5f-456b-9bf1-bcf50ec5f047.png?w=300&quality=85&strip=all&ssl=1",
+    "srcset": "",
+    "alt": "The Heavenly Demon’s Apocalypse",
+    "width": null,
+    "height": null,
+    "loading": "lazy",
+    "class": "object-cover w-full h-full transition-transform duration-300 hover:scale-105"
+  },
+  {
+    "src": "https://i0.wp.com/storage.vortexscans.org/upload/2026/03/16/fcf7dbca-168b-4d89-823f-3cc25f360751.webp?w=300&quality=85&strip=all&ssl=1",
+    "srcset": "",
+    "alt": "God of Improvisation",
+    "width": null,
+    "height": null,
+    "loading": "lazy",
+    "class": "object-cover w-full h-full transition-transform duration-300 hover:scale-105"
+  },
+  {
+    "src": "https://i0.wp.com/storage.vortexscans.org/upload/2026/03/18/3850d28c-e5fc-4a24-b1ce-adbb25ec8474.webp?w=300&quality=85&strip=all&ssl=1",
+    "srcset": "",
+    "alt": "Resurrection Boy",
+    "width": null,
+    "height": null,
+    "loading": "lazy",
+    "class": "object-cover w-full h-full transition-transform duration-300 hover:scale-105"
+  },
+  {
+    "src": "https://i0.wp.com/storage.vortexscans.org/upload/series/featured/lxJf4GmfzvG3XexqIAuF8KOjIGtbS5BK/c0b2479e-cbb2-42bc-a19a-645433e092b9.jpg?w=300&quality=85&strip=all&ssl=1",
+    "srcset": "",
+    "alt": "There Is No Great King in My Kingdom",
+    "width": null,
+    "height": null,
+    "loading": "lazy",
+    "class": "object-cover w-full h-full transition-transform duration-300 hover:scale-105"
+  },
+  {
+    "src": "https://i0.wp.com/storage.vortexscans.org/upload/series/featured/lxJf4GmfzvG3XexqIAuF8KOjIGtbS5BK/2de85ab7-7b29-46d5-b1b3-5cad468fddb7.jpg?w=300&quality=85&strip=all&ssl=1",
+    "srcset": "",
+    "alt": "Lumberjack",
+    "width": null,
+    "height": null,
+    "loading": "lazy",
+    "class": "object-cover w-full h-full transition-transform duration-300 hover:scale-105"
+  },
+  {
+    "src": "https://i0.wp.com/storage.vortexscans.org/upload/series/featured/lxJf4GmfzvG3XexqIAuF8KOjIGtbS5BK/fec0baf7-238b-4475-9a66-2cf02024bd99.jpg?w=300&quality=85&strip=all&ssl=1",
+    "srcset": "",
+    "alt": "The Great Heavenly Demon Sovereign",
+    "width": null,
+    "height": null,
+    "loading": "lazy",
+    "class": "object-cover w-full h-full transition-transform duration-300 hover:scale-105"
+  },
+  {
+    "src": "https://i0.wp.com/storage.vortexscans.org/upload/series/featured/lxJf4GmfzvG3XexqIAuF8KOjIGtbS5BK/15a39ac0-4d4b-4896-82bd-584597354608.jpg?w=300&quality=85&strip=all&ssl=1",
+    "srcset": "",
+    "alt": "Reincarnator’s Stream",
+    "width": null,
+    "height": null,
+    "loading": "lazy",
+    "class": "object-cover w-full h-full transition-transform duration-300 hover:scale-105"
+  },
+  {
+    "src": "https://i0.wp.com/storage.vortexscans.org/upload/series/featured/lxJf4GmfzvG3XexqIAuF8KOjIGtbS5BK/aa1582ff-17ff-4f63-bcf0-8f5234fe0db3.jpg?w=300&quality=85&strip=all&ssl=1",
+    "srcset": "",
+    "alt": "Demonic Beast Hunter Survival Guide",
+    "width": null,
+    "height": null,
+    "loading": "lazy",
+    "class": "object-cover w-full h-full transition-transform duration-300 hover:scale-105"
+  },
+  {
+    "src": "https://i0.wp.com/storage.vortexscans.org/upload/series/featured/lxJf4GmfzvG3XexqIAuF8KOjIGtbS5BK/f7926cce-13b7-42dc-bba1-1630bda63a36.jpg?w=300&quality=85&strip=all&ssl=1",
+    "srcset": "",
+    "alt": "I Married the Dragon I Killed",
+    "width": null,
+    "height": null,
+    "loading": "lazy",
+    "class": "object-cover w-full h-full transition-transform duration-300 hover:scale-105"
+  },
+  {
+    "src": "https://i0.wp.com/storage.vortexscans.org/upload/series/featured/lxJf4GmfzvG3XexqIAuF8KOjIGtbS5BK/e1d1ea16-f235-4abe-b6ac-b850ac79e9d7.jpg?w=300&quality=85&strip=all&ssl=1",
+    "srcset": "",
+    "alt": "Reincarnated as the Grand Duke's Third Son",
+    "width": null,
+    "height": null,
+    "loading": "lazy",
+    "class": "object-cover w-full h-full transition-transform duration-300 hover:scale-105"
+  },
+  {
+    "src": "https://i0.wp.com/storage.vortexscans.org/upload/2025/11/20/64f39efb-a8e2-4c15-9c99-61a3bc922078.webp?w=300&quality=85&strip=all&ssl=1",
+    "srcset": "",
+    "alt": "Superhuman’s Gaming Stream",
+    "width": null,
+    "height": null,
+    "loading": "lazy",
+    "class": "object-cover w-full h-full transition-transform duration-300 hover:scale-105"
+  },
+  {
+    "src": "https://i0.wp.com/storage.vortexscans.org/upload/series/featured/4/328ea0e1-5c47-40bd-aeb7-13d7538d74fd.png?w=300&quality=85&strip=all&ssl=1",
+    "srcset": "",
+    "alt": "Absolute Domination at Level 0 Using My Analysis Skill",
+    "width": null,
+    "height": null,
+    "loading": "lazy",
+    "class": "object-cover w-full h-full transition-transform duration-300 hover:scale-105"
+  },
+  {
+    "src": "https://i0.wp.com/storage.vortexscans.org/upload/2026/03/15/810bbe94-84a4-472d-8790-9b2c9bb02210.webp?w=300&quality=85&strip=all&ssl=1",
+    "srcset": "",
+    "alt": "A Wimp's Strategy Guide to Conquer the Tower",
+    "width": null,
+    "height": null,
+    "loading": "lazy",
+    "class": "object-cover w-full h-full transition-transform duration-300 hover:scale-105"
+  },
+  {
+    "src": "https://i0.wp.com/storage.vortexscans.org/upload/series/featured/4/eab9a3ca-f485-46b4-956e-5cfbdff80eff.png?w=300&quality=85&strip=all&ssl=1",
+    "srcset": "",
+    "alt": "The Legendary Hero is an Academy Honors Student",
+    "width": null,
+    "height": null,
+    "loading": "lazy",
+    "class": "object-cover w-full h-full transition-transform duration-300 hover:scale-105"
+  },
+  {
+    "src": "https://i0.wp.com/storage.vortexscans.org/upload/series/featured/751/84ba43fe-fb91-4756-8066-10e33f85f1ae.png?w=300&quality=85&strip=all&ssl=1",
+    "srcset": "",
+    "alt": "Reincarnated as the Youngest Son of a Demon Swordsman Family",
+    "width": null,
+    "height": null,
+    "loading": "lazy",
+    "class": "object-cover w-full h-full transition-transform duration-300 hover:scale-105"
+  },
+  {
+    "src": "https://i0.wp.com/storage.vortexscans.org/upload/series/featured/751/b7bc6c04-f09e-47ea-b21c-421bd2985ff9.jpg?w=300&quality=85&strip=all&ssl=1",
+    "srcset": "",
+    "alt": "I Became the Master of the Weakest Demon King",
+    "width": null,
+    "height": null,
+    "loading": "lazy",
+    "class": "object-cover w-full h-full transition-transform duration-300 hover:scale-105"
+  },
+  {
+    "src": "https://i0.wp.com/storage.vortexscans.org/upload/series/featured/4/0e4535c6-25fa-4b45-8819-a32375461e2f.png?w=300&quality=85&strip=all&ssl=1",
+    "srcset": "",
+    "alt": "A Space Marine Got a Status Window",
+    "width": null,
+    "height": null,
+    "loading": "lazy",
+    "class": "object-cover w-full h-full transition-transform duration-300 hover:scale-105"
+  },
+  {
+    "src": "https://i0.wp.com/storage.vortexscans.org/upload/series/featured/lxJf4GmfzvG3XexqIAuF8KOjIGtbS5BK/5d40c318-9e84-40ca-b6ca-3968502db610.jpg?w=300&quality=85&strip=all&ssl=1",
+    "srcset": "",
+    "alt": "I Was Actually a Third-Generation Chaebol",
+    "width": null,
+    "height": null,
+    "loading": "lazy",
+    "class": "object-cover w-full h-full transition-transform duration-300 hover:scale-105"
+  },
+  {
+    "src": "https://i0.wp.com/storage.vortexscans.org/upload/2025/09/06/a49ca6e8-3fa4-430d-9ae1-c26862e2bcc2.webp?w=300&quality=85&strip=all&ssl=1",
+    "srcset": "",
+    "alt": "Monopolizing All Opportunities",
+    "width": null,
+    "height": null,
+    "loading": "lazy",
+    "class": "object-cover w-full h-full transition-transform duration-300 hover:scale-105"
+  },
+  {
+    "src": "https://storage.vortexscans.org/upload/2026/03/16/4c12bdb0-3f9d-443c-9b24-d7a3958c6d2f.webp",
+    "srcset": "",
+    "alt": "Character from the For beginners collection",
+    "width": "640",
+    "height": "640",
+    "loading": "lazy",
+    "class": "h-full w-full select-none object-cover transition-transform duration-300 group-hover:scale-105"
+  },
+  {
+    "src": "https://storage.vortexscans.org/upload/2026/03/16/68f62090-5f9e-4f28-bcbf-7a216057c8ab.webp",
+    "srcset": "",
+    "alt": "Character from the Top Picks collection",
+    "width": "640",
+    "height": "640",
+    "loading": "lazy",
+    "class": "h-full w-full select-none object-cover transition-transform duration-300 group-hover:scale-105"
+  },
+  {
+    "src": "https://storage.vortexscans.org/upload/2026/03/16/0ed81945-433a-4426-aa3f-4305e29836ae.webp",
+    "srcset": "",
+    "alt": "Character from the Fantasy Worlds collection",
+    "width": "640",
+    "height": "640",
+    "loading": "lazy",
+    "class": "h-full w-full select-none object-cover transition-transform duration-300 group-hover:scale-105"
+  },
+  {
+    "src": "https://storage.vortexscans.org/upload/2026/03/16/0c21c43b-a660-4285-b81f-9a8c7df48a80.webp",
+    "srcset": "",
+    "alt": "Character from the Marathon Reads collection",
+    "width": "640",
+    "height": "640",
+    "loading": "lazy",
+    "class": "h-full w-full select-none object-cover transition-transform duration-300 group-hover:scale-105"
+  },
+  {
+    "src": "https://storage.vortexscans.org/upload/2026/03/16/abb50df4-c462-4d4b-94e0-5c254ad2696e.webp",
+    "srcset": "",
+    "alt": "Character from the Completed Series collection",
+    "width": "640",
+    "height": "640",
+    "loading": "lazy",
+    "class": "h-full w-full select-none object-cover transition-transform duration-300 group-hover:scale-105"
+  },
+  {
+    "src": "https://storage.vortexscans.org/upload/2026/01/16/7b9c7a67-aa8d-4804-b710-83c00cf41dec.webp",
+    "srcset": "",
+    "alt": "Naledi Nkonyeni",
+    "width": "28",
+    "height": "28",
+    "loading": "lazy",
+    "class": "absolute inset-0 h-full w-full object-cover"
+  },
+  {
+    "src": "https://cdn.discordapp.com/avatars/1221780721069330513/83197bec9178cb95870f8288f6c47c62.png",
+    "srcset": "",
+    "alt": "˚ . ೀreign ་༘࿐⋆｡˚",
+    "width": "28",
+    "height": "28",
+    "loading": "lazy",
+    "class": "absolute inset-0 h-full w-full object-cover"
+  },
+  {
+    "src": "https://cdn.discordapp.com/avatars/1221780721069330513/83197bec9178cb95870f8288f6c47c62.png",
+    "srcset": "",
+    "alt": "˚ . ೀreign ་༘࿐⋆｡˚",
+    "width": "28",
+    "height": "28",
+    "loading": "lazy",
+    "class": "absolute inset-0 h-full w-full object-cover"
+  },
+  {
+    "src": "https://storage.vortexscans.org/upload/avatar/id8AWDlLSUjoNaq6iuVp3OqoaUG15tmf/fc7dddce-5d49-428f-8733-a02fb2b2110f.jpeg",
+    "srcset": "",
+    "alt": "Pure Rage",
+    "width": "28",
+    "height": "28",
+    "loading": "lazy",
+    "class": "absolute inset-0 h-full w-full object-cover"
+  },
+  {
+    "src": "https://storage.vortexscans.org/upload/avatar/cmgb0p7bx0003pl0iwpzw9frk/060d1720-b1fb-4be5-b204-6a93ff81f746.jpg",
+    "srcset": "",
+    "alt": "Subwaysurf1",
+    "width": "40",
+    "height": "40",
+    "loading": "lazy",
+    "class": "absolute inset-0 h-full w-full object-cover"
+  },
+  {
+    "src": "https://storage.vortexscans.org/upload/2026/01/12/3afb0731-de67-44da-bbb6-3de0331cc2d1.webp",
+    "srcset": "",
+    "alt": "Nitely",
+    "width": "24",
+    "height": "24",
+    "loading": "lazy",
+    "class": "absolute inset-0 h-full w-full object-cover"
+  },
+  {
+    "src": "https://cdn.discordapp.com/avatars/1080313302623719484/ecec8eeea4cb3d94132edfabb1805d1d.png",
+    "srcset": "",
+    "alt": "MR_VILLIAN",
+    "width": "24",
+    "height": "24",
+    "loading": "lazy",
+    "class": "absolute inset-0 h-full w-full object-cover"
+  },
+  {
+    "src": "https://storage.vortexscans.org/upload/avatar/sG4M6RW86VBZcQlbhCehUyfTGicmMAbi/8b907519-5593-4c3f-a906-4eb5ae8ce5c1.jpg",
+    "srcset": "",
+    "alt": "Shin",
+    "width": "24",
+    "height": "24",
+    "loading": "lazy",
+    "class": "absolute inset-0 h-full w-full object-cover"
+  },
+  {
+    "src": "https://lh3.googleusercontent.com/a/ACg8ocJJk0VIgwB1lc0NOCa1Phho5iX0QjONSt7BdH2ll19QM7SeAg=s96-c",
+    "srcset": "",
+    "alt": "Lyr A",
+    "width": "24",
+    "height": "24",
+    "loading": "lazy",
+    "class": "absolute inset-0 h-full w-full object-cover"
+  },
+  {
+    "src": "https://i0.wp.com/storage.vortexscans.org/upload/series/featured/4/084fbdf3-30a0-4b82-9b52-0220f98b59db.png?w=128&quality=85&strip=all&ssl=1",
+    "srcset": "",
+    "alt": "A Rogue Guard in a Medieval Fantasy",
+    "width": "128",
+    "height": "180",
+    "loading": "lazy",
+    "class": "object-cover rounded-lg lg:rounded-xl w-[60px] lg:w-[72px] min-w-[60px] lg:min-w-[72px] h-[84px] lg:h-[104px] shadow-lg transition-shadow duration-300 group-hover:shadow-[0_0_20px_rgba(255,255,255,0.15)]"
+  },
+  {
+    "src": "https://i0.wp.com/storage.vortexscans.org/upload/series/featured/4/3aa790ec-6d3c-4615-ac02-e765fe455c8d.png?w=128&quality=85&strip=all&ssl=1",
+    "srcset": "",
+    "alt": "The Sword Saint Reincarnated into a Noble Mage Family",
+    "width": "128",
+    "height": "180",
+    "loading": "lazy",
+    "class": "object-cover rounded-lg lg:rounded-xl w-[60px] lg:w-[72px] min-w-[60px] lg:min-w-[72px] h-[84px] lg:h-[104px] shadow-lg transition-shadow duration-300 group-hover:shadow-[0_0_20px_rgba(255,255,255,0.15)]"
+  },
+  {
+    "src": "https://i0.wp.com/storage.vortexscans.org/upload/series/featured/4/085ee983-4a52-4b73-b522-9b9d05a4319b.png?w=128&quality=85&strip=all&ssl=1",
+    "srcset": "",
+    "alt": "The Rebel of the Tyrant Noble Family",
+    "width": "128",
+    "height": "180",
+    "loading": "lazy",
+    "class": "object-cover rounded-lg lg:rounded-xl w-[60px] lg:w-[72px] min-w-[60px] lg:min-w-[72px] h-[84px] lg:h-[104px] shadow-lg transition-shadow duration-300 group-hover:shadow-[0_0_20px_rgba(255,255,255,0.15)]"
+  },
+  {
+    "src": "https://i0.wp.com/storage.vortexscans.org/upload/series/featured/lxJf4GmfzvG3XexqIAuF8KOjIGtbS5BK/08a8b9ee-5281-4272-996b-1b9dd5a4cfc0.png?w=128&quality=85&strip=all&ssl=1",
+    "srcset": "",
+    "alt": "The Hero’s Ballad",
+    "width": "128",
+    "height": "180",
+    "loading": "lazy",
+    "class": "object-cover rounded-lg lg:rounded-xl w-[60px] lg:w-[72px] min-w-[60px] lg:min-w-[72px] h-[84px] lg:h-[104px] shadow-lg transition-shadow duration-300 group-hover:shadow-[0_0_20px_rgba(255,255,255,0.15)]"
+  },
+  {
+    "src": "https://i0.wp.com/storage.vortexscans.org/upload/2026/02/18/b215b6b4-bc58-454b-a824-7df1e17e47e3.webp?w=128&quality=85&strip=all&ssl=1",
+    "srcset": "",
+    "alt": "Reality Quest",
+    "width": "128",
+    "height": "180",
+    "loading": "lazy",
+    "class": "object-cover rounded-lg lg:rounded-xl w-[60px] lg:w-[72px] min-w-[60px] lg:min-w-[72px] h-[84px] lg:h-[104px] shadow-lg transition-shadow duration-300 group-hover:shadow-[0_0_20px_rgba(255,255,255,0.15)]"
+  },
+  {
+    "src": "https://i0.wp.com/storage.vortexscans.org/upload/series/featured/4/fe6cdc11-9b7c-4ee3-a267-b5177bbafdb1.png?w=128&quality=85&strip=all&ssl=1",
+    "srcset": "",
+    "alt": "The Beginning After the End",
+    "width": "128",
+    "height": "180",
+    "loading": "lazy",
+    "class": "object-cover rounded-lg lg:rounded-xl w-[60px] lg:w-[72px] min-w-[60px] lg:min-w-[72px] h-[84px] lg:h-[104px] shadow-lg transition-shadow duration-300 group-hover:shadow-[0_0_20px_rgba(255,255,255,0.15)]"
+  },
+  {
+    "src": "https://i0.wp.com/storage.vortexscans.org/upload/series/featured/4/d6f63312-9876-41e9-a499-afa31d177add.png?w=128&quality=85&strip=all&ssl=1",
+    "srcset": "",
+    "alt": "Contract Killer Enrollment",
+    "width": "128",
+    "height": "180",
+    "loading": "lazy",
+    "class": "object-cover rounded-lg lg:rounded-xl w-[60px] lg:w-[72px] min-w-[60px] lg:min-w-[72px] h-[84px] lg:h-[104px] shadow-lg transition-shadow duration-300 group-hover:shadow-[0_0_20px_rgba(255,255,255,0.15)]"
+  },
+  {
+    "src": "https://i0.wp.com/storage.vortexscans.org/upload/series/featured/4/0e4535c6-25fa-4b45-8819-a32375461e2f.png?w=128&quality=85&strip=all&ssl=1",
+    "srcset": "",
+    "alt": "A Space Marine Got a Status Window",
+    "width": "128",
+    "height": "180",
+    "loading": "lazy",
+    "class": "object-cover rounded-lg lg:rounded-xl w-[60px] lg:w-[72px] min-w-[60px] lg:min-w-[72px] h-[84px] lg:h-[104px] shadow-lg transition-shadow duration-300 group-hover:shadow-[0_0_20px_rgba(255,255,255,0.15)]"
+  },
+  {
+    "src": "https://i0.wp.com/storage.vortexscans.org/upload/2025/06/24/f956e16a-5a34-4839-a9b3-8645a09e6fe6.webp?w=128&quality=85&strip=all&ssl=1",
+    "srcset": "",
+    "alt": "Hardcore Leveling Warrior: Earth Game",
+    "width": "128",
+    "height": "180",
+    "loading": "lazy",
+    "class": "object-cover rounded-lg lg:rounded-xl w-[60px] lg:w-[72px] min-w-[60px] lg:min-w-[72px] h-[84px] lg:h-[104px] shadow-lg transition-shadow duration-300 group-hover:shadow-[0_0_20px_rgba(255,255,255,0.15)]"
+  },
+  {
+    "src": "https://storage.vortexscans.org/upload/settings/logo/cmgwxmqgh0000mj0p26cruyru/2a9fd079-94f5-4463-808b-4ce327ff7639.png",
+    "srcset": "",
+    "alt": "Vortex Scans logo",
+    "width": "360",
+    "height": "128",
+    "loading": "lazy",
+    "class": "h-24 w-auto max-w-[280px] object-contain sm:h-32 sm:max-w-[360px]"
+  },
+  {
+    "src": "https://i0.wp.com/storage.vortexscans.org/upload/settings/logo/cmgwxmqgh0000mj0p26cruyru/2a9fd079-94f5-4463-808b-4ce327ff7639.png?w=112&quality=75&strip=all&ssl=1",
+    "srcset": "",
+    "alt": "Vortex Scans",
+    "width": "40",
+    "height": "40",
+    "loading": "lazy",
+    "class": "object-contain w-14 h-14"
+  }
+]

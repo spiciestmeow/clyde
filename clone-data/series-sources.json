@@ -1,0 +1,4934 @@
+{
+  "0.0000001percent-demon-king": [
+    {
+      "name": "Sample Source A",
+      "url": "https://example.com/?series=0.0000001percent-demon-king&source=a",
+      "isSample": true
+    },
+    {
+      "name": "Sample Source B",
+      "url": "https://example.org/?series=0.0000001percent-demon-king&source=b",
+      "isSample": true
+    }
+  ],
+  "30-years-have-passed-since-the-prologue": [
+    {
+      "name": "Sample Source A",
+      "url": "https://example.com/?series=30-years-have-passed-since-the-prologue&source=a",
+      "isSample": true
+    },
+    {
+      "name": "Sample Source B",
+      "url": "https://example.org/?series=30-years-have-passed-since-the-prologue&source=b",
+      "isSample": true
+    }
+  ],
+  "_schema": [
+    {
+      "name": "Sample Source A",
+      "url": "https://example.com/?series=_schema&source=a",
+      "isSample": true
+    },
+    {
+      "name": "Sample Source B",
+      "url": "https://example.org/?series=_schema&source=b",
+      "isSample": true
+    }
+  ],
+  "a-barbarian-from-the-medieval-era": [
+    {
+      "name": "Sample Source A",
+      "url": "https://example.com/?series=a-barbarian-from-the-medieval-era&source=a",
+      "isSample": true
+    },
+    {
+      "name": "Sample Source B",
+      "url": "https://example.org/?series=a-barbarian-from-the-medieval-era&source=b",
+      "isSample": true
+    }
+  ],
+  "a-blank-slate-regression-for-the-origin-lost-idol": [
+    {
+      "name": "Sample Source A",
+      "url": "https://example.com/?series=a-blank-slate-regression-for-the-origin-lost-idol&source=a",
+      "isSample": true
+    },
+    {
+      "name": "Sample Source B",
+      "url": "https://example.org/?series=a-blank-slate-regression-for-the-origin-lost-idol&source=b",
+      "isSample": true
+    }
+  ],
+  "a-cadet-becomes-a-prophet!": [
+    {
+      "name": "Sample Source A",
+      "url": "https://example.com/?series=a-cadet-becomes-a-prophet!&source=a",
+      "isSample": true
+    },
+    {
+      "name": "Sample Source B",
+      "url": "https://example.org/?series=a-cadet-becomes-a-prophet!&source=b",
+      "isSample": true
+    }
+  ],
+  "a-grimoire-changed-my-fate": [
+    {
+      "name": "Sample Source A",
+      "url": "https://example.com/?series=a-grimoire-changed-my-fate&source=a",
+      "isSample": true
+    },
+    {
+      "name": "Sample Source B",
+      "url": "https://example.org/?series=a-grimoire-changed-my-fate&source=b",
+      "isSample": true
+    }
+  ],
+  "a-mountain-of-corpses-a-sea-of-blood": [
+    {
+      "name": "Sample Source A",
+      "url": "https://example.com/?series=a-mountain-of-corpses-a-sea-of-blood&source=a",
+      "isSample": true
+    },
+    {
+      "name": "Sample Source B",
+      "url": "https://example.org/?series=a-mountain-of-corpses-a-sea-of-blood&source=b",
+      "isSample": true
+    }
+  ],
+  "a-rogue-guard-in-a-medieval-fantasy-pglwl7vt": [
+    {
+      "name": "Sample Source A",
+      "url": "https://example.com/?series=a-rogue-guard-in-a-medieval-fantasy-pglwl7vt&source=a",
+      "isSample": true
+    },
+    {
+      "name": "Sample Source B",
+      "url": "https://example.org/?series=a-rogue-guard-in-a-medieval-fantasy-pglwl7vt&source=b",
+      "isSample": true
+    }
+  ],
+  "a-savage-proposal": [
+    {
+      "name": "Sample Source A",
+      "url": "https://example.com/?series=a-savage-proposal&source=a",
+      "isSample": true
+    },
+    {
+      "name": "Sample Source B",
+      "url": "https://example.org/?series=a-savage-proposal&source=b",
+      "isSample": true
+    }
+  ],
+  "a-space-marine-got-a-status-window": [
+    {
+      "name": "Sample Source A",
+      "url": "https://example.com/?series=a-space-marine-got-a-status-window&source=a",
+      "isSample": true
+    },
+    {
+      "name": "Sample Source B",
+      "url": "https://example.org/?series=a-space-marine-got-a-status-window&source=b",
+      "isSample": true
+    }
+  ],
+  "a-wimp's-strategy-guide-to-conquer-the-tower": [
+    {
+      "name": "Sample Source A",
+      "url": "https://example.com/?series=a-wimp's-strategy-guide-to-conquer-the-tower&source=a",
+      "isSample": true
+    },
+    {
+      "name": "Sample Source B",
+      "url": "https://example.org/?series=a-wimp's-strategy-guide-to-conquer-the-tower&source=b",
+      "isSample": true
+    }
+  ],
+  "absolute-domination": [
+    {
+      "name": "Sample Source A",
+      "url": "https://example.com/?series=absolute-domination&source=a",
+      "isSample": true
+    },
+    {
+      "name": "Sample Source B",
+      "url": "https://example.org/?series=absolute-domination&source=b",
+      "isSample": true
+    }
+  ],
+  "absolute-domination-at-level-0-using-my-analysis-skill": [
+    {
+      "name": "Sample Source A",
+      "url": "https://example.com/?series=absolute-domination-at-level-0-using-my-analysis-skill&source=a",
+      "isSample": true
+    },
+    {
+      "name": "Sample Source B",
+      "url": "https://example.org/?series=absolute-domination-at-level-0-using-my-analysis-skill&source=b",
+      "isSample": true
+    }
+  ],
+  "absolute-dominion-novel": [
+    {
+      "name": "Sample Source A",
+      "url": "https://example.com/?series=absolute-dominion-novel&source=a",
+      "isSample": true
+    },
+    {
+      "name": "Sample Source B",
+      "url": "https://example.org/?series=absolute-dominion-novel&source=b",
+      "isSample": true
+    }
+  ],
+  "afterlife-diner": [
+    {
+      "name": "Sample Source A",
+      "url": "https://example.com/?series=afterlife-diner&source=a",
+      "isSample": true
+    },
+    {
+      "name": "Sample Source B",
+      "url": "https://example.org/?series=afterlife-diner&source=b",
+      "isSample": true
+    }
+  ],
+  "apocalyptic-chef-awakening4": [
+    {
+      "name": "Sample Source A",
+      "url": "https://example.com/?series=apocalyptic-chef-awakening4&source=a",
+      "isSample": true
+    },
+    {
+      "name": "Sample Source B",
+      "url": "https://example.org/?series=apocalyptic-chef-awakening4&source=b",
+      "isSample": true
+    }
+  ],
+  "archmage-curriculum": [
+    {
+      "name": "Sample Source A",
+      "url": "https://example.com/?series=archmage-curriculum&source=a",
+      "isSample": true
+    },
+    {
+      "name": "Sample Source B",
+      "url": "https://example.org/?series=archmage-curriculum&source=b",
+      "isSample": true
+    }
+  ],
+  "archmage-transcending-through-regression": [
+    {
+      "name": "Sample Source A",
+      "url": "https://example.com/?series=archmage-transcending-through-regression&source=a",
+      "isSample": true
+    },
+    {
+      "name": "Sample Source B",
+      "url": "https://example.org/?series=archmage-transcending-through-regression&source=b",
+      "isSample": true
+    }
+  ],
+  "assassin-x-dragon": [
+    {
+      "name": "Sample Source A",
+      "url": "https://example.com/?series=assassin-x-dragon&source=a",
+      "isSample": true
+    },
+    {
+      "name": "Sample Source B",
+      "url": "https://example.org/?series=assassin-x-dragon&source=b",
+      "isSample": true
+    }
+  ],
+  "barbarian's-adventure-in-a-fantasy-world": [
+    {
+      "name": "Sample Source A",
+      "url": "https://example.com/?series=barbarian's-adventure-in-a-fantasy-world&source=a",
+      "isSample": true
+    },
+    {
+      "name": "Sample Source B",
+      "url": "https://example.org/?series=barbarian's-adventure-in-a-fantasy-world&source=b",
+      "isSample": true
+    }
+  ],
+  "became-a-medieval-fantasy-wizard": [
+    {
+      "name": "Sample Source A",
+      "url": "https://example.com/?series=became-a-medieval-fantasy-wizard&source=a",
+      "isSample": true
+    },
+    {
+      "name": "Sample Source B",
+      "url": "https://example.org/?series=became-a-medieval-fantasy-wizard&source=b",
+      "isSample": true
+    }
+  ],
+  "became-the-owner-of-a-poor-estate": [
+    {
+      "name": "Sample Source A",
+      "url": "https://example.com/?series=became-the-owner-of-a-poor-estate&source=a",
+      "isSample": true
+    },
+    {
+      "name": "Sample Source B",
+      "url": "https://example.org/?series=became-the-owner-of-a-poor-estate&source=b",
+      "isSample": true
+    }
+  ],
+  "became-the-patron-of-villains": [
+    {
+      "name": "Sample Source A",
+      "url": "https://example.com/?series=became-the-patron-of-villains&source=a",
+      "isSample": true
+    },
+    {
+      "name": "Sample Source B",
+      "url": "https://example.org/?series=became-the-patron-of-villains&source=b",
+      "isSample": true
+    }
+  ],
+  "became-the-rebel-of-the-necromancer-family": [
+    {
+      "name": "Sample Source A",
+      "url": "https://example.com/?series=became-the-rebel-of-the-necromancer-family&source=a",
+      "isSample": true
+    },
+    {
+      "name": "Sample Source B",
+      "url": "https://example.org/?series=became-the-rebel-of-the-necromancer-family&source=b",
+      "isSample": true
+    }
+  ],
+  "being-pathetic-my-disciples-keep-me-alive-wxuq8iu5": [
+    {
+      "name": "Sample Source A",
+      "url": "https://example.com/?series=being-pathetic-my-disciples-keep-me-alive-wxuq8iu5&source=a",
+      "isSample": true
+    },
+    {
+      "name": "Sample Source B",
+      "url": "https://example.org/?series=being-pathetic-my-disciples-keep-me-alive-wxuq8iu5&source=b",
+      "isSample": true
+    }
+  ],
+  "bill-the-blacksmith": [
+    {
+      "name": "Sample Source A",
+      "url": "https://example.com/?series=bill-the-blacksmith&source=a",
+      "isSample": true
+    },
+    {
+      "name": "Sample Source B",
+      "url": "https://example.org/?series=bill-the-blacksmith&source=b",
+      "isSample": true
+    }
+  ],
+  "bizarre-restaurant": [
+    {
+      "name": "Sample Source A",
+      "url": "https://example.com/?series=bizarre-restaurant&source=a",
+      "isSample": true
+    },
+    {
+      "name": "Sample Source B",
+      "url": "https://example.org/?series=bizarre-restaurant&source=b",
+      "isSample": true
+    }
+  ],
+  "bj-villainess": [
+    {
+      "name": "Sample Source A",
+      "url": "https://example.com/?series=bj-villainess&source=a",
+      "isSample": true
+    },
+    {
+      "name": "Sample Source B",
+      "url": "https://example.org/?series=bj-villainess&source=b",
+      "isSample": true
+    }
+  ],
+  "blade-of-purity:-the-strongest-swordsman-who-pierces-the-darkness": [
+    {
+      "name": "Sample Source A",
+      "url": "https://example.com/?series=blade-of-purity%3A-the-strongest-swordsman-who-pierces-the-darkness&source=a",
+      "isSample": true
+    },
+    {
+      "name": "Sample Source B",
+      "url": "https://example.org/?series=blade-of-purity%3A-the-strongest-swordsman-who-pierces-the-darkness&source=b",
+      "isSample": true
+    }
+  ],
+  "blade-of-retribution": [
+    {
+      "name": "Sample Source A",
+      "url": "https://example.com/?series=blade-of-retribution&source=a",
+      "isSample": true
+    },
+    {
+      "name": "Sample Source B",
+      "url": "https://example.org/?series=blade-of-retribution&source=b",
+      "isSample": true
+    }
+  ],
+  "blood-rain:-zero": [
+    {
+      "name": "Sample Source A",
+      "url": "https://example.com/?series=blood-rain%3A-zero&source=a",
+      "isSample": true
+    },
+    {
+      "name": "Sample Source B",
+      "url": "https://example.org/?series=blood-rain%3A-zero&source=b",
+      "isSample": true
+    }
+  ],
+  "boss-assault": [
+    {
+      "name": "Sample Source A",
+      "url": "https://example.com/?series=boss-assault&source=a",
+      "isSample": true
+    },
+    {
+      "name": "Sample Source B",
+      "url": "https://example.org/?series=boss-assault&source=b",
+      "isSample": true
+    }
+  ],
+  "breakers": [
+    {
+      "name": "Sample Source A",
+      "url": "https://example.com/?series=breakers&source=a",
+      "isSample": true
+    },
+    {
+      "name": "Sample Source B",
+      "url": "https://example.org/?series=breakers&source=b",
+      "isSample": true
+    }
+  ],
+  "chronicles-of-the-demon-slaying-cultivator": [
+    {
+      "name": "Sample Source A",
+      "url": "https://example.com/?series=chronicles-of-the-demon-slaying-cultivator&source=a",
+      "isSample": true
+    },
+    {
+      "name": "Sample Source B",
+      "url": "https://example.org/?series=chronicles-of-the-demon-slaying-cultivator&source=b",
+      "isSample": true
+    }
+  ],
+  "chronicles-of-the-lazy-sovereign": [
+    {
+      "name": "Sample Source A",
+      "url": "https://example.com/?series=chronicles-of-the-lazy-sovereign&source=a",
+      "isSample": true
+    },
+    {
+      "name": "Sample Source B",
+      "url": "https://example.org/?series=chronicles-of-the-lazy-sovereign&source=b",
+      "isSample": true
+    }
+  ],
+  "chronicles-of-the-moonlit-night": [
+    {
+      "name": "Sample Source A",
+      "url": "https://example.com/?series=chronicles-of-the-moonlit-night&source=a",
+      "isSample": true
+    },
+    {
+      "name": "Sample Source B",
+      "url": "https://example.org/?series=chronicles-of-the-moonlit-night&source=b",
+      "isSample": true
+    }
+  ],
+  "chronicles-of-the-tang-sect": [
+    {
+      "name": "Sample Source A",
+      "url": "https://example.com/?series=chronicles-of-the-tang-sect&source=a",
+      "isSample": true
+    },
+    {
+      "name": "Sample Source B",
+      "url": "https://example.org/?series=chronicles-of-the-tang-sect&source=b",
+      "isSample": true
+    }
+  ],
+  "chrono-labyrinth": [
+    {
+      "name": "Sample Source A",
+      "url": "https://example.com/?series=chrono-labyrinth&source=a",
+      "isSample": true
+    },
+    {
+      "name": "Sample Source B",
+      "url": "https://example.org/?series=chrono-labyrinth&source=b",
+      "isSample": true
+    }
+  ],
+  "contract-killer-enrollment": [
+    {
+      "name": "Sample Source A",
+      "url": "https://example.com/?series=contract-killer-enrollment&source=a",
+      "isSample": true
+    },
+    {
+      "name": "Sample Source B",
+      "url": "https://example.org/?series=contract-killer-enrollment&source=b",
+      "isSample": true
+    }
+  ],
+  "copycat": [
+    {
+      "name": "Sample Source A",
+      "url": "https://example.com/?series=copycat&source=a",
+      "isSample": true
+    },
+    {
+      "name": "Sample Source B",
+      "url": "https://example.org/?series=copycat&source=b",
+      "isSample": true
+    }
+  ],
+  "copying-skills-with-affection": [
+    {
+      "name": "Sample Source A",
+      "url": "https://example.com/?series=copying-skills-with-affection&source=a",
+      "isSample": true
+    },
+    {
+      "name": "Sample Source B",
+      "url": "https://example.org/?series=copying-skills-with-affection&source=b",
+      "isSample": true
+    }
+  ],
+  "crimson-reset": [
+    {
+      "name": "Sample Source A",
+      "url": "https://example.com/?series=crimson-reset&source=a",
+      "isSample": true
+    },
+    {
+      "name": "Sample Source B",
+      "url": "https://example.org/?series=crimson-reset&source=b",
+      "isSample": true
+    }
+  ],
+  "crimson-reset-novel": [
+    {
+      "name": "Sample Source A",
+      "url": "https://example.com/?series=crimson-reset-novel&source=a",
+      "isSample": true
+    },
+    {
+      "name": "Sample Source B",
+      "url": "https://example.org/?series=crimson-reset-novel&source=b",
+      "isSample": true
+    }
+  ],
+  "crimson-yaksha": [
+    {
+      "name": "Sample Source A",
+      "url": "https://example.com/?series=crimson-yaksha&source=a",
+      "isSample": true
+    },
+    {
+      "name": "Sample Source B",
+      "url": "https://example.org/?series=crimson-yaksha&source=b",
+      "isSample": true
+    }
+  ],
+  "cry-or-better-yet-beg-6bme3wfa": [
+    {
+      "name": "Sample Source A",
+      "url": "https://example.com/?series=cry-or-better-yet-beg-6bme3wfa&source=a",
+      "isSample": true
+    },
+    {
+      "name": "Sample Source B",
+      "url": "https://example.org/?series=cry-or-better-yet-beg-6bme3wfa&source=b",
+      "isSample": true
+    }
+  ],
+  "dao-of-the-bizarre-immortal": [
+    {
+      "name": "Sample Source A",
+      "url": "https://example.com/?series=dao-of-the-bizarre-immortal&source=a",
+      "isSample": true
+    },
+    {
+      "name": "Sample Source B",
+      "url": "https://example.org/?series=dao-of-the-bizarre-immortal&source=b",
+      "isSample": true
+    }
+  ],
+  "dark-and-light-martial-emperor-2s05gnoa": [
+    {
+      "name": "Sample Source A",
+      "url": "https://example.com/?series=dark-and-light-martial-emperor-2s05gnoa&source=a",
+      "isSample": true
+    },
+    {
+      "name": "Sample Source B",
+      "url": "https://example.org/?series=dark-and-light-martial-emperor-2s05gnoa&source=b",
+      "isSample": true
+    }
+  ],
+  "deadly-enterprise": [
+    {
+      "name": "Sample Source A",
+      "url": "https://example.com/?series=deadly-enterprise&source=a",
+      "isSample": true
+    },
+    {
+      "name": "Sample Source B",
+      "url": "https://example.org/?series=deadly-enterprise&source=b",
+      "isSample": true
+    }
+  ],
+  "death-penalty": [
+    {
+      "name": "Sample Source A",
+      "url": "https://example.com/?series=death-penalty&source=a",
+      "isSample": true
+    },
+    {
+      "name": "Sample Source B",
+      "url": "https://example.org/?series=death-penalty&source=b",
+      "isSample": true
+    }
+  ],
+  "debuff-master-xv9ezmey": [
+    {
+      "name": "Sample Source A",
+      "url": "https://example.com/?series=debuff-master-xv9ezmey&source=a",
+      "isSample": true
+    },
+    {
+      "name": "Sample Source B",
+      "url": "https://example.org/?series=debuff-master-xv9ezmey&source=b",
+      "isSample": true
+    }
+  ],
+  "debut-or-die": [
+    {
+      "name": "Sample Source A",
+      "url": "https://example.com/?series=debut-or-die&source=a",
+      "isSample": true
+    },
+    {
+      "name": "Sample Source B",
+      "url": "https://example.org/?series=debut-or-die&source=b",
+      "isSample": true
+    }
+  ],
+  "demonic-beast-hunter-survival-guide": [
+    {
+      "name": "Sample Source A",
+      "url": "https://example.com/?series=demonic-beast-hunter-survival-guide&source=a",
+      "isSample": true
+    },
+    {
+      "name": "Sample Source B",
+      "url": "https://example.org/?series=demonic-beast-hunter-survival-guide&source=b",
+      "isSample": true
+    }
+  ],
+  "demonic-frontline:-the-thirteenth-flying-dragon-novel": [
+    {
+      "name": "Sample Source A",
+      "url": "https://example.com/?series=demonic-frontline%3A-the-thirteenth-flying-dragon-novel&source=a",
+      "isSample": true
+    },
+    {
+      "name": "Sample Source B",
+      "url": "https://example.org/?series=demonic-frontline%3A-the-thirteenth-flying-dragon-novel&source=b",
+      "isSample": true
+    }
+  ],
+  "devil-and-ice": [
+    {
+      "name": "Sample Source A",
+      "url": "https://example.com/?series=devil-and-ice&source=a",
+      "isSample": true
+    },
+    {
+      "name": "Sample Source B",
+      "url": "https://example.org/?series=devil-and-ice&source=b",
+      "isSample": true
+    }
+  ],
+  "divine-delivery": [
+    {
+      "name": "Sample Source A",
+      "url": "https://example.com/?series=divine-delivery&source=a",
+      "isSample": true
+    },
+    {
+      "name": "Sample Source B",
+      "url": "https://example.org/?series=divine-delivery&source=b",
+      "isSample": true
+    }
+  ],
+  "dog-eat-dog": [
+    {
+      "name": "Sample Source A",
+      "url": "https://example.com/?series=dog-eat-dog&source=a",
+      "isSample": true
+    },
+    {
+      "name": "Sample Source B",
+      "url": "https://example.org/?series=dog-eat-dog&source=b",
+      "isSample": true
+    }
+  ],
+  "doomsday-weapon": [
+    {
+      "name": "Sample Source A",
+      "url": "https://example.com/?series=doomsday-weapon&source=a",
+      "isSample": true
+    },
+    {
+      "name": "Sample Source B",
+      "url": "https://example.org/?series=doomsday-weapon&source=b",
+      "isSample": true
+    }
+  ],
+  "double-click": [
+    {
+      "name": "Sample Source A",
+      "url": "https://example.com/?series=double-click&source=a",
+      "isSample": true
+    },
+    {
+      "name": "Sample Source B",
+      "url": "https://example.org/?series=double-click&source=b",
+      "isSample": true
+    }
+  ],
+  "duchess-in-ruins": [
+    {
+      "name": "Sample Source A",
+      "url": "https://example.com/?series=duchess-in-ruins&source=a",
+      "isSample": true
+    },
+    {
+      "name": "Sample Source B",
+      "url": "https://example.org/?series=duchess-in-ruins&source=b",
+      "isSample": true
+    }
+  ],
+  "eat-before-you-go": [
+    {
+      "name": "Sample Source A",
+      "url": "https://example.com/?series=eat-before-you-go&source=a",
+      "isSample": true
+    },
+    {
+      "name": "Sample Source B",
+      "url": "https://example.org/?series=eat-before-you-go&source=b",
+      "isSample": true
+    }
+  ],
+  "emperor-of-solo-play": [
+    {
+      "name": "Sample Source A",
+      "url": "https://example.com/?series=emperor-of-solo-play&source=a",
+      "isSample": true
+    },
+    {
+      "name": "Sample Source B",
+      "url": "https://example.org/?series=emperor-of-solo-play&source=b",
+      "isSample": true
+    }
+  ],
+  "empress-maria": [
+    {
+      "name": "Sample Source A",
+      "url": "https://example.com/?series=empress-maria&source=a",
+      "isSample": true
+    },
+    {
+      "name": "Sample Source B",
+      "url": "https://example.org/?series=empress-maria&source=b",
+      "isSample": true
+    }
+  ],
+  "erika:-my-friend-is-obsessed-with-me": [
+    {
+      "name": "Sample Source A",
+      "url": "https://example.com/?series=erika%3A-my-friend-is-obsessed-with-me&source=a",
+      "isSample": true
+    },
+    {
+      "name": "Sample Source B",
+      "url": "https://example.org/?series=erika%3A-my-friend-is-obsessed-with-me&source=b",
+      "isSample": true
+    }
+  ],
+  "error:-the-echo": [
+    {
+      "name": "Sample Source A",
+      "url": "https://example.com/?series=error%3A-the-echo&source=a",
+      "isSample": true
+    },
+    {
+      "name": "Sample Source B",
+      "url": "https://example.org/?series=error%3A-the-echo&source=b",
+      "isSample": true
+    }
+  ],
+  "evolution-road-to-space-monster-m3jhpw3j": [
+    {
+      "name": "Sample Source A",
+      "url": "https://example.com/?series=evolution-road-to-space-monster-m3jhpw3j&source=a",
+      "isSample": true
+    },
+    {
+      "name": "Sample Source B",
+      "url": "https://example.org/?series=evolution-road-to-space-monster-m3jhpw3j&source=b",
+      "isSample": true
+    }
+  ],
+  "expelled-hero-is-too-strong-o68wuqjx": [
+    {
+      "name": "Sample Source A",
+      "url": "https://example.com/?series=expelled-hero-is-too-strong-o68wuqjx&source=a",
+      "isSample": true
+    },
+    {
+      "name": "Sample Source B",
+      "url": "https://example.org/?series=expelled-hero-is-too-strong-o68wuqjx&source=b",
+      "isSample": true
+    }
+  ],
+  "extra-of-a-crazy-world": [
+    {
+      "name": "Sample Source A",
+      "url": "https://example.com/?series=extra-of-a-crazy-world&source=a",
+      "isSample": true
+    },
+    {
+      "name": "Sample Source B",
+      "url": "https://example.org/?series=extra-of-a-crazy-world&source=b",
+      "isSample": true
+    }
+  ],
+  "fantasy-induction-corps": [
+    {
+      "name": "Sample Source A",
+      "url": "https://example.com/?series=fantasy-induction-corps&source=a",
+      "isSample": true
+    },
+    {
+      "name": "Sample Source B",
+      "url": "https://example.org/?series=fantasy-induction-corps&source=b",
+      "isSample": true
+    }
+  ],
+  "feasting-lord-in-another-world": [
+    {
+      "name": "Sample Source A",
+      "url": "https://example.com/?series=feasting-lord-in-another-world&source=a",
+      "isSample": true
+    },
+    {
+      "name": "Sample Source B",
+      "url": "https://example.org/?series=feasting-lord-in-another-world&source=b",
+      "isSample": true
+    }
+  ],
+  "feeding-the-lives-of-failing-idols": [
+    {
+      "name": "Sample Source A",
+      "url": "https://example.com/?series=feeding-the-lives-of-failing-idols&source=a",
+      "isSample": true
+    },
+    {
+      "name": "Sample Source B",
+      "url": "https://example.org/?series=feeding-the-lives-of-failing-idols&source=b",
+      "isSample": true
+    }
+  ],
+  "fighting-is-too-easy": [
+    {
+      "name": "Sample Source A",
+      "url": "https://example.com/?series=fighting-is-too-easy&source=a",
+      "isSample": true
+    },
+    {
+      "name": "Sample Source B",
+      "url": "https://example.org/?series=fighting-is-too-easy&source=b",
+      "isSample": true
+    }
+  ],
+  "fighting-monsters-with-monsters": [
+    {
+      "name": "Sample Source A",
+      "url": "https://example.com/?series=fighting-monsters-with-monsters&source=a",
+      "isSample": true
+    },
+    {
+      "name": "Sample Source B",
+      "url": "https://example.org/?series=fighting-monsters-with-monsters&source=b",
+      "isSample": true
+    }
+  ],
+  "first-senior-disciple-lee-hwi": [
+    {
+      "name": "Sample Source A",
+      "url": "https://example.com/?series=first-senior-disciple-lee-hwi&source=a",
+      "isSample": true
+    },
+    {
+      "name": "Sample Source B",
+      "url": "https://example.org/?series=first-senior-disciple-lee-hwi&source=b",
+      "isSample": true
+    }
+  ],
+  "gachiakuta": [
+    {
+      "name": "Sample Source A",
+      "url": "https://example.com/?series=gachiakuta&source=a",
+      "isSample": true
+    },
+    {
+      "name": "Sample Source B",
+      "url": "https://example.org/?series=gachiakuta&source=b",
+      "isSample": true
+    }
+  ],
+  "garden-of-may": [
+    {
+      "name": "Sample Source A",
+      "url": "https://example.com/?series=garden-of-may&source=a",
+      "isSample": true
+    },
+    {
+      "name": "Sample Source B",
+      "url": "https://example.org/?series=garden-of-may&source=b",
+      "isSample": true
+    }
+  ],
+  "genesis-of-the-battle-god": [
+    {
+      "name": "Sample Source A",
+      "url": "https://example.com/?series=genesis-of-the-battle-god&source=a",
+      "isSample": true
+    },
+    {
+      "name": "Sample Source B",
+      "url": "https://example.org/?series=genesis-of-the-battle-god&source=b",
+      "isSample": true
+    }
+  ],
+  "ghost-hammer": [
+    {
+      "name": "Sample Source A",
+      "url": "https://example.com/?series=ghost-hammer&source=a",
+      "isSample": true
+    },
+    {
+      "name": "Sample Source B",
+      "url": "https://example.org/?series=ghost-hammer&source=b",
+      "isSample": true
+    }
+  ],
+  "ghost-story-club-(remake)": [
+    {
+      "name": "Sample Source A",
+      "url": "https://example.com/?series=ghost-story-club-(remake)&source=a",
+      "isSample": true
+    },
+    {
+      "name": "Sample Source B",
+      "url": "https://example.org/?series=ghost-story-club-(remake)&source=b",
+      "isSample": true
+    }
+  ],
+  "goblin-corporation": [
+    {
+      "name": "Sample Source A",
+      "url": "https://example.com/?series=goblin-corporation&source=a",
+      "isSample": true
+    },
+    {
+      "name": "Sample Source B",
+      "url": "https://example.org/?series=goblin-corporation&source=b",
+      "isSample": true
+    }
+  ],
+  "god-of-improvisation": [
+    {
+      "name": "Sample Source A",
+      "url": "https://example.com/?series=god-of-improvisation&source=a",
+      "isSample": true
+    },
+    {
+      "name": "Sample Source B",
+      "url": "https://example.org/?series=god-of-improvisation&source=b",
+      "isSample": true
+    }
+  ],
+  "god-slaying-copycat": [
+    {
+      "name": "Sample Source A",
+      "url": "https://example.com/?series=god-slaying-copycat&source=a",
+      "isSample": true
+    },
+    {
+      "name": "Sample Source B",
+      "url": "https://example.org/?series=god-slaying-copycat&source=b",
+      "isSample": true
+    }
+  ],
+  "golden-martial-god": [
+    {
+      "name": "Sample Source A",
+      "url": "https://example.com/?series=golden-martial-god&source=a",
+      "isSample": true
+    },
+    {
+      "name": "Sample Source B",
+      "url": "https://example.org/?series=golden-martial-god&source=b",
+      "isSample": true
+    }
+  ],
+  "got-a-gallery-in-the-wild": [
+    {
+      "name": "Sample Source A",
+      "url": "https://example.com/?series=got-a-gallery-in-the-wild&source=a",
+      "isSample": true
+    },
+    {
+      "name": "Sample Source B",
+      "url": "https://example.org/?series=got-a-gallery-in-the-wild&source=b",
+      "isSample": true
+    }
+  ],
+  "got-dropped-into-a-ghost-story-still-gotta-work": [
+    {
+      "name": "Sample Source A",
+      "url": "https://example.com/?series=got-dropped-into-a-ghost-story-still-gotta-work&source=a",
+      "isSample": true
+    },
+    {
+      "name": "Sample Source B",
+      "url": "https://example.org/?series=got-dropped-into-a-ghost-story-still-gotta-work&source=b",
+      "isSample": true
+    }
+  ],
+  "grand-maison-paris:-zero": [
+    {
+      "name": "Sample Source A",
+      "url": "https://example.com/?series=grand-maison-paris%3A-zero&source=a",
+      "isSample": true
+    },
+    {
+      "name": "Sample Source B",
+      "url": "https://example.org/?series=grand-maison-paris%3A-zero&source=b",
+      "isSample": true
+    }
+  ],
+  "half-blood": [
+    {
+      "name": "Sample Source A",
+      "url": "https://example.com/?series=half-blood&source=a",
+      "isSample": true
+    },
+    {
+      "name": "Sample Source B",
+      "url": "https://example.org/?series=half-blood&source=b",
+      "isSample": true
+    }
+  ],
+  "hardcore-leveling-warrior": [
+    {
+      "name": "Sample Source A",
+      "url": "https://example.com/?series=hardcore-leveling-warrior&source=a",
+      "isSample": true
+    },
+    {
+      "name": "Sample Source B",
+      "url": "https://example.org/?series=hardcore-leveling-warrior&source=b",
+      "isSample": true
+    }
+  ],
+  "hardcore-leveling-warrior:-earth-game": [
+    {
+      "name": "Sample Source A",
+      "url": "https://example.com/?series=hardcore-leveling-warrior%3A-earth-game&source=a",
+      "isSample": true
+    },
+    {
+      "name": "Sample Source B",
+      "url": "https://example.org/?series=hardcore-leveling-warrior%3A-earth-game&source=b",
+      "isSample": true
+    }
+  ],
+  "hardcore-leveling-warrior:-world-of-tanks": [
+    {
+      "name": "Sample Source A",
+      "url": "https://example.com/?series=hardcore-leveling-warrior%3A-world-of-tanks&source=a",
+      "isSample": true
+    },
+    {
+      "name": "Sample Source B",
+      "url": "https://example.org/?series=hardcore-leveling-warrior%3A-world-of-tanks&source=b",
+      "isSample": true
+    }
+  ],
+  "healing-agency": [
+    {
+      "name": "Sample Source A",
+      "url": "https://example.com/?series=healing-agency&source=a",
+      "isSample": true
+    },
+    {
+      "name": "Sample Source B",
+      "url": "https://example.org/?series=healing-agency&source=b",
+      "isSample": true
+    }
+  ],
+  "heavenly-demon-reborn!": [
+    {
+      "name": "Sample Source A",
+      "url": "https://example.com/?series=heavenly-demon-reborn!&source=a",
+      "isSample": true
+    },
+    {
+      "name": "Sample Source B",
+      "url": "https://example.org/?series=heavenly-demon-reborn!&source=b",
+      "isSample": true
+    }
+  ],
+  "hellogin": [
+    {
+      "name": "Sample Source A",
+      "url": "https://example.com/?series=hellogin&source=a",
+      "isSample": true
+    },
+    {
+      "name": "Sample Source B",
+      "url": "https://example.org/?series=hellogin&source=b",
+      "isSample": true
+    }
+  ],
+  "heroes-never-rest": [
+    {
+      "name": "Sample Source A",
+      "url": "https://example.com/?series=heroes-never-rest&source=a",
+      "isSample": true
+    },
+    {
+      "name": "Sample Source B",
+      "url": "https://example.org/?series=heroes-never-rest&source=b",
+      "isSample": true
+    }
+  ],
+  "hiding-out-in-an-apocalypse": [
+    {
+      "name": "Sample Source A",
+      "url": "https://example.com/?series=hiding-out-in-an-apocalypse&source=a",
+      "isSample": true
+    },
+    {
+      "name": "Sample Source B",
+      "url": "https://example.org/?series=hiding-out-in-an-apocalypse&source=b",
+      "isSample": true
+    }
+  ],
+  "how-a-cyberpunk-fixer-survives": [
+    {
+      "name": "Sample Source A",
+      "url": "https://example.com/?series=how-a-cyberpunk-fixer-survives&source=a",
+      "isSample": true
+    },
+    {
+      "name": "Sample Source B",
+      "url": "https://example.org/?series=how-a-cyberpunk-fixer-survives&source=b",
+      "isSample": true
+    }
+  ],
+  "how-to-be-a-dark-heros-daughter": [
+    {
+      "name": "Sample Source A",
+      "url": "https://example.com/?series=how-to-be-a-dark-heros-daughter&source=a",
+      "isSample": true
+    },
+    {
+      "name": "Sample Source B",
+      "url": "https://example.org/?series=how-to-be-a-dark-heros-daughter&source=b",
+      "isSample": true
+    }
+  ],
+  "how-to-reject-my-obsessive-ex-husband": [
+    {
+      "name": "Sample Source A",
+      "url": "https://example.com/?series=how-to-reject-my-obsessive-ex-husband&source=a",
+      "isSample": true
+    },
+    {
+      "name": "Sample Source B",
+      "url": "https://example.org/?series=how-to-reject-my-obsessive-ex-husband&source=b",
+      "isSample": true
+    }
+  ],
+  "how-to-survive-restructuring": [
+    {
+      "name": "Sample Source A",
+      "url": "https://example.com/?series=how-to-survive-restructuring&source=a",
+      "isSample": true
+    },
+    {
+      "name": "Sample Source B",
+      "url": "https://example.org/?series=how-to-survive-restructuring&source=b",
+      "isSample": true
+    }
+  ],
+  "i-am-in-the-same-class-as-the-crazy-male-leads": [
+    {
+      "name": "Sample Source A",
+      "url": "https://example.com/?series=i-am-in-the-same-class-as-the-crazy-male-leads&source=a",
+      "isSample": true
+    },
+    {
+      "name": "Sample Source B",
+      "url": "https://example.org/?series=i-am-in-the-same-class-as-the-crazy-male-leads&source=b",
+      "isSample": true
+    }
+  ],
+  "i-am-the-strongest-awakener": [
+    {
+      "name": "Sample Source A",
+      "url": "https://example.com/?series=i-am-the-strongest-awakener&source=a",
+      "isSample": true
+    },
+    {
+      "name": "Sample Source B",
+      "url": "https://example.org/?series=i-am-the-strongest-awakener&source=b",
+      "isSample": true
+    }
+  ],
+  "i-became-a-childhood-friend-of-a-mid-level-boss": [
+    {
+      "name": "Sample Source A",
+      "url": "https://example.com/?series=i-became-a-childhood-friend-of-a-mid-level-boss&source=a",
+      "isSample": true
+    },
+    {
+      "name": "Sample Source B",
+      "url": "https://example.org/?series=i-became-a-childhood-friend-of-a-mid-level-boss&source=b",
+      "isSample": true
+    }
+  ],
+  "i-became-a-married-man-in-another-world": [
+    {
+      "name": "Sample Source A",
+      "url": "https://example.com/?series=i-became-a-married-man-in-another-world&source=a",
+      "isSample": true
+    },
+    {
+      "name": "Sample Source B",
+      "url": "https://example.org/?series=i-became-a-married-man-in-another-world&source=b",
+      "isSample": true
+    }
+  ],
+  "i-became-a-munchkin-skill-thief": [
+    {
+      "name": "Sample Source A",
+      "url": "https://example.com/?series=i-became-a-munchkin-skill-thief&source=a",
+      "isSample": true
+    },
+    {
+      "name": "Sample Source B",
+      "url": "https://example.org/?series=i-became-a-munchkin-skill-thief&source=b",
+      "isSample": true
+    }
+  ],
+  "i-became-a-transcendent-hunter-with-100000x-exp": [
+    {
+      "name": "Sample Source A",
+      "url": "https://example.com/?series=i-became-a-transcendent-hunter-with-100000x-exp&source=a",
+      "isSample": true
+    },
+    {
+      "name": "Sample Source B",
+      "url": "https://example.org/?series=i-became-a-transcendent-hunter-with-100000x-exp&source=b",
+      "isSample": true
+    }
+  ],
+  "i-became-the-berserker-of-the-world-i-created": [
+    {
+      "name": "Sample Source A",
+      "url": "https://example.com/?series=i-became-the-berserker-of-the-world-i-created&source=a",
+      "isSample": true
+    },
+    {
+      "name": "Sample Source B",
+      "url": "https://example.org/?series=i-became-the-berserker-of-the-world-i-created&source=b",
+      "isSample": true
+    }
+  ],
+  "i-became-the-genius-bastard-of-a-noble-dark-clan": [
+    {
+      "name": "Sample Source A",
+      "url": "https://example.com/?series=i-became-the-genius-bastard-of-a-noble-dark-clan&source=a",
+      "isSample": true
+    },
+    {
+      "name": "Sample Source B",
+      "url": "https://example.org/?series=i-became-the-genius-bastard-of-a-noble-dark-clan&source=b",
+      "isSample": true
+    }
+  ],
+  "i-became-the-king-by-scavenging-qcp113bh": [
+    {
+      "name": "Sample Source A",
+      "url": "https://example.com/?series=i-became-the-king-by-scavenging-qcp113bh&source=a",
+      "isSample": true
+    },
+    {
+      "name": "Sample Source B",
+      "url": "https://example.org/?series=i-became-the-king-by-scavenging-qcp113bh&source=b",
+      "isSample": true
+    }
+  ],
+  "i-became-the-leader-of-a-doomed-girl-group": [
+    {
+      "name": "Sample Source A",
+      "url": "https://example.com/?series=i-became-the-leader-of-a-doomed-girl-group&source=a",
+      "isSample": true
+    },
+    {
+      "name": "Sample Source B",
+      "url": "https://example.org/?series=i-became-the-leader-of-a-doomed-girl-group&source=b",
+      "isSample": true
+    }
+  ],
+  "i-became-the-master-of-the-weakest-demon-king": [
+    {
+      "name": "Sample Source A",
+      "url": "https://example.com/?series=i-became-the-master-of-the-weakest-demon-king&source=a",
+      "isSample": true
+    },
+    {
+      "name": "Sample Source B",
+      "url": "https://example.org/?series=i-became-the-master-of-the-weakest-demon-king&source=b",
+      "isSample": true
+    }
+  ],
+  "i-became-the-rogue-first-prince": [
+    {
+      "name": "Sample Source A",
+      "url": "https://example.com/?series=i-became-the-rogue-first-prince&source=a",
+      "isSample": true
+    },
+    {
+      "name": "Sample Source B",
+      "url": "https://example.org/?series=i-became-the-rogue-first-prince&source=b",
+      "isSample": true
+    }
+  ],
+  "i-became-the-scoundrel-of-the-cheon-family": [
+    {
+      "name": "Sample Source A",
+      "url": "https://example.com/?series=i-became-the-scoundrel-of-the-cheon-family&source=a",
+      "isSample": true
+    },
+    {
+      "name": "Sample Source B",
+      "url": "https://example.org/?series=i-became-the-scoundrel-of-the-cheon-family&source=b",
+      "isSample": true
+    }
+  ],
+  "i-became-the-tyrant-of-a-defense-game-gkw8b435": [
+    {
+      "name": "Sample Source A",
+      "url": "https://example.com/?series=i-became-the-tyrant-of-a-defense-game-gkw8b435&source=a",
+      "isSample": true
+    },
+    {
+      "name": "Sample Source B",
+      "url": "https://example.org/?series=i-became-the-tyrant-of-a-defense-game-gkw8b435&source=b",
+      "isSample": true
+    }
+  ],
+  "i-became-the-youngest-martial-god": [
+    {
+      "name": "Sample Source A",
+      "url": "https://example.com/?series=i-became-the-youngest-martial-god&source=a",
+      "isSample": true
+    },
+    {
+      "name": "Sample Source B",
+      "url": "https://example.org/?series=i-became-the-youngest-martial-god&source=b",
+      "isSample": true
+    }
+  ],
+  "i-kidnapped-the-youngest-daughter-of-the-sichuan-tang-clan": [
+    {
+      "name": "Sample Source A",
+      "url": "https://example.com/?series=i-kidnapped-the-youngest-daughter-of-the-sichuan-tang-clan&source=a",
+      "isSample": true
+    },
+    {
+      "name": "Sample Source B",
+      "url": "https://example.org/?series=i-kidnapped-the-youngest-daughter-of-the-sichuan-tang-clan&source=b",
+      "isSample": true
+    }
+  ],
+  "i-married-the-dragon-i-killed": [
+    {
+      "name": "Sample Source A",
+      "url": "https://example.com/?series=i-married-the-dragon-i-killed&source=a",
+      "isSample": true
+    },
+    {
+      "name": "Sample Source B",
+      "url": "https://example.org/?series=i-married-the-dragon-i-killed&source=b",
+      "isSample": true
+    }
+  ],
+  "i-offered-kimchi-ramen-to-the-gods": [
+    {
+      "name": "Sample Source A",
+      "url": "https://example.com/?series=i-offered-kimchi-ramen-to-the-gods&source=a",
+      "isSample": true
+    },
+    {
+      "name": "Sample Source B",
+      "url": "https://example.org/?series=i-offered-kimchi-ramen-to-the-gods&source=b",
+      "isSample": true
+    }
+  ],
+  "i-regressed-to-level-up-instead-of-being-a-simp": [
+    {
+      "name": "Sample Source A",
+      "url": "https://example.com/?series=i-regressed-to-level-up-instead-of-being-a-simp&source=a",
+      "isSample": true
+    },
+    {
+      "name": "Sample Source B",
+      "url": "https://example.org/?series=i-regressed-to-level-up-instead-of-being-a-simp&source=b",
+      "isSample": true
+    }
+  ],
+  "i-reincarnated-as-the-crazed-heir": [
+    {
+      "name": "Sample Source A",
+      "url": "https://example.com/?series=i-reincarnated-as-the-crazed-heir&source=a",
+      "isSample": true
+    },
+    {
+      "name": "Sample Source B",
+      "url": "https://example.org/?series=i-reincarnated-as-the-crazed-heir&source=b",
+      "isSample": true
+    }
+  ],
+  "i-was-actually-a-third-generation-chaebol": [
+    {
+      "name": "Sample Source A",
+      "url": "https://example.com/?series=i-was-actually-a-third-generation-chaebol&source=a",
+      "isSample": true
+    },
+    {
+      "name": "Sample Source B",
+      "url": "https://example.org/?series=i-was-actually-a-third-generation-chaebol&source=b",
+      "isSample": true
+    }
+  ],
+  "i-was-the-final-boss-b7vztphk": [
+    {
+      "name": "Sample Source A",
+      "url": "https://example.com/?series=i-was-the-final-boss-b7vztphk&source=a",
+      "isSample": true
+    },
+    {
+      "name": "Sample Source B",
+      "url": "https://example.org/?series=i-was-the-final-boss-b7vztphk&source=b",
+      "isSample": true
+    }
+  ],
+  "i-was-thrown-into-an-unknown-manga": [
+    {
+      "name": "Sample Source A",
+      "url": "https://example.com/?series=i-was-thrown-into-an-unknown-manga&source=a",
+      "isSample": true
+    },
+    {
+      "name": "Sample Source B",
+      "url": "https://example.org/?series=i-was-thrown-into-an-unknown-manga&source=b",
+      "isSample": true
+    }
+  ],
+  "ice-lord": [
+    {
+      "name": "Sample Source A",
+      "url": "https://example.com/?series=ice-lord&source=a",
+      "isSample": true
+    },
+    {
+      "name": "Sample Source B",
+      "url": "https://example.org/?series=ice-lord&source=b",
+      "isSample": true
+    }
+  ],
+  "im-a-villainess-but-i-wont-live-like-one": [
+    {
+      "name": "Sample Source A",
+      "url": "https://example.com/?series=im-a-villainess-but-i-wont-live-like-one&source=a",
+      "isSample": true
+    },
+    {
+      "name": "Sample Source B",
+      "url": "https://example.org/?series=im-a-villainess-but-i-wont-live-like-one&source=b",
+      "isSample": true
+    }
+  ],
+  "im-going-to-meet-you-beyond-time-9kz8finv": [
+    {
+      "name": "Sample Source A",
+      "url": "https://example.com/?series=im-going-to-meet-you-beyond-time-9kz8finv&source=a",
+      "isSample": true
+    },
+    {
+      "name": "Sample Source B",
+      "url": "https://example.org/?series=im-going-to-meet-you-beyond-time-9kz8finv&source=b",
+      "isSample": true
+    }
+  ],
+  "initializing-the-sect-system": [
+    {
+      "name": "Sample Source A",
+      "url": "https://example.com/?series=initializing-the-sect-system&source=a",
+      "isSample": true
+    },
+    {
+      "name": "Sample Source B",
+      "url": "https://example.org/?series=initializing-the-sect-system&source=b",
+      "isSample": true
+    }
+  ],
+  "invincible-escort": [
+    {
+      "name": "Sample Source A",
+      "url": "https://example.com/?series=invincible-escort&source=a",
+      "isSample": true
+    },
+    {
+      "name": "Sample Source B",
+      "url": "https://example.org/?series=invincible-escort&source=b",
+      "isSample": true
+    }
+  ],
+  "judgment": [
+    {
+      "name": "Sample Source A",
+      "url": "https://example.com/?series=judgment&source=a",
+      "isSample": true
+    },
+    {
+      "name": "Sample Source B",
+      "url": "https://example.org/?series=judgment&source=b",
+      "isSample": true
+    }
+  ],
+  "jungle-juice": [
+    {
+      "name": "Sample Source A",
+      "url": "https://example.com/?series=jungle-juice&source=a",
+      "isSample": true
+    },
+    {
+      "name": "Sample Source B",
+      "url": "https://example.org/?series=jungle-juice&source=b",
+      "isSample": true
+    }
+  ],
+  "juvenile-law-uee38imx": [
+    {
+      "name": "Sample Source A",
+      "url": "https://example.com/?series=juvenile-law-uee38imx&source=a",
+      "isSample": true
+    },
+    {
+      "name": "Sample Source B",
+      "url": "https://example.org/?series=juvenile-law-uee38imx&source=b",
+      "isSample": true
+    }
+  ],
+  "juvenile-prison-a2fw3x2q": [
+    {
+      "name": "Sample Source A",
+      "url": "https://example.com/?series=juvenile-prison-a2fw3x2q&source=a",
+      "isSample": true
+    },
+    {
+      "name": "Sample Source B",
+      "url": "https://example.org/?series=juvenile-prison-a2fw3x2q&source=b",
+      "isSample": true
+    }
+  ],
+  "kidnapped-dragons": [
+    {
+      "name": "Sample Source A",
+      "url": "https://example.com/?series=kidnapped-dragons&source=a",
+      "isSample": true
+    },
+    {
+      "name": "Sample Source B",
+      "url": "https://example.org/?series=kidnapped-dragons&source=b",
+      "isSample": true
+    }
+  ],
+  "kidnapped-dragons-novel": [
+    {
+      "name": "Sample Source A",
+      "url": "https://example.com/?series=kidnapped-dragons-novel&source=a",
+      "isSample": true
+    },
+    {
+      "name": "Sample Source B",
+      "url": "https://example.org/?series=kidnapped-dragons-novel&source=b",
+      "isSample": true
+    }
+  ],
+  "kill-the-dragon": [
+    {
+      "name": "Sample Source A",
+      "url": "https://example.com/?series=kill-the-dragon&source=a",
+      "isSample": true
+    },
+    {
+      "name": "Sample Source B",
+      "url": "https://example.org/?series=kill-the-dragon&source=b",
+      "isSample": true
+    }
+  ],
+  "kindergarten-for-divine-beasts": [
+    {
+      "name": "Sample Source A",
+      "url": "https://example.com/?series=kindergarten-for-divine-beasts&source=a",
+      "isSample": true
+    },
+    {
+      "name": "Sample Source B",
+      "url": "https://example.org/?series=kindergarten-for-divine-beasts&source=b",
+      "isSample": true
+    }
+  ],
+  "king-of-the-cartel": [
+    {
+      "name": "Sample Source A",
+      "url": "https://example.com/?series=king-of-the-cartel&source=a",
+      "isSample": true
+    },
+    {
+      "name": "Sample Source B",
+      "url": "https://example.org/?series=king-of-the-cartel&source=b",
+      "isSample": true
+    }
+  ],
+  "king-of-the-octagon-5ntuxhrv": [
+    {
+      "name": "Sample Source A",
+      "url": "https://example.com/?series=king-of-the-octagon-5ntuxhrv&source=a",
+      "isSample": true
+    },
+    {
+      "name": "Sample Source B",
+      "url": "https://example.org/?series=king-of-the-octagon-5ntuxhrv&source=b",
+      "isSample": true
+    }
+  ],
+  "king-of-violence1": [
+    {
+      "name": "Sample Source A",
+      "url": "https://example.com/?series=king-of-violence1&source=a",
+      "isSample": true
+    },
+    {
+      "name": "Sample Source B",
+      "url": "https://example.org/?series=king-of-violence1&source=b",
+      "isSample": true
+    }
+  ],
+  "knight-of-equilibrium": [
+    {
+      "name": "Sample Source A",
+      "url": "https://example.com/?series=knight-of-equilibrium&source=a",
+      "isSample": true
+    },
+    {
+      "name": "Sample Source B",
+      "url": "https://example.org/?series=knight-of-equilibrium&source=b",
+      "isSample": true
+    }
+  ],
+  "knights-restaurant-lxbgxbk7": [
+    {
+      "name": "Sample Source A",
+      "url": "https://example.com/?series=knights-restaurant-lxbgxbk7&source=a",
+      "isSample": true
+    },
+    {
+      "name": "Sample Source B",
+      "url": "https://example.org/?series=knights-restaurant-lxbgxbk7&source=b",
+      "isSample": true
+    }
+  ],
+  "left-handed-mutation": [
+    {
+      "name": "Sample Source A",
+      "url": "https://example.com/?series=left-handed-mutation&source=a",
+      "isSample": true
+    },
+    {
+      "name": "Sample Source B",
+      "url": "https://example.org/?series=left-handed-mutation&source=b",
+      "isSample": true
+    }
+  ],
+  "leveling-up-with-gods": [
+    {
+      "name": "Sample Source A",
+      "url": "https://example.com/?series=leveling-up-with-gods&source=a",
+      "isSample": true
+    },
+    {
+      "name": "Sample Source B",
+      "url": "https://example.org/?series=leveling-up-with-gods&source=b",
+      "isSample": true
+    }
+  ],
+  "like-father-like-daughter": [
+    {
+      "name": "Sample Source A",
+      "url": "https://example.com/?series=like-father-like-daughter&source=a",
+      "isSample": true
+    },
+    {
+      "name": "Sample Source B",
+      "url": "https://example.org/?series=like-father-like-daughter&source=b",
+      "isSample": true
+    }
+  ],
+  "limit-breaker": [
+    {
+      "name": "Sample Source A",
+      "url": "https://example.com/?series=limit-breaker&source=a",
+      "isSample": true
+    },
+    {
+      "name": "Sample Source B",
+      "url": "https://example.org/?series=limit-breaker&source=b",
+      "isSample": true
+    }
+  ],
+  "lock-me-up-duke!": [
+    {
+      "name": "Sample Source A",
+      "url": "https://example.com/?series=lock-me-up-duke!&source=a",
+      "isSample": true
+    },
+    {
+      "name": "Sample Source B",
+      "url": "https://example.org/?series=lock-me-up-duke!&source=b",
+      "isSample": true
+    }
+  ],
+  "looking-for-a-top-tier-fighting-coach": [
+    {
+      "name": "Sample Source A",
+      "url": "https://example.com/?series=looking-for-a-top-tier-fighting-coach&source=a",
+      "isSample": true
+    },
+    {
+      "name": "Sample Source B",
+      "url": "https://example.org/?series=looking-for-a-top-tier-fighting-coach&source=b",
+      "isSample": true
+    }
+  ],
+  "love-tears-zombies-apart": [
+    {
+      "name": "Sample Source A",
+      "url": "https://example.com/?series=love-tears-zombies-apart&source=a",
+      "isSample": true
+    },
+    {
+      "name": "Sample Source B",
+      "url": "https://example.org/?series=love-tears-zombies-apart&source=b",
+      "isSample": true
+    }
+  ],
+  "lumberjack": [
+    {
+      "name": "Sample Source A",
+      "url": "https://example.com/?series=lumberjack&source=a",
+      "isSample": true
+    },
+    {
+      "name": "Sample Source B",
+      "url": "https://example.org/?series=lumberjack&source=b",
+      "isSample": true
+    }
+  ],
+  "master-of-all-skills": [
+    {
+      "name": "Sample Source A",
+      "url": "https://example.com/?series=master-of-all-skills&source=a",
+      "isSample": true
+    },
+    {
+      "name": "Sample Source B",
+      "url": "https://example.org/?series=master-of-all-skills&source=b",
+      "isSample": true
+    }
+  ],
+  "masters-of-lightning-knives": [
+    {
+      "name": "Sample Source A",
+      "url": "https://example.com/?series=masters-of-lightning-knives&source=a",
+      "isSample": true
+    },
+    {
+      "name": "Sample Source B",
+      "url": "https://example.org/?series=masters-of-lightning-knives&source=b",
+      "isSample": true
+    }
+  ],
+  "max-level-guild-receptionist-b26z12zb": [
+    {
+      "name": "Sample Source A",
+      "url": "https://example.com/?series=max-level-guild-receptionist-b26z12zb&source=a",
+      "isSample": true
+    },
+    {
+      "name": "Sample Source B",
+      "url": "https://example.org/?series=max-level-guild-receptionist-b26z12zb&source=b",
+      "isSample": true
+    }
+  ],
+  "maxed-out-leveling2": [
+    {
+      "name": "Sample Source A",
+      "url": "https://example.com/?series=maxed-out-leveling2&source=a",
+      "isSample": true
+    },
+    {
+      "name": "Sample Source B",
+      "url": "https://example.org/?series=maxed-out-leveling2&source=b",
+      "isSample": true
+    }
+  ],
+  "maybe-meant-to-be": [
+    {
+      "name": "Sample Source A",
+      "url": "https://example.com/?series=maybe-meant-to-be&source=a",
+      "isSample": true
+    },
+    {
+      "name": "Sample Source B",
+      "url": "https://example.org/?series=maybe-meant-to-be&source=b",
+      "isSample": true
+    }
+  ],
+  "mercenary-enrollment-148la7eq": [
+    {
+      "name": "Sample Source A",
+      "url": "https://example.com/?series=mercenary-enrollment-148la7eq&source=a",
+      "isSample": true
+    },
+    {
+      "name": "Sample Source B",
+      "url": "https://example.org/?series=mercenary-enrollment-148la7eq&source=b",
+      "isSample": true
+    }
+  ],
+  "monopolizing-all-opportunities": [
+    {
+      "name": "Sample Source A",
+      "url": "https://example.com/?series=monopolizing-all-opportunities&source=a",
+      "isSample": true
+    },
+    {
+      "name": "Sample Source B",
+      "url": "https://example.org/?series=monopolizing-all-opportunities&source=b",
+      "isSample": true
+    }
+  ],
+  "monster-eater": [
+    {
+      "name": "Sample Source A",
+      "url": "https://example.com/?series=monster-eater&source=a",
+      "isSample": true
+    },
+    {
+      "name": "Sample Source B",
+      "url": "https://example.org/?series=monster-eater&source=b",
+      "isSample": true
+    }
+  ],
+  "monster-genius-players-really-like-me": [
+    {
+      "name": "Sample Source A",
+      "url": "https://example.com/?series=monster-genius-players-really-like-me&source=a",
+      "isSample": true
+    },
+    {
+      "name": "Sample Source B",
+      "url": "https://example.org/?series=monster-genius-players-really-like-me&source=b",
+      "isSample": true
+    }
+  ],
+  "mr.-kim-strikes-it-rich-with-auto-hunting": [
+    {
+      "name": "Sample Source A",
+      "url": "https://example.com/?series=mr.-kim-strikes-it-rich-with-auto-hunting&source=a",
+      "isSample": true
+    },
+    {
+      "name": "Sample Source B",
+      "url": "https://example.org/?series=mr.-kim-strikes-it-rich-with-auto-hunting&source=b",
+      "isSample": true
+    }
+  ],
+  "murim-psychopath": [
+    {
+      "name": "Sample Source A",
+      "url": "https://example.com/?series=murim-psychopath&source=a",
+      "isSample": true
+    },
+    {
+      "name": "Sample Source B",
+      "url": "https://example.org/?series=murim-psychopath&source=b",
+      "isSample": true
+    }
+  ],
+  "murim-rpg-simulation-jdjd0y0v": [
+    {
+      "name": "Sample Source A",
+      "url": "https://example.com/?series=murim-rpg-simulation-jdjd0y0v&source=a",
+      "isSample": true
+    },
+    {
+      "name": "Sample Source B",
+      "url": "https://example.org/?series=murim-rpg-simulation-jdjd0y0v&source=b",
+      "isSample": true
+    }
+  ],
+  "my-best-friend-is-an-eldritch-horror": [
+    {
+      "name": "Sample Source A",
+      "url": "https://example.com/?series=my-best-friend-is-an-eldritch-horror&source=a",
+      "isSample": true
+    },
+    {
+      "name": "Sample Source B",
+      "url": "https://example.org/?series=my-best-friend-is-an-eldritch-horror&source=b",
+      "isSample": true
+    }
+  ],
+  "my-brother-and-his-gift": [
+    {
+      "name": "Sample Source A",
+      "url": "https://example.com/?series=my-brother-and-his-gift&source=a",
+      "isSample": true
+    },
+    {
+      "name": "Sample Source B",
+      "url": "https://example.org/?series=my-brother-and-his-gift&source=b",
+      "isSample": true
+    }
+  ],
+  "my-brother-is-a-mad-dog": [
+    {
+      "name": "Sample Source A",
+      "url": "https://example.com/?series=my-brother-is-a-mad-dog&source=a",
+      "isSample": true
+    },
+    {
+      "name": "Sample Source B",
+      "url": "https://example.org/?series=my-brother-is-a-mad-dog&source=b",
+      "isSample": true
+    }
+  ],
+  "my-comeback-as-the-youngest-member": [
+    {
+      "name": "Sample Source A",
+      "url": "https://example.com/?series=my-comeback-as-the-youngest-member&source=a",
+      "isSample": true
+    },
+    {
+      "name": "Sample Source B",
+      "url": "https://example.org/?series=my-comeback-as-the-youngest-member&source=b",
+      "isSample": true
+    }
+  ],
+  "my-dad-is-the-strongest-under-heaven": [
+    {
+      "name": "Sample Source A",
+      "url": "https://example.com/?series=my-dad-is-the-strongest-under-heaven&source=a",
+      "isSample": true
+    },
+    {
+      "name": "Sample Source B",
+      "url": "https://example.org/?series=my-dad-is-the-strongest-under-heaven&source=b",
+      "isSample": true
+    }
+  ],
+  "my-daughter-is-the-final-boss2": [
+    {
+      "name": "Sample Source A",
+      "url": "https://example.com/?series=my-daughter-is-the-final-boss2&source=a",
+      "isSample": true
+    },
+    {
+      "name": "Sample Source B",
+      "url": "https://example.org/?series=my-daughter-is-the-final-boss2&source=b",
+      "isSample": true
+    }
+  ],
+  "my-girlfriend-returned-as-a-dragon": [
+    {
+      "name": "Sample Source A",
+      "url": "https://example.com/?series=my-girlfriend-returned-as-a-dragon&source=a",
+      "isSample": true
+    },
+    {
+      "name": "Sample Source B",
+      "url": "https://example.org/?series=my-girlfriend-returned-as-a-dragon&source=b",
+      "isSample": true
+    }
+  ],
+  "my-inventory-is-abnormal": [
+    {
+      "name": "Sample Source A",
+      "url": "https://example.com/?series=my-inventory-is-abnormal&source=a",
+      "isSample": true
+    },
+    {
+      "name": "Sample Source B",
+      "url": "https://example.org/?series=my-inventory-is-abnormal&source=b",
+      "isSample": true
+    }
+  ],
+  "my-relaxing-academy-convenience-store": [
+    {
+      "name": "Sample Source A",
+      "url": "https://example.com/?series=my-relaxing-academy-convenience-store&source=a",
+      "isSample": true
+    },
+    {
+      "name": "Sample Source B",
+      "url": "https://example.org/?series=my-relaxing-academy-convenience-store&source=b",
+      "isSample": true
+    }
+  ],
+  "nation-class-dungeon-architect": [
+    {
+      "name": "Sample Source A",
+      "url": "https://example.com/?series=nation-class-dungeon-architect&source=a",
+      "isSample": true
+    },
+    {
+      "name": "Sample Source B",
+      "url": "https://example.org/?series=nation-class-dungeon-architect&source=b",
+      "isSample": true
+    }
+  ],
+  "national-level-big-shots-flock-to-my-farm": [
+    {
+      "name": "Sample Source A",
+      "url": "https://example.com/?series=national-level-big-shots-flock-to-my-farm&source=a",
+      "isSample": true
+    },
+    {
+      "name": "Sample Source B",
+      "url": "https://example.org/?series=national-level-big-shots-flock-to-my-farm&source=b",
+      "isSample": true
+    }
+  ],
+  "necromancer-academy": [
+    {
+      "name": "Sample Source A",
+      "url": "https://example.com/?series=necromancer-academy&source=a",
+      "isSample": true
+    },
+    {
+      "name": "Sample Source B",
+      "url": "https://example.org/?series=necromancer-academy&source=b",
+      "isSample": true
+    }
+  ],
+  "on-the-way-to-meet-mom": [
+    {
+      "name": "Sample Source A",
+      "url": "https://example.com/?series=on-the-way-to-meet-mom&source=a",
+      "isSample": true
+    },
+    {
+      "name": "Sample Source B",
+      "url": "https://example.org/?series=on-the-way-to-meet-mom&source=b",
+      "isSample": true
+    }
+  ],
+  "one-day-i-became-a-hatchling": [
+    {
+      "name": "Sample Source A",
+      "url": "https://example.com/?series=one-day-i-became-a-hatchling&source=a",
+      "isSample": true
+    },
+    {
+      "name": "Sample Source B",
+      "url": "https://example.org/?series=one-day-i-became-a-hatchling&source=b",
+      "isSample": true
+    }
+  ],
+  "operation-true-love-cdkm2q92": [
+    {
+      "name": "Sample Source A",
+      "url": "https://example.com/?series=operation-true-love-cdkm2q92&source=a",
+      "isSample": true
+    },
+    {
+      "name": "Sample Source B",
+      "url": "https://example.org/?series=operation-true-love-cdkm2q92&source=b",
+      "isSample": true
+    }
+  ],
+  "ordeal": [
+    {
+      "name": "Sample Source A",
+      "url": "https://example.com/?series=ordeal&source=a",
+      "isSample": true
+    },
+    {
+      "name": "Sample Source B",
+      "url": "https://example.org/?series=ordeal&source=b",
+      "isSample": true
+    }
+  ],
+  "otherworld-general-store": [
+    {
+      "name": "Sample Source A",
+      "url": "https://example.com/?series=otherworld-general-store&source=a",
+      "isSample": true
+    },
+    {
+      "name": "Sample Source B",
+      "url": "https://example.org/?series=otherworld-general-store&source=b",
+      "isSample": true
+    }
+  ],
+  "otherworld-mercenary": [
+    {
+      "name": "Sample Source A",
+      "url": "https://example.com/?series=otherworld-mercenary&source=a",
+      "isSample": true
+    },
+    {
+      "name": "Sample Source B",
+      "url": "https://example.org/?series=otherworld-mercenary&source=b",
+      "isSample": true
+    }
+  ],
+  "our-guilds-idol": [
+    {
+      "name": "Sample Source A",
+      "url": "https://example.com/?series=our-guilds-idol&source=a",
+      "isSample": true
+    },
+    {
+      "name": "Sample Source B",
+      "url": "https://example.org/?series=our-guilds-idol&source=b",
+      "isSample": true
+    }
+  ],
+  "ovcharka": [
+    {
+      "name": "Sample Source A",
+      "url": "https://example.com/?series=ovcharka&source=a",
+      "isSample": true
+    },
+    {
+      "name": "Sample Source B",
+      "url": "https://example.org/?series=ovcharka&source=b",
+      "isSample": true
+    }
+  ],
+  "overgeared": [
+    {
+      "name": "Sample Source A",
+      "url": "https://example.com/?series=overgeared&source=a",
+      "isSample": true
+    },
+    {
+      "name": "Sample Source B",
+      "url": "https://example.org/?series=overgeared&source=b",
+      "isSample": true
+    }
+  ],
+  "paranoid-mage-9mqr9tno": [
+    {
+      "name": "Sample Source A",
+      "url": "https://example.com/?series=paranoid-mage-9mqr9tno&source=a",
+      "isSample": true
+    },
+    {
+      "name": "Sample Source B",
+      "url": "https://example.org/?series=paranoid-mage-9mqr9tno&source=b",
+      "isSample": true
+    }
+  ],
+  "past-life-returner": [
+    {
+      "name": "Sample Source A",
+      "url": "https://example.com/?series=past-life-returner&source=a",
+      "isSample": true
+    },
+    {
+      "name": "Sample Source B",
+      "url": "https://example.org/?series=past-life-returner&source=b",
+      "isSample": true
+    }
+  ],
+  "path-of-vengeance": [
+    {
+      "name": "Sample Source A",
+      "url": "https://example.com/?series=path-of-vengeance&source=a",
+      "isSample": true
+    },
+    {
+      "name": "Sample Source B",
+      "url": "https://example.org/?series=path-of-vengeance&source=b",
+      "isSample": true
+    }
+  ],
+  "peach-blossom-paradise": [
+    {
+      "name": "Sample Source A",
+      "url": "https://example.com/?series=peach-blossom-paradise&source=a",
+      "isSample": true
+    },
+    {
+      "name": "Sample Source B",
+      "url": "https://example.org/?series=peach-blossom-paradise&source=b",
+      "isSample": true
+    }
+  ],
+  "piece-maker-of-flame": [
+    {
+      "name": "Sample Source A",
+      "url": "https://example.com/?series=piece-maker-of-flame&source=a",
+      "isSample": true
+    },
+    {
+      "name": "Sample Source B",
+      "url": "https://example.org/?series=piece-maker-of-flame&source=b",
+      "isSample": true
+    }
+  ],
+  "player-s7gyl3nz": [
+    {
+      "name": "Sample Source A",
+      "url": "https://example.com/?series=player-s7gyl3nz&source=a",
+      "isSample": true
+    },
+    {
+      "name": "Sample Source B",
+      "url": "https://example.org/?series=player-s7gyl3nz&source=b",
+      "isSample": true
+    }
+  ],
+  "politician-who-foresees-the-future": [
+    {
+      "name": "Sample Source A",
+      "url": "https://example.com/?series=politician-who-foresees-the-future&source=a",
+      "isSample": true
+    },
+    {
+      "name": "Sample Source B",
+      "url": "https://example.org/?series=politician-who-foresees-the-future&source=b",
+      "isSample": true
+    }
+  ],
+  "raising-the-princess-to-overcome-death1": [
+    {
+      "name": "Sample Source A",
+      "url": "https://example.com/?series=raising-the-princess-to-overcome-death1&source=a",
+      "isSample": true
+    },
+    {
+      "name": "Sample Source B",
+      "url": "https://example.org/?series=raising-the-princess-to-overcome-death1&source=b",
+      "isSample": true
+    }
+  ],
+  "rakshasa-of-evil": [
+    {
+      "name": "Sample Source A",
+      "url": "https://example.com/?series=rakshasa-of-evil&source=a",
+      "isSample": true
+    },
+    {
+      "name": "Sample Source B",
+      "url": "https://example.org/?series=rakshasa-of-evil&source=b",
+      "isSample": true
+    }
+  ],
+  "rankers-return-c6f3k3os": [
+    {
+      "name": "Sample Source A",
+      "url": "https://example.com/?series=rankers-return-c6f3k3os&source=a",
+      "isSample": true
+    },
+    {
+      "name": "Sample Source B",
+      "url": "https://example.org/?series=rankers-return-c6f3k3os&source=b",
+      "isSample": true
+    }
+  ],
+  "reality-quest-2": [
+    {
+      "name": "Sample Source A",
+      "url": "https://example.com/?series=reality-quest-2&source=a",
+      "isSample": true
+    },
+    {
+      "name": "Sample Source B",
+      "url": "https://example.org/?series=reality-quest-2&source=b",
+      "isSample": true
+    }
+  ],
+  "rebirth-monarch-of-the-dead": [
+    {
+      "name": "Sample Source A",
+      "url": "https://example.com/?series=rebirth-monarch-of-the-dead&source=a",
+      "isSample": true
+    },
+    {
+      "name": "Sample Source B",
+      "url": "https://example.org/?series=rebirth-monarch-of-the-dead&source=b",
+      "isSample": true
+    }
+  ],
+  "rebirth-of-the-divine-demon": [
+    {
+      "name": "Sample Source A",
+      "url": "https://example.com/?series=rebirth-of-the-divine-demon&source=a",
+      "isSample": true
+    },
+    {
+      "name": "Sample Source B",
+      "url": "https://example.org/?series=rebirth-of-the-divine-demon&source=b",
+      "isSample": true
+    }
+  ],
+  "rebirth-of-the-divine-demon-novel": [
+    {
+      "name": "Sample Source A",
+      "url": "https://example.com/?series=rebirth-of-the-divine-demon-novel&source=a",
+      "isSample": true
+    },
+    {
+      "name": "Sample Source B",
+      "url": "https://example.org/?series=rebirth-of-the-divine-demon-novel&source=b",
+      "isSample": true
+    }
+  ],
+  "rebirth-of-the-ultimate-war-god": [
+    {
+      "name": "Sample Source A",
+      "url": "https://example.com/?series=rebirth-of-the-ultimate-war-god&source=a",
+      "isSample": true
+    },
+    {
+      "name": "Sample Source B",
+      "url": "https://example.org/?series=rebirth-of-the-ultimate-war-god&source=b",
+      "isSample": true
+    }
+  ],
+  "reborn-as-the-heavenly-demon": [
+    {
+      "name": "Sample Source A",
+      "url": "https://example.com/?series=reborn-as-the-heavenly-demon&source=a",
+      "isSample": true
+    },
+    {
+      "name": "Sample Source B",
+      "url": "https://example.org/?series=reborn-as-the-heavenly-demon&source=b",
+      "isSample": true
+    }
+  ],
+  "reborn-on-the-demonic-cult-battlefield": [
+    {
+      "name": "Sample Source A",
+      "url": "https://example.com/?series=reborn-on-the-demonic-cult-battlefield&source=a",
+      "isSample": true
+    },
+    {
+      "name": "Sample Source B",
+      "url": "https://example.org/?series=reborn-on-the-demonic-cult-battlefield&source=b",
+      "isSample": true
+    }
+  ],
+  "record-of-lodoss-war:-the-necromancer-queen": [
+    {
+      "name": "Sample Source A",
+      "url": "https://example.com/?series=record-of-lodoss-war%3A-the-necromancer-queen&source=a",
+      "isSample": true
+    },
+    {
+      "name": "Sample Source B",
+      "url": "https://example.org/?series=record-of-lodoss-war%3A-the-necromancer-queen&source=b",
+      "isSample": true
+    }
+  ],
+  "red-shirt": [
+    {
+      "name": "Sample Source A",
+      "url": "https://example.com/?series=red-shirt&source=a",
+      "isSample": true
+    },
+    {
+      "name": "Sample Source B",
+      "url": "https://example.org/?series=red-shirt&source=b",
+      "isSample": true
+    }
+  ],
+  "regenerate-top-players-0cn52tcd": [
+    {
+      "name": "Sample Source A",
+      "url": "https://example.com/?series=regenerate-top-players-0cn52tcd&source=a",
+      "isSample": true
+    },
+    {
+      "name": "Sample Source B",
+      "url": "https://example.org/?series=regenerate-top-players-0cn52tcd&source=b",
+      "isSample": true
+    }
+  ],
+  "regressed-blood-demon": [
+    {
+      "name": "Sample Source A",
+      "url": "https://example.com/?series=regressed-blood-demon&source=a",
+      "isSample": true
+    },
+    {
+      "name": "Sample Source B",
+      "url": "https://example.org/?series=regressed-blood-demon&source=b",
+      "isSample": true
+    }
+  ],
+  "regressing-as-the-reincarnated-bastard": [
+    {
+      "name": "Sample Source A",
+      "url": "https://example.com/?series=regressing-as-the-reincarnated-bastard&source=a",
+      "isSample": true
+    },
+    {
+      "name": "Sample Source B",
+      "url": "https://example.org/?series=regressing-as-the-reincarnated-bastard&source=b",
+      "isSample": true
+    }
+  ],
+  "regression-of-the-close-combat-mage": [
+    {
+      "name": "Sample Source A",
+      "url": "https://example.com/?series=regression-of-the-close-combat-mage&source=a",
+      "isSample": true
+    },
+    {
+      "name": "Sample Source B",
+      "url": "https://example.org/?series=regression-of-the-close-combat-mage&source=b",
+      "isSample": true
+    }
+  ],
+  "reincarnated-as-a-genius-prodigy": [
+    {
+      "name": "Sample Source A",
+      "url": "https://example.com/?series=reincarnated-as-a-genius-prodigy&source=a",
+      "isSample": true
+    },
+    {
+      "name": "Sample Source B",
+      "url": "https://example.org/?series=reincarnated-as-a-genius-prodigy&source=b",
+      "isSample": true
+    }
+  ],
+  "reincarnated-as-the-grand-duke's-third-son": [
+    {
+      "name": "Sample Source A",
+      "url": "https://example.com/?series=reincarnated-as-the-grand-duke's-third-son&source=a",
+      "isSample": true
+    },
+    {
+      "name": "Sample Source B",
+      "url": "https://example.org/?series=reincarnated-as-the-grand-duke's-third-son&source=b",
+      "isSample": true
+    }
+  ],
+  "reincarnated-as-the-weakest-warrior-with-the-power-to-choose-any-reward": [
+    {
+      "name": "Sample Source A",
+      "url": "https://example.com/?series=reincarnated-as-the-weakest-warrior-with-the-power-to-choose-any-reward&source=a",
+      "isSample": true
+    },
+    {
+      "name": "Sample Source B",
+      "url": "https://example.org/?series=reincarnated-as-the-weakest-warrior-with-the-power-to-choose-any-reward&source=b",
+      "isSample": true
+    }
+  ],
+  "reincarnated-as-the-youngest-son-of-a-demon-swordsman-family": [
+    {
+      "name": "Sample Source A",
+      "url": "https://example.com/?series=reincarnated-as-the-youngest-son-of-a-demon-swordsman-family&source=a",
+      "isSample": true
+    },
+    {
+      "name": "Sample Source B",
+      "url": "https://example.org/?series=reincarnated-as-the-youngest-son-of-a-demon-swordsman-family&source=b",
+      "isSample": true
+    }
+  ],
+  "reincarnated-into-a-cursed-game": [
+    {
+      "name": "Sample Source A",
+      "url": "https://example.com/?series=reincarnated-into-a-cursed-game&source=a",
+      "isSample": true
+    },
+    {
+      "name": "Sample Source B",
+      "url": "https://example.org/?series=reincarnated-into-a-cursed-game&source=b",
+      "isSample": true
+    }
+  ],
+  "reincarnation-of-the-sword-master": [
+    {
+      "name": "Sample Source A",
+      "url": "https://example.com/?series=reincarnation-of-the-sword-master&source=a",
+      "isSample": true
+    },
+    {
+      "name": "Sample Source B",
+      "url": "https://example.org/?series=reincarnation-of-the-sword-master&source=b",
+      "isSample": true
+    }
+  ],
+  "reincarnation-of-the-veteran-soldier": [
+    {
+      "name": "Sample Source A",
+      "url": "https://example.com/?series=reincarnation-of-the-veteran-soldier&source=a",
+      "isSample": true
+    },
+    {
+      "name": "Sample Source B",
+      "url": "https://example.org/?series=reincarnation-of-the-veteran-soldier&source=b",
+      "isSample": true
+    }
+  ],
+  "reincarnator's-stream": [
+    {
+      "name": "Sample Source A",
+      "url": "https://example.com/?series=reincarnator's-stream&source=a",
+      "isSample": true
+    },
+    {
+      "name": "Sample Source B",
+      "url": "https://example.org/?series=reincarnator's-stream&source=b",
+      "isSample": true
+    }
+  ],
+  "remarried-empress-cy9ivnl3": [
+    {
+      "name": "Sample Source A",
+      "url": "https://example.com/?series=remarried-empress-cy9ivnl3&source=a",
+      "isSample": true
+    },
+    {
+      "name": "Sample Source B",
+      "url": "https://example.org/?series=remarried-empress-cy9ivnl3&source=b",
+      "isSample": true
+    }
+  ],
+  "rental-hero": [
+    {
+      "name": "Sample Source A",
+      "url": "https://example.com/?series=rental-hero&source=a",
+      "isSample": true
+    },
+    {
+      "name": "Sample Source B",
+      "url": "https://example.org/?series=rental-hero&source=b",
+      "isSample": true
+    }
+  ],
+  "resurrection-boy": [
+    {
+      "name": "Sample Source A",
+      "url": "https://example.com/?series=resurrection-boy&source=a",
+      "isSample": true
+    },
+    {
+      "name": "Sample Source B",
+      "url": "https://example.org/?series=resurrection-boy&source=b",
+      "isSample": true
+    }
+  ],
+  "retired-demon-king": [
+    {
+      "name": "Sample Source A",
+      "url": "https://example.com/?series=retired-demon-king&source=a",
+      "isSample": true
+    },
+    {
+      "name": "Sample Source B",
+      "url": "https://example.org/?series=retired-demon-king&source=b",
+      "isSample": true
+    }
+  ],
+  "return-of-a-crazy-genius-composer": [
+    {
+      "name": "Sample Source A",
+      "url": "https://example.com/?series=return-of-a-crazy-genius-composer&source=a",
+      "isSample": true
+    },
+    {
+      "name": "Sample Source B",
+      "url": "https://example.org/?series=return-of-a-crazy-genius-composer&source=b",
+      "isSample": true
+    }
+  ],
+  "return-of-the-apocalypse-class-death-knight": [
+    {
+      "name": "Sample Source A",
+      "url": "https://example.com/?series=return-of-the-apocalypse-class-death-knight&source=a",
+      "isSample": true
+    },
+    {
+      "name": "Sample Source B",
+      "url": "https://example.org/?series=return-of-the-apocalypse-class-death-knight&source=b",
+      "isSample": true
+    }
+  ],
+  "return-of-the-genius-player-hmmk4ymb": [
+    {
+      "name": "Sample Source A",
+      "url": "https://example.com/?series=return-of-the-genius-player-hmmk4ymb&source=a",
+      "isSample": true
+    },
+    {
+      "name": "Sample Source B",
+      "url": "https://example.org/?series=return-of-the-genius-player-hmmk4ymb&source=b",
+      "isSample": true
+    }
+  ],
+  "return-of-the-runebound-professor": [
+    {
+      "name": "Sample Source A",
+      "url": "https://example.com/?series=return-of-the-runebound-professor&source=a",
+      "isSample": true
+    },
+    {
+      "name": "Sample Source B",
+      "url": "https://example.org/?series=return-of-the-runebound-professor&source=b",
+      "isSample": true
+    }
+  ],
+  "return-of-the-sss-class-demon-lord": [
+    {
+      "name": "Sample Source A",
+      "url": "https://example.com/?series=return-of-the-sss-class-demon-lord&source=a",
+      "isSample": true
+    },
+    {
+      "name": "Sample Source B",
+      "url": "https://example.org/?series=return-of-the-sss-class-demon-lord&source=b",
+      "isSample": true
+    }
+  ],
+  "return-of-the-sword-god-rank-civil-servant": [
+    {
+      "name": "Sample Source A",
+      "url": "https://example.com/?series=return-of-the-sword-god-rank-civil-servant&source=a",
+      "isSample": true
+    },
+    {
+      "name": "Sample Source B",
+      "url": "https://example.org/?series=return-of-the-sword-god-rank-civil-servant&source=b",
+      "isSample": true
+    }
+  ],
+  "return-to-player": [
+    {
+      "name": "Sample Source A",
+      "url": "https://example.com/?series=return-to-player&source=a",
+      "isSample": true
+    },
+    {
+      "name": "Sample Source B",
+      "url": "https://example.org/?series=return-to-player&source=b",
+      "isSample": true
+    }
+  ],
+  "revenge-of-the-bloom-flower": [
+    {
+      "name": "Sample Source A",
+      "url": "https://example.com/?series=revenge-of-the-bloom-flower&source=a",
+      "isSample": true
+    },
+    {
+      "name": "Sample Source B",
+      "url": "https://example.org/?series=revenge-of-the-bloom-flower&source=b",
+      "isSample": true
+    }
+  ],
+  "rise-of-the-limitless-necromancer": [
+    {
+      "name": "Sample Source A",
+      "url": "https://example.com/?series=rise-of-the-limitless-necromancer&source=a",
+      "isSample": true
+    },
+    {
+      "name": "Sample Source B",
+      "url": "https://example.org/?series=rise-of-the-limitless-necromancer&source=b",
+      "isSample": true
+    }
+  ],
+  "rise-of-the-low-class-swordsman": [
+    {
+      "name": "Sample Source A",
+      "url": "https://example.com/?series=rise-of-the-low-class-swordsman&source=a",
+      "isSample": true
+    },
+    {
+      "name": "Sample Source B",
+      "url": "https://example.org/?series=rise-of-the-low-class-swordsman&source=b",
+      "isSample": true
+    }
+  ],
+  "rise-of-the-soul-devouring-god": [
+    {
+      "name": "Sample Source A",
+      "url": "https://example.com/?series=rise-of-the-soul-devouring-god&source=a",
+      "isSample": true
+    },
+    {
+      "name": "Sample Source B",
+      "url": "https://example.org/?series=rise-of-the-soul-devouring-god&source=b",
+      "isSample": true
+    }
+  ],
+  "rural-ace": [
+    {
+      "name": "Sample Source A",
+      "url": "https://example.com/?series=rural-ace&source=a",
+      "isSample": true
+    },
+    {
+      "name": "Sample Source B",
+      "url": "https://example.org/?series=rural-ace&source=b",
+      "isSample": true
+    }
+  ],
+  "s-class-hunter-heals-with-monsters": [
+    {
+      "name": "Sample Source A",
+      "url": "https://example.com/?series=s-class-hunter-heals-with-monsters&source=a",
+      "isSample": true
+    },
+    {
+      "name": "Sample Source B",
+      "url": "https://example.org/?series=s-class-hunter-heals-with-monsters&source=b",
+      "isSample": true
+    }
+  ],
+  "s-class-hunter-heals-with-monsters-novel": [
+    {
+      "name": "Sample Source A",
+      "url": "https://example.com/?series=s-class-hunter-heals-with-monsters-novel&source=a",
+      "isSample": true
+    },
+    {
+      "name": "Sample Source B",
+      "url": "https://example.org/?series=s-class-hunter-heals-with-monsters-novel&source=b",
+      "isSample": true
+    }
+  ],
+  "savior-of-divine-blood:-draw-out-0.00000001percent-to-become-the-strongest": [
+    {
+      "name": "Sample Source A",
+      "url": "https://example.com/?series=savior-of-divine-blood%3A-draw-out-0.00000001percent-to-become-the-strongest&source=a",
+      "isSample": true
+    },
+    {
+      "name": "Sample Source B",
+      "url": "https://example.org/?series=savior-of-divine-blood%3A-draw-out-0.00000001percent-to-become-the-strongest&source=b",
+      "isSample": true
+    }
+  ],
+  "self-glorification": [
+    {
+      "name": "Sample Source A",
+      "url": "https://example.com/?series=self-glorification&source=a",
+      "isSample": true
+    },
+    {
+      "name": "Sample Source B",
+      "url": "https://example.org/?series=self-glorification&source=b",
+      "isSample": true
+    }
+  ],
+  "shadow-slave": [
+    {
+      "name": "Sample Source A",
+      "url": "https://example.com/?series=shadow-slave&source=a",
+      "isSample": true
+    },
+    {
+      "name": "Sample Source B",
+      "url": "https://example.org/?series=shadow-slave&source=b",
+      "isSample": true
+    }
+  ],
+  "shovel": [
+    {
+      "name": "Sample Source A",
+      "url": "https://example.com/?series=shovel&source=a",
+      "isSample": true
+    },
+    {
+      "name": "Sample Source B",
+      "url": "https://example.org/?series=shovel&source=b",
+      "isSample": true
+    }
+  ],
+  "skeleton-warrior-ym0ychxr": [
+    {
+      "name": "Sample Source A",
+      "url": "https://example.com/?series=skeleton-warrior-ym0ychxr&source=a",
+      "isSample": true
+    },
+    {
+      "name": "Sample Source B",
+      "url": "https://example.org/?series=skeleton-warrior-ym0ychxr&source=b",
+      "isSample": true
+    }
+  ],
+  "sleeping-ranker": [
+    {
+      "name": "Sample Source A",
+      "url": "https://example.com/?series=sleeping-ranker&source=a",
+      "isSample": true
+    },
+    {
+      "name": "Sample Source B",
+      "url": "https://example.org/?series=sleeping-ranker&source=b",
+      "isSample": true
+    }
+  ],
+  "so-did-someone-force-you-to-become-the-heavenly-demon": [
+    {
+      "name": "Sample Source A",
+      "url": "https://example.com/?series=so-did-someone-force-you-to-become-the-heavenly-demon&source=a",
+      "isSample": true
+    },
+    {
+      "name": "Sample Source B",
+      "url": "https://example.org/?series=so-did-someone-force-you-to-become-the-heavenly-demon&source=b",
+      "isSample": true
+    }
+  ],
+  "so-did-someone-force-you-to-become-the-heavenly-demon-novel": [
+    {
+      "name": "Sample Source A",
+      "url": "https://example.com/?series=so-did-someone-force-you-to-become-the-heavenly-demon-novel&source=a",
+      "isSample": true
+    },
+    {
+      "name": "Sample Source B",
+      "url": "https://example.org/?series=so-did-someone-force-you-to-become-the-heavenly-demon-novel&source=b",
+      "isSample": true
+    }
+  ],
+  "solo-ex-rank-summoner": [
+    {
+      "name": "Sample Source A",
+      "url": "https://example.com/?series=solo-ex-rank-summoner&source=a",
+      "isSample": true
+    },
+    {
+      "name": "Sample Source B",
+      "url": "https://example.org/?series=solo-ex-rank-summoner&source=b",
+      "isSample": true
+    }
+  ],
+  "solo-farming-in-the-tower": [
+    {
+      "name": "Sample Source A",
+      "url": "https://example.com/?series=solo-farming-in-the-tower&source=a",
+      "isSample": true
+    },
+    {
+      "name": "Sample Source B",
+      "url": "https://example.org/?series=solo-farming-in-the-tower&source=b",
+      "isSample": true
+    }
+  ],
+  "solo-leveling-arise": [
+    {
+      "name": "Sample Source A",
+      "url": "https://example.com/?series=solo-leveling-arise&source=a",
+      "isSample": true
+    },
+    {
+      "name": "Sample Source B",
+      "url": "https://example.org/?series=solo-leveling-arise&source=b",
+      "isSample": true
+    }
+  ],
+  "solo-resurrection-ul0unjsy": [
+    {
+      "name": "Sample Source A",
+      "url": "https://example.com/?series=solo-resurrection-ul0unjsy&source=a",
+      "isSample": true
+    },
+    {
+      "name": "Sample Source B",
+      "url": "https://example.org/?series=solo-resurrection-ul0unjsy&source=b",
+      "isSample": true
+    }
+  ],
+  "solo-strike-a-hundred-million-damage-npz3uudd": [
+    {
+      "name": "Sample Source A",
+      "url": "https://example.com/?series=solo-strike-a-hundred-million-damage-npz3uudd&source=a",
+      "isSample": true
+    },
+    {
+      "name": "Sample Source B",
+      "url": "https://example.org/?series=solo-strike-a-hundred-million-damage-npz3uudd&source=b",
+      "isSample": true
+    }
+  ],
+  "solo-swordmaster": [
+    {
+      "name": "Sample Source A",
+      "url": "https://example.com/?series=solo-swordmaster&source=a",
+      "isSample": true
+    },
+    {
+      "name": "Sample Source B",
+      "url": "https://example.org/?series=solo-swordmaster&source=b",
+      "isSample": true
+    }
+  ],
+  "sovereign-of-a-hundred-blades:-heir-to-the-strongest-style": [
+    {
+      "name": "Sample Source A",
+      "url": "https://example.com/?series=sovereign-of-a-hundred-blades%3A-heir-to-the-strongest-style&source=a",
+      "isSample": true
+    },
+    {
+      "name": "Sample Source B",
+      "url": "https://example.org/?series=sovereign-of-a-hundred-blades%3A-heir-to-the-strongest-style&source=b",
+      "isSample": true
+    }
+  ],
+  "space-cheon-ma-307": [
+    {
+      "name": "Sample Source A",
+      "url": "https://example.com/?series=space-cheon-ma-307&source=a",
+      "isSample": true
+    },
+    {
+      "name": "Sample Source B",
+      "url": "https://example.org/?series=space-cheon-ma-307&source=b",
+      "isSample": true
+    }
+  ],
+  "space-cheon-ma-3077": [
+    {
+      "name": "Sample Source A",
+      "url": "https://example.com/?series=space-cheon-ma-3077&source=a",
+      "isSample": true
+    },
+    {
+      "name": "Sample Source B",
+      "url": "https://example.org/?series=space-cheon-ma-3077&source=b",
+      "isSample": true
+    }
+  ],
+  "special-civil-servant": [
+    {
+      "name": "Sample Source A",
+      "url": "https://example.com/?series=special-civil-servant&source=a",
+      "isSample": true
+    },
+    {
+      "name": "Sample Source B",
+      "url": "https://example.org/?series=special-civil-servant&source=b",
+      "isSample": true
+    }
+  ],
+  "spend-more-earn-more": [
+    {
+      "name": "Sample Source A",
+      "url": "https://example.com/?series=spend-more-earn-more&source=a",
+      "isSample": true
+    },
+    {
+      "name": "Sample Source B",
+      "url": "https://example.org/?series=spend-more-earn-more&source=b",
+      "isSample": true
+    }
+  ],
+  "spirit-farmer": [
+    {
+      "name": "Sample Source A",
+      "url": "https://example.com/?series=spirit-farmer&source=a",
+      "isSample": true
+    },
+    {
+      "name": "Sample Source B",
+      "url": "https://example.org/?series=spirit-farmer&source=b",
+      "isSample": true
+    }
+  ],
+  "spooky-yokai": [
+    {
+      "name": "Sample Source A",
+      "url": "https://example.com/?series=spooky-yokai&source=a",
+      "isSample": true
+    },
+    {
+      "name": "Sample Source B",
+      "url": "https://example.org/?series=spooky-yokai&source=b",
+      "isSample": true
+    }
+  ],
+  "spy-survival-in-the-demonic-cult": [
+    {
+      "name": "Sample Source A",
+      "url": "https://example.com/?series=spy-survival-in-the-demonic-cult&source=a",
+      "isSample": true
+    },
+    {
+      "name": "Sample Source B",
+      "url": "https://example.org/?series=spy-survival-in-the-demonic-cult&source=b",
+      "isSample": true
+    }
+  ],
+  "sss-class-regressor-has-no-conscience": [
+    {
+      "name": "Sample Source A",
+      "url": "https://example.com/?series=sss-class-regressor-has-no-conscience&source=a",
+      "isSample": true
+    },
+    {
+      "name": "Sample Source B",
+      "url": "https://example.org/?series=sss-class-regressor-has-no-conscience&source=b",
+      "isSample": true
+    }
+  ],
+  "stand-in-hero": [
+    {
+      "name": "Sample Source A",
+      "url": "https://example.com/?series=stand-in-hero&source=a",
+      "isSample": true
+    },
+    {
+      "name": "Sample Source B",
+      "url": "https://example.org/?series=stand-in-hero&source=b",
+      "isSample": true
+    }
+  ],
+  "starting-with-13-hidden-traits": [
+    {
+      "name": "Sample Source A",
+      "url": "https://example.com/?series=starting-with-13-hidden-traits&source=a",
+      "isSample": true
+    },
+    {
+      "name": "Sample Source B",
+      "url": "https://example.org/?series=starting-with-13-hidden-traits&source=b",
+      "isSample": true
+    }
+  ],
+  "superhuman's-gaming-stream": [
+    {
+      "name": "Sample Source A",
+      "url": "https://example.com/?series=superhuman's-gaming-stream&source=a",
+      "isSample": true
+    },
+    {
+      "name": "Sample Source B",
+      "url": "https://example.org/?series=superhuman's-gaming-stream&source=b",
+      "isSample": true
+    }
+  ],
+  "superstar-from-age-0-rlinhwnh": [
+    {
+      "name": "Sample Source A",
+      "url": "https://example.com/?series=superstar-from-age-0-rlinhwnh&source=a",
+      "isSample": true
+    },
+    {
+      "name": "Sample Source B",
+      "url": "https://example.org/?series=superstar-from-age-0-rlinhwnh&source=b",
+      "isSample": true
+    }
+  ],
+  "supreme-demon-of-hyungsan": [
+    {
+      "name": "Sample Source A",
+      "url": "https://example.com/?series=supreme-demon-of-hyungsan&source=a",
+      "isSample": true
+    },
+    {
+      "name": "Sample Source B",
+      "url": "https://example.org/?series=supreme-demon-of-hyungsan&source=b",
+      "isSample": true
+    }
+  ],
+  "survival-story-of-a-sword-king-in-a-fantasy-world": [
+    {
+      "name": "Sample Source A",
+      "url": "https://example.com/?series=survival-story-of-a-sword-king-in-a-fantasy-world&source=a",
+      "isSample": true
+    },
+    {
+      "name": "Sample Source B",
+      "url": "https://example.org/?series=survival-story-of-a-sword-king-in-a-fantasy-world&source=b",
+      "isSample": true
+    }
+  ],
+  "survival-supremacy": [
+    {
+      "name": "Sample Source A",
+      "url": "https://example.com/?series=survival-supremacy&source=a",
+      "isSample": true
+    },
+    {
+      "name": "Sample Source B",
+      "url": "https://example.org/?series=survival-supremacy&source=b",
+      "isSample": true
+    }
+  ],
+  "surviving-in-an-rpg-maker-horror-game": [
+    {
+      "name": "Sample Source A",
+      "url": "https://example.com/?series=surviving-in-an-rpg-maker-horror-game&source=a",
+      "isSample": true
+    },
+    {
+      "name": "Sample Source B",
+      "url": "https://example.org/?series=surviving-in-an-rpg-maker-horror-game&source=b",
+      "isSample": true
+    }
+  ],
+  "sword-devouring-swordmaster": [
+    {
+      "name": "Sample Source A",
+      "url": "https://example.com/?series=sword-devouring-swordmaster&source=a",
+      "isSample": true
+    },
+    {
+      "name": "Sample Source B",
+      "url": "https://example.org/?series=sword-devouring-swordmaster&source=b",
+      "isSample": true
+    }
+  ],
+  "sword-god-dragon": [
+    {
+      "name": "Sample Source A",
+      "url": "https://example.com/?series=sword-god-dragon&source=a",
+      "isSample": true
+    },
+    {
+      "name": "Sample Source B",
+      "url": "https://example.org/?series=sword-god-dragon&source=b",
+      "isSample": true
+    }
+  ],
+  "synaptic-error": [
+    {
+      "name": "Sample Source A",
+      "url": "https://example.com/?series=synaptic-error&source=a",
+      "isSample": true
+    },
+    {
+      "name": "Sample Source B",
+      "url": "https://example.org/?series=synaptic-error&source=b",
+      "isSample": true
+    }
+  ],
+  "the-18-year-old-demon-king": [
+    {
+      "name": "Sample Source A",
+      "url": "https://example.com/?series=the-18-year-old-demon-king&source=a",
+      "isSample": true
+    },
+    {
+      "name": "Sample Source B",
+      "url": "https://example.org/?series=the-18-year-old-demon-king&source=b",
+      "isSample": true
+    }
+  ],
+  "the-academy's-weapon-copycat": [
+    {
+      "name": "Sample Source A",
+      "url": "https://example.com/?series=the-academy's-weapon-copycat&source=a",
+      "isSample": true
+    },
+    {
+      "name": "Sample Source B",
+      "url": "https://example.org/?series=the-academy's-weapon-copycat&source=b",
+      "isSample": true
+    }
+  ],
+  "the-advanced-player-of-the-tutorial-tower-gp0a6ozh": [
+    {
+      "name": "Sample Source A",
+      "url": "https://example.com/?series=the-advanced-player-of-the-tutorial-tower-gp0a6ozh&source=a",
+      "isSample": true
+    },
+    {
+      "name": "Sample Source B",
+      "url": "https://example.org/?series=the-advanced-player-of-the-tutorial-tower-gp0a6ozh&source=b",
+      "isSample": true
+    }
+  ],
+  "the-almighty-trap-master": [
+    {
+      "name": "Sample Source A",
+      "url": "https://example.com/?series=the-almighty-trap-master&source=a",
+      "isSample": true
+    },
+    {
+      "name": "Sample Source B",
+      "url": "https://example.org/?series=the-almighty-trap-master&source=b",
+      "isSample": true
+    }
+  ],
+  "the-ancient-sovereign-of-eternity": [
+    {
+      "name": "Sample Source A",
+      "url": "https://example.com/?series=the-ancient-sovereign-of-eternity&source=a",
+      "isSample": true
+    },
+    {
+      "name": "Sample Source B",
+      "url": "https://example.org/?series=the-ancient-sovereign-of-eternity&source=b",
+      "isSample": true
+    }
+  ],
+  "the-apocalypse-needs-a-pro": [
+    {
+      "name": "Sample Source A",
+      "url": "https://example.com/?series=the-apocalypse-needs-a-pro&source=a",
+      "isSample": true
+    },
+    {
+      "name": "Sample Source B",
+      "url": "https://example.org/?series=the-apocalypse-needs-a-pro&source=b",
+      "isSample": true
+    }
+  ],
+  "the-bat-knight:-dan": [
+    {
+      "name": "Sample Source A",
+      "url": "https://example.com/?series=the-bat-knight%3A-dan&source=a",
+      "isSample": true
+    },
+    {
+      "name": "Sample Source B",
+      "url": "https://example.org/?series=the-bat-knight%3A-dan&source=b",
+      "isSample": true
+    }
+  ],
+  "the-beginning-after-the-end": [
+    {
+      "name": "Sample Source A",
+      "url": "https://example.com/?series=the-beginning-after-the-end&source=a",
+      "isSample": true
+    },
+    {
+      "name": "Sample Source B",
+      "url": "https://example.org/?series=the-beginning-after-the-end&source=b",
+      "isSample": true
+    }
+  ],
+  "the-black-haired-knight-king": [
+    {
+      "name": "Sample Source A",
+      "url": "https://example.com/?series=the-black-haired-knight-king&source=a",
+      "isSample": true
+    },
+    {
+      "name": "Sample Source B",
+      "url": "https://example.org/?series=the-black-haired-knight-king&source=b",
+      "isSample": true
+    }
+  ],
+  "the-black-haired-u.s.-army-general": [
+    {
+      "name": "Sample Source A",
+      "url": "https://example.com/?series=the-black-haired-u.s.-army-general&source=a",
+      "isSample": true
+    },
+    {
+      "name": "Sample Source B",
+      "url": "https://example.org/?series=the-black-haired-u.s.-army-general&source=b",
+      "isSample": true
+    }
+  ],
+  "the-blind-avenger-with-a-divine-eye": [
+    {
+      "name": "Sample Source A",
+      "url": "https://example.com/?series=the-blind-avenger-with-a-divine-eye&source=a",
+      "isSample": true
+    },
+    {
+      "name": "Sample Source B",
+      "url": "https://example.org/?series=the-blind-avenger-with-a-divine-eye&source=b",
+      "isSample": true
+    }
+  ],
+  "the-blood-demon-chronicles": [
+    {
+      "name": "Sample Source A",
+      "url": "https://example.com/?series=the-blood-demon-chronicles&source=a",
+      "isSample": true
+    },
+    {
+      "name": "Sample Source B",
+      "url": "https://example.org/?series=the-blood-demon-chronicles&source=b",
+      "isSample": true
+    }
+  ],
+  "the-ceo-who-wants-an-easy-life": [
+    {
+      "name": "Sample Source A",
+      "url": "https://example.com/?series=the-ceo-who-wants-an-easy-life&source=a",
+      "isSample": true
+    },
+    {
+      "name": "Sample Source B",
+      "url": "https://example.org/?series=the-ceo-who-wants-an-easy-life&source=b",
+      "isSample": true
+    }
+  ],
+  "the-chairman-of-pharmaceutical-company-is-a-poison-king": [
+    {
+      "name": "Sample Source A",
+      "url": "https://example.com/?series=the-chairman-of-pharmaceutical-company-is-a-poison-king&source=a",
+      "isSample": true
+    },
+    {
+      "name": "Sample Source B",
+      "url": "https://example.org/?series=the-chairman-of-pharmaceutical-company-is-a-poison-king&source=b",
+      "isSample": true
+    }
+  ],
+  "the-childe-orjdr5pa": [
+    {
+      "name": "Sample Source A",
+      "url": "https://example.com/?series=the-childe-orjdr5pa&source=a",
+      "isSample": true
+    },
+    {
+      "name": "Sample Source B",
+      "url": "https://example.org/?series=the-childe-orjdr5pa&source=b",
+      "isSample": true
+    }
+  ],
+  "the-cold-blooded-worrior": [
+    {
+      "name": "Sample Source A",
+      "url": "https://example.com/?series=the-cold-blooded-worrior&source=a",
+      "isSample": true
+    },
+    {
+      "name": "Sample Source B",
+      "url": "https://example.org/?series=the-cold-blooded-worrior&source=b",
+      "isSample": true
+    }
+  ],
+  "the-corrupt-magistrate-who-hid-his-status-window\"": [
+    {
+      "name": "Sample Source A",
+      "url": "https://example.com/?series=the-corrupt-magistrate-who-hid-his-status-window%22&source=a",
+      "isSample": true
+    },
+    {
+      "name": "Sample Source B",
+      "url": "https://example.org/?series=the-corrupt-magistrate-who-hid-his-status-window%22&source=b",
+      "isSample": true
+    }
+  ],
+  "the-crazy-villain-regains-his-sanity": [
+    {
+      "name": "Sample Source A",
+      "url": "https://example.com/?series=the-crazy-villain-regains-his-sanity&source=a",
+      "isSample": true
+    },
+    {
+      "name": "Sample Source B",
+      "url": "https://example.org/?series=the-crazy-villain-regains-his-sanity&source=b",
+      "isSample": true
+    }
+  ],
+  "the-crimson-dragon-martial-emperor": [
+    {
+      "name": "Sample Source A",
+      "url": "https://example.com/?series=the-crimson-dragon-martial-emperor&source=a",
+      "isSample": true
+    },
+    {
+      "name": "Sample Source B",
+      "url": "https://example.org/?series=the-crimson-dragon-martial-emperor&source=b",
+      "isSample": true
+    }
+  ],
+  "the-dang-clans-swordmaster-heir-just-wants-a-normal-life": [
+    {
+      "name": "Sample Source A",
+      "url": "https://example.com/?series=the-dang-clans-swordmaster-heir-just-wants-a-normal-life&source=a",
+      "isSample": true
+    },
+    {
+      "name": "Sample Source B",
+      "url": "https://example.org/?series=the-dang-clans-swordmaster-heir-just-wants-a-normal-life&source=b",
+      "isSample": true
+    }
+  ],
+  "the-dark-mage-~-i-am-the-only-transcendant-mage-who-regressed-with-cheat-skills": [
+    {
+      "name": "Sample Source A",
+      "url": "https://example.com/?series=the-dark-mage-~-i-am-the-only-transcendant-mage-who-regressed-with-cheat-skills&source=a",
+      "isSample": true
+    },
+    {
+      "name": "Sample Source B",
+      "url": "https://example.org/?series=the-dark-mage-~-i-am-the-only-transcendant-mage-who-regressed-with-cheat-skills&source=b",
+      "isSample": true
+    }
+  ],
+  "the-day-the-real-one-appeared": [
+    {
+      "name": "Sample Source A",
+      "url": "https://example.com/?series=the-day-the-real-one-appeared&source=a",
+      "isSample": true
+    },
+    {
+      "name": "Sample Source B",
+      "url": "https://example.org/?series=the-day-the-real-one-appeared&source=b",
+      "isSample": true
+    }
+  ],
+  "the-demon-king-overrun-by-heroes": [
+    {
+      "name": "Sample Source A",
+      "url": "https://example.com/?series=the-demon-king-overrun-by-heroes&source=a",
+      "isSample": true
+    },
+    {
+      "name": "Sample Source B",
+      "url": "https://example.org/?series=the-demon-king-overrun-by-heroes&source=b",
+      "isSample": true
+    }
+  ],
+  "the-demonic-cult-instructor-returns": [
+    {
+      "name": "Sample Source A",
+      "url": "https://example.com/?series=the-demonic-cult-instructor-returns&source=a",
+      "isSample": true
+    },
+    {
+      "name": "Sample Source B",
+      "url": "https://example.org/?series=the-demonic-cult-instructor-returns&source=b",
+      "isSample": true
+    }
+  ],
+  "the-descent-of-the-demonic-master-zruh6k8m": [
+    {
+      "name": "Sample Source A",
+      "url": "https://example.com/?series=the-descent-of-the-demonic-master-zruh6k8m&source=a",
+      "isSample": true
+    },
+    {
+      "name": "Sample Source B",
+      "url": "https://example.org/?series=the-descent-of-the-demonic-master-zruh6k8m&source=b",
+      "isSample": true
+    }
+  ],
+  "the-dragon-of-kunlun": [
+    {
+      "name": "Sample Source A",
+      "url": "https://example.com/?series=the-dragon-of-kunlun&source=a",
+      "isSample": true
+    },
+    {
+      "name": "Sample Source B",
+      "url": "https://example.org/?series=the-dragon-of-kunlun&source=b",
+      "isSample": true
+    }
+  ],
+  "the-druid-of-seoul-station": [
+    {
+      "name": "Sample Source A",
+      "url": "https://example.com/?series=the-druid-of-seoul-station&source=a",
+      "isSample": true
+    },
+    {
+      "name": "Sample Source B",
+      "url": "https://example.org/?series=the-druid-of-seoul-station&source=b",
+      "isSample": true
+    }
+  ],
+  "the-dungeon-painter": [
+    {
+      "name": "Sample Source A",
+      "url": "https://example.com/?series=the-dungeon-painter&source=a",
+      "isSample": true
+    },
+    {
+      "name": "Sample Source B",
+      "url": "https://example.org/?series=the-dungeon-painter&source=b",
+      "isSample": true
+    }
+  ],
+  "the-dying-wall-street-genius": [
+    {
+      "name": "Sample Source A",
+      "url": "https://example.com/?series=the-dying-wall-street-genius&source=a",
+      "isSample": true
+    },
+    {
+      "name": "Sample Source B",
+      "url": "https://example.org/?series=the-dying-wall-street-genius&source=b",
+      "isSample": true
+    }
+  ],
+  "the-emperors-sword": [
+    {
+      "name": "Sample Source A",
+      "url": "https://example.com/?series=the-emperors-sword&source=a",
+      "isSample": true
+    },
+    {
+      "name": "Sample Source B",
+      "url": "https://example.org/?series=the-emperors-sword&source=b",
+      "isSample": true
+    }
+  ],
+  "the-end-is-a-game-to-me1": [
+    {
+      "name": "Sample Source A",
+      "url": "https://example.com/?series=the-end-is-a-game-to-me1&source=a",
+      "isSample": true
+    },
+    {
+      "name": "Sample Source B",
+      "url": "https://example.org/?series=the-end-is-a-game-to-me1&source=b",
+      "isSample": true
+    }
+  ],
+  "the-entry-level-agent": [
+    {
+      "name": "Sample Source A",
+      "url": "https://example.com/?series=the-entry-level-agent&source=a",
+      "isSample": true
+    },
+    {
+      "name": "Sample Source B",
+      "url": "https://example.org/?series=the-entry-level-agent&source=b",
+      "isSample": true
+    }
+  ],
+  "the-evil-ring": [
+    {
+      "name": "Sample Source A",
+      "url": "https://example.com/?series=the-evil-ring&source=a",
+      "isSample": true
+    },
+    {
+      "name": "Sample Source B",
+      "url": "https://example.org/?series=the-evil-ring&source=b",
+      "isSample": true
+    }
+  ],
+  "the-executioner-kna3b2ep": [
+    {
+      "name": "Sample Source A",
+      "url": "https://example.com/?series=the-executioner-kna3b2ep&source=a",
+      "isSample": true
+    },
+    {
+      "name": "Sample Source B",
+      "url": "https://example.org/?series=the-executioner-kna3b2ep&source=b",
+      "isSample": true
+    }
+  ],
+  "the-exiled-ultimate-barrier-mage-wants-a-relaxing-journey-with-his-bride": [
+    {
+      "name": "Sample Source A",
+      "url": "https://example.com/?series=the-exiled-ultimate-barrier-mage-wants-a-relaxing-journey-with-his-bride&source=a",
+      "isSample": true
+    },
+    {
+      "name": "Sample Source B",
+      "url": "https://example.org/?series=the-exiled-ultimate-barrier-mage-wants-a-relaxing-journey-with-his-bride&source=b",
+      "isSample": true
+    }
+  ],
+  "the-forgotten-field": [
+    {
+      "name": "Sample Source A",
+      "url": "https://example.com/?series=the-forgotten-field&source=a",
+      "isSample": true
+    },
+    {
+      "name": "Sample Source B",
+      "url": "https://example.org/?series=the-forgotten-field&source=b",
+      "isSample": true
+    }
+  ],
+  "the-former-supreme": [
+    {
+      "name": "Sample Source A",
+      "url": "https://example.com/?series=the-former-supreme&source=a",
+      "isSample": true
+    },
+    {
+      "name": "Sample Source B",
+      "url": "https://example.org/?series=the-former-supreme&source=b",
+      "isSample": true
+    }
+  ],
+  "the-frozen-player-returns": [
+    {
+      "name": "Sample Source A",
+      "url": "https://example.com/?series=the-frozen-player-returns&source=a",
+      "isSample": true
+    },
+    {
+      "name": "Sample Source B",
+      "url": "https://example.org/?series=the-frozen-player-returns&source=b",
+      "isSample": true
+    }
+  ],
+  "the-game-architect-of-the-abyss": [
+    {
+      "name": "Sample Source A",
+      "url": "https://example.com/?series=the-game-architect-of-the-abyss&source=a",
+      "isSample": true
+    },
+    {
+      "name": "Sample Source B",
+      "url": "https://example.org/?series=the-game-architect-of-the-abyss&source=b",
+      "isSample": true
+    }
+  ],
+  "the-genius-girl-who-hid-her-martial-arts-achievements": [
+    {
+      "name": "Sample Source A",
+      "url": "https://example.com/?series=the-genius-girl-who-hid-her-martial-arts-achievements&source=a",
+      "isSample": true
+    },
+    {
+      "name": "Sample Source B",
+      "url": "https://example.org/?series=the-genius-girl-who-hid-her-martial-arts-achievements&source=b",
+      "isSample": true
+    }
+  ],
+  "the-genius-professor-wants-an-easy-life": [
+    {
+      "name": "Sample Source A",
+      "url": "https://example.com/?series=the-genius-professor-wants-an-easy-life&source=a",
+      "isSample": true
+    },
+    {
+      "name": "Sample Source B",
+      "url": "https://example.org/?series=the-genius-professor-wants-an-easy-life&source=b",
+      "isSample": true
+    }
+  ],
+  "the-genius-spirited-streamer": [
+    {
+      "name": "Sample Source A",
+      "url": "https://example.com/?series=the-genius-spirited-streamer&source=a",
+      "isSample": true
+    },
+    {
+      "name": "Sample Source B",
+      "url": "https://example.org/?series=the-genius-spirited-streamer&source=b",
+      "isSample": true
+    }
+  ],
+  "the-genius-wants-to-be-ordinary!": [
+    {
+      "name": "Sample Source A",
+      "url": "https://example.com/?series=the-genius-wants-to-be-ordinary!&source=a",
+      "isSample": true
+    },
+    {
+      "name": "Sample Source B",
+      "url": "https://example.org/?series=the-genius-wants-to-be-ordinary!&source=b",
+      "isSample": true
+    }
+  ],
+  "the-great-heavenly-demon-sovereign": [
+    {
+      "name": "Sample Source A",
+      "url": "https://example.com/?series=the-great-heavenly-demon-sovereign&source=a",
+      "isSample": true
+    },
+    {
+      "name": "Sample Source B",
+      "url": "https://example.org/?series=the-great-heavenly-demon-sovereign&source=b",
+      "isSample": true
+    }
+  ],
+  "the-great-heavenly-demon-sovereign-novel": [
+    {
+      "name": "Sample Source A",
+      "url": "https://example.com/?series=the-great-heavenly-demon-sovereign-novel&source=a",
+      "isSample": true
+    },
+    {
+      "name": "Sample Source B",
+      "url": "https://example.org/?series=the-great-heavenly-demon-sovereign-novel&source=b",
+      "isSample": true
+    }
+  ],
+  "the-great-mage-returns-after-4000-years": [
+    {
+      "name": "Sample Source A",
+      "url": "https://example.com/?series=the-great-mage-returns-after-4000-years&source=a",
+      "isSample": true
+    },
+    {
+      "name": "Sample Source B",
+      "url": "https://example.org/?series=the-great-mage-returns-after-4000-years&source=b",
+      "isSample": true
+    }
+  ],
+  "the-great-sword-hero:-the-scrap-loved-by-god": [
+    {
+      "name": "Sample Source A",
+      "url": "https://example.com/?series=the-great-sword-hero%3A-the-scrap-loved-by-god&source=a",
+      "isSample": true
+    },
+    {
+      "name": "Sample Source B",
+      "url": "https://example.org/?series=the-great-sword-hero%3A-the-scrap-loved-by-god&source=b",
+      "isSample": true
+    }
+  ],
+  "the-great-war-76h2dz2i": [
+    {
+      "name": "Sample Source A",
+      "url": "https://example.com/?series=the-great-war-76h2dz2i&source=a",
+      "isSample": true
+    },
+    {
+      "name": "Sample Source B",
+      "url": "https://example.org/?series=the-great-war-76h2dz2i&source=b",
+      "isSample": true
+    }
+  ],
+  "the-haunted-house": [
+    {
+      "name": "Sample Source A",
+      "url": "https://example.com/?series=the-haunted-house&source=a",
+      "isSample": true
+    },
+    {
+      "name": "Sample Source B",
+      "url": "https://example.org/?series=the-haunted-house&source=b",
+      "isSample": true
+    }
+  ],
+  "the-heavenly-demon's-apocalypse": [
+    {
+      "name": "Sample Source A",
+      "url": "https://example.com/?series=the-heavenly-demon's-apocalypse&source=a",
+      "isSample": true
+    },
+    {
+      "name": "Sample Source B",
+      "url": "https://example.org/?series=the-heavenly-demon's-apocalypse&source=b",
+      "isSample": true
+    }
+  ],
+  "the-hero's-ballad": [
+    {
+      "name": "Sample Source A",
+      "url": "https://example.com/?series=the-hero's-ballad&source=a",
+      "isSample": true
+    },
+    {
+      "name": "Sample Source B",
+      "url": "https://example.org/?series=the-hero's-ballad&source=b",
+      "isSample": true
+    }
+  ],
+  "the-hero-defeats-the-bullies-j3z7xlid": [
+    {
+      "name": "Sample Source A",
+      "url": "https://example.com/?series=the-hero-defeats-the-bullies-j3z7xlid&source=a",
+      "isSample": true
+    },
+    {
+      "name": "Sample Source B",
+      "url": "https://example.org/?series=the-hero-defeats-the-bullies-j3z7xlid&source=b",
+      "isSample": true
+    }
+  ],
+  "the-hero-directed-by-the-demon-king": [
+    {
+      "name": "Sample Source A",
+      "url": "https://example.com/?series=the-hero-directed-by-the-demon-king&source=a",
+      "isSample": true
+    },
+    {
+      "name": "Sample Source B",
+      "url": "https://example.org/?series=the-hero-directed-by-the-demon-king&source=b",
+      "isSample": true
+    }
+  ],
+  "the-howling-plague": [
+    {
+      "name": "Sample Source A",
+      "url": "https://example.com/?series=the-howling-plague&source=a",
+      "isSample": true
+    },
+    {
+      "name": "Sample Source B",
+      "url": "https://example.org/?series=the-howling-plague&source=b",
+      "isSample": true
+    }
+  ],
+  "the-hunter-lives-in-a-rented-apartment": [
+    {
+      "name": "Sample Source A",
+      "url": "https://example.com/?series=the-hunter-lives-in-a-rented-apartment&source=a",
+      "isSample": true
+    },
+    {
+      "name": "Sample Source B",
+      "url": "https://example.org/?series=the-hunter-lives-in-a-rented-apartment&source=b",
+      "isSample": true
+    }
+  ],
+  "the-immortal-genius-spearman": [
+    {
+      "name": "Sample Source A",
+      "url": "https://example.com/?series=the-immortal-genius-spearman&source=a",
+      "isSample": true
+    },
+    {
+      "name": "Sample Source B",
+      "url": "https://example.org/?series=the-immortal-genius-spearman&source=b",
+      "isSample": true
+    }
+  ],
+  "the-killer-lawyer": [
+    {
+      "name": "Sample Source A",
+      "url": "https://example.com/?series=the-killer-lawyer&source=a",
+      "isSample": true
+    },
+    {
+      "name": "Sample Source B",
+      "url": "https://example.org/?series=the-killer-lawyer&source=b",
+      "isSample": true
+    }
+  ],
+  "the-king-of-snow-6201p9fx": [
+    {
+      "name": "Sample Source A",
+      "url": "https://example.com/?series=the-king-of-snow-6201p9fx&source=a",
+      "isSample": true
+    },
+    {
+      "name": "Sample Source B",
+      "url": "https://example.org/?series=the-king-of-snow-6201p9fx&source=b",
+      "isSample": true
+    }
+  ],
+  "the-knight-becomes-a-black-flower": [
+    {
+      "name": "Sample Source A",
+      "url": "https://example.com/?series=the-knight-becomes-a-black-flower&source=a",
+      "isSample": true
+    },
+    {
+      "name": "Sample Source B",
+      "url": "https://example.org/?series=the-knight-becomes-a-black-flower&source=b",
+      "isSample": true
+    }
+  ],
+  "the-laws-of-cultivation": [
+    {
+      "name": "Sample Source A",
+      "url": "https://example.com/?series=the-laws-of-cultivation&source=a",
+      "isSample": true
+    },
+    {
+      "name": "Sample Source B",
+      "url": "https://example.org/?series=the-laws-of-cultivation&source=b",
+      "isSample": true
+    }
+  ],
+  "the-lawyer-who-sees-souls": [
+    {
+      "name": "Sample Source A",
+      "url": "https://example.com/?series=the-lawyer-who-sees-souls&source=a",
+      "isSample": true
+    },
+    {
+      "name": "Sample Source B",
+      "url": "https://example.org/?series=the-lawyer-who-sees-souls&source=b",
+      "isSample": true
+    }
+  ],
+  "the-legend-of-the-northern-blade": [
+    {
+      "name": "Sample Source A",
+      "url": "https://example.com/?series=the-legend-of-the-northern-blade&source=a",
+      "isSample": true
+    },
+    {
+      "name": "Sample Source B",
+      "url": "https://example.org/?series=the-legend-of-the-northern-blade&source=b",
+      "isSample": true
+    }
+  ],
+  "the-legendary-hero-is-an-academy-honors-student": [
+    {
+      "name": "Sample Source A",
+      "url": "https://example.com/?series=the-legendary-hero-is-an-academy-honors-student&source=a",
+      "isSample": true
+    },
+    {
+      "name": "Sample Source B",
+      "url": "https://example.org/?series=the-legendary-hero-is-an-academy-honors-student&source=b",
+      "isSample": true
+    }
+  ],
+  "the-legendary-hunter-becomes-young-again-3rra2eul": [
+    {
+      "name": "Sample Source A",
+      "url": "https://example.com/?series=the-legendary-hunter-becomes-young-again-3rra2eul&source=a",
+      "isSample": true
+    },
+    {
+      "name": "Sample Source B",
+      "url": "https://example.org/?series=the-legendary-hunter-becomes-young-again-3rra2eul&source=b",
+      "isSample": true
+    }
+  ],
+  "the-legendary-moonlight-sculptor-41zlu0iz": [
+    {
+      "name": "Sample Source A",
+      "url": "https://example.com/?series=the-legendary-moonlight-sculptor-41zlu0iz&source=a",
+      "isSample": true
+    },
+    {
+      "name": "Sample Source B",
+      "url": "https://example.org/?series=the-legendary-moonlight-sculptor-41zlu0iz&source=b",
+      "isSample": true
+    }
+  ],
+  "the-limitless-germ-necromancer": [
+    {
+      "name": "Sample Source A",
+      "url": "https://example.com/?series=the-limitless-germ-necromancer&source=a",
+      "isSample": true
+    },
+    {
+      "name": "Sample Source B",
+      "url": "https://example.org/?series=the-limitless-germ-necromancer&source=b",
+      "isSample": true
+    }
+  ],
+  "the-lord-of-coins": [
+    {
+      "name": "Sample Source A",
+      "url": "https://example.com/?series=the-lord-of-coins&source=a",
+      "isSample": true
+    },
+    {
+      "name": "Sample Source B",
+      "url": "https://example.org/?series=the-lord-of-coins&source=b",
+      "isSample": true
+    }
+  ],
+  "the-lord-who-levels-up-by-absorbing-powers": [
+    {
+      "name": "Sample Source A",
+      "url": "https://example.com/?series=the-lord-who-levels-up-by-absorbing-powers&source=a",
+      "isSample": true
+    },
+    {
+      "name": "Sample Source B",
+      "url": "https://example.org/?series=the-lord-who-levels-up-by-absorbing-powers&source=b",
+      "isSample": true
+    }
+  ],
+  "the-lucky-plan-of-an-idol-in-his-second-life": [
+    {
+      "name": "Sample Source A",
+      "url": "https://example.com/?series=the-lucky-plan-of-an-idol-in-his-second-life&source=a",
+      "isSample": true
+    },
+    {
+      "name": "Sample Source B",
+      "url": "https://example.org/?series=the-lucky-plan-of-an-idol-in-his-second-life&source=b",
+      "isSample": true
+    }
+  ],
+  "the-mad-dog": [
+    {
+      "name": "Sample Source A",
+      "url": "https://example.com/?series=the-mad-dog&source=a",
+      "isSample": true
+    },
+    {
+      "name": "Sample Source B",
+      "url": "https://example.org/?series=the-mad-dog&source=b",
+      "isSample": true
+    }
+  ],
+  "the-misfit-of-the-martial-world": [
+    {
+      "name": "Sample Source A",
+      "url": "https://example.com/?series=the-misfit-of-the-martial-world&source=a",
+      "isSample": true
+    },
+    {
+      "name": "Sample Source B",
+      "url": "https://example.org/?series=the-misfit-of-the-martial-world&source=b",
+      "isSample": true
+    }
+  ],
+  "the-monster-knight-wants-parental-leave": [
+    {
+      "name": "Sample Source A",
+      "url": "https://example.com/?series=the-monster-knight-wants-parental-leave&source=a",
+      "isSample": true
+    },
+    {
+      "name": "Sample Source B",
+      "url": "https://example.org/?series=the-monster-knight-wants-parental-leave&source=b",
+      "isSample": true
+    }
+  ],
+  "the-most-handsome-man-becomes-a-skeleton-8sl1lxna": [
+    {
+      "name": "Sample Source A",
+      "url": "https://example.com/?series=the-most-handsome-man-becomes-a-skeleton-8sl1lxna&source=a",
+      "isSample": true
+    },
+    {
+      "name": "Sample Source B",
+      "url": "https://example.org/?series=the-most-handsome-man-becomes-a-skeleton-8sl1lxna&source=b",
+      "isSample": true
+    }
+  ],
+  "the-necromancer-familys-young-heir": [
+    {
+      "name": "Sample Source A",
+      "url": "https://example.com/?series=the-necromancer-familys-young-heir&source=a",
+      "isSample": true
+    },
+    {
+      "name": "Sample Source B",
+      "url": "https://example.org/?series=the-necromancer-familys-young-heir&source=b",
+      "isSample": true
+    }
+  ],
+  "the-necromancer-of-a-renowned-sword-family": [
+    {
+      "name": "Sample Source A",
+      "url": "https://example.com/?series=the-necromancer-of-a-renowned-sword-family&source=a",
+      "isSample": true
+    },
+    {
+      "name": "Sample Source B",
+      "url": "https://example.org/?series=the-necromancer-of-a-renowned-sword-family&source=b",
+      "isSample": true
+    }
+  ],
+  "the-new-beggars-sect-9yovh5hb": [
+    {
+      "name": "Sample Source A",
+      "url": "https://example.com/?series=the-new-beggars-sect-9yovh5hb&source=a",
+      "isSample": true
+    },
+    {
+      "name": "Sample Source B",
+      "url": "https://example.org/?series=the-new-beggars-sect-9yovh5hb&source=b",
+      "isSample": true
+    }
+  ],
+  "the-outlaws-0": [
+    {
+      "name": "Sample Source A",
+      "url": "https://example.com/?series=the-outlaws-0&source=a",
+      "isSample": true
+    },
+    {
+      "name": "Sample Source B",
+      "url": "https://example.org/?series=the-outlaws-0&source=b",
+      "isSample": true
+    }
+  ],
+  "the-perfect-contract": [
+    {
+      "name": "Sample Source A",
+      "url": "https://example.com/?series=the-perfect-contract&source=a",
+      "isSample": true
+    },
+    {
+      "name": "Sample Source B",
+      "url": "https://example.org/?series=the-perfect-contract&source=b",
+      "isSample": true
+    }
+  ],
+  "the-player-of-the-fallen-family": [
+    {
+      "name": "Sample Source A",
+      "url": "https://example.com/?series=the-player-of-the-fallen-family&source=a",
+      "isSample": true
+    },
+    {
+      "name": "Sample Source B",
+      "url": "https://example.org/?series=the-player-of-the-fallen-family&source=b",
+      "isSample": true
+    }
+  ],
+  "the-postman-of-the-apocalypse": [
+    {
+      "name": "Sample Source A",
+      "url": "https://example.com/?series=the-postman-of-the-apocalypse&source=a",
+      "isSample": true
+    },
+    {
+      "name": "Sample Source B",
+      "url": "https://example.org/?series=the-postman-of-the-apocalypse&source=b",
+      "isSample": true
+    }
+  ],
+  "the-price-is-your-everything2": [
+    {
+      "name": "Sample Source A",
+      "url": "https://example.com/?series=the-price-is-your-everything2&source=a",
+      "isSample": true
+    },
+    {
+      "name": "Sample Source B",
+      "url": "https://example.org/?series=the-price-is-your-everything2&source=b",
+      "isSample": true
+    }
+  ],
+  "the-prosecutor:-kim-seo-jin": [
+    {
+      "name": "Sample Source A",
+      "url": "https://example.com/?series=the-prosecutor%3A-kim-seo-jin&source=a",
+      "isSample": true
+    },
+    {
+      "name": "Sample Source B",
+      "url": "https://example.org/?series=the-prosecutor%3A-kim-seo-jin&source=b",
+      "isSample": true
+    }
+  ],
+  "the-pure-love-that-winter": [
+    {
+      "name": "Sample Source A",
+      "url": "https://example.com/?series=the-pure-love-that-winter&source=a",
+      "isSample": true
+    },
+    {
+      "name": "Sample Source B",
+      "url": "https://example.org/?series=the-pure-love-that-winter&source=b",
+      "isSample": true
+    }
+  ],
+  "the-rebel-of-the-apocalypse-academy": [
+    {
+      "name": "Sample Source A",
+      "url": "https://example.com/?series=the-rebel-of-the-apocalypse-academy&source=a",
+      "isSample": true
+    },
+    {
+      "name": "Sample Source B",
+      "url": "https://example.org/?series=the-rebel-of-the-apocalypse-academy&source=b",
+      "isSample": true
+    }
+  ],
+  "the-rebel-of-the-tyrant-noble-family": [
+    {
+      "name": "Sample Source A",
+      "url": "https://example.com/?series=the-rebel-of-the-tyrant-noble-family&source=a",
+      "isSample": true
+    },
+    {
+      "name": "Sample Source B",
+      "url": "https://example.org/?series=the-rebel-of-the-tyrant-noble-family&source=b",
+      "isSample": true
+    }
+  ],
+  "the-rebellious-apostle-of-the-harvest-goddess": [
+    {
+      "name": "Sample Source A",
+      "url": "https://example.com/?series=the-rebellious-apostle-of-the-harvest-goddess&source=a",
+      "isSample": true
+    },
+    {
+      "name": "Sample Source B",
+      "url": "https://example.org/?series=the-rebellious-apostle-of-the-harvest-goddess&source=b",
+      "isSample": true
+    }
+  ],
+  "the-regressed-extra-becomes-a-genius": [
+    {
+      "name": "Sample Source A",
+      "url": "https://example.com/?series=the-regressed-extra-becomes-a-genius&source=a",
+      "isSample": true
+    },
+    {
+      "name": "Sample Source B",
+      "url": "https://example.org/?series=the-regressed-extra-becomes-a-genius&source=b",
+      "isSample": true
+    }
+  ],
+  "the-regressionist-and-the-blind-saintess": [
+    {
+      "name": "Sample Source A",
+      "url": "https://example.com/?series=the-regressionist-and-the-blind-saintess&source=a",
+      "isSample": true
+    },
+    {
+      "name": "Sample Source B",
+      "url": "https://example.org/?series=the-regressionist-and-the-blind-saintess&source=b",
+      "isSample": true
+    }
+  ],
+  "the-regressor-makes-everything": [
+    {
+      "name": "Sample Source A",
+      "url": "https://example.com/?series=the-regressor-makes-everything&source=a",
+      "isSample": true
+    },
+    {
+      "name": "Sample Source B",
+      "url": "https://example.org/?series=the-regressor-makes-everything&source=b",
+      "isSample": true
+    }
+  ],
+  "the-regressor-only-protect-me": [
+    {
+      "name": "Sample Source A",
+      "url": "https://example.com/?series=the-regressor-only-protect-me&source=a",
+      "isSample": true
+    },
+    {
+      "name": "Sample Source B",
+      "url": "https://example.org/?series=the-regressor-only-protect-me&source=b",
+      "isSample": true
+    }
+  ],
+  "the-reincarnated-avenger": [
+    {
+      "name": "Sample Source A",
+      "url": "https://example.com/?series=the-reincarnated-avenger&source=a",
+      "isSample": true
+    },
+    {
+      "name": "Sample Source B",
+      "url": "https://example.org/?series=the-reincarnated-avenger&source=b",
+      "isSample": true
+    }
+  ],
+  "the-return-of-the-unrivaled-genius-ranker": [
+    {
+      "name": "Sample Source A",
+      "url": "https://example.com/?series=the-return-of-the-unrivaled-genius-ranker&source=a",
+      "isSample": true
+    },
+    {
+      "name": "Sample Source B",
+      "url": "https://example.org/?series=the-return-of-the-unrivaled-genius-ranker&source=b",
+      "isSample": true
+    }
+  ],
+  "the-ruined-world-was-mistaken-for-a-game": [
+    {
+      "name": "Sample Source A",
+      "url": "https://example.com/?series=the-ruined-world-was-mistaken-for-a-game&source=a",
+      "isSample": true
+    },
+    {
+      "name": "Sample Source B",
+      "url": "https://example.org/?series=the-ruined-world-was-mistaken-for-a-game&source=b",
+      "isSample": true
+    }
+  ],
+  "the-ruler-of-darkness": [
+    {
+      "name": "Sample Source A",
+      "url": "https://example.com/?series=the-ruler-of-darkness&source=a",
+      "isSample": true
+    },
+    {
+      "name": "Sample Source B",
+      "url": "https://example.org/?series=the-ruler-of-darkness&source=b",
+      "isSample": true
+    }
+  ],
+  "the-saint-levels-up-through-necromancy": [
+    {
+      "name": "Sample Source A",
+      "url": "https://example.com/?series=the-saint-levels-up-through-necromancy&source=a",
+      "isSample": true
+    },
+    {
+      "name": "Sample Source B",
+      "url": "https://example.org/?series=the-saint-levels-up-through-necromancy&source=b",
+      "isSample": true
+    }
+  ],
+  "the-script-eating-actor": [
+    {
+      "name": "Sample Source A",
+      "url": "https://example.com/?series=the-script-eating-actor&source=a",
+      "isSample": true
+    },
+    {
+      "name": "Sample Source B",
+      "url": "https://example.org/?series=the-script-eating-actor&source=b",
+      "isSample": true
+    }
+  ],
+  "the-seventh-prince-wants-to-bail": [
+    {
+      "name": "Sample Source A",
+      "url": "https://example.com/?series=the-seventh-prince-wants-to-bail&source=a",
+      "isSample": true
+    },
+    {
+      "name": "Sample Source B",
+      "url": "https://example.org/?series=the-seventh-prince-wants-to-bail&source=b",
+      "isSample": true
+    }
+  ],
+  "the-shepherd-wizard": [
+    {
+      "name": "Sample Source A",
+      "url": "https://example.com/?series=the-shepherd-wizard&source=a",
+      "isSample": true
+    },
+    {
+      "name": "Sample Source B",
+      "url": "https://example.org/?series=the-shepherd-wizard&source=b",
+      "isSample": true
+    }
+  ],
+  "the-skeleton-soldier-failed-to-defend-the-dungeon-0ky1nyb0": [
+    {
+      "name": "Sample Source A",
+      "url": "https://example.com/?series=the-skeleton-soldier-failed-to-defend-the-dungeon-0ky1nyb0&source=a",
+      "isSample": true
+    },
+    {
+      "name": "Sample Source B",
+      "url": "https://example.org/?series=the-skeleton-soldier-failed-to-defend-the-dungeon-0ky1nyb0&source=b",
+      "isSample": true
+    }
+  ],
+  "the-social-outcast-necromancer": [
+    {
+      "name": "Sample Source A",
+      "url": "https://example.com/?series=the-social-outcast-necromancer&source=a",
+      "isSample": true
+    },
+    {
+      "name": "Sample Source B",
+      "url": "https://example.org/?series=the-social-outcast-necromancer&source=b",
+      "isSample": true
+    }
+  ],
+  "the-steel-emperor": [
+    {
+      "name": "Sample Source A",
+      "url": "https://example.com/?series=the-steel-emperor&source=a",
+      "isSample": true
+    },
+    {
+      "name": "Sample Source B",
+      "url": "https://example.org/?series=the-steel-emperor&source=b",
+      "isSample": true
+    }
+  ],
+  "the-story-of-a-low-rank-soldier-becoming-a-monarch": [
+    {
+      "name": "Sample Source A",
+      "url": "https://example.com/?series=the-story-of-a-low-rank-soldier-becoming-a-monarch&source=a",
+      "isSample": true
+    },
+    {
+      "name": "Sample Source B",
+      "url": "https://example.org/?series=the-story-of-a-low-rank-soldier-becoming-a-monarch&source=b",
+      "isSample": true
+    }
+  ],
+  "the-strange-tales-of-the-crescent-moon-hall-xckiu7zb": [
+    {
+      "name": "Sample Source A",
+      "url": "https://example.com/?series=the-strange-tales-of-the-crescent-moon-hall-xckiu7zb&source=a",
+      "isSample": true
+    },
+    {
+      "name": "Sample Source B",
+      "url": "https://example.org/?series=the-strange-tales-of-the-crescent-moon-hall-xckiu7zb&source=b",
+      "isSample": true
+    }
+  ],
+  "the-support-ate-it-all": [
+    {
+      "name": "Sample Source A",
+      "url": "https://example.com/?series=the-support-ate-it-all&source=a",
+      "isSample": true
+    },
+    {
+      "name": "Sample Source B",
+      "url": "https://example.org/?series=the-support-ate-it-all&source=b",
+      "isSample": true
+    }
+  ],
+  "the-supreme-demonic-sword": [
+    {
+      "name": "Sample Source A",
+      "url": "https://example.com/?series=the-supreme-demonic-sword&source=a",
+      "isSample": true
+    },
+    {
+      "name": "Sample Source B",
+      "url": "https://example.org/?series=the-supreme-demonic-sword&source=b",
+      "isSample": true
+    }
+  ],
+  "the-supreme-martial-academy": [
+    {
+      "name": "Sample Source A",
+      "url": "https://example.com/?series=the-supreme-martial-academy&source=a",
+      "isSample": true
+    },
+    {
+      "name": "Sample Source B",
+      "url": "https://example.org/?series=the-supreme-martial-academy&source=b",
+      "isSample": true
+    }
+  ],
+  "the-survivor-of-the-saviors-6y29qop2": [
+    {
+      "name": "Sample Source A",
+      "url": "https://example.com/?series=the-survivor-of-the-saviors-6y29qop2&source=a",
+      "isSample": true
+    },
+    {
+      "name": "Sample Source B",
+      "url": "https://example.org/?series=the-survivor-of-the-saviors-6y29qop2&source=b",
+      "isSample": true
+    }
+  ],
+  "the-sword-emperor-reincarnated-into-a-swordmaster-clan": [
+    {
+      "name": "Sample Source A",
+      "url": "https://example.com/?series=the-sword-emperor-reincarnated-into-a-swordmaster-clan&source=a",
+      "isSample": true
+    },
+    {
+      "name": "Sample Source B",
+      "url": "https://example.org/?series=the-sword-emperor-reincarnated-into-a-swordmaster-clan&source=b",
+      "isSample": true
+    }
+  ],
+  "the-sword-god-from-a-fallen-world": [
+    {
+      "name": "Sample Source A",
+      "url": "https://example.com/?series=the-sword-god-from-a-fallen-world&source=a",
+      "isSample": true
+    },
+    {
+      "name": "Sample Source B",
+      "url": "https://example.org/?series=the-sword-god-from-a-fallen-world&source=b",
+      "isSample": true
+    }
+  ],
+  "the-sword-saint-reincarnated-into-a-noble-mage-family": [
+    {
+      "name": "Sample Source A",
+      "url": "https://example.com/?series=the-sword-saint-reincarnated-into-a-noble-mage-family&source=a",
+      "isSample": true
+    },
+    {
+      "name": "Sample Source B",
+      "url": "https://example.org/?series=the-sword-saint-reincarnated-into-a-noble-mage-family&source=b",
+      "isSample": true
+    }
+  ],
+  "the-swordmaster-who-leapt-through-time": [
+    {
+      "name": "Sample Source A",
+      "url": "https://example.com/?series=the-swordmaster-who-leapt-through-time&source=a",
+      "isSample": true
+    },
+    {
+      "name": "Sample Source B",
+      "url": "https://example.org/?series=the-swordmaster-who-leapt-through-time&source=b",
+      "isSample": true
+    }
+  ],
+  "the-tale-of-the-skeleton-messenger": [
+    {
+      "name": "Sample Source A",
+      "url": "https://example.com/?series=the-tale-of-the-skeleton-messenger&source=a",
+      "isSample": true
+    },
+    {
+      "name": "Sample Source B",
+      "url": "https://example.org/?series=the-tale-of-the-skeleton-messenger&source=b",
+      "isSample": true
+    }
+  ],
+  "the-turn-bound-mage": [
+    {
+      "name": "Sample Source A",
+      "url": "https://example.com/?series=the-turn-bound-mage&source=a",
+      "isSample": true
+    },
+    {
+      "name": "Sample Source B",
+      "url": "https://example.org/?series=the-turn-bound-mage&source=b",
+      "isSample": true
+    }
+  ],
+  "the-ultimate-tank": [
+    {
+      "name": "Sample Source A",
+      "url": "https://example.com/?series=the-ultimate-tank&source=a",
+      "isSample": true
+    },
+    {
+      "name": "Sample Source B",
+      "url": "https://example.org/?series=the-ultimate-tank&source=b",
+      "isSample": true
+    }
+  ],
+  "the-ultimate-weapon-returns-after-100-million-years": [
+    {
+      "name": "Sample Source A",
+      "url": "https://example.com/?series=the-ultimate-weapon-returns-after-100-million-years&source=a",
+      "isSample": true
+    },
+    {
+      "name": "Sample Source B",
+      "url": "https://example.org/?series=the-ultimate-weapon-returns-after-100-million-years&source=b",
+      "isSample": true
+    }
+  ],
+  "the-unforgettable-genius-martial-artist": [
+    {
+      "name": "Sample Source A",
+      "url": "https://example.com/?series=the-unforgettable-genius-martial-artist&source=a",
+      "isSample": true
+    },
+    {
+      "name": "Sample Source B",
+      "url": "https://example.org/?series=the-unforgettable-genius-martial-artist&source=b",
+      "isSample": true
+    }
+  ],
+  "the-unrivaled-mythic-class-player": [
+    {
+      "name": "Sample Source A",
+      "url": "https://example.com/?series=the-unrivaled-mythic-class-player&source=a",
+      "isSample": true
+    },
+    {
+      "name": "Sample Source B",
+      "url": "https://example.org/?series=the-unrivaled-mythic-class-player&source=b",
+      "isSample": true
+    }
+  ],
+  "the-wind-mage": [
+    {
+      "name": "Sample Source A",
+      "url": "https://example.com/?series=the-wind-mage&source=a",
+      "isSample": true
+    },
+    {
+      "name": "Sample Source B",
+      "url": "https://example.org/?series=the-wind-mage&source=b",
+      "isSample": true
+    }
+  ],
+  "the-worn-and-torn-newbie": [
+    {
+      "name": "Sample Source A",
+      "url": "https://example.com/?series=the-worn-and-torn-newbie&source=a",
+      "isSample": true
+    },
+    {
+      "name": "Sample Source B",
+      "url": "https://example.org/?series=the-worn-and-torn-newbie&source=b",
+      "isSample": true
+    }
+  ],
+  "the-zerg-overlord-w351mf0b": [
+    {
+      "name": "Sample Source A",
+      "url": "https://example.com/?series=the-zerg-overlord-w351mf0b&source=a",
+      "isSample": true
+    },
+    {
+      "name": "Sample Source B",
+      "url": "https://example.org/?series=the-zerg-overlord-w351mf0b&source=b",
+      "isSample": true
+    }
+  ],
+  "there-are-no-bad-young-ladies-in-this-world": [
+    {
+      "name": "Sample Source A",
+      "url": "https://example.com/?series=there-are-no-bad-young-ladies-in-this-world&source=a",
+      "isSample": true
+    },
+    {
+      "name": "Sample Source B",
+      "url": "https://example.org/?series=there-are-no-bad-young-ladies-in-this-world&source=b",
+      "isSample": true
+    }
+  ],
+  "there-is-no-great-king-in-my-kingdom": [
+    {
+      "name": "Sample Source A",
+      "url": "https://example.com/?series=there-is-no-great-king-in-my-kingdom&source=a",
+      "isSample": true
+    },
+    {
+      "name": "Sample Source B",
+      "url": "https://example.org/?series=there-is-no-great-king-in-my-kingdom&source=b",
+      "isSample": true
+    }
+  ],
+  "third-rate-martial-family-becomes-the-best-under-heaven": [
+    {
+      "name": "Sample Source A",
+      "url": "https://example.com/?series=third-rate-martial-family-becomes-the-best-under-heaven&source=a",
+      "isSample": true
+    },
+    {
+      "name": "Sample Source B",
+      "url": "https://example.org/?series=third-rate-martial-family-becomes-the-best-under-heaven&source=b",
+      "isSample": true
+    }
+  ],
+  "this-killer-is-a-son-in-law": [
+    {
+      "name": "Sample Source A",
+      "url": "https://example.com/?series=this-killer-is-a-son-in-law&source=a",
+      "isSample": true
+    },
+    {
+      "name": "Sample Source B",
+      "url": "https://example.org/?series=this-killer-is-a-son-in-law&source=b",
+      "isSample": true
+    }
+  ],
+  "till-death-do-us-part": [
+    {
+      "name": "Sample Source A",
+      "url": "https://example.com/?series=till-death-do-us-part&source=a",
+      "isSample": true
+    },
+    {
+      "name": "Sample Source B",
+      "url": "https://example.org/?series=till-death-do-us-part&source=b",
+      "isSample": true
+    }
+  ],
+  "to-hell-with-the-status-window": [
+    {
+      "name": "Sample Source A",
+      "url": "https://example.com/?series=to-hell-with-the-status-window&source=a",
+      "isSample": true
+    },
+    {
+      "name": "Sample Source B",
+      "url": "https://example.org/?series=to-hell-with-the-status-window&source=b",
+      "isSample": true
+    }
+  ],
+  "to-live-as-an-immortal": [
+    {
+      "name": "Sample Source A",
+      "url": "https://example.com/?series=to-live-as-an-immortal&source=a",
+      "isSample": true
+    },
+    {
+      "name": "Sample Source B",
+      "url": "https://example.org/?series=to-live-as-an-immortal&source=b",
+      "isSample": true
+    }
+  ],
+  "tog-urek-mazino": [
+    {
+      "name": "Sample Source A",
+      "url": "https://example.com/?series=tog-urek-mazino&source=a",
+      "isSample": true
+    },
+    {
+      "name": "Sample Source B",
+      "url": "https://example.org/?series=tog-urek-mazino&source=b",
+      "isSample": true
+    }
+  ],
+  "tomb-raider-king-end-line": [
+    {
+      "name": "Sample Source A",
+      "url": "https://example.com/?series=tomb-raider-king-end-line&source=a",
+      "isSample": true
+    },
+    {
+      "name": "Sample Source B",
+      "url": "https://example.org/?series=tomb-raider-king-end-line&source=b",
+      "isSample": true
+    }
+  ],
+  "top-delinquent-of-the-demonic-cult": [
+    {
+      "name": "Sample Source A",
+      "url": "https://example.com/?series=top-delinquent-of-the-demonic-cult&source=a",
+      "isSample": true
+    },
+    {
+      "name": "Sample Source B",
+      "url": "https://example.org/?series=top-delinquent-of-the-demonic-cult&source=b",
+      "isSample": true
+    }
+  ],
+  "top-tier-providence": [
+    {
+      "name": "Sample Source A",
+      "url": "https://example.com/?series=top-tier-providence&source=a",
+      "isSample": true
+    },
+    {
+      "name": "Sample Source B",
+      "url": "https://example.org/?series=top-tier-providence&source=b",
+      "isSample": true
+    }
+  ],
+  "tower-of-god": [
+    {
+      "name": "Sample Source A",
+      "url": "https://example.com/?series=tower-of-god&source=a",
+      "isSample": true
+    },
+    {
+      "name": "Sample Source B",
+      "url": "https://example.org/?series=tower-of-god&source=b",
+      "isSample": true
+    }
+  ],
+  "transcendence-due-to-a-system-error": [
+    {
+      "name": "Sample Source A",
+      "url": "https://example.com/?series=transcendence-due-to-a-system-error&source=a",
+      "isSample": true
+    },
+    {
+      "name": "Sample Source B",
+      "url": "https://example.org/?series=transcendence-due-to-a-system-error&source=b",
+      "isSample": true
+    }
+  ],
+  "veteran-of-the-apocalypse": [
+    {
+      "name": "Sample Source A",
+      "url": "https://example.com/?series=veteran-of-the-apocalypse&source=a",
+      "isSample": true
+    },
+    {
+      "name": "Sample Source B",
+      "url": "https://example.org/?series=veteran-of-the-apocalypse&source=b",
+      "isSample": true
+    }
+  ],
+  "war-of-the-stray-dogs": [
+    {
+      "name": "Sample Source A",
+      "url": "https://example.com/?series=war-of-the-stray-dogs&source=a",
+      "isSample": true
+    },
+    {
+      "name": "Sample Source B",
+      "url": "https://example.org/?series=war-of-the-stray-dogs&source=b",
+      "isSample": true
+    }
+  ],
+  "weapon-maker": [
+    {
+      "name": "Sample Source A",
+      "url": "https://example.com/?series=weapon-maker&source=a",
+      "isSample": true
+    },
+    {
+      "name": "Sample Source B",
+      "url": "https://example.org/?series=weapon-maker&source=b",
+      "isSample": true
+    }
+  ],
+  "why-i-quit-being-the-demon-king-q77htq6b": [
+    {
+      "name": "Sample Source A",
+      "url": "https://example.com/?series=why-i-quit-being-the-demon-king-q77htq6b&source=a",
+      "isSample": true
+    },
+    {
+      "name": "Sample Source B",
+      "url": "https://example.org/?series=why-i-quit-being-the-demon-king-q77htq6b&source=b",
+      "isSample": true
+    }
+  ],
+  "wild-ranker": [
+    {
+      "name": "Sample Source A",
+      "url": "https://example.com/?series=wild-ranker&source=a",
+      "isSample": true
+    },
+    {
+      "name": "Sample Source B",
+      "url": "https://example.org/?series=wild-ranker&source=b",
+      "isSample": true
+    }
+  ],
+  "wind-breaker": [
+    {
+      "name": "Sample Source A",
+      "url": "https://example.com/?series=wind-breaker&source=a",
+      "isSample": true
+    },
+    {
+      "name": "Sample Source B",
+      "url": "https://example.org/?series=wind-breaker&source=b",
+      "isSample": true
+    }
+  ],
+  "wonderland": [
+    {
+      "name": "Sample Source A",
+      "url": "https://example.com/?series=wonderland&source=a",
+      "isSample": true
+    },
+    {
+      "name": "Sample Source B",
+      "url": "https://example.org/?series=wonderland&source=b",
+      "isSample": true
+    }
+  ],
+  "world-extinction-war": [
+    {
+      "name": "Sample Source A",
+      "url": "https://example.com/?series=world-extinction-war&source=a",
+      "isSample": true
+    },
+    {
+      "name": "Sample Source B",
+      "url": "https://example.org/?series=world-extinction-war&source=b",
+      "isSample": true
+    }
+  ],
+  "world-saving-is-a-skill": [
+    {
+      "name": "Sample Source A",
+      "url": "https://example.com/?series=world-saving-is-a-skill&source=a",
+      "isSample": true
+    },
+    {
+      "name": "Sample Source B",
+      "url": "https://example.org/?series=world-saving-is-a-skill&source=b",
+      "isSample": true
+    }
+  ],
+  "worrior-of-the-mind-sword": [
+    {
+      "name": "Sample Source A",
+      "url": "https://example.com/?series=worrior-of-the-mind-sword&source=a",
+      "isSample": true
+    },
+    {
+      "name": "Sample Source B",
+      "url": "https://example.org/?series=worrior-of-the-mind-sword&source=b",
+      "isSample": true
+    }
+  ],
+  "writers-legacy": [
+    {
+      "name": "Sample Source A",
+      "url": "https://example.com/?series=writers-legacy&source=a",
+      "isSample": true
+    },
+    {
+      "name": "Sample Source B",
+      "url": "https://example.org/?series=writers-legacy&source=b",
+      "isSample": true
+    }
+  ],
+  "yacha": [
+    {
+      "name": "Sample Source A",
+      "url": "https://example.com/?series=yacha&source=a",
+      "isSample": true
+    },
+    {
+      "name": "Sample Source B",
+      "url": "https://example.org/?series=yacha&source=b",
+      "isSample": true
+    }
+  ],
+  "your-sweet-breath": [
+    {
+      "name": "Sample Source A",
+      "url": "https://example.com/?series=your-sweet-breath&source=a",
+      "isSample": true
+    },
+    {
+      "name": "Sample Source B",
+      "url": "https://example.org/?series=your-sweet-breath&source=b",
+      "isSample": true
+    }
+  ],
+  "zig-the-blacksmith": [
+    {
+      "name": "Sample Source A",
+      "url": "https://example.com/?series=zig-the-blacksmith&source=a",
+      "isSample": true
+    },
+    {
+      "name": "Sample Source B",
+      "url": "https://example.org/?series=zig-the-blacksmith&source=b",
+      "isSample": true
+    }
+  ]
+}
