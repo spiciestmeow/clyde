@@ -24,6 +24,14 @@ export default defineConfig({
     host: '0.0.0.0',
     allowedHosts: true,
     proxy: {
+      '/api/mangadex-covers': {
+        target: 'https://uploads.mangadex.org/covers',
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/api\/mangadex-covers/, ''),
+        headers: {
+          Referer: 'https://mangadex.org',
+        },
+      },
       '/api/mangadex': {
         target: 'https://api.mangadex.org',
         changeOrigin: true,
@@ -35,6 +43,14 @@ export default defineConfig({
     host: '0.0.0.0',
     allowedHosts: true,
     proxy: {
+      '/api/mangadex-covers': {
+        target: 'https://uploads.mangadex.org/covers',
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/api\/mangadex-covers/, ''),
+        headers: {
+          Referer: 'https://mangadex.org',
+        },
+      },
       '/api/mangadex': {
         target: 'https://api.mangadex.org',
         changeOrigin: true,

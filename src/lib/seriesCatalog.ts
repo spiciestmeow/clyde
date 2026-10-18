@@ -298,9 +298,10 @@ export async function updateSeriesRecord(input: UpdateSeriesRequest): Promise<Se
     .update(updateData)
     .eq('id', input.id)
     .select('*')
-    .single();
+    .maybeSingle();
 
   if (error) throw error;
+  if (!data) throw new Error('Series not found or update returned no rows.');
   return toSeriesRecord(data);
 }
 

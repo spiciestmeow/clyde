@@ -241,8 +241,8 @@ export async function fetchMangaDexDetails(rawInput: string): Promise<MangaDexIm
     }
   }
 
-  // Optional MangaDex cover URL (fallback if user wants to use it)
-  const coverUrl = coverFileName ? `https://uploads.mangadex.org/covers/${id}/${coverFileName}` : undefined;
+  // Use proxied cover URL to avoid MangaDex hotlink blocking/placeholder
+  const coverUrl = coverFileName ? `/api/mangadex-covers/${id}/${coverFileName}` : undefined;
 
   return {
     id,
