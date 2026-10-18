@@ -259,6 +259,9 @@ export default function SeriesDetailPage() {
   }, [slug, series, seriesPageVisibility.similarSeries]);
 
   useLayoutEffect(() => {
+    window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
+    document.documentElement.scrollTop = 0;
+    document.body.scrollTop = 0;
     if (!fixedRailPositions) return;
     const layout = seriesLayoutRef.current;
     layout?.querySelector<HTMLElement>('.series-left-rail')?.scrollTo(0, 0);
