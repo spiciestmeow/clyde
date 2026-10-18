@@ -52,7 +52,7 @@ export function LatestReleaseCard({
               ) : (
                 <span
                   className={`release-chapter-status ${
-                    chapter.status === 'New' ? 'is-new' : 'is-old'
+                    chapter.status.trim().toLowerCase() === 'new' ? 'is-new' : 'is-old'
                   }`}
                 >
                   {chapter.status}

@@ -139,45 +139,149 @@ function recoverImage(event: SyntheticEvent<HTMLDivElement>) {
 function SectionTitle({ children, icon }: { children: string; icon?: boolean }) {
   return <div className="section-title">{icon && <Flame size={17} fill="currentColor" />}<h2>{children}</h2></div>;
 }
+function parseChapterAgeMinutes(status: string): number | null {
+  const s = status.trim().toLowerCase();
+  if (!s) return null;
+  if (s === 'new' || s === 'just now' || s === 'free now') return 0;
+  if (s === 'today') return 720;
+  if (s === 'yesterday') return 1440;
+
+  const minMatch = s.match(/(\d+)\s*min(?:ute)?s?\s*ago/);
+  if (minMatch) return Number(minMatch[1]);
+
+  const hourMatch = s.match(/(\d+)\s*(?:hour|hr)s?\s*ago/);
+  if (hourMatch) return Number(hourMatch[1]) * 60;
+
+  const dayMatch = s.match(/(\d+)\s*days?\s*ago/);
+  if (dayMatch) return Number(dayMatch[1]) * 1440;
+
+  const weekMatch = s.match(/(\d+)\s*weeks?\s*ago/);
+  if (weekMatch) return Number(weekMatch[1]) * 1440 * 7;
+
+  const monthMatch = s.match(/(\d+)\s*months?\s*ago/);
+  if (monthMatch) return Number(monthMatch[1]) * 1440 * 30;
+
+  const parsedDate = Date.parse(s);
+  if (!Number.isNaN(parsedDate)) {
+    const diffMin = (Date.now() - parsedDate) / (1000 * 60);
+    if (diffMin >= 0) return diffMin;
+  }
+
+  return null;
+}
+
+function getSeriesReleaseAgeMinutes(item: SeriesRecord): number {
+  const chapterAges = item.chapters
+    .map((c) => parseChapterAgeMinutes(c.status))
+    .filter((age): age is number => age !== null);
+
+  if (chapterAges.length > 0) {
+    return Math.min(...chapterAges);
+  }
+
+  const seriesDate = Date.parse(item.updatedAt || item.createdAt);
+  if (!Number.isNaN(seriesDate)) {
+    return Math.max(0, (Date.now() - seriesDate) / (1000 * 60));
+  }
+
+  return Number.POSITIVE_INFINITY;
+}
+
 function HomePage() {
   const [slide, setSlide] = useState(0);
   const [filter, setFilter] = useState<'Latest' | 'New'>('Latest');
+  const [popularPeriod, setPopularPeriod] = useState<'This week' | 'Today' | 'All time'>('This week');
+  const [showPeriodDropdown, setShowPeriodDropdown] = useState(false);
+  const periodDropdownRef = useRef<HTMLDivElement>(null);
   const [releasePage, setReleasePage] = useState(1);
   const catalogQuery = useSeriesCatalog();
   const seriesItems = catalogQuery.items;
   const searchItems = useMemo(() => toSiteSearchItems(seriesItems), [seriesItems]);
   const trendingSearchItems = useMemo(() => toTrendingSiteSearchItems(seriesItems), [seriesItems]);
-  const popularityOrder = useMemo(() => [...seriesItems].sort((left, right) =>
-    Number(right.pinned) - Number(left.pinned) ||
-    Number(right.rating ?? 0) - Number(left.rating ?? 0) ||
-    left.title.localeCompare(right.title),
-  ), [seriesItems]);
-  const popularCards = useMemo<PopularNowCardItem[]>(() => popularityOrder
-    .filter((item) => item.cover)
-    .slice(0, MAX_POPULAR_SERIES)
-    .map((item) => ({ title: item.title, src: item.cover, href: item.href })), [popularityOrder]);
-  const mostPopularItems = useMemo<MostPopularCardItem[]>(() => popularityOrder
-    .filter((item) => item.cover)
-    .slice(0, MAX_MOST_POPULAR_SERIES)
-    .map((item) => ({ title: item.title, src: item.cover, href: item.href, genres: item.genres })), [popularityOrder]);
-  const latestReleases = useMemo(() => [...seriesItems].sort((left, right) => {
-    const releaseAge = (item: SeriesRecord) => {
-      const statuses = item.chapters.map((chapter) => chapter.status.trim().toLocaleLowerCase());
-      if (statuses.includes('new')) return 0;
-      const dayAges = statuses.flatMap((status) => {
-        const match = status.match(/(\d+)\s*days?\s*ago/);
-        if (match) return [Number(match[1])];
-        if (status === 'yesterday') return [1];
-        if (status === 'today') return [0];
-        return [];
-      });
-      return dayAges.length ? Math.min(...dayAges) + 1 : Number.POSITIVE_INFINITY;
+
+  useEffect(() => {
+    if (!showPeriodDropdown) return;
+    const handleClickOutside = (e: MouseEvent) => {
+      if (periodDropdownRef.current && !periodDropdownRef.current.contains(e.target as Node)) {
+        setShowPeriodDropdown(false);
+      }
     };
-    const leftAge = releaseAge(left);
-    const rightAge = releaseAge(right);
-    if (leftAge !== rightAge) return leftAge < rightAge ? -1 : 1;
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [showPeriodDropdown]);
+
+  // Section 1: Popular Today (Top 20 trending / pinned / highest rated series)
+  const popularCards = useMemo<PopularNowCardItem[]>(() => {
+    const sorted = [...seriesItems].sort((left, right) => {
+      const pinDiff = Number(Boolean(right.pinned)) - Number(Boolean(left.pinned));
+      if (pinDiff !== 0) return pinDiff;
+
+      const rightRating = parseFloat(right.rating ?? '0') || 0;
+      const leftRating = parseFloat(left.rating ?? '0') || 0;
+      if (rightRating !== leftRating) return rightRating - leftRating;
+
+      const chapDiff = right.chapters.length - left.chapters.length;
+      if (chapDiff !== 0) return chapDiff;
+
+      return left.title.localeCompare(right.title);
+    });
+
+    return sorted
+      .filter((item) => item.cover)
+      .slice(0, MAX_POPULAR_SERIES)
+      .map((item) => ({ title: item.title, src: item.cover, href: item.href }));
+  }, [seriesItems]);
+
+  // Section 3: Most Popular (Top 9 series based on period selection)
+  const mostPopularItems = useMemo<MostPopularCardItem[]>(() => {
+    const sorted = [...seriesItems].sort((left, right) => {
+      const leftRating = parseFloat(left.rating ?? '0') || 0;
+      const rightRating = parseFloat(right.rating ?? '0') || 0;
+
+      if (popularPeriod === 'Today') {
+        const leftAge = getSeriesReleaseAgeMinutes(left);
+        const rightAge = getSeriesReleaseAgeMinutes(right);
+        const leftBonus = leftAge <= 1440 ? 1.5 : 0;
+        const rightBonus = rightAge <= 1440 ? 1.5 : 0;
+        return (Number(Boolean(right.pinned)) - Number(Boolean(left.pinned))) ||
+          (rightRating + rightBonus) - (leftRating + leftBonus) ||
+          right.chapters.length - left.chapters.length ||
+          left.title.localeCompare(right.title);
+      }
+
+      if (popularPeriod === 'This week') {
+        const leftAge = getSeriesReleaseAgeMinutes(left);
+        const rightAge = getSeriesReleaseAgeMinutes(right);
+        const leftBonus = leftAge <= 7 * 1440 ? 0.75 : 0;
+        const rightBonus = rightAge <= 7 * 1440 ? 0.75 : 0;
+        return (Number(Boolean(right.pinned)) - Number(Boolean(left.pinned))) ||
+          (rightRating + rightBonus) - (leftRating + leftBonus) ||
+          right.chapters.length - left.chapters.length ||
+          left.title.localeCompare(right.title);
+      }
+
+      // 'All time'
+      return (Number(Boolean(right.pinned)) - Number(Boolean(left.pinned))) ||
+        rightRating - leftRating ||
+        right.chapters.length - left.chapters.length ||
+        left.title.localeCompare(right.title);
+    });
+
+    return sorted
+      .filter((item) => item.cover)
+      .slice(0, MAX_MOST_POPULAR_SERIES)
+      .map((item) => ({ title: item.title, src: item.cover, href: item.href, genres: item.genres }));
+  }, [seriesItems, popularPeriod]);
+
+  // Section 2: Latest Releases (Sorted by newest chapter drop or creation)
+  const latestReleases = useMemo(() => [...seriesItems].sort((left, right) => {
+    const leftAge = getSeriesReleaseAgeMinutes(left);
+    const rightAge = getSeriesReleaseAgeMinutes(right);
+    if (leftAge !== rightAge) return leftAge - rightAge;
+
     const createdAtDiff = Date.parse(right.createdAt) - Date.parse(left.createdAt);
     if (Number.isFinite(createdAtDiff) && createdAtDiff !== 0) return createdAtDiff;
+
     return right.pageNumber - left.pageNumber || right.pageOrder - left.pageOrder || left.title.localeCompare(right.title);
   }), [seriesItems]);
   const continueReadingItems = useMemo<ContinueReadingItem[]>(() => {
@@ -235,9 +339,25 @@ function HomePage() {
       active = false;
     };
   }, []);
-  const visibleReleases = filter === 'New'
-    ? latestReleases.filter((release) => release.chapters.some((chapter) => chapter.status === 'New'))
-    : latestReleases;
+
+  const visibleReleases = useMemo(() => {
+    if (filter === 'Latest') return latestReleases;
+    const SEVEN_DAYS_MS = 7 * 24 * 60 * 60 * 1000;
+    return latestReleases.filter((release) => {
+      const hasNewChapter = release.chapters.some((chapter) => {
+        const s = chapter.status.trim().toLowerCase();
+        return s === 'new' || s === 'free now' || s === 'just now' || s.includes('min') || s.includes('hour') || s === 'today';
+      });
+      if (hasNewChapter) return true;
+
+      const createdTime = Date.parse(release.createdAt);
+      if (!Number.isNaN(createdTime) && (Date.now() - createdTime) < SEVEN_DAYS_MS) {
+        return true;
+      }
+
+      return false;
+    });
+  }, [filter, latestReleases]);
   const releasePageCount = Math.max(1, Math.ceil(visibleReleases.length / RELEASES_PER_PAGE));
   const currentReleasePage = Math.min(releasePage, releasePageCount);
   const pagedReleases = visibleReleases.slice(
@@ -454,7 +574,64 @@ function HomePage() {
           <section className="most-popular content-width">
             <div className="section-heading">
               <SectionTitle icon>Most Popular</SectionTitle>
-              <button className="period-control">This week <ChevronDown size={14} /></button>
+              <div ref={periodDropdownRef} style={{ position: 'relative' }}>
+                <button
+                  type="button"
+                  className="period-control"
+                  onClick={() => setShowPeriodDropdown((prev) => !prev)}
+                  aria-expanded={showPeriodDropdown}
+                  aria-haspopup="listbox"
+                >
+                  {popularPeriod} <ChevronDown size={14} />
+                </button>
+                {showPeriodDropdown && (
+                  <div
+                    style={{
+                      position: 'absolute',
+                      top: 'calc(100% + 4px)',
+                      right: 0,
+                      background: 'var(--panel)',
+                      border: '1px solid var(--line)',
+                      borderRadius: '8px',
+                      padding: '4px',
+                      zIndex: 50,
+                      minWidth: '110px',
+                      boxShadow: '0 8px 24px rgba(0, 0, 0, 0.35)',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      gap: '2px',
+                    }}
+                  >
+                    {(['This week', 'Today', 'All time'] as const).map((period) => (
+                      <button
+                        key={period}
+                        type="button"
+                        style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          width: '100%',
+                          padding: '6px 10px',
+                          border: 'none',
+                          borderRadius: '6px',
+                          background: period === popularPeriod ? 'var(--panel-soft)' : 'transparent',
+                          color: period === popularPeriod ? 'var(--text)' : 'var(--muted)',
+                          fontSize: '11px',
+                          fontWeight: period === popularPeriod ? 600 : 400,
+                          cursor: 'pointer',
+                          textAlign: 'left',
+                          transition: 'background 0.15s, color 0.15s',
+                        }}
+                        onClick={() => {
+                          setPopularPeriod(period);
+                          setShowPeriodDropdown(false);
+                        }}
+                      >
+                        {period}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
             </div>
             <div className="popular-rank-grid">
               {mostPopularItems.map((item, i) => (
