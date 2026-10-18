@@ -19,6 +19,8 @@
     <style id="vcomics-progress-style">
       #vcomics-navigation-progress {
         position: fixed;
+        left: 0;
+        right: 0;
         inset-inline-start: 0;
         top: 0;
         z-index: 2147483647;
@@ -45,7 +47,17 @@
         const key = "__vcomicsNavigationProgress";
         const w = window;
         if (w[key]?.initialized) return;
-        const state = (w[key] = { initialized: true, active: false, value: 0, trickleTimer: 0, hideTimer: 0 });
+
+        const state = {
+          initialized: true,
+          active: false,
+          value: 0,
+          trickleTimer: 0,
+          hideTimer: 0,
+          resetTimer: 0,
+          safetyTimer: 0,
+        };
+
         const getBar = () => {
           let bar = document.getElementById("vcomics-navigation-progress");
           if (!bar) {
@@ -56,43 +68,76 @@
           }
           return bar;
         };
-        const setValue = (value) => {
-          state.value = Math.max(state.value, Math.min(value, 100));
-          const bar = getBar();
-          bar.style.opacity = "1";
-          bar.style.transform = "scaleX(" + (state.value / 100) + ")";
-        };
+
         const clearTimers = () => {
           if (state.trickleTimer) { window.clearInterval(state.trickleTimer); state.trickleTimer = 0; }
           if (state.hideTimer) { window.clearTimeout(state.hideTimer); state.hideTimer = 0; }
+          if (state.resetTimer) { window.clearTimeout(state.resetTimer); state.resetTimer = 0; }
+          if (state.safetyTimer) { window.clearTimeout(state.safetyTimer); state.safetyTimer = 0; }
         };
+
+        const setProgress = (val, instant) => {
+          state.value = Math.max(0, Math.min(val, 100));
+          const bar = getBar();
+          if (instant) {
+            bar.style.transition = "none";
+            bar.style.transform = "scaleX(" + (state.value / 100) + ")";
+            void bar.offsetWidth; // Force layout reflow
+            bar.style.transition = "";
+          } else {
+            bar.style.transform = "scaleX(" + (state.value / 100) + ")";
+          }
+        };
+
         const start = () => {
           clearTimers();
           state.active = true;
-          state.value = 0;
-          setValue(15);
+          const bar = getBar();
+          bar.style.opacity = "1";
+          setProgress(0, true);
+
+          window.requestAnimationFrame(() => {
+            if (!state.active) return;
+            setProgress(15);
+          });
+
           state.trickleTimer = window.setInterval(() => {
             if (!state.active) return;
             const next = state.value + (state.value < 70 ? 8 : state.value < 88 ? 3 : 0.75);
-            setValue(Math.min(next, 92));
+            setProgress(Math.min(next, 92));
           }, 200);
+
+          // Absolute fail-safe: automatically complete after 2.5s if not already finished
+          state.safetyTimer = window.setTimeout(() => {
+            if (state.active) done();
+          }, 2500);
         };
+
         const done = () => {
           if (!state.active) return;
           state.active = false;
           if (state.trickleTimer) { window.clearInterval(state.trickleTimer); state.trickleTimer = 0; }
-          setValue(100);
+          if (state.safetyTimer) { window.clearTimeout(state.safetyTimer); state.safetyTimer = 0; }
+
+          setProgress(100);
+
           state.hideTimer = window.setTimeout(() => {
             const bar = getBar();
             bar.style.opacity = "0";
-            bar.style.transform = "scaleX(0)";
-            state.value = 0;
-            state.hideTimer = 0;
-          }, 200);
+            state.resetTimer = window.setTimeout(() => {
+              setProgress(0, true);
+              state.value = 0;
+            }, 180);
+          }, 220);
         };
-        w[key].start = start;
-        w[key].done = done;
-        // Trigger on every refresh immediately
+
+        w[key] = {
+          ...state,
+          start,
+          done,
+        };
+
+        // Start immediately on initial page load / refresh
         start();
       })();
     </script>

@@ -9,6 +9,8 @@ declare global {
       value: number;
       trickleTimer: number;
       hideTimer: number;
+      resetTimer: number;
+      safetyTimer: number;
       start: () => void;
       done: () => void;
     };
@@ -25,6 +27,8 @@ function getGlobalProgress() {
       value: 0,
       trickleTimer: 0,
       hideTimer: 0,
+      resetTimer: 0,
+      safetyTimer: 0,
       start: () => {},
       done: () => {},
     };
@@ -40,51 +44,65 @@ function getGlobalProgress() {
       return bar;
     };
 
-    const setValue = (val: number) => {
-      state.value = Math.max(state.value, Math.min(val, 100));
-      const bar = getBar();
-      bar.style.opacity = '1';
-      bar.style.transform = `scaleX(${state.value / 100})`;
+    const clearTimers = () => {
+      if (state.trickleTimer) { window.clearInterval(state.trickleTimer); state.trickleTimer = 0; }
+      if (state.hideTimer) { window.clearTimeout(state.hideTimer); state.hideTimer = 0; }
+      if (state.resetTimer) { window.clearTimeout(state.resetTimer); state.resetTimer = 0; }
+      if (state.safetyTimer) { window.clearTimeout(state.safetyTimer); state.safetyTimer = 0; }
     };
 
-    const clearTimers = () => {
-      if (state.trickleTimer) {
-        window.clearInterval(state.trickleTimer);
-        state.trickleTimer = 0;
-      }
-      if (state.hideTimer) {
-        window.clearTimeout(state.hideTimer);
-        state.hideTimer = 0;
+    const setProgress = (val: number, instant?: boolean) => {
+      state.value = Math.max(0, Math.min(val, 100));
+      const bar = getBar();
+      if (instant) {
+        bar.style.transition = 'none';
+        bar.style.transform = `scaleX(${state.value / 100})`;
+        void bar.offsetWidth;
+        bar.style.transition = '';
+      } else {
+        bar.style.transform = `scaleX(${state.value / 100})`;
       }
     };
 
     state.start = () => {
       clearTimers();
       state.active = true;
-      state.value = 0;
-      setValue(15);
+      const bar = getBar();
+      bar.style.opacity = '1';
+      setProgress(0, true);
+
+      window.requestAnimationFrame(() => {
+        if (!state.active) return;
+        setProgress(15);
+      });
+
       state.trickleTimer = window.setInterval(() => {
         if (!state.active) return;
         const next = state.value + (state.value < 70 ? 8 : state.value < 88 ? 3 : 0.75);
-        setValue(Math.min(next, 92));
+        setProgress(Math.min(next, 92));
       }, 200);
+
+      state.safetyTimer = window.setTimeout(() => {
+        if (state.active) state.done();
+      }, 2500);
     };
 
     state.done = () => {
       if (!state.active) return;
       state.active = false;
-      if (state.trickleTimer) {
-        window.clearInterval(state.trickleTimer);
-        state.trickleTimer = 0;
-      }
-      setValue(100);
+      if (state.trickleTimer) { window.clearInterval(state.trickleTimer); state.trickleTimer = 0; }
+      if (state.safetyTimer) { window.clearTimeout(state.safetyTimer); state.safetyTimer = 0; }
+
+      setProgress(100);
+
       state.hideTimer = window.setTimeout(() => {
         const bar = getBar();
         bar.style.opacity = '0';
-        bar.style.transform = 'scaleX(0)';
-        state.value = 0;
-        state.hideTimer = 0;
-      }, 200);
+        state.resetTimer = window.setTimeout(() => {
+          setProgress(0, true);
+          state.value = 0;
+        }, 180);
+      }, 220);
     };
 
     w.__vcomicsNavigationProgress = state;
@@ -103,17 +121,17 @@ export function finishNavigationProgress() {
 export default function NavigationProgress() {
   const [location] = useLocation();
   const isFirstMountRef = useRef(true);
+  const routeTimerRef = useRef<number | null>(null);
 
-  // Initial page mount / refresh: finish progress after a clean display window
+  // Initial page mount / refresh: complete progress smoothly
   useEffect(() => {
     const progress = getGlobalProgress();
-    // If progress isn't already active from index.html, start it
     if (!progress?.active) {
       progress?.start();
     }
     const timer = window.setTimeout(() => {
       progress?.done();
-    }, 450);
+    }, 400);
 
     return () => window.clearTimeout(timer);
   }, []);
@@ -126,16 +144,30 @@ export default function NavigationProgress() {
     }
 
     const progress = getGlobalProgress();
-    progress?.start();
+    if (routeTimerRef.current !== null) {
+      window.clearTimeout(routeTimerRef.current);
+    }
 
-    const timer = window.setTimeout(() => {
+    // Ensure progress is started for this transition
+    if (!progress?.active) {
+      progress?.start();
+    }
+
+    // Finish when the new view is rendered
+    routeTimerRef.current = window.setTimeout(() => {
       progress?.done();
-    }, 350);
+      routeTimerRef.current = null;
+    }, 280);
 
-    return () => window.clearTimeout(timer);
+    return () => {
+      if (routeTimerRef.current !== null) {
+        window.clearTimeout(routeTimerRef.current);
+        routeTimerRef.current = null;
+      }
+    };
   }, [location]);
 
-  // Intercept all internal link clicks and popstate (browser back/forward)
+  // Intercept clicks on links
   useEffect(() => {
     const handleClick = (event: MouseEvent) => {
       if (
@@ -163,7 +195,16 @@ export default function NavigationProgress() {
       const destination = new URL(link.href, window.location.href);
       if (destination.origin !== window.location.origin) return;
 
-      // Start progress immediately on internal link click
+      const normalize = (p: string) => p.replace(/\/$/, '') || '/';
+      const destPath = normalize(destination.pathname);
+      const currPath = normalize(window.location.pathname);
+
+      // If user double-taps or clicks the already active route link, do not trigger an orphan progress
+      if (destPath === currPath && destination.search === window.location.search) {
+        return;
+      }
+
+      // Start progress immediately on internal route link click
       getGlobalProgress()?.start();
     };
 
@@ -172,7 +213,7 @@ export default function NavigationProgress() {
       progress?.start();
       window.setTimeout(() => {
         progress?.done();
-      }, 350);
+      }, 280);
     };
 
     document.addEventListener('click', handleClick, { capture: true });
@@ -181,6 +222,9 @@ export default function NavigationProgress() {
     return () => {
       document.removeEventListener('click', handleClick, { capture: true });
       window.removeEventListener('popstate', handlePopState);
+      if (routeTimerRef.current !== null) {
+        window.clearTimeout(routeTimerRef.current);
+      }
     };
   }, []);
 
