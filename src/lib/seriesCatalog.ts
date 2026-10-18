@@ -305,3 +305,13 @@ export async function updateSeriesRecord(input: UpdateSeriesRequest): Promise<Se
   return toSeriesRecord(data);
 }
 
+export async function deleteSeriesRecord(id: number): Promise<void> {
+  const client = requireSupabase();
+  const { error } = await client
+    .from('series')
+    .delete()
+    .eq('id', id);
+
+  if (error) throw error;
+}
+

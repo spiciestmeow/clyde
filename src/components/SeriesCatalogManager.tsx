@@ -23,6 +23,7 @@ import {
 import {
   createSeriesRecord,
   updateSeriesRecord,
+  deleteSeriesRecord,
   SERIES_CATALOG_QUERY_KEY,
   type CreateSeriesRequest,
   type UpdateSeriesRequest,
@@ -211,6 +212,17 @@ export default function SeriesCatalogManager() {
     },
     onError: (err: any) => {
       setSubmitError(err?.message || 'Failed to update series. Please check your data and try again.');
+    },
+  });
+
+  // Delete series mutation
+  const deleteSeriesMutation = useMutation({
+    mutationFn: deleteSeriesRecord,
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: SERIES_CATALOG_QUERY_KEY });
+    },
+    onError: (err: any) => {
+      alert(err?.message || 'Failed to delete series.');
     },
   });
 
@@ -1179,6 +1191,19 @@ export default function SeriesCatalogManager() {
                     }}
                   >
                     <Edit2 size={16} />
+                  </button>
+                  <button
+                    type="button"
+                    className="title-action-btn title-action-btn-danger"
+                    title="Delete series"
+                    disabled={deleteSeriesMutation.isPending}
+                    onClick={() => {
+                      if (window.confirm(`Are you sure you want to delete "${series.title}"? This cannot be undone.`)) {
+                        deleteSeriesMutation.mutate(series.id);
+                      }
+                    }}
+                  >
+                    <Trash2 size={16} />
                   </button>
                   <a
                     href={series.href || `/series/${series.slug}`}

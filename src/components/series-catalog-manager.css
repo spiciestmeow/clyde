@@ -437,6 +437,9 @@
 
 .title-actions {
   flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  gap: 6px;
 }
 
 .title-action-btn {
@@ -448,11 +451,19 @@
   color: var(--up-text-muted);
   border-radius: 6px;
   transition: color 0.15s ease, background 0.15s ease;
+  background: transparent;
+  border: none;
+  cursor: pointer;
 }
 
 .title-action-btn:hover {
   color: var(--up-teal);
   background: #242d38;
+}
+
+.title-action-btn-danger:hover {
+  color: #ef4444;
+  background: rgba(239, 68, 68, 0.15);
 }
 
 /* ====================================================
