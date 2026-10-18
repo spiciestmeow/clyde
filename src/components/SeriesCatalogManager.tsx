@@ -7,6 +7,7 @@ import {
   BookOpen,
   Check,
   ChevronDown,
+  Edit2,
   ExternalLink,
   FileText,
   Image as ImageIcon,
@@ -21,8 +22,10 @@ import {
 } from 'lucide-react';
 import {
   createSeriesRecord,
+  updateSeriesRecord,
   SERIES_CATALOG_QUERY_KEY,
   type CreateSeriesRequest,
+  type UpdateSeriesRequest,
   type SeriesLink,
   type SeriesRecord,
 } from '../lib/seriesCatalog';
@@ -122,7 +125,8 @@ export default function SeriesCatalogManager() {
   // Modal search
   const [modalSearch, setModalSearch] = useState('');
 
-  // Form draft
+  // Form draft & editing state
+  const [editingSeriesId, setEditingSeriesId] = useState<number | null>(null);
   const [draft, setDraft] = useState<FormDraft>(initialFormDraft);
   const [newAltTitle, setNewAltTitle] = useState('');
   const [newAuthor, setNewAuthor] = useState('');
@@ -175,9 +179,10 @@ export default function SeriesCatalogManager() {
   // Create series mutation
   const createSeriesMutation = useMutation({
     mutationFn: createSeriesRecord,
-    onSuccess: async (series) => {
+    onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: SERIES_CATALOG_QUERY_KEY });
       setView('list');
+      setEditingSeriesId(null);
       setDraft(initialFormDraft());
       setImportUrl('');
       setImportError(null);
@@ -190,12 +195,32 @@ export default function SeriesCatalogManager() {
     },
   });
 
-  // Check if a title already exists in the catalog
+  // Update series mutation
+  const updateSeriesMutation = useMutation({
+    mutationFn: updateSeriesRecord,
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: SERIES_CATALOG_QUERY_KEY });
+      setView('list');
+      setEditingSeriesId(null);
+      setDraft(initialFormDraft());
+      setImportUrl('');
+      setImportError(null);
+      setDuplicateTitle(null);
+      setImportSuccess(null);
+      setSubmitError(null);
+    },
+    onError: (err: any) => {
+      setSubmitError(err?.message || 'Failed to update series. Please check your data and try again.');
+    },
+  });
+
+  // Check if a title already exists in the catalog (excluding current editing series)
   const checkDuplicate = (titleToCheck: string, sourceId?: string): { title: string; href: string } | null => {
     const cleanTitle = titleToCheck.trim().toLowerCase();
     const cleanSlug = slugify(titleToCheck);
 
     const existing = catalogItems.find((item) => {
+      if (editingSeriesId && item.id === editingSeriesId) return false;
       if (item.title.trim().toLowerCase() === cleanTitle) return true;
       if (item.slug === cleanSlug) return true;
       if (item.alternateTitles?.some((alt) => alt.trim().toLowerCase() === cleanTitle)) return true;
@@ -223,13 +248,13 @@ export default function SeriesCatalogManager() {
     try {
       const data = await fetchMangaDexDetails(importUrl);
 
-      // Check for duplicate in existing website catalog (Image 4)
       const duplicate = checkDuplicate(data.title, data.id);
       if (duplicate) {
         setDuplicateTitle(duplicate);
+        return;
       }
 
-      // Populate draft without overriding unrelated fields unnecessarily
+      // Populate draft
       setDraft((current) => ({
         ...current,
         title: data.title || current.title,
@@ -354,28 +379,52 @@ export default function SeriesCatalogManager() {
       return;
     }
 
-    const payload: CreateSeriesRequest = {
-      title,
-      cover: draft.cover.trim() || undefined,
-      category: draft.category || 'Manga',
-      status: draft.status || 'Releasing',
-      synopsis: draft.synopsis.trim() || undefined,
-      alternateTitles: draft.alternateTitles.length ? draft.alternateTitles : undefined,
-      author: draft.authors.join(', ') || undefined,
-      artist: draft.artists.join(', ') || undefined,
-      publishers: draft.publishers.length ? draft.publishers : undefined,
-      contentRating: draft.contentRating || 'Safe',
-      year: draft.year ? Number(draft.year) : undefined,
-      originalLanguage: draft.originalLanguage || undefined,
-      demographics: draft.demographics.length ? draft.demographics : undefined,
-      genres: draft.genres.length ? draft.genres : undefined,
-      formats: draft.formats.length ? draft.formats : undefined,
-      tags: draft.tags.length ? draft.tags : undefined,
-      trackers: draft.trackers.filter((t) => t.name && t.url),
-      sources: draft.sources.filter((s) => s.name && s.url),
-    };
-
-    createSeriesMutation.mutate(payload);
+    if (editingSeriesId) {
+      const updatePayload: UpdateSeriesRequest = {
+        id: editingSeriesId,
+        title,
+        cover: draft.cover.trim() || '',
+        category: draft.category || 'Manga',
+        status: draft.status || 'Releasing',
+        synopsis: draft.synopsis.trim() || undefined,
+        alternateTitles: draft.alternateTitles,
+        author: draft.authors.join(', ') || undefined,
+        artist: draft.artists.join(', ') || undefined,
+        publishers: draft.publishers,
+        contentRating: draft.contentRating || 'Safe',
+        year: draft.year ? Number(draft.year) : undefined,
+        originalLanguage: draft.originalLanguage || undefined,
+        demographics: draft.demographics,
+        genres: draft.genres,
+        formats: draft.formats,
+        tags: draft.tags,
+        trackers: draft.trackers.filter((t) => t.name && t.url),
+        sources: draft.sources.filter((s) => s.name && s.url),
+      };
+      updateSeriesMutation.mutate(updatePayload);
+    } else {
+      const payload: CreateSeriesRequest = {
+        title,
+        cover: draft.cover.trim() || undefined,
+        category: draft.category || 'Manga',
+        status: draft.status || 'Releasing',
+        synopsis: draft.synopsis.trim() || undefined,
+        alternateTitles: draft.alternateTitles.length ? draft.alternateTitles : undefined,
+        author: draft.authors.join(', ') || undefined,
+        artist: draft.artists.join(', ') || undefined,
+        publishers: draft.publishers.length ? draft.publishers : undefined,
+        contentRating: draft.contentRating || 'Safe',
+        year: draft.year ? Number(draft.year) : undefined,
+        originalLanguage: draft.originalLanguage || undefined,
+        demographics: draft.demographics.length ? draft.demographics : undefined,
+        genres: draft.genres.length ? draft.genres : undefined,
+        formats: draft.formats.length ? draft.formats : undefined,
+        tags: draft.tags.length ? draft.tags : undefined,
+        trackers: draft.trackers.filter((t) => t.name && t.url),
+        sources: draft.sources.filter((s) => s.name && s.url),
+      };
+      createSeriesMutation.mutate(payload);
+    }
   };
 
   // ==========================================
@@ -387,15 +436,17 @@ export default function SeriesCatalogManager() {
         {/* Breadcrumb Header */}
         <div className="new-title-nav">
           <nav className="new-title-breadcrumb" aria-label="Breadcrumb">
-            <button type="button" className="breadcrumb-link" onClick={() => setView('list')}>
+            <button type="button" className="breadcrumb-link" onClick={() => { setView('list'); setEditingSeriesId(null); }}>
               HOME
             </button>
             <span className="breadcrumb-separator">/</span>
-            <span className="breadcrumb-current">NEW TITLE</span>
+            <span className="breadcrumb-current">{editingSeriesId ? 'EDIT TITLE' : 'NEW TITLE'}</span>
           </nav>
-          <h1 className="new-title-heading">New title</h1>
+          <h1 className="new-title-heading">{editingSeriesId ? 'Edit title' : 'New title'}</h1>
           <p className="new-title-subheading">
-            Add a new title to the catalog. Required fields are marked with *.
+            {editingSeriesId
+              ? 'Update the details for this title. Required fields are marked with *.'
+              : 'Add a new title to the catalog. Required fields are marked with *.'}
           </p>
         </div>
 
@@ -948,16 +999,24 @@ export default function SeriesCatalogManager() {
 
           {/* Footer actions */}
           <div className="form-actions-footer">
-            <button type="button" className="btn-cancel" onClick={() => setView('list')}>
+            <button type="button" className="btn-cancel" onClick={() => { setView('list'); setEditingSeriesId(null); }}>
               Cancel
             </button>
             <button
               type="submit"
               className="btn-teal btn-create"
-              disabled={createSeriesMutation.isPending || !draft.title.trim() || !!duplicateTitle}
+              disabled={
+                (editingSeriesId ? updateSeriesMutation.isPending : createSeriesMutation.isPending) ||
+                !draft.title.trim() ||
+                !!duplicateTitle
+              }
             >
-              {createSeriesMutation.isPending ? <LoaderCircle className="spin-icon" size={16} /> : null}
-              {createSeriesMutation.isPending ? 'Creating...' : 'Create title'}
+              {(editingSeriesId ? updateSeriesMutation.isPending : createSeriesMutation.isPending) ? (
+                <LoaderCircle className="spin-icon" size={16} />
+              ) : null}
+              {editingSeriesId
+                ? (updateSeriesMutation.isPending ? 'Saving...' : 'Save changes')
+                : (createSeriesMutation.isPending ? 'Creating...' : 'Create title')}
             </button>
           </div>
         </form>
@@ -1085,6 +1144,42 @@ export default function SeriesCatalogManager() {
                   </div>
                 </div>
                 <div className="title-actions">
+                  <button
+                    type="button"
+                    className="title-action-btn"
+                    title="Edit series details"
+                    onClick={() => {
+                      setEditingSeriesId(series.id);
+                      setDraft({
+                        title: series.title || '',
+                        cover: series.cover || '',
+                        category: series.category || 'Manga',
+                        status: series.status || 'Ongoing',
+                        synopsis: series.synopsis || '',
+                        alternateTitles: series.alternateTitles || [],
+                        authors: series.author ? series.author.split(',').map((s) => s.trim()) : [],
+                        artists: series.artist ? series.artist.split(',').map((s) => s.trim()) : [],
+                        publishers: series.publishers || [],
+                        contentRating: series.contentRating || 'Safe',
+                        year: series.year ? String(series.year) : '',
+                        originalLanguage: series.originalLanguage || 'Japanese',
+                        demographics: series.demographics || [],
+                        genres: series.genres || [],
+                        formats: series.formats || [],
+                        tags: series.tags || [],
+                        trackers: series.trackers ? series.trackers.map((t) => ({ ...t, logo: t.logo || '', isSample: !!t.isSample })) : [],
+                        sources: series.sources ? series.sources.map((s) => ({ ...s, logo: s.logo || '', isSample: !!s.isSample })) : [],
+                      });
+                      setImportUrl('');
+                      setImportError(null);
+                      setDuplicateTitle(null);
+                      setImportSuccess(null);
+                      setSubmitError(null);
+                      setView('new-title');
+                    }}
+                  >
+                    <Edit2 size={16} />
+                  </button>
                   <a
                     href={series.href || `/series/${series.slug}`}
                     target="_blank"

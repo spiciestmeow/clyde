@@ -266,3 +266,41 @@ export async function createSeriesRecord(input: CreateSeriesRequest): Promise<Se
   return toSeriesRecord(data);
 }
 
+export type UpdateSeriesRequest = Partial<CreateSeriesRequest> & {
+  id: number;
+};
+
+export async function updateSeriesRecord(input: UpdateSeriesRequest): Promise<SeriesRecord> {
+  const client = requireSupabase();
+  const updateData: Record<string, unknown> = {};
+
+  if (input.title !== undefined) updateData.title = input.title.trim();
+  if (input.cover !== undefined) updateData.cover = input.cover.trim();
+  if (input.category !== undefined) updateData.category = input.category.trim();
+  if (input.status !== undefined) updateData.status = input.status.trim();
+  if (input.synopsis !== undefined) updateData.synopsis = input.synopsis?.trim() || null;
+  if (input.alternateTitles !== undefined) updateData.alternate_titles = input.alternateTitles;
+  if (input.author !== undefined) updateData.author = input.author?.trim() || null;
+  if (input.artist !== undefined) updateData.artist = input.artist?.trim() || null;
+  if (input.publishers !== undefined) updateData.publishers = input.publishers;
+  if (input.contentRating !== undefined) updateData.content_rating = input.contentRating?.trim() || null;
+  if (input.year !== undefined) updateData.year = input.year ?? null;
+  if (input.originalLanguage !== undefined) updateData.original_language = input.originalLanguage?.trim() || null;
+  if (input.demographics !== undefined) updateData.demographics = input.demographics;
+  if (input.genres !== undefined) updateData.genres = input.genres;
+  if (input.formats !== undefined) updateData.formats = input.formats;
+  if (input.tags !== undefined) updateData.tags = input.tags;
+  if (input.trackers !== undefined) updateData.trackers = input.trackers;
+  if (input.sources !== undefined) updateData.sources = input.sources;
+
+  const { data, error } = await client
+    .from('series')
+    .update(updateData)
+    .eq('id', input.id)
+    .select('*')
+    .single();
+
+  if (error) throw error;
+  return toSeriesRecord(data);
+}
+
