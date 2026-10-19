@@ -24,6 +24,7 @@ import {
   createSeriesRecord,
   updateSeriesRecord,
   deleteSeriesRecord,
+  addSeriesChapter,
   SERIES_CATALOG_QUERY_KEY,
   type CreateSeriesRequest,
   type UpdateSeriesRequest,
@@ -144,6 +145,12 @@ export default function SeriesCatalogManager() {
   const [importSuccess, setImportSuccess] = useState<string | null>(null);
   const [submitError, setSubmitError] = useState<string | null>(null);
 
+  // Chapter upload states
+  const [selectedSeriesForChapter, setSelectedSeriesForChapter] = useState<SeriesRecord | null>(null);
+  const [chapterTitleInput, setChapterTitleInput] = useState('');
+  const [chapterStatusInput, setChapterStatusInput] = useState('New');
+  const [chapterError, setChapterError] = useState<string | null>(null);
+
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Filtered titles for Main List (Image 1)
@@ -224,6 +231,22 @@ export default function SeriesCatalogManager() {
     },
     onError: (err: any) => {
       alert(err?.message || 'Failed to delete series.');
+    },
+  });
+
+  // Add chapter mutation
+  const addChapterMutation = useMutation({
+    mutationFn: addSeriesChapter,
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: SERIES_CATALOG_QUERY_KEY });
+      setSelectedSeriesForChapter(null);
+      setChapterTitleInput('');
+      setChapterError(null);
+      setIsModalOpen(false);
+      setMainTab('chapters');
+    },
+    onError: (err: any) => {
+      setChapterError(err?.message || 'Failed to add chapter.');
     },
   });
 
@@ -1223,99 +1246,225 @@ export default function SeriesCatalogManager() {
         )
       ) : (
         /* Chapters Tab */
-        <div className="uploads-empty-state">
-          <div className="empty-icon-outline">
-            <FileText size={32} strokeWidth={1.5} />
-          </div>
-          <h3 className="empty-title">No chapters.</h3>
-          <p className="empty-subtitle">Upload a chapter to any manga page to start.</p>
-        </div>
+        (() => {
+          const seriesWithChapters = catalogItems.filter((s) => s.chapters && s.chapters.length > 0);
+          if (seriesWithChapters.length === 0) {
+            return (
+              <div className="uploads-empty-state">
+                <div className="empty-icon-outline">
+                  <FileText size={32} strokeWidth={1.5} />
+                </div>
+                <h3 className="empty-title">No chapters.</h3>
+                <p className="empty-subtitle">Upload a chapter to any manga page to start.</p>
+              </div>
+            );
+          }
+          return (
+            <div className="uploads-list">
+              {seriesWithChapters.map((series) => (
+                <div key={series.id} className="uploads-item-row" style={{ flexDirection: 'column', alignItems: 'stretch', gap: 12 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 10 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                      <div className="thumb-container">
+                        {series.cover ? <img src={series.cover} alt={series.title} /> : <div className="thumb-placeholder"><BookOpen size={18} /></div>}
+                      </div>
+                      <div>
+                        <h3 className="title-heading" style={{ margin: 0 }}>{series.title}</h3>
+                        <small style={{ color: '#94a3b8' }}>{series.chapters.length} chapter{series.chapters.length === 1 ? '' : 's'} • {series.category}</small>
+                      </div>
+                    </div>
+                    <button
+                      type="button"
+                      className="btn-teal"
+                      style={{ padding: '6px 14px', fontSize: 13 }}
+                      onClick={() => {
+                        setSelectedSeriesForChapter(series);
+                        setChapterTitleInput(`Chapter ${series.chapters.length + 1}`);
+                        setChapterStatusInput('New');
+                        setChapterError(null);
+                        setIsModalOpen(true);
+                      }}
+                    >
+                      <Plus size={14} style={{ marginRight: 4 }} />
+                      Add chapter
+                    </button>
+                  </div>
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, paddingLeft: 56 }}>
+                    {series.chapters.map((chap, idx) => (
+                      <span key={chap.href || idx} style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '4px 10px', borderRadius: 6, background: '#1e293b', fontSize: 12, color: '#f1f5f9' }}>
+                        <span>{chap.title}</span>
+                        <span style={{ fontSize: 10, padding: '1px 6px', borderRadius: 4, background: chap.status.toLowerCase() === 'new' ? '#059669' : '#334155', color: '#fff' }}>
+                          {chap.status}
+                        </span>
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
+          );
+        })()
       )}
 
       {/* ========================================== */}
       {/* IMAGE 2: UPLOAD CHAPTER MODAL DIALOG       */}
       {/* ========================================== */}
       {isModalOpen && (
-        <div className="modal-backdrop" onClick={() => setIsModalOpen(false)}>
+        <div className="modal-backdrop" onClick={() => { setIsModalOpen(false); setSelectedSeriesForChapter(null); setChapterError(null); }}>
           <div className="modal-dialog-card" onClick={(e) => e.stopPropagation()}>
             <div className="modal-header">
-              <h2 className="modal-title">Upload chapter</h2>
+              <h2 className="modal-title">{selectedSeriesForChapter ? `Add Chapter to "${selectedSeriesForChapter.title}"` : 'Upload chapter'}</h2>
               <button
                 type="button"
                 className="modal-close-btn"
-                onClick={() => setIsModalOpen(false)}
+                onClick={() => { setIsModalOpen(false); setSelectedSeriesForChapter(null); setChapterError(null); }}
                 aria-label="Close dialog"
               >
                 <X size={18} />
               </button>
             </div>
-            <p className="modal-subtitle">Pick a title to add a chapter to, or create a new title.</p>
 
-            <div className="modal-search-field">
-              <Search size={16} className="modal-search-icon" />
-              <input
-                type="text"
-                placeholder="Search a title..."
-                value={modalSearch}
-                onChange={(e) => setModalSearch(e.target.value)}
-                autoFocus
-              />
-            </div>
-            <p className="modal-search-hint">Start typing a title to find it.</p>
+            {selectedSeriesForChapter ? (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 14, marginTop: 12 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '10px 12px', background: '#0f172a', borderRadius: 8, border: '1px solid #1e293b' }}>
+                  <div className="result-thumb">
+                    {selectedSeriesForChapter.cover ? <img src={selectedSeriesForChapter.cover} alt="" /> : <BookOpen size={16} />}
+                  </div>
+                  <div className="result-info">
+                    <strong>{selectedSeriesForChapter.title}</strong>
+                    <small style={{ color: '#94a3b8', display: 'block' }}>{selectedSeriesForChapter.chapters?.length || 0} existing chapters</small>
+                  </div>
+                </div>
 
-            {/* If matching titles found */}
-            {modalMatches.length > 0 && (
-              <div className="modal-results-list">
-                {modalMatches.map((item) => (
-                  <div
-                    key={item.id}
-                    className="modal-result-item"
+                {chapterError && (
+                  <div className="uploads-error-banner" style={{ margin: 0 }}>
+                    {chapterError}
+                  </div>
+                )}
+
+                <div>
+                  <label style={{ display: 'block', fontSize: 13, fontWeight: 600, marginBottom: 6, color: '#e2e8f0' }}>Chapter Title</label>
+                  <input
+                    type="text"
+                    placeholder="e.g. Chapter 1"
+                    value={chapterTitleInput}
+                    onChange={(e) => setChapterTitleInput(e.target.value)}
+                    style={{ width: '100%', padding: '10px 12px', borderRadius: 8, background: '#0f172a', border: '1px solid #334155', color: '#fff', fontSize: 14 }}
+                    autoFocus
+                  />
+                </div>
+
+                <div>
+                  <label style={{ display: 'block', fontSize: 13, fontWeight: 600, marginBottom: 6, color: '#e2e8f0' }}>Status Badge</label>
+                  <select
+                    value={chapterStatusInput}
+                    onChange={(e) => setChapterStatusInput(e.target.value)}
+                    style={{ width: '100%', padding: '10px 12px', borderRadius: 8, background: '#0f172a', border: '1px solid #334155', color: '#fff', fontSize: 14 }}
+                  >
+                    <option value="New">New</option>
+                    <option value="Free now">Free now</option>
+                  </select>
+                </div>
+
+                <div className="modal-buttons-group" style={{ marginTop: 8 }}>
+                  <button
+                    type="button"
+                    className="btn-dark"
+                    onClick={() => { setSelectedSeriesForChapter(null); setChapterError(null); }}
+                  >
+                    Back to search
+                  </button>
+                  <button
+                    type="button"
+                    className="btn-teal"
+                    disabled={addChapterMutation.isPending || !chapterTitleInput.trim()}
                     onClick={() => {
-                      alert(`Selected title: ${item.title}. Chapter upload flow can be integrated here.`);
+                      if (!chapterTitleInput.trim()) return;
+                      addChapterMutation.mutate({
+                        seriesId: selectedSeriesForChapter.id,
+                        chapterTitle: chapterTitleInput.trim(),
+                        status: chapterStatusInput,
+                      });
                     }}
                   >
-                    <div className="result-thumb">
-                      {item.cover ? <img src={item.cover} alt="" /> : <BookOpen size={16} />}
-                    </div>
-                    <div className="result-info">
-                      <strong>{item.title}</strong>
-                      <small>{item.chapters?.length || 0} chapters • {item.category}</small>
-                    </div>
-                  </div>
-                ))}
+                    {addChapterMutation.isPending ? 'Adding chapter...' : 'Add Chapter'}
+                  </button>
+                </div>
               </div>
+            ) : (
+              <>
+                <p className="modal-subtitle">Pick a title to add a chapter to, or create a new title.</p>
+
+                <div className="modal-search-field">
+                  <Search size={16} className="modal-search-icon" />
+                  <input
+                    type="text"
+                    placeholder="Search a title..."
+                    value={modalSearch}
+                    onChange={(e) => setModalSearch(e.target.value)}
+                    autoFocus
+                  />
+                </div>
+                <p className="modal-search-hint">Start typing a title to find it.</p>
+
+                {/* If matching titles found */}
+                {modalMatches.length > 0 && (
+                  <div className="modal-results-list">
+                    {modalMatches.map((item) => (
+                      <div
+                        key={item.id}
+                        className="modal-result-item"
+                        onClick={() => {
+                          setSelectedSeriesForChapter(item);
+                          setChapterTitleInput(`Chapter ${(item.chapters?.length || 0) + 1}`);
+                          setChapterStatusInput('New');
+                          setChapterError(null);
+                        }}
+                      >
+                        <div className="result-thumb">
+                          {item.cover ? <img src={item.cover} alt="" /> : <BookOpen size={16} />}
+                        </div>
+                        <div className="result-info">
+                          <strong>{item.title}</strong>
+                          <small>{item.chapters?.length || 0} chapters • {item.category}</small>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                <div className="modal-buttons-group">
+                  <button
+                    type="button"
+                    className="btn-teal btn-create-new-title"
+                    onClick={() => {
+                      setIsModalOpen(false);
+                      setView('new-title');
+                      setDraft(initialFormDraft());
+                      setImportUrl('');
+                      setImportError(null);
+                      setDuplicateTitle(null);
+                      setImportSuccess(null);
+                    }}
+                  >
+                    <Plus size={16} />
+                    Create new title
+                  </button>
+
+                  <button
+                    type="button"
+                    className="btn-dark btn-uploaded-chapters"
+                    onClick={() => {
+                      setIsModalOpen(false);
+                      setMainTab('chapters');
+                    }}
+                  >
+                    <List size={16} />
+                    Uploaded Chapters
+                  </button>
+                </div>
+              </>
             )}
-
-            <div className="modal-buttons-group">
-              <button
-                type="button"
-                className="btn-teal btn-create-new-title"
-                onClick={() => {
-                  setIsModalOpen(false);
-                  setView('new-title');
-                  setDraft(initialFormDraft());
-                  setImportUrl('');
-                  setImportError(null);
-                  setDuplicateTitle(null);
-                  setImportSuccess(null);
-                }}
-              >
-                <Plus size={16} />
-                Create new title
-              </button>
-
-              <button
-                type="button"
-                className="btn-dark btn-uploaded-chapters"
-                onClick={() => {
-                  setIsModalOpen(false);
-                  setMainTab('chapters');
-                }}
-              >
-                <List size={16} />
-                Uploaded Chapters
-              </button>
-            </div>
           </div>
         </div>
       )}

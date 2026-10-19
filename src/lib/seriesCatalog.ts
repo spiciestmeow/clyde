@@ -299,6 +299,7 @@ export async function createSeriesRecord(input: CreateSeriesRequest): Promise<Se
 
 export type UpdateSeriesRequest = Partial<CreateSeriesRequest> & {
   id: number;
+  chapters?: SeriesChapter[];
 };
 
 export async function updateSeriesRecord(input: UpdateSeriesRequest): Promise<SeriesRecord> {
@@ -323,6 +324,7 @@ export async function updateSeriesRecord(input: UpdateSeriesRequest): Promise<Se
   if (input.tags !== undefined) updateData.tags = input.tags;
   if (input.trackers !== undefined) updateData.trackers = input.trackers;
   if (input.sources !== undefined) updateData.sources = input.sources;
+  if (input.chapters !== undefined) updateData.chapters = input.chapters;
   updateData.updated_at = new Date().toISOString();
 
   const { data, error } = await client
@@ -334,6 +336,63 @@ export async function updateSeriesRecord(input: UpdateSeriesRequest): Promise<Se
 
   if (error) throw error;
   if (!data) throw new Error('Series not found or update returned no rows. Please ensure the Supabase UPDATE policy is executed.');
+  return toSeriesRecord(data);
+}
+
+export type AddSeriesChapterInput = {
+  seriesId: number;
+  chapterTitle: string;
+  chapterHref?: string;
+  status?: string;
+  locked?: boolean;
+};
+
+export async function addSeriesChapter(input: AddSeriesChapterInput): Promise<SeriesRecord> {
+  const client = requireSupabase();
+
+  const { data: current, error: fetchError } = await client
+    .from('series')
+    .select('*')
+    .eq('id', input.seriesId)
+    .single();
+
+  if (fetchError || !current) throw fetchError || new Error('Series not found');
+
+  const existingChapters: SeriesChapter[] = Array.isArray(current.chapters) ? current.chapters : [];
+  const cleanTitle = input.chapterTitle.trim();
+  const slug = current.slug || slugify(current.title);
+
+  const chapterSlug = slugify(cleanTitle);
+  const href = input.chapterHref?.trim() || `/series/${slug}/${chapterSlug}`;
+
+  const now = new Date().toISOString();
+  const newChapter: SeriesChapter & { createdAt: string } = {
+    title: cleanTitle,
+    href,
+    status: input.status?.trim() || 'New',
+    locked: input.locked ?? false,
+    createdAt: now,
+  };
+
+  const updatedChapters = [newChapter, ...existingChapters];
+  const updatedFacts = {
+    ...(current.facts || {}),
+    last_chapter_added_at: now,
+  };
+
+  const { data, error } = await client
+    .from('series')
+    .update({
+      chapters: updatedChapters,
+      facts: updatedFacts,
+      updated_at: now,
+    })
+    .eq('id', input.seriesId)
+    .select('*')
+    .maybeSingle();
+
+  if (error) throw error;
+  if (!data) throw new Error('Failed to add chapter.');
   return toSeriesRecord(data);
 }
 

@@ -151,7 +151,7 @@ function SectionTitle({ children, icon }: { children: string; icon?: boolean }) 
 function parseChapterAgeMinutes(status: string): number | null {
   const s = status.trim().toLowerCase();
   if (!s) return null;
-  if (s === 'new' || s === 'just now' || s === 'free now') return 0;
+  if (s === 'new' || s === 'just now') return 0;
   if (s === 'today') return 720;
   if (s === 'yesterday') return 1440;
 
@@ -180,19 +180,41 @@ function parseChapterAgeMinutes(status: string): number | null {
 }
 
 function getSeriesReleaseAgeMinutes(item: SeriesRecord): number {
-  const chapterAges = item.chapters
-    .map((c) => parseChapterAgeMinutes(c.status))
-    .filter((age): age is number => age !== null);
+  const chapterAges: number[] = [];
+
+  // Check if a new chapter timestamp was explicitly recorded on the series
+  const lastChapterAddedAt = item.facts?.last_chapter_added_at || (item as any).last_chapter_added_at;
+  if (lastChapterAddedAt) {
+    const t = Date.parse(lastChapterAddedAt);
+    if (!Number.isNaN(t)) {
+      chapterAges.push(Math.max(0, (Date.now() - t) / (1000 * 60)));
+    }
+  }
+
+  // Check each chapter for explicit date or status
+  if (Array.isArray(item.chapters) && item.chapters.length > 0) {
+    for (const c of item.chapters) {
+      const explicitDate = (c as any).createdAt || (c as any).created_at || (c as any).date || (c as any).releasedAt;
+      if (explicitDate) {
+        const t = Date.parse(explicitDate);
+        if (!Number.isNaN(t)) {
+          chapterAges.push(Math.max(0, (Date.now() - t) / (1000 * 60)));
+        }
+      }
+      const age = parseChapterAgeMinutes(c.status);
+      if (age !== null) {
+        chapterAges.push(age);
+      }
+    }
+  }
 
   if (chapterAges.length > 0) {
     return Math.min(...chapterAges);
   }
 
-  const seriesDate = Date.parse(item.updatedAt || item.createdAt);
-  if (!Number.isNaN(seriesDate)) {
-    return Math.max(0, (Date.now() - seriesDate) / (1000 * 60));
-  }
-
+  // IMPORTANT: Do NOT fall back to item.updatedAt!
+  // Updating series details (synopsis, cover, genres, etc.) touches updatedAt.
+  // Release sorting should ONLY prioritize series when a new chapter is added.
   return Number.POSITIVE_INFINITY;
 }
 
@@ -303,16 +325,17 @@ function HomePage() {
       .map((item) => ({ title: item.title, src: item.cover, href: item.href, genres: item.genres }));
   }, [seriesItems, popularPeriod]);
 
-  // Section 2: Latest Releases (Sorted by newest chapter drop or creation)
+  // Section 2: Latest Releases (Sorted by newest chapter drop, preserving catalog order)
   const latestReleases = useMemo(() => [...seriesItems].sort((left, right) => {
     const leftAge = getSeriesReleaseAgeMinutes(left);
     const rightAge = getSeriesReleaseAgeMinutes(right);
     if (leftAge !== rightAge) return leftAge - rightAge;
 
-    const createdAtDiff = Date.parse(right.createdAt) - Date.parse(left.createdAt);
-    if (Number.isFinite(createdAtDiff) && createdAtDiff !== 0) return createdAtDiff;
-
-    return right.pageNumber - left.pageNumber || right.pageOrder - left.pageOrder || left.title.localeCompare(right.title);
+    return (
+      left.pageNumber - right.pageNumber ||
+      left.pageOrder - right.pageOrder ||
+      left.title.localeCompare(right.title)
+    );
   }), [seriesItems]);
   const continueReadingItems = useMemo<ContinueReadingItem[]>(() => {
     const byTitle = new Map(seriesItems.map((item) => [item.title.toLocaleLowerCase(), item]));
@@ -373,9 +396,12 @@ function HomePage() {
     return latestReleases.filter((release) => {
       const hasNewChapter = release.chapters.some((chapter) => {
         const s = chapter.status.trim().toLowerCase();
-        return s === 'new' || s === 'free now' || s === 'just now' || s.includes('min') || s.includes('hour') || s === 'today';
+        return s === 'new' || s === 'just now' || s.includes('min') || s.includes('hour') || s === 'today';
       });
       if (hasNewChapter) return true;
+
+      const releaseAge = getSeriesReleaseAgeMinutes(release);
+      if (releaseAge <= 7 * 1440) return true;
 
       const createdTime = Date.parse(release.createdAt);
       if (!Number.isNaN(createdTime) && (Date.now() - createdTime) < SEVEN_DAYS_MS) {
