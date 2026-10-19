@@ -81,6 +81,92 @@ function getFaviconUrl(rawUrl: string): string {
   }
 }
 
+export function buildScanlatorSeriesUrl(
+  scanlatorName: string,
+  baseUrl: string,
+  seriesTitle: string,
+): string {
+  if (!baseUrl) return '';
+  const cleanTitle = seriesTitle.trim();
+  const encoded = encodeURIComponent(cleanTitle);
+  const lower = scanlatorName.toLowerCase();
+
+  // If baseUrl already points to a specific series/manga page (not just domain root), keep it
+  try {
+    const parsed = new URL(baseUrl);
+    if (parsed.pathname && parsed.pathname.length > 3 && !['/series', '/manga', '/comics'].includes(parsed.pathname)) {
+      return baseUrl;
+    }
+  } catch {
+    // continue
+  }
+
+  // Asura: has direct series search /series?name={encoded}
+  if (lower.includes('asura')) {
+    return `https://asuracomic.net/series?name=${encoded}`;
+  }
+  // Reaper: /series?query={encoded}
+  if (lower.includes('reaper')) {
+    return `https://reaperscans.com/series?query=${encoded}`;
+  }
+  // Flame: /series?search={encoded}
+  if (lower.includes('flame')) {
+    return `https://flamecomics.xyz/series?search=${encoded}`;
+  }
+  // MangaDex: /search?q={encoded}
+  if (lower.includes('mangadex')) {
+    return `https://mangadex.org/search?q=${encoded}`;
+  }
+  // Zero Scans
+  if (lower.includes('zero')) {
+    return `https://zeroscans.com/?s=${encoded}&post_type=wp-manga`;
+  }
+  // Hive Scans / Void Scans
+  if (lower.includes('hive') || lower.includes('void')) {
+    return `https://hivescans.com/?s=${encoded}&post_type=wp-manga`;
+  }
+  // Diva Scans
+  if (lower.includes('diva')) {
+    return `https://divascans.com/?s=${encoded}&post_type=wp-manga`;
+  }
+  // Genztoons
+  if (lower.includes('genz')) {
+    return `https://genztoons.com/?s=${encoded}&post_type=wp-manga`;
+  }
+  // O Translations
+  if (lower.includes('o translation')) {
+    return `https://otranslations.com/?s=${encoded}`;
+  }
+  // Drake Scans
+  if (lower.includes('drake')) {
+    return `https://drakescans.com/?s=${encoded}&post_type=wp-manga`;
+  }
+  // Cosmic Scans
+  if (lower.includes('cosmic')) {
+    return `https://cosmicscans.com/?s=${encoded}&post_type=wp-manga`;
+  }
+  // Realm / Rizzfables
+  if (lower.includes('realm') || lower.includes('rizz')) {
+    return `https://rizzfables.com/?s=${encoded}&post_type=wp-manga`;
+  }
+  // Luminous Scans
+  if (lower.includes('luminous')) {
+    return `https://luminousscans.net/?s=${encoded}&post_type=wp-manga`;
+  }
+  // Immortal Updates
+  if (lower.includes('immortal')) {
+    return `https://immortalupdates.com/?s=${encoded}&post_type=wp-manga`;
+  }
+
+  // Generic WordPress / scanlator domain fallback
+  try {
+    const parsed = new URL(baseUrl);
+    return `${parsed.origin}/?s=${encoded}&post_type=wp-manga`;
+  } catch {
+    return baseUrl;
+  }
+}
+
 export async function fetchScanlationSources(rawTitle: string, alternateTitles: string[] = []) {
   const title = rawTitle.trim();
   if (!title) {
@@ -223,11 +309,12 @@ export async function fetchScanlationSources(rawTitle: string, alternateTitles: 
       }
 
       const chCount = groupLatestChapter.get(rawName) || totalChapters || '';
+      const seriesUrl = buildScanlatorSeriesUrl(rawName, siteUrl, title);
       const logo = siteUrl ? getFaviconUrl(siteUrl) : '';
 
       sources.push({
         name: rawName,
-        url: siteUrl,
+        url: seriesUrl,
         logo: logo || undefined,
         chapterCount: chCount ? `${chCount} ch` : undefined,
         active: Boolean(g.active),
