@@ -231,7 +231,8 @@ export default function SeriesDetailPage() {
   const [copied, setCopied] = useState(false);
   const [mobileNav, setMobileNav] = useState(false);
   const { dark, toggleTheme } = useThemeMode();
-  const [activeTab, setActiveTab] = useState<'chapters' | 'sources' | 'synopsis' | 'reviews'>('chapters');
+  const [activeTab, setActiveTab] = useState<'sources' | 'synopsis' | 'reviews'>('sources');
+  const [, setTick] = useState(0);
   const [synopsisExpanded, setSynopsisExpanded] = useState(false);
   const [coverOpen, setCoverOpen] = useState(false);
   const coverButtonRef = useRef<HTMLButtonElement>(null);
@@ -407,6 +408,12 @@ export default function SeriesDetailPage() {
     };
   }, [coverOpen]);
 
+  // Tick every 60 s so chapter badge transitions from "New" to relative time without a page reload.
+  useEffect(() => {
+    const id = window.setInterval(() => setTick((t) => t + 1), 60_000);
+    return () => window.clearInterval(id);
+  }, []);
+
   const bookmarked = !!series && bookmarks.includes(series.href);
   const related = useMemo(() => {
     return catalogQuery.items
@@ -525,6 +532,20 @@ export default function SeriesDetailPage() {
   const hasExpandableSynopsis = synopsis.length > 180;
   const newestChapter = series.chapters[0];
   const firstChapter = series.chapters[series.chapters.length - 1] || newestChapter;
+  const chapterAddedAt = series.facts?.last_chapter_added_at as string | undefined;
+  const chapterAddedMs = chapterAddedAt ? Date.parse(chapterAddedAt) : NaN;
+  const isNewChapter = !Number.isNaN(chapterAddedMs) && Date.now() - chapterAddedMs < 3_600_000;
+  const chapterBadge = isNewChapter
+    ? 'New'
+    : !Number.isNaN(chapterAddedMs)
+      ? formatRelativeTime(chapterAddedMs)
+      : newestChapter?.status?.toLowerCase() === 'new'
+        ? 'New'
+        : '';
+  const chapterLabel = newestChapter
+    ? newestChapter.title
+    : (series.facts?.latest_chapter_number ? `Chapter ${series.facts.latest_chapter_number}` : String(series.chapters.length));
+
   const latestSeriesUpdate = getLatestSeriesUpdate(series);
   const factEntries: [string, string][] = [
     ['Status', series.status || detail?.facts?.status || ''],
@@ -532,7 +553,7 @@ export default function SeriesDetailPage() {
     ['Author', detail?.author || ''],
     ['Artist', detail?.artist || ''],
     ['Released', detail?.facts?.released || (series.year ? String(series.year) : '')],
-    ['Chapters', String(series.chapters.length)],
+    ['Chapters', chapterLabel],
     ['Last update', latestSeriesUpdate],
   ];
 
@@ -548,8 +569,7 @@ export default function SeriesDetailPage() {
     { key: 'sad' as const, label: 'Sad', icon: cryReactionIcon, count: reactionCounts?.sad },
     { key: 'angry' as const, label: 'Angry', icon: angryReactionIcon, count: reactionCounts?.angry },
   ];
-  const visibleInfoTabs: ('chapters' | 'sources' | 'synopsis' | 'reviews')[] = [];
-  visibleInfoTabs.push('chapters');
+  const visibleInfoTabs: ('sources' | 'synopsis' | 'reviews')[] = [];
   if (seriesPageVisibility.sources) visibleInfoTabs.push('sources');
   if (seriesPageVisibility.synopsis) visibleInfoTabs.push('synopsis');
   if (seriesPageVisibility.reviews) visibleInfoTabs.push('reviews');
@@ -597,44 +617,51 @@ export default function SeriesDetailPage() {
           {seriesPageVisibility.seriesFacts && <section className="series-facts-panel" aria-label="Series information">
             <div className="series-facts-grid">{facts.map(([label, value]) => {
               const FactIcon = label === 'Status' ? Activity : label === 'Type' ? Type : label === 'Author' || label === 'Artist' ? PenLine : label === 'Chapters' ? BookOpen : CalendarDays;
-              const isReleaseLabel = label === 'Released' || label === 'Release';
 
               return (
                 <div key={label} style={{ display: 'contents' }}>
                   <div className="series-fact">
                     <span className="series-fact-label"><FactIcon aria-hidden="true" />{label}</span>
-                    <strong className={value === 'Not provided' ? 'is-missing' : ''} data-fact={label}>
-                      {label === 'Status' && value !== 'Not provided' && <i className="series-status-indicator" aria-hidden="true" />}
-                      {value}
-                    </strong>
+                    {label === 'Chapters' && newestChapter ? (
+                      <strong data-fact={label} style={{ display: 'flex', alignItems: 'center', gap: 4, justifyContent: 'flex-end', flexWrap: 'wrap' }}>
+                        <a
+                          href={newestChapter.href}
+                          title={`Read ${newestChapter.title}`}
+                          style={{
+                            color: '#ed741b',
+                            fontWeight: 650,
+                            fontSize: 'clamp(7px, .48vw, 9px)',
+                            textDecoration: 'none',
+                            maxWidth: 'clamp(72px, 5.73vw, 110px)',
+                            overflow: 'hidden',
+                            textOverflow: 'ellipsis',
+                            whiteSpace: 'nowrap',
+                          }}
+                        >
+                          {value}
+                        </a>
+                        {chapterBadge && (
+                          <span style={{
+                            padding: '1px 5px',
+                            borderRadius: 8,
+                            background: isNewChapter || newestChapter.status?.toLowerCase() === 'new' ? '#ed741b' : 'var(--series-muted, #888)',
+                            color: '#fff',
+                            fontSize: 9,
+                            fontWeight: 700,
+                            lineHeight: 1.4,
+                            whiteSpace: 'nowrap',
+                          }}>
+                            {chapterBadge}
+                          </span>
+                        )}
+                      </strong>
+                    ) : (
+                      <strong className={value === 'Not provided' ? 'is-missing' : ''} data-fact={label}>
+                        {label === 'Status' && value !== 'Not provided' && <i className="series-status-indicator" aria-hidden="true" />}
+                        {value}
+                      </strong>
+                    )}
                   </div>
-
-                  {isReleaseLabel && newestChapter && (
-                    <div className="series-fact series-fact--chapter-release" style={{ marginTop: 4, marginBottom: 4 }}>
-                      <span className="series-fact-label">
-                        <BookOpen size={12} aria-hidden="true" />
-                        Latest
-                      </span>
-                      <a
-                        href={newestChapter.href}
-                        className="series-fact-chapter-link"
-                        title={`Read ${newestChapter.title}`}
-                        style={{
-                          color: '#ed741b',
-                          fontWeight: 650,
-                          fontSize: 'clamp(7px, .48vw, 9px)',
-                          textDecoration: 'none',
-                          maxWidth: 'clamp(72px, 5.73vw, 110px)',
-                          overflow: 'hidden',
-                          textOverflow: 'ellipsis',
-                          whiteSpace: 'nowrap',
-                          textAlign: 'right',
-                        }}
-                      >
-                        {newestChapter.title}
-                      </a>
-                    </div>
-                  )}
                 </div>
               );
             })}</div>
@@ -649,53 +676,11 @@ export default function SeriesDetailPage() {
 
           {visibleInfoTabs.length > 0 && <section className="series-chapters" id="sources">
             <div className="series-info-tabs" role="tablist" aria-label="Series information">
-              <button type="button" role="tab" aria-selected={visibleActiveTab === 'chapters'} className={visibleActiveTab === 'chapters' ? 'is-active' : ''} onClick={() => setActiveTab('chapters')}><BookOpen size={14} aria-hidden="true" /> Chapters ({series.chapters.length})</button>
               {seriesPageVisibility.sources && <button type="button" role="tab" aria-selected={visibleActiveTab === 'sources'} className={visibleActiveTab === 'sources' ? 'is-active' : ''} onClick={() => setActiveTab('sources')}><Rows3 size={14} aria-hidden="true" /> Sources ({series.sources.length})</button>}
               {seriesPageVisibility.synopsis && <button type="button" role="tab" aria-selected={visibleActiveTab === 'synopsis'} className={visibleActiveTab === 'synopsis' ? 'is-active' : ''} onClick={() => setActiveTab('synopsis')}><List size={14} aria-hidden="true" /> Synopsis</button>}
               {seriesPageVisibility.reviews && <button type="button" role="tab" aria-selected={visibleActiveTab === 'reviews'} className={visibleActiveTab === 'reviews' ? 'is-active' : ''} onClick={() => setActiveTab('reviews')}><MessageSquareText size={14} aria-hidden="true" /> Reviews{detail?.reviewCount !== undefined ? ` (${detail.reviewCount})` : ''}</button>}
             </div>
-            {visibleActiveTab === 'chapters' ? <>
-              {series.chapters.length ? (
-                <div className="series-chapter-list" style={{ display: 'grid', gap: 6, marginTop: 8 }}>
-                  {series.chapters.map((ch, idx) => (
-                    <a
-                      key={`${ch.title}-${idx}`}
-                      href={ch.href}
-                      className="series-source-row"
-                      style={{ textDecoration: 'none', color: 'inherit', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 14px' }}
-                    >
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                        <div style={{ width: 28, height: 28, borderRadius: 6, background: '#ed741b18', color: '#ed741b', display: 'grid', placeItems: 'center' }}>
-                          <BookOpen size={14} />
-                        </div>
-                        <strong style={{ fontSize: 13, color: 'var(--series-ink)' }}>{ch.title}</strong>
-                      </div>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                        {latestSeriesUpdate && (
-                          <span style={{ fontSize: 11, color: 'var(--series-muted)' }}>
-                            {latestSeriesUpdate}
-                          </span>
-                        )}
-                        <span
-                          style={{
-                            padding: '2px 8px',
-                            borderRadius: 12,
-                            background: '#ed741b',
-                            color: '#fff',
-                            fontSize: 10,
-                            fontWeight: 700,
-                          }}
-                        >
-                          {ch.status || 'New'}
-                        </span>
-                      </div>
-                    </a>
-                  ))}
-                </div>
-              ) : (
-                <div className="series-empty">No chapters have been released yet.</div>
-              )}
-            </> : visibleActiveTab === 'sources' ? <>
+            {visibleActiveTab === 'sources' ? <>
               {series.sources.length ? <div className="series-source-list">{series.sources.map((source, index) => {
                 const getSourceFavicon = (url?: string) => {
                   if (!url) return '';
