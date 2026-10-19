@@ -278,7 +278,15 @@ function HomePage() {
       return left.title.localeCompare(right.title);
     });
 
-    return sorted
+    const seen = new Set<string>();
+    const unique = sorted.filter((item) => {
+      const key = item.slug || item.href || item.title.toLowerCase();
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    });
+
+    return unique
       .filter((item) => item.cover)
       .slice(0, MAX_POPULAR_SERIES)
       .map((item) => ({ title: item.title, src: item.cover, href: item.href }));
@@ -609,14 +617,13 @@ function HomePage() {
                 suppressRailClickUntilRef.current = 0;
               }
             }}
-          >{(popularCards.length >= 4 ? [0, 1, 2] : [0]).flatMap((copyIndex) => popularCards.map((card) => (
+          >{popularCards.map((card) => (
             <PopularNowCard
-              key={`${copyIndex}-${card.title}`}
+              key={card.href || card.title}
               item={card}
               imageSrc={assetUrl(card.src, 400)}
-              copyIndex={copyIndex}
             />
-          )))}</div><button className="rail-arrow left" onClick={() => railRef.current?.scrollBy({ left: -500, behavior: 'smooth' })} aria-label="Previous popular"><ArrowLeft /></button><button className="rail-arrow right" onClick={() => railRef.current?.scrollBy({ left: 500, behavior: 'smooth' })} aria-label="Next popular"><ArrowRight /></button></div>
+          ))}</div><button className="rail-arrow left" onClick={() => railRef.current?.scrollBy({ left: -500, behavior: 'smooth' })} aria-label="Previous popular"><ArrowLeft /></button><button className="rail-arrow right" onClick={() => railRef.current?.scrollBy({ left: 500, behavior: 'smooth' })} aria-label="Next popular"><ArrowRight /></button></div>
         </section>}
 
         {homepageVisibility.continueReading && continueReadingItems.length > 0 && (

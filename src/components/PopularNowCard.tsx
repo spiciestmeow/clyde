@@ -7,23 +7,19 @@ export type PopularNowCardItem = {
 type PopularNowCardProps = {
   item: PopularNowCardItem;
   imageSrc: string;
-  copyIndex: number;
+  copyIndex?: number;
 };
 
 export function PopularNowCard({
   item,
   imageSrc,
-  copyIndex,
+  copyIndex = 0,
 }: PopularNowCardProps) {
-  const isVisibleCopy = copyIndex === 1;
-
   return (
     <a
       className="popular-card"
       href={item.href}
       data-loop-copy={copyIndex}
-      aria-hidden={!isVisibleCopy}
-      tabIndex={isVisibleCopy ? undefined : -1}
       title={item.title}
       draggable={false}
     >
