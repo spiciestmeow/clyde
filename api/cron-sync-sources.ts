@@ -23,6 +23,76 @@ const SUPABASE_KEY =
   process.env.VITE_SUPABASE_ANON_KEY ||
   'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImlheG5xZ2pjZ2xoc2RuaWthenhjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTIzNDU3MTAsImV4cCI6MjEwNzkyMTcxMH0.vkRAjHvs5v8NG9BiCV_pH1eRQhEXLfhfePUETlL_w40';
 
+// Helper to scrape latest chapter number directly from custom scanlator URLs
+async function fetchHighestChapterFromDirectSources(
+  sources: { name: string; url: string }[],
+): Promise<{ chapterNumber: string; sourceName: string } | null> {
+  let highestNum = 0;
+  let highestStr = '';
+  let highestSourceName = '';
+
+  for (const src of sources) {
+    if (!src?.url) continue;
+    try {
+      const parsed = new URL(src.url);
+      // Skip top-level homepages with no specific series path
+      if (!parsed.pathname || parsed.pathname === '/' || parsed.pathname.length <= 1) {
+        continue;
+      }
+
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 6000);
+
+      const res = await fetch(src.url, {
+        signal: controller.signal,
+        headers: {
+          'User-Agent':
+            'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36',
+          Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+        },
+      });
+      clearTimeout(timeoutId);
+
+      if (!res.ok) continue;
+      const html = await res.text();
+
+      // Find all chapter numbers in page text and URLs
+      const textPattern = /\b(?:chapter|ch|episode|ep)\.?\s*(\d+(?:\.\d+)?)\b/gi;
+      const urlPattern = /(?:chapter|ch|ep)[-_/](\d+(?:\.\d+)?)/gi;
+
+      const candidates: number[] = [];
+      let m: RegExpExecArray | null;
+
+      while ((m = textPattern.exec(html)) !== null) {
+        const val = parseFloat(m[1]);
+        if (!Number.isNaN(val) && val > 0 && val < 5000 && val !== 2024 && val !== 2025 && val !== 2026) {
+          candidates.push(val);
+        }
+      }
+
+      while ((m = urlPattern.exec(html)) !== null) {
+        const val = parseFloat(m[1]);
+        if (!Number.isNaN(val) && val > 0 && val < 5000 && val !== 2024 && val !== 2025 && val !== 2026) {
+          candidates.push(val);
+        }
+      }
+
+      if (candidates.length > 0) {
+        const pageMax = Math.max(...candidates);
+        if (pageMax > highestNum) {
+          highestNum = pageMax;
+          highestStr = String(pageMax);
+          highestSourceName = src.name || parsed.hostname;
+        }
+      }
+    } catch {
+      // Ignore individual source fetch or timeout errors
+    }
+  }
+
+  return highestNum > 0 ? { chapterNumber: highestStr, sourceName: highestSourceName } : null;
+}
+
 export default async function handler(
   request: ApiRequest,
   response: ApiResponse,
@@ -71,23 +141,50 @@ export default async function handler(
       previousChapter: string;
       newChapter: string;
       releaseTime: string;
+      source: string;
     }[] = [];
 
     const logs: string[] = [];
 
-    // 2. Iterate through each series and check for latest chapters
+    // 2. Iterate through each series and check both MangaUpdates and direct sources
     for (const item of seriesList) {
       try {
         const altTitles = Array.isArray(item.alternate_titles) ? item.alternate_titles : [];
         const syncResult = await fetchScanlationSources(item.title, altTitles);
 
-        if (!syncResult.matchedSeries?.latestChapterNumber) {
-          logs.push(`[${item.title}] No release data found on MangaUpdates`);
-          continue;
+        let detectedChNum = 0;
+        let detectedChStr = '';
+        let detectedTimestamp: number | undefined;
+        let detectionSource = 'MangaUpdates';
+
+        if (syncResult.matchedSeries?.latestChapterNumber) {
+          const num = parseFloat(syncResult.matchedSeries.latestChapterNumber);
+          if (!Number.isNaN(num)) {
+            detectedChNum = num;
+            detectedChStr = syncResult.matchedSeries.latestChapterNumber;
+            detectedTimestamp = syncResult.matchedSeries.lastReleaseTimestamp;
+          }
         }
 
-        const detectedChNum = parseFloat(syncResult.matchedSeries.latestChapterNumber);
-        if (Number.isNaN(detectedChNum)) continue;
+        // Also check any custom / manually added source URLs on the series
+        const itemSources = Array.isArray(item.sources) ? item.sources : [];
+        if (itemSources.length > 0) {
+          const directResult = await fetchHighestChapterFromDirectSources(itemSources);
+          if (directResult) {
+            const directNum = parseFloat(directResult.chapterNumber);
+            if (!Number.isNaN(directNum) && directNum > detectedChNum) {
+              detectedChNum = directNum;
+              detectedChStr = directResult.chapterNumber;
+              detectedTimestamp = Date.now();
+              detectionSource = `Direct Source (${directResult.sourceName})`;
+            }
+          }
+        }
+
+        if (detectedChNum === 0) {
+          logs.push(`[${item.title}] No release data found on MangaUpdates or direct sources`);
+          continue;
+        }
 
         // Current chapter number
         const currentChStr =
@@ -97,16 +194,16 @@ export default async function handler(
 
         // If newly detected chapter is higher than current
         if (detectedChNum > currentNum) {
-          const newChTitle = `Chapter ${syncResult.matchedSeries.latestChapterNumber}`;
-          const newChHref = `/series/${item.slug}/chapter-${syncResult.matchedSeries.latestChapterNumber}`;
-          const releaseIso = syncResult.matchedSeries.lastReleaseTimestamp
-            ? new Date(syncResult.matchedSeries.lastReleaseTimestamp).toISOString()
+          const newChTitle = `Chapter ${detectedChStr}`;
+          const newChHref = `/series/${item.slug}/chapter-${detectedChStr}`;
+          const releaseIso = detectedTimestamp
+            ? new Date(detectedTimestamp).toISOString()
             : new Date().toISOString();
 
           const existingChapters = Array.isArray(item.chapters) ? item.chapters : [];
           const alreadyHasCh = existingChapters.some((ch: any) => {
             const t = String(ch?.title || '').trim().toLowerCase();
-            return t === newChTitle.toLowerCase() || t === String(syncResult.matchedSeries!.latestChapterNumber);
+            return t === newChTitle.toLowerCase() || t === String(detectedChStr);
           });
 
           const nextChapters = alreadyHasCh
@@ -124,7 +221,7 @@ export default async function handler(
 
           const nextFacts = {
             ...(item.facts || {}),
-            latest_chapter_number: String(syncResult.matchedSeries.latestChapterNumber),
+            latest_chapter_number: String(detectedChStr),
             last_chapter_added_at: releaseIso,
             lastUpdate: releaseIso,
           };
@@ -147,11 +244,12 @@ export default async function handler(
               previousChapter: String(currentNum),
               newChapter: String(detectedChNum),
               releaseTime: releaseIso,
+              source: detectionSource,
             });
-            logs.push(`[${item.title}] Updated: Ch.${currentNum} -> Ch.${detectedChNum}`);
+            logs.push(`[${item.title}] Updated: Ch.${currentNum} -> Ch.${detectedChNum} (via ${detectionSource})`);
           }
         } else {
-          logs.push(`[${item.title}] Up-to-date (Current: ${currentNum}, Detected: ${detectedChNum})`);
+          logs.push(`[${item.title}] Up-to-date (Current: ${currentNum}, Detected: ${detectedChNum} via ${detectionSource})`);
         }
       } catch (seriesErr) {
         const msg = seriesErr instanceof Error ? seriesErr.message : String(seriesErr);
