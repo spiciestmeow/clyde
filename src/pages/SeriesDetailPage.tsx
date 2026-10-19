@@ -1,7 +1,14 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState, type SyntheticEvent } from 'react';
 import { Link, useLocation, useParams } from 'wouter';
 import { Activity, ArrowLeft, ArrowUpRight, BookOpen, Bookmark, CalendarDays, Check, ChevronDown, ChevronRight, Clock3, Flag, Heart, Info, List, Maximize2, MessageSquare, MessageSquareText, PenLine, Rows3, Search, Share2, Square, Star, TriangleAlert, Type, X, ZoomIn } from 'lucide-react';
-import { incrementSeriesViews, type SeriesRecord } from '../lib/seriesCatalog';
+import { useQueryClient } from '@tanstack/react-query';
+import {
+  cacheSeriesCatalog,
+  incrementSeriesViews,
+  SERIES_CATALOG_QUERY_KEY,
+  type SeriesCatalogResponse,
+  type SeriesRecord,
+} from '../lib/seriesCatalog';
 import assets from '../../clone-data/asset-references.json';
 import vortexLogo from '../assets/vortex-logo.webp';
 import angryReactionIcon from '../assets/reactions/angry.webp';
@@ -192,10 +199,13 @@ function getLatestSeriesUpdate(series: SeriesRecord): string {
   return 'Recently';
 }
 
+const VIEW_COOLDOWN_MS = 15 * 60 * 1000; // 15-minute cooldown per series (standard for scanlation sites like Asura)
+
 export default function SeriesDetailPage() {
   const params = useParams<{ slug: string }>();
   const [, setLocation] = useLocation();
   const slug = decodeURIComponent(params.slug || '').replace(/\/$/, '');
+  const queryClient = useQueryClient();
   const catalogQuery = useSeriesCatalog();
   const seriesQuery = catalogQuery;
   const series: SeriesRecord | undefined = catalogQuery.items.find(
@@ -228,6 +238,7 @@ export default function SeriesDetailPage() {
   const closeCoverRef = useRef<HTMLButtonElement>(null);
   const seriesLayoutRef = useRef<HTMLDivElement>(null);
   const [fixedRailPositions, setFixedRailPositions] = useState<FixedRailPositions | null>(null);
+  const lastIncrementedSeriesIdRef = useRef<number | null>(null);
 
   useEffect(() => {
     let active = true;
@@ -259,16 +270,36 @@ export default function SeriesDetailPage() {
       }
 
       try {
-        const sessionKey = `vortex-viewed-series:${series.id}`;
-        if (!sessionStorage.getItem(sessionKey)) {
-          sessionStorage.setItem(sessionKey, '1');
-          void incrementSeriesViews(series.id);
+        const cooldownKey = `vortex-view-cooldown:${series.id}`;
+        const lastViewTime = Number(localStorage.getItem(cooldownKey) || 0);
+        const now = Date.now();
+        if (
+          lastIncrementedSeriesIdRef.current !== series.id &&
+          (!lastViewTime || now - lastViewTime > VIEW_COOLDOWN_MS)
+        ) {
+          lastIncrementedSeriesIdRef.current = series.id;
+          localStorage.setItem(cooldownKey, String(now));
+          void incrementSeriesViews(series.id).then((newViews) => {
+            if (typeof newViews === 'number') {
+              queryClient.setQueryData<SeriesCatalogResponse>(SERIES_CATALOG_QUERY_KEY, (old) => {
+                if (!old) return old;
+                const nextResponse = {
+                  ...old,
+                  items: old.items.map((item) =>
+                    item.id === series.id ? { ...item, views: newViews } : item,
+                  ),
+                };
+                cacheSeriesCatalog(nextResponse);
+                return nextResponse;
+              });
+            }
+          });
         }
       } catch {
-        // Continue if sessionStorage is unavailable
+        // Continue if localStorage is unavailable
       }
     }
-  }, [slug, series]);
+  }, [slug, series, queryClient]);
 
   useLayoutEffect(() => {
     const layout = seriesLayoutRef.current;
