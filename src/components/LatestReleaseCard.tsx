@@ -1,5 +1,67 @@
+import { useEffect, useRef, useState } from 'react';
 import { Eye, Pin, Star } from 'lucide-react';
 import type { SeriesRecord } from '../lib/seriesCatalog';
+
+function MarqueeValue({ text }: { text: string }) {
+  const containerRef = useRef<HTMLDivElement>(null);
+  const measureRef = useRef<HTMLSpanElement>(null);
+  const [isOverflowing, setIsOverflowing] = useState(false);
+  const [duration, setDuration] = useState(8);
+
+  useEffect(() => {
+    const container = containerRef.current;
+    const measure = measureRef.current;
+    if (!container || !measure) return;
+
+    const checkOverflow = () => {
+      const textWidth = measure.offsetWidth;
+      const containerWidth = container.clientWidth;
+      const overflows = textWidth > containerWidth;
+      setIsOverflowing(overflows);
+      if (overflows) {
+        // Steady scroll speed (~35px/s, min 6s)
+        const calculatedDuration = Math.max(6, Math.round((textWidth + 28) / 35));
+        setDuration(calculatedDuration);
+      }
+    };
+
+    checkOverflow();
+
+    const ro = new ResizeObserver(() => {
+      checkOverflow();
+    });
+    ro.observe(container);
+
+    if (document.fonts?.ready) {
+      void document.fonts.ready.then(checkOverflow);
+    }
+
+    return () => ro.disconnect();
+  }, [text]);
+
+  return (
+    <div
+      ref={containerRef}
+      className={`release-box-value${isOverflowing ? ' is-overflowing' : ''}`}
+      title={text}
+    >
+      <span ref={measureRef} className="release-box-value-measure" aria-hidden="true">
+        {text}
+      </span>
+      {isOverflowing ? (
+        <div
+          className="release-box-marquee-track"
+          style={{ animationDuration: `${duration}s` }}
+        >
+          <span className="release-box-marquee-unit">{text}</span>
+          <span className="release-box-marquee-unit" aria-hidden="true">{text}</span>
+        </div>
+      ) : (
+        <span className="release-box-value-static">{text}</span>
+      )}
+    </div>
+  );
+}
 
 export type LatestRelease = {
   id?: number;
@@ -192,19 +254,19 @@ export function LatestReleaseCard({
           {isSameAuthorArtist ? (
             <div className="release-box release-box--author">
               <span className="release-box-label">Author & Artist</span>
-              <span className="release-box-value" title={author}>{author}</span>
+              <MarqueeValue text={author} />
             </div>
           ) : (
             <>
               <div className="release-box release-box--author">
                 <span className="release-box-label">Author</span>
-                <span className="release-box-value" title={author}>{author}</span>
+                <MarqueeValue text={author} />
               </div>
 
               {/* Artist Box (Purple accent) */}
               <div className="release-box release-box--artist">
                 <span className="release-box-label">Artist</span>
-                <span className="release-box-value" title={artist}>{artist}</span>
+                <MarqueeValue text={artist} />
               </div>
             </>
           )}
@@ -212,7 +274,7 @@ export function LatestReleaseCard({
           {/* Sources Box (Red accent) */}
           <div className="release-box release-box--sources">
             <span className="release-box-label">Sources</span>
-            <span className="release-box-value" title={sourcesValue}>{sourcesValue}</span>
+            <MarqueeValue text={sourcesValue} />
           </div>
         </div>
       </div>
