@@ -30,6 +30,7 @@ import { toSiteSearchItems, toTrendingSiteSearchItems } from '../data/seriesSear
 import { seriesAvailability, seriesGenres, seriesStatuses, seriesTypes } from '../data/seriesFilterOptions';
 import { useThemeMode } from '../hooks/useThemeMode';
 import { useSeriesCatalog } from '../hooks/useSeriesCatalog';
+import { LatestReleaseCard, seriesToRelease } from '../components/LatestReleaseCard';
 import assets from '../../clone-data/asset-references.json';
 import '../series-detail.css';
 import '../series-data-status.css';
@@ -622,21 +623,13 @@ export default function SeriesBrowsePage() {
           </div>
           </aside>
           {visibleItems.length ? <div className="catalog-grid">
-            {visibleItems.map((item) => <article className="catalog-card" key={item.href} data-testid={`card-series-${item.href.split('/').pop()}`}>
-              <Link href={item.href} className="catalog-cover-link" aria-label={`Open ${item.title}`} data-testid={`link-series-cover-${item.href.split('/').pop()}`}>
-                <img className="catalog-cover" src={imageUrl(item.cover, 360)} alt={`Cover of ${item.title}`} loading="lazy" decoding="async" data-testid={`img-series-cover-${item.href.split('/').pop()}`} />
-                <span className={`catalog-category ${item.category.toLowerCase()}`} data-testid={`text-series-category-${item.href.split('/').pop()}`}>{item.category}</span>
-                {item.pinned && <span className="catalog-pinned">Pinned</span>}
-              </Link>
-              <div className="catalog-card-copy">
-                <Link href={item.href} className="catalog-title" title={item.title} data-testid={`link-series-title-${item.href.split('/').pop()}`}>{item.title}</Link>
-                <div className="catalog-meta"><span className="catalog-rating">{item.rating ?? '—'} <Star size={12} fill="currentColor" /></span><span className="catalog-status" data-testid={`status-series-${item.href.split('/').pop()}`}><i />{item.status}</span></div>
-                <div className="catalog-chapters">{item.chapters.slice(0, 4).map((chapter) => <a href={chapter.href} className="catalog-chapter" key={chapter.href} data-testid={`link-series-chapter-${item.href.split('/').pop()}-${chapter.title.toLowerCase().replaceAll(' ', '-')}`}>
-                  <span className="sr-only">Open </span>
-                  <span className="catalog-chapter-name">{chapter.title}</span><span className={`catalog-chapter-time${chapter.status === 'New' ? ' is-new' : ''}${chapter.locked ? ' is-locked' : ''}`}>{chapter.status}</span>
-                </a>)}</div>
-              </div>
-            </article>)}
+            {visibleItems.map((item) => (
+              <LatestReleaseCard
+                key={item.href}
+                release={seriesToRelease(item)}
+                imageSrc={imageUrl(item.cover, 360)}
+              />
+            ))}
           </div> : <div className="catalog-empty">
             <span className="catalog-empty-icon"><Search size={21} /></span>
             <h2>No series found</h2>

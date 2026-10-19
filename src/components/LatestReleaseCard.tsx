@@ -1,4 +1,5 @@
 import { Eye, Pin, Star } from 'lucide-react';
+import type { SeriesRecord } from '../lib/seriesCatalog';
 
 export type LatestRelease = {
   id?: number;
@@ -17,6 +18,27 @@ export type LatestRelease = {
   favorites?: string | number | null;
   facts?: Record<string, string | null> | null;
 };
+
+/** Convert a SeriesRecord directly into the LatestRelease shape */
+export function seriesToRelease(item: SeriesRecord): LatestRelease {
+  return {
+    id: item.id,
+    title: item.title,
+    href: item.href,
+    cover: item.cover,
+    category: item.category,
+    rating: item.rating,
+    status: item.status,
+    pinned: item.pinned,
+    chapters: item.chapters,
+    author: item.author,
+    artist: item.artist,
+    sources: item.sources,
+    publishers: item.publishers,
+    favorites: item.favorites,
+    facts: item.facts,
+  };
+}
 
 type LatestReleaseCardProps = {
   release: LatestRelease;
