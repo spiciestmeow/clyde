@@ -10,9 +10,9 @@ export function useSeriesCatalog() {
   const query = useQuery<SeriesCatalogResponse>({
     queryKey: SERIES_CATALOG_QUERY_KEY,
     queryFn: getSeriesCatalog,
-    initialData: () => getCachedSeriesCatalog() ?? undefined,
-    staleTime: 60_000,
-    refetchOnWindowFocus: false,
+    placeholderData: () => getCachedSeriesCatalog() ?? undefined,
+    staleTime: 10_000,
+    refetchOnWindowFocus: true,
   });
 
   return {
