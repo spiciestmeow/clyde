@@ -1,4 +1,4 @@
-import { Eye, Lock, Star, Unlock } from 'lucide-react';
+import { Eye, Lock, Pin, Star, Unlock } from 'lucide-react';
 
 export type LatestRelease = {
   id?: number;
@@ -93,10 +93,17 @@ export function LatestReleaseCard({
       <a className="release-cover" href={release.href} title={release.title}>
         <img src={imageSrc} alt={release.title} loading="lazy" />
         <span className="release-type">{release.category || 'Manhwa'}</span>
-        <span className="release-views">
-          <Eye size={12} />
-          {viewsValue}
-        </span>
+        {release.pinned ? (
+          <span className="release-cover-pill is-pinned">
+            <Pin size={11} className="pin-icon" fill="currentColor" />
+            <span>Pinned</span>
+          </span>
+        ) : (
+          <span className="release-cover-pill is-views">
+            <Eye size={12} />
+            <span>{viewsValue}</span>
+          </span>
+        )}
       </a>
 
       <div className="release-info">
@@ -120,13 +127,13 @@ export function LatestReleaseCard({
           {latestChapter ? (
             <a className="release-box release-box--chapter" href={latestChapter.href}>
               <div className="release-box-left">
-                <Lock size={14} className="chapter-lock" />
+                <Lock size={15} className="chapter-lock" />
                 <span className="chapter-title">{latestChapter.title}</span>
               </div>
               <div className="release-box-right">
                 {latestChapter.status.trim().toLowerCase() === 'free now' ? (
                   <span className="chapter-badge is-free">
-                    <Unlock size={11} /> Free now
+                    <Unlock size={12} /> Free now
                   </span>
                 ) : latestChapter.status.trim().toLowerCase() === 'new' ? (
                   <span className="chapter-badge is-new">
@@ -142,7 +149,7 @@ export function LatestReleaseCard({
           ) : (
             <div className="release-box release-box--chapter is-empty">
               <div className="release-box-left">
-                <Lock size={14} className="chapter-lock" />
+                <Lock size={15} className="chapter-lock" />
                 <span className="chapter-title">Chapter 13</span>
               </div>
               <div className="release-box-right">
