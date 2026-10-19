@@ -875,6 +875,10 @@ main { padding-bottom: 38px; }
   display: inline-flex;
   align-items: center;
 }
+@keyframes new-blink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.35; }
+}
 .chapter-badge.is-new {
   color: #ea580c;
   font-weight: 700;
@@ -882,6 +886,7 @@ main { padding-bottom: 38px; }
   align-items: center;
   gap: 3px;
   font-size: 11.5px;
+  animation: new-blink 1.2s ease-in-out infinite;
 }
 .theme-dark .chapter-badge.is-new {
   color: #f59e0b;
