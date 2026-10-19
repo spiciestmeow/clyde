@@ -43,6 +43,7 @@ type FormDraft = {
   cover: string;
   category: string;
   status: string;
+  isNew: boolean;
   synopsis: string;
   alternateTitles: string[];
   authors: string[];
@@ -83,6 +84,7 @@ const initialFormDraft = (): FormDraft => ({
   cover: '',
   category: 'Manga',
   status: 'Releasing',
+  isNew: true,
   synopsis: '',
   alternateTitles: [],
   authors: [],
@@ -423,6 +425,7 @@ export default function SeriesCatalogManager() {
         cover: draft.cover.trim() || '',
         category: draft.category || 'Manga',
         status: draft.status || 'Releasing',
+        isNew: draft.isNew,
         synopsis: draft.synopsis.trim() || undefined,
         alternateTitles: draft.alternateTitles,
         author: draft.authors.join(', ') || undefined,
@@ -445,6 +448,7 @@ export default function SeriesCatalogManager() {
         cover: draft.cover.trim() || undefined,
         category: draft.category || 'Manga',
         status: draft.status || 'Releasing',
+        isNew: draft.isNew,
         synopsis: draft.synopsis.trim() || undefined,
         alternateTitles: draft.alternateTitles.length ? draft.alternateTitles : undefined,
         author: draft.authors.join(', ') || undefined,
@@ -833,6 +837,35 @@ export default function SeriesCatalogManager() {
                   <ChevronDown className="select-arrow" size={15} />
                 </div>
               </div>
+
+              <div className="field-group grid-full-span">
+                <label className="field-label">
+                  New series (feature in "New" releases tab) <span className="required-star">*</span>
+                </label>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginTop: 4, flexWrap: 'wrap' }}>
+                  <button
+                    type="button"
+                    className={`toggle-pill ${draft.isNew ? 'is-selected' : ''}`}
+                    style={{ padding: '8px 18px', fontWeight: 600, fontSize: 13 }}
+                    onClick={() => setDraft((c) => ({ ...c, isNew: true }))}
+                  >
+                    ✓ Yes (New series)
+                  </button>
+                  <button
+                    type="button"
+                    className={`toggle-pill ${!draft.isNew ? 'is-selected' : ''}`}
+                    style={{ padding: '8px 18px', fontWeight: 600, fontSize: 13 }}
+                    onClick={() => setDraft((c) => ({ ...c, isNew: false }))}
+                  >
+                    ✕ No (Regular series)
+                  </button>
+                  <span style={{ fontSize: 12, color: 'var(--up-text-muted)' }}>
+                    {draft.isNew
+                      ? 'Enabled: This series will appear under the "New" tab in Latest Releases.'
+                      : 'Disabled: This series will only appear under regular "Latest" releases.'}
+                  </span>
+                </div>
+              </div>
             </div>
 
             <div className="field-group">
@@ -1175,6 +1208,11 @@ export default function SeriesCatalogManager() {
                   <div className="title-badges">
                     <span className="badge-tag">{series.category || 'Manga'}</span>
                     <span className="badge-tag status-badge">{series.status || 'Ongoing'}</span>
+                    {series.isNew && (
+                      <span className="badge-tag" style={{ background: '#059669', color: '#fff', fontWeight: 600 }}>
+                        New
+                      </span>
+                    )}
                   </div>
                   <div className="title-stats">
                     <span>{series.chapters?.length || 0} chapters</span>
@@ -1192,6 +1230,7 @@ export default function SeriesCatalogManager() {
                         cover: series.cover || '',
                         category: series.category || 'Manga',
                         status: series.status || 'Ongoing',
+                        isNew: series.isNew ?? (series.facts?.is_new === 'true' || false),
                         synopsis: series.synopsis || '',
                         alternateTitles: series.alternateTitles || [],
                         authors: series.author ? series.author.split(',').map((s) => s.trim()) : [],

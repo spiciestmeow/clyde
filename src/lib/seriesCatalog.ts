@@ -24,6 +24,7 @@ export type SeriesRecord = {
   rating: string | null;
   status: string;
   pinned: boolean;
+  isNew?: boolean;
   chapters: SeriesChapter[];
   alternateTitles: string[];
   synopsis: string | null;
@@ -54,6 +55,7 @@ export type CreateSeriesRequest = {
   cover?: string;
   category?: string;
   status?: string;
+  isNew?: boolean;
   synopsis?: string;
   alternateTitles?: string[];
   author?: string;
@@ -132,6 +134,7 @@ function toSeriesRecord(value: unknown): SeriesRecord {
     rating: row.rating,
     status: row.status ?? 'Ongoing',
     pinned: row.pinned ?? false,
+    isNew: row.facts?.is_new !== undefined ? String(row.facts.is_new).toLowerCase() === 'true' : false,
     chapters: row.chapters ?? [],
     alternateTitles: row.alternate_titles ?? [],
     synopsis: row.synopsis,
@@ -258,6 +261,7 @@ export async function createSeriesRecord(input: CreateSeriesRequest): Promise<Se
     serialization: null,
     released: input.year ? String(input.year) : null,
     lastUpdate: null,
+    is_new: input.isNew !== undefined ? (input.isNew ? 'true' : 'false') : 'true',
   };
 
   const { data, error } = await client
@@ -300,6 +304,7 @@ export async function createSeriesRecord(input: CreateSeriesRequest): Promise<Se
 export type UpdateSeriesRequest = Partial<CreateSeriesRequest> & {
   id: number;
   chapters?: SeriesChapter[];
+  isNew?: boolean;
 };
 
 export async function updateSeriesRecord(input: UpdateSeriesRequest): Promise<SeriesRecord> {
@@ -325,6 +330,21 @@ export async function updateSeriesRecord(input: UpdateSeriesRequest): Promise<Se
   if (input.trackers !== undefined) updateData.trackers = input.trackers;
   if (input.sources !== undefined) updateData.sources = input.sources;
   if (input.chapters !== undefined) updateData.chapters = input.chapters;
+
+  if (input.isNew !== undefined) {
+    const { data: current } = await client
+      .from('series')
+      .select('facts')
+      .eq('id', input.id)
+      .maybeSingle();
+
+    const existingFacts = (current?.facts as Record<string, unknown>) || {};
+    updateData.facts = {
+      ...existingFacts,
+      is_new: input.isNew ? 'true' : 'false',
+    };
+  }
+
   updateData.updated_at = new Date().toISOString();
 
   const { data, error } = await client

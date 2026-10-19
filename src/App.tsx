@@ -392,8 +392,15 @@ function HomePage() {
 
   const visibleReleases = useMemo(() => {
     if (filter === 'Latest') return latestReleases;
-    const SEVEN_DAYS_MS = 7 * 24 * 60 * 60 * 1000;
     return latestReleases.filter((release) => {
+      // 1. Explicit admin toggle from series upload/edit
+      if (release.isNew) return true;
+      if (release.facts?.is_new === 'true') return true;
+
+      // If explicitly set to false by admin, exclude from New tab
+      if (release.facts?.is_new === 'false') return false;
+
+      // 2. Fallback for legacy series: check for new chapter status
       const hasNewChapter = release.chapters.some((chapter) => {
         const s = chapter.status.trim().toLowerCase();
         return s === 'new' || s === 'just now' || s.includes('min') || s.includes('hour') || s === 'today';
@@ -402,11 +409,6 @@ function HomePage() {
 
       const releaseAge = getSeriesReleaseAgeMinutes(release);
       if (releaseAge <= 7 * 1440) return true;
-
-      const createdTime = Date.parse(release.createdAt);
-      if (!Number.isNaN(createdTime) && (Date.now() - createdTime) < SEVEN_DAYS_MS) {
-        return true;
-      }
 
       return false;
     });
