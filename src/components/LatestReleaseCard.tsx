@@ -127,13 +127,13 @@ export function LatestReleaseCard({
           {latestChapter ? (
             <a className="release-box release-box--chapter" href={latestChapter.href}>
               <div className="release-box-left">
-                <Lock size={15} className="chapter-lock" />
+                <Lock size={16} className="chapter-lock" />
                 <span className="chapter-title">{latestChapter.title}</span>
               </div>
               <div className="release-box-right">
                 {latestChapter.status.trim().toLowerCase() === 'free now' ? (
                   <span className="chapter-badge is-free">
-                    <Unlock size={12} /> Free now
+                    <Unlock size={13} /> Free now
                   </span>
                 ) : latestChapter.status.trim().toLowerCase() === 'new' ? (
                   <span className="chapter-badge is-new">
@@ -149,7 +149,7 @@ export function LatestReleaseCard({
           ) : (
             <div className="release-box release-box--chapter is-empty">
               <div className="release-box-left">
-                <Lock size={15} className="chapter-lock" />
+                <Lock size={16} className="chapter-lock" />
                 <span className="chapter-title">Chapter 13</span>
               </div>
               <div className="release-box-right">
