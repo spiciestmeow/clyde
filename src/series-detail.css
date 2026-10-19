@@ -86,8 +86,20 @@
 .series-layout--without-sidebar { grid-template-columns: 149px minmax(0,1fr); }
 .series-left-rail,.series-primary,.series-sidebar { min-width: 0; }
 .series-left-rail,.series-sidebar {
+  position: sticky;
+  top: 16px;
   align-self: start;
-  overflow: visible;
+}
+.series-layout--rails-fixed .series-left-rail,
+.series-layout--rails-fixed .series-sidebar {
+  position: fixed;
+  z-index: 31;
+  max-height: calc(100dvh - 32px);
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  overflow-anchor: none;
+  scrollbar-width: thin;
 }
 
 @media (min-width: 701px) {
