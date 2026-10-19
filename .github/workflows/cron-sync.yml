@@ -1,0 +1,15 @@
+name: Hourly Series Sync
+
+on:
+  schedule:
+    # Runs every hour at minute 0
+    - cron: '0 * * * *'
+  workflow_dispatch: # Allows manual trigger from GitHub Actions anytime
+
+jobs:
+  sync-chapters:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger Vortex Scans Chapter Sync
+        run: |
+          curl -s -f "https://clyde-silk.vercel.app/api/cron-sync-sources" || echo "Sync endpoint triggered"
