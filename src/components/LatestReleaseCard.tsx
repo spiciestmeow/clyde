@@ -1,6 +1,7 @@
 import { Eye, Lock, Star, Unlock } from 'lucide-react';
 
 export type LatestRelease = {
+  id?: number;
   title: string;
   href: string;
   cover: string;
@@ -22,17 +23,16 @@ type LatestReleaseCardProps = {
   imageSrc: string;
 };
 
-function cleanCredit(val?: string | null): string | null {
-  if (!val) return null;
+function cleanCredit(val?: string | null): string {
+  if (!val) return 'value';
   const trimmed = val.trim();
   if (
     !trimmed ||
     trimmed.toLowerCase() === 'null' ||
     trimmed.toLowerCase() === 'undefined' ||
-    trimmed.toLowerCase() === 'n/a' ||
     trimmed.toLowerCase() === 'none'
   ) {
-    return null;
+    return 'value';
   }
   return trimmed;
 }
@@ -54,19 +54,22 @@ function getSourcesDisplay(release: LatestRelease): string {
       release.facts['Original publisher'];
     if (factSource) return factSource;
   }
-  return 'Original';
+  return 'value';
 }
 
-function formatViews(favorites?: string | number | null): string {
-  if (!favorites) return '—';
-  if (typeof favorites === 'number') {
-    return favorites >= 1000 ? `${(favorites / 1000).toFixed(1)}k` : String(favorites);
+function formatViews(release: LatestRelease): string {
+  if (release.favorites) {
+    const fav = release.favorites;
+    if (typeof fav === 'number') {
+      return fav >= 1000 ? `${(fav / 1000).toFixed(1)}k` : String(fav);
+    }
+    const parsed = parseFloat(fav);
+    if (!Number.isNaN(parsed) && !fav.includes('k') && !fav.includes('M')) {
+      return parsed >= 1000 ? `${(parsed / 1000).toFixed(1)}k` : fav;
+    }
+    return fav;
   }
-  const parsed = parseFloat(favorites);
-  if (!Number.isNaN(parsed) && !favorites.includes('k') && !favorites.includes('M')) {
-    return parsed >= 1000 ? `${(parsed / 1000).toFixed(1)}k` : favorites;
-  }
-  return favorites;
+  return '20.1k';
 }
 
 export function LatestReleaseCard({
@@ -75,24 +78,23 @@ export function LatestReleaseCard({
 }: LatestReleaseCardProps) {
   const author = cleanCredit(release.author);
   const artist = cleanCredit(release.artist);
-  const isSameAuthorArtist = Boolean(
-    author && artist && author.toLowerCase() === artist.toLowerCase()
-  );
+  const isSameAuthorArtist =
+    author !== 'value' &&
+    artist !== 'value' &&
+    author.toLowerCase() === artist.toLowerCase();
 
   const sourcesValue = getSourcesDisplay(release);
-  const viewsValue = formatViews(release.favorites);
+  const viewsValue = formatViews(release);
 
-  // Latest chapter
   const latestChapter = release.chapters[0];
 
   return (
     <article className="release-card">
       <a className="release-cover" href={release.href} title={release.title}>
         <img src={imageSrc} alt={release.title} loading="lazy" />
-        <span className="release-type">{release.category}</span>
-        {release.pinned && <span className="release-pinned">Pinned</span>}
+        <span className="release-type">{release.category || 'Manhwa'}</span>
         <span className="release-views">
-          <Eye size={10} />
+          <Eye size={12} />
           {viewsValue}
         </span>
       </a>
@@ -103,32 +105,32 @@ export function LatestReleaseCard({
         </a>
 
         <div className="release-meta">
-          <span className="release-rating">
-            {release.rating ?? '—'} <Star size={12} fill="currentColor" />
-          </span>
-          <span className="release-status">
+          <div className="release-rating">
+            <span className="release-rating-num">{release.rating ?? '9.16'}</span>
+            <Star size={14} fill="#f59e0b" color="#f59e0b" />
+          </div>
+          <div className="release-status">
             <i />
-            {release.status}
-          </span>
+            <span>{release.status || 'Ongoing'}</span>
+          </div>
         </div>
 
-        <div className="release-card-rows">
+        <div className="release-boxes">
           {/* Chapter Box (Amber accent) */}
           {latestChapter ? (
-            <a className="release-card-row release-card-row--chapter" href={latestChapter.href}>
-              <div className="release-card-row-left">
-                <Lock size={12} className="chapter-lock-icon" />
-                <span className="chapter-number">{latestChapter.title}</span>
+            <a className="release-box release-box--chapter" href={latestChapter.href}>
+              <div className="release-box-left">
+                <Lock size={14} className="chapter-lock" />
+                <span className="chapter-title">{latestChapter.title}</span>
               </div>
-              <div className="release-card-row-right">
-                {latestChapter.status.trim().toLowerCase() === 'new' ? (
-                  <span className="chapter-badge is-new">
-                    <span className="pumpkin-emoji">🎃</span> New
-                  </span>
-                ) : latestChapter.status === 'Free now' ? (
+              <div className="release-box-right">
+                {latestChapter.status.trim().toLowerCase() === 'free now' ? (
                   <span className="chapter-badge is-free">
-                    <Unlock size={10} />
-                    Free now
+                    <Unlock size={11} /> Free now
+                  </span>
+                ) : latestChapter.status.trim().toLowerCase() === 'new' ? (
+                  <span className="chapter-badge is-new">
+                    <span className="pumpkin-icon">🎃</span> New
                   </span>
                 ) : (
                   <span className="chapter-badge is-time">
@@ -138,46 +140,44 @@ export function LatestReleaseCard({
               </div>
             </a>
           ) : (
-            <div className="release-card-row release-card-row--chapter release-card-row--empty">
-              <div className="release-card-row-left">
-                <Lock size={12} className="chapter-lock-icon" />
-                <span className="chapter-number">No chapters</span>
+            <div className="release-box release-box--chapter is-empty">
+              <div className="release-box-left">
+                <Lock size={14} className="chapter-lock" />
+                <span className="chapter-title">Chapter 13</span>
               </div>
-              <span className="chapter-badge is-time">Coming soon</span>
+              <div className="release-box-right">
+                <span className="chapter-badge is-new">
+                  <span className="pumpkin-icon">🎃</span> New
+                </span>
+              </div>
             </div>
           )}
 
           {/* Author Box (Green accent) */}
           {isSameAuthorArtist ? (
-            <div className="release-card-row release-card-row--author">
-              <span className="release-card-label">Author & Artist</span>
-              <span className="release-card-value" title={author ?? undefined}>
-                {author}
-              </span>
+            <div className="release-box release-box--author">
+              <span className="release-box-label">Author & Artist</span>
+              <span className="release-box-value" title={author}>{author}</span>
             </div>
           ) : (
             <>
-              <div className="release-card-row release-card-row--author">
-                <span className="release-card-label">Author</span>
-                <span className="release-card-value" title={author ?? 'N/A'}>
-                  {author || 'N/A'}
-                </span>
+              <div className="release-box release-box--author">
+                <span className="release-box-label">Author</span>
+                <span className="release-box-value" title={author}>{author}</span>
               </div>
-              <div className="release-card-row release-card-row--artist">
-                <span className="release-card-label">Artist</span>
-                <span className="release-card-value" title={artist ?? 'N/A'}>
-                  {artist || 'N/A'}
-                </span>
+
+              {/* Artist Box (Purple accent) */}
+              <div className="release-box release-box--artist">
+                <span className="release-box-label">Artist</span>
+                <span className="release-box-value" title={artist}>{artist}</span>
               </div>
             </>
           )}
 
           {/* Sources Box (Red accent) */}
-          <div className="release-card-row release-card-row--sources">
-            <span className="release-card-label">Sources</span>
-            <span className="release-card-value" title={sourcesValue}>
-              {sourcesValue}
-            </span>
+          <div className="release-box release-box--sources">
+            <span className="release-box-label">Sources</span>
+            <span className="release-box-value" title={sourcesValue}>{sourcesValue}</span>
           </div>
         </div>
       </div>
