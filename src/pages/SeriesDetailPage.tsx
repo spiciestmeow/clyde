@@ -276,7 +276,7 @@ export default function SeriesDetailPage() {
 
     const leftRail = layout.querySelector<HTMLElement>('.series-left-rail');
     const rightRail = layout.querySelector<HTMLElement>('.series-sidebar');
-    if (!leftRail || !rightRail) {
+    if (!leftRail) {
       setFixedRailPositions(null);
       return;
     }
@@ -284,15 +284,17 @@ export default function SeriesDetailPage() {
     const updateRailPositions = () => {
       layout.classList.remove('series-layout--rails-fixed');
       leftRail.removeAttribute('style');
-      rightRail.removeAttribute('style');
+      rightRail?.removeAttribute('style');
+      const coverFrame = leftRail.querySelector<HTMLElement>('.series-cover-frame');
+      const relatedItems = rightRail ? Array.from(rightRail.querySelectorAll<HTMLElement>('.series-related')) : [];
+      if (coverFrame) coverFrame.style.maxHeight = '';
+      relatedItems.forEach((item) => { item.style.display = ''; });
 
       if (window.innerWidth <= 700) {
         setFixedRailPositions(null);
         return;
       }
 
-      const leftRect = leftRail.getBoundingClientRect();
-      const rightRect = rightRail.getBoundingClientRect();
       const main = layout.closest<HTMLElement>('.series-main');
       const zoom = Number.parseFloat(main ? getComputedStyle(main).zoom : '1') || 1;
       const headerHeight = layout.closest('.series-page')
@@ -301,10 +303,38 @@ export default function SeriesDetailPage() {
       const top = Math.max(16, (headerHeight + 12) / zoom);
       const maxHeight = Math.max(120, (window.innerHeight - top * zoom - 16) / zoom);
 
-      setFixedRailPositions({
-        left: { left: leftRect.left / zoom, top, width: leftRect.width / zoom, maxHeight },
-        right: { left: rightRect.left / zoom, top, width: rightRect.width / zoom, maxHeight },
-      });
+      // Never fall back to sticky: shrink the rails so they always fit the screen.
+      // Left rail: cap the cover height by however much the rail overflows.
+      const leftHeight = leftRail.getBoundingClientRect().height / zoom;
+      if (coverFrame && leftHeight > maxHeight) {
+        const coverHeight = coverFrame.getBoundingClientRect().height / zoom;
+        coverFrame.style.maxHeight = `${Math.max(140, coverHeight - (leftHeight - maxHeight))}px`;
+      }
+      // Right rail: hide trailing similar-series items that don't fit.
+      for (let i = relatedItems.length - 1; i > 0; i -= 1) {
+        if (!rightRail || rightRail.getBoundingClientRect().height / zoom <= maxHeight) break;
+        relatedItems[i].style.display = 'none';
+      }
+
+      const leftRect = leftRail.getBoundingClientRect();
+      const rightRect = rightRail?.getBoundingClientRect() ?? leftRect;
+
+      const left = { left: leftRect.left / zoom, top, width: leftRect.width / zoom, maxHeight };
+      const right = { left: rightRect.left / zoom, top, width: rightRect.width / zoom, maxHeight };
+
+      // We removed the class/styles straight from the DOM above, so React may think
+      // nothing changed and skip re-adding them. Re-apply them directly here.
+      const applyRail = (el: HTMLElement, p: typeof left) => {
+        el.style.left = `${p.left}px`;
+        el.style.top = `${p.top}px`;
+        el.style.width = `${p.width}px`;
+        el.style.maxHeight = `${p.maxHeight}px`;
+      };
+      layout.classList.add('series-layout--rails-fixed');
+      applyRail(leftRail, left);
+      if (rightRail) applyRail(rightRail, right);
+
+      setFixedRailPositions({ left, right });
     };
 
     let frame = 0;
@@ -319,17 +349,16 @@ export default function SeriesDetailPage() {
       window.cancelAnimationFrame(frame);
       window.removeEventListener('resize', scheduleUpdate);
     };
-  }, [slug, series, seriesPageVisibility.similarSeries]);
+  }, [slug, series, seriesPageVisibility.similarSeries, catalogQuery.items]);
 
   useLayoutEffect(() => {
     window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
     document.documentElement.scrollTop = 0;
     document.body.scrollTop = 0;
-    if (!fixedRailPositions) return;
     const layout = seriesLayoutRef.current;
     layout?.querySelector<HTMLElement>('.series-left-rail')?.scrollTo(0, 0);
     layout?.querySelector<HTMLElement>('.series-sidebar')?.scrollTo(0, 0);
-  }, [fixedRailPositions, slug]);
+  }, [slug]);
 
   useEffect(() => {
     if (!coverOpen) return;
