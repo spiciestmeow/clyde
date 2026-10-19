@@ -688,12 +688,6 @@ main { padding-bottom: 38px; }
   border: 1px solid var(--line);
   border-radius: 16px;
   background: var(--panel);
-  transition: border-color .18s, transform .18s, box-shadow .18s;
-}
-.release-card:hover {
-  border-color: #777780;
-  transform: translateY(-2px);
-  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.28);
 }
 .release-cover {
   position: relative;
@@ -711,8 +705,8 @@ main { padding-bottom: 38px; }
   object-fit: cover;
   transition: transform .3s ease;
 }
-.release-card:hover .release-cover img {
-  transform: scale(1.04);
+.release-cover:hover img {
+  transform: scale(1.05);
 }
 .release-type {
   position: absolute;
