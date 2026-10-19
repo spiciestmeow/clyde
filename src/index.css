@@ -815,25 +815,21 @@ main { padding-bottom: 38px; }
 .release-boxes {
   display: flex;
   flex-direction: column;
-  gap: 8px;
-  margin-top: 4px;
-  flex: 1;
-  justify-content: space-between;
+  gap: 7px;
+  margin-top: 6px;
 }
 .release-box {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 12px;
-  flex: 1;
-  min-height: 38px;
-  max-height: 42px;
-  padding: 0 14px 0 12px;
-  border-radius: 7px;
+  gap: 8px;
+  height: 35px;
+  padding: 0 10px 0 9px;
+  border-radius: 6px;
   border: 1px solid var(--line);
   background: var(--panel-soft);
   color: var(--text);
-  font-size: 14px;
+  font-size: 12px;
   line-height: 1.2;
   text-decoration: none;
   transition: border-color .15s, background-color .15s;
@@ -843,7 +839,7 @@ main { padding-bottom: 38px; }
   border-color: #e2e8f0;
 }
 .release-box--chapter {
-  border-left: 3.5px solid #f59e0b !important;
+  border-left: 3px solid #f59e0b !important;
   color: #d97706;
 }
 .theme-dark .release-box--chapter {
@@ -856,7 +852,7 @@ main { padding-bottom: 38px; }
 .release-box-left {
   display: inline-flex;
   align-items: center;
-  gap: 7px;
+  gap: 5px;
   min-width: 0;
   overflow: hidden;
 }
@@ -869,7 +865,7 @@ main { padding-bottom: 38px; }
 }
 .chapter-title {
   font-weight: 700;
-  font-size: 14px;
+  font-size: 12px;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -884,58 +880,58 @@ main { padding-bottom: 38px; }
   font-weight: 700;
   display: inline-flex;
   align-items: center;
-  gap: 4px;
-  font-size: 13.5px;
+  gap: 3px;
+  font-size: 11.5px;
 }
 .theme-dark .chapter-badge.is-new {
   color: #f59e0b;
 }
 .pumpkin-icon {
-  font-size: 14px;
+  font-size: 12px;
   line-height: 1;
 }
 .chapter-badge.is-free {
   display: inline-flex;
   align-items: center;
-  gap: 4px;
-  padding: 3px 8px;
+  gap: 3px;
+  padding: 2px 7px;
   border: 1px solid #10b98150;
   border-radius: 9999px;
   background: #10b98114;
   color: #10b981;
-  font-size: 12px;
+  font-size: 11px;
   font-weight: 600;
 }
 .chapter-badge.is-time {
   color: var(--faint);
-  font-size: 12.5px;
+  font-size: 11px;
   font-weight: 500;
 }
 .release-box--author {
-  border-left: 3.5px solid #10b981 !important;
+  border-left: 3px solid #10b981 !important;
 }
 .release-box--artist {
-  border-left: 3.5px solid #d946ef !important;
+  border-left: 3px solid #d946ef !important;
 }
 .release-box--sources {
-  border-left: 3.5px solid #ef4444 !important;
+  border-left: 3px solid #ef4444 !important;
 }
 .release-box-label {
   font-weight: 700;
-  font-size: 14px;
+  font-size: 12px;
   color: var(--text);
   flex-shrink: 0;
 }
 .release-box-value {
   color: var(--text);
   font-weight: 500;
-  font-size: 13.5px;
+  font-size: 11.5px;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
   max-width: 62%;
   text-align: right;
-  opacity: 0.95;
+  opacity: 0.9;
 }
 .release-pagination-wrap { display: flex; justify-content: center; padding-top: 24px; }
 .release-pagination { display: flex; width: 100%; flex-wrap: wrap; align-items: center; justify-content: center; column-gap: 8px; row-gap: 8px; }
@@ -1054,7 +1050,7 @@ main { padding-bottom: 38px; }
 @media (max-width: 760px) {
   .topbar { height: 50px; }.nav-wrap { max-width: none; padding: 0 10px; gap: 7px; }.brand { width: 38px; height: 30px; }.main-nav { gap: 2px; }.nav-pill { height: 30px; gap: 4px; padding: 0 7px; font-size: 11px; }.nav-pill svg { width: 13px; height: 13px; }.bookmark-pill { display: none; }.nav-search { height: 30px; min-width: 60px; max-width: 210px; gap: 5px; padding: 0 8px; }.nav-search input { font-size: 10px; }.icon-pill { width: 26px; height: 26px; }.icon-pill svg, .icon-pill img { width: 15px; height: 15px; }.discord-short { display: none; }
    .continue-grid { max-width: none; grid-template-columns: repeat(6, 112px); gap: 12px; }
-   .release-grid { grid-template-columns: 1fr; gap: 12px; }.release-card { padding: 6px; gap: 10px; border-radius: 14px; }.release-cover { width: 110px; min-width: 110px; flex: 0 0 110px; align-self: stretch; height: auto; }.release-title { font-size: 14px; }.release-box { height: 32px; min-height: 32px; padding: 0 9px; }.release-box-label { font-size: 12.5px; }.release-box-value { font-size: 11.5px; }.chapter-title { font-size: 12px; }
+   .release-grid { grid-template-columns: 1fr; gap: 12px; }.release-card { padding: 6px; gap: 10px; border-radius: 14px; }.release-cover { width: 110px; min-width: 110px; flex: 0 0 110px; align-self: stretch; height: auto; }.release-title { font-size: 14px; }.release-box { height: 32px; padding: 0 8px; }.release-box-label { font-size: 12px; }.release-box-value { font-size: 11px; }.chapter-title { font-size: 11.5px; }
   .community-grid { grid-template-columns: 1fr; }.members-panel { max-width: none; }.collection-grid { grid-template-columns: repeat(5, minmax(120px,1fr)); overflow-x: auto; padding-bottom: 5px; }.collection-card { min-width: 120px; }
    .popular-rank-grid { grid-template-columns: repeat(2,minmax(0,1fr)); row-gap: 18px; column-gap: 14px; }.rank-card { min-height: 64px; gap: 6px; }.rank-cover,.rank-card > img { width: 44px; height: 62px; border-radius: 8px; }.rank-number { flex-basis: 21px; font-size: 22px; }.rank-info { gap: 5px; padding-left: 5px; }.rank-title { font-size: 12px; }.rank-genre { padding: 3px 6px; font-size: 9px; }
 }
@@ -1064,7 +1060,7 @@ main { padding-bottom: 38px; }
   .content-width { width: calc(100% - 20px); }.section-title h2 { font-size: 15px; }.popular-section { margin-top: 8px; }
    .continue-section,.latest-section,.collection-section,.community-grid,.most-popular { margin-top: 22px; }.continue-grid { grid-template-columns: repeat(6, 100px); gap: 9px; }.continue-card__title { font-size: 10px; }.continue-card__activity { font-size: 8px; }
   .latest-section { width: 100%; padding: 11px 9px; border-radius: 0; }.latest-heading { flex-wrap: wrap; gap: 7px; }.latest-heading .section-title { width: 100%; }.latest-tabs button { padding: 6px 8px; }
-   .release-grid { grid-template-columns: 1fr; gap: 10px; }.release-card { padding: 6px; gap: 8px; border-radius: 12px; }.release-cover { width: 95px; min-width: 95px; flex: 0 0 95px; align-self: stretch; height: auto; }.release-title { font-size: 13px; }.release-box { height: 30px; min-height: 30px; padding: 0 8px; }.release-box-label { font-size: 12px; }.release-box-value { font-size: 11px; }.chapter-title { font-size: 11.5px; }.chapter-badge.is-new { font-size: 11.5px; }
+   .release-grid { grid-template-columns: 1fr; gap: 10px; }.release-card { padding: 6px; gap: 8px; border-radius: 12px; }.release-cover { width: 95px; min-width: 95px; flex: 0 0 95px; align-self: stretch; height: auto; }.release-title { font-size: 13px; }.release-box { height: 30px; padding: 0 7px; }.release-box-label { font-size: 11.5px; }.release-box-value { font-size: 10.5px; }.chapter-title { font-size: 11px; }.chapter-badge.is-new { font-size: 11px; }
   .collection-grid { grid-template-columns: repeat(5, 128px); }.community-grid { gap: 10px; }.comments-panel,.members-panel { padding: 10px; }
    .popular-rank-grid { grid-template-columns: 1fr; row-gap: 12px; column-gap: 0; margin-top: 14px; }.rank-card { min-height: 68px; gap: 7px; }.rank-cover,.rank-card > img { width: 46px; height: 64px; }.rank-number { flex-basis: 22px; font-size: 22px; }.rank-info { gap: 5px; padding-left: 6px; }.rank-title { font-size: 13px; }.rank-genre { padding: 3px 6px; font-size: 9px; }
   .footer-links { gap: 18px; }
