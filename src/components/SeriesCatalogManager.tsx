@@ -190,7 +190,7 @@ export default function SeriesCatalogManager() {
     setIsSyncing(true);
     setSyncError(null);
     try {
-      const result = await syncSeriesSources(q);
+      const result = await syncSeriesSources(q, draft.alternateTitles || []);
       setSyncResult(result);
       if (!result.matchedSeries || result.sources.length === 0) {
         setSyncError(`No scanlation sources found for "${q}". Try another alias or spelling.`);

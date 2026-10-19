@@ -81,40 +81,54 @@ function getFaviconUrl(rawUrl: string): string {
   }
 }
 
-export async function fetchScanlationSources(rawTitle: string) {
+export async function fetchScanlationSources(rawTitle: string, alternateTitles: string[] = []) {
   const title = rawTitle.trim();
   if (!title) {
     return { matchedSeries: null, sources: [] };
   }
 
-  // 1. Search MangaUpdates
-  const searchRes = await fetch('https://api.mangaupdates.com/v1/series/search', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'User-Agent': 'VortexScans/1.0',
-    },
-    body: JSON.stringify({
-      search: title,
-      stype: 'title',
-      perpage: 5,
-    }),
-  });
-
-  if (!searchRes.ok) {
-    throw new Error(`MangaUpdates search returned status ${searchRes.status}`);
-  }
-
-  const searchData = (await searchRes.json()) as {
-    total_hits: number;
-    results?: { record: MangaUpdatesRecord }[];
+  // Helper to query MangaUpdates search
+  const searchMangaUpdates = async (searchQuery: string) => {
+    try {
+      const res = await fetch('https://api.mangaupdates.com/v1/series/search', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'User-Agent': 'VortexScans/1.0',
+        },
+        body: JSON.stringify({
+          search: searchQuery,
+          stype: 'title',
+          perpage: 5,
+        }),
+      });
+      if (!res.ok) return null;
+      const data = (await res.json()) as {
+        total_hits: number;
+        results?: { record: MangaUpdatesRecord }[];
+      };
+      return data.results && data.results.length > 0 ? data.results : null;
+    } catch {
+      return null;
+    }
   };
 
-  if (!searchData.results || searchData.results.length === 0) {
+  // 1. Search primary title, fallback to alternate titles if not found
+  let searchResults = await searchMangaUpdates(title);
+  if (!searchResults && alternateTitles.length > 0) {
+    for (const alt of alternateTitles) {
+      const cleanAlt = alt?.trim();
+      if (!cleanAlt) continue;
+      searchResults = await searchMangaUpdates(cleanAlt);
+      if (searchResults) break;
+    }
+  }
+
+  if (!searchResults || searchResults.length === 0) {
     return { matchedSeries: null, sources: [] };
   }
 
-  const bestRecord = searchData.results[0].record;
+  const bestRecord = searchResults[0].record;
   const seriesId = bestRecord.series_id;
 
   // 2. Fetch detail & groups in parallel
@@ -290,12 +304,22 @@ export default async function handler(
 
   try {
     let title = '';
+    let alternateTitles: string[] = [];
     if (request.method === 'GET') {
       const url = new URL(request.url || '', 'http://localhost');
       title = url.searchParams.get('title') || '';
+      const rawAlt = url.searchParams.get('alternateTitles');
+      if (rawAlt) {
+        try {
+          alternateTitles = JSON.parse(rawAlt);
+        } catch {
+          alternateTitles = rawAlt.split(',').map((s) => s.trim()).filter(Boolean);
+        }
+      }
     } else if (request.method === 'POST') {
       const body = typeof request.body === 'string' ? JSON.parse(request.body) : request.body;
       title = (body as { title?: string })?.title || '';
+      alternateTitles = (body as { alternateTitles?: string[] })?.alternateTitles || [];
     }
 
     if (!title.trim()) {
@@ -303,7 +327,7 @@ export default async function handler(
       return;
     }
 
-    const data = await fetchScanlationSources(title);
+    const data = await fetchScanlationSources(title, alternateTitles);
     response.status(200).json(data);
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Failed to sync sources.';

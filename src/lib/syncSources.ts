@@ -22,14 +22,23 @@ export type SyncSourcesResult = {
   sources: DetectedSource[];
 };
 
-export async function syncSeriesSources(title: string): Promise<SyncSourcesResult> {
+export async function syncSeriesSources(
+  title: string,
+  alternateTitles: string[] = [],
+): Promise<SyncSourcesResult> {
   const cleanTitle = title.trim();
   if (!cleanTitle) {
     throw new Error('Please enter a series title to search.');
   }
 
-  const endpoint = `/api/sync-sources?title=${encodeURIComponent(cleanTitle)}`;
-  const response = await fetch(endpoint);
+  const response = await fetch('/api/sync-sources', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      title: cleanTitle,
+      alternateTitles: alternateTitles.filter(Boolean),
+    }),
+  });
 
   if (!response.ok) {
     let errorMessage = `Failed to sync sources (${response.status})`;
