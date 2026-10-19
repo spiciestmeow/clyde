@@ -12,7 +12,7 @@
       "destination": "https://api.mangadex.org/:path*"
     },
     {
-      "source": "/(.*)",
+      "source": "/((?!api/).*)",
       "destination": "/index.html"
     }
   ]

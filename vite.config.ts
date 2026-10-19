@@ -6,10 +6,43 @@ import { defineConfig } from 'vite';
 
 const root = path.dirname(fileURLToPath(import.meta.url));
 
+function syncSourcesDevPlugin() {
+  return {
+    name: 'sync-sources-dev-server',
+    configureServer(server: any) {
+      server.middlewares.use(async (req: any, res: any, next: any) => {
+        if (req.url && req.url.startsWith('/api/sync-sources')) {
+          try {
+            const url = new URL(req.url, 'http://localhost');
+            const title = url.searchParams.get('title') || '';
+            if (!title.trim()) {
+              res.statusCode = 400;
+              res.setHeader('Content-Type', 'application/json');
+              res.end(JSON.stringify({ error: 'Please provide a title' }));
+              return;
+            }
+            const { fetchScanlationSources } = await import('./api/sync-sources.ts');
+            const result = await fetchScanlationSources(title);
+            res.statusCode = 200;
+            res.setHeader('Content-Type', 'application/json');
+            res.end(JSON.stringify(result));
+          } catch (err: any) {
+            res.statusCode = 500;
+            res.setHeader('Content-Type', 'application/json');
+            res.end(JSON.stringify({ error: err?.message || 'Sync failed' }));
+          }
+          return;
+        }
+        next();
+      });
+    },
+  };
+}
+
 export default defineConfig({
   root,
   base: '/',
-  plugins: [react(), tailwindcss()],
+  plugins: [react(), tailwindcss(), syncSourcesDevPlugin()],
   resolve: {
     alias: {
       '@': path.resolve(root, 'src'),
