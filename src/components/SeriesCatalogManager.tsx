@@ -554,6 +554,253 @@ export default function SeriesCatalogManager() {
     }
   };
 
+  const syncSourcesModalElement = isSyncSourcesOpen ? (
+    <div className="modal-backdrop" onClick={() => setIsSyncSourcesOpen(false)}>
+      <div className="modal-dialog-card modal-sync-dialog" onClick={(e) => e.stopPropagation()}>
+        <div className="modal-header">
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <div className="sync-modal-icon-badge">
+              <Zap size={16} />
+            </div>
+            <div>
+              <h2 className="modal-title" style={{ margin: 0 }}>Sync Translation Sources</h2>
+              <small style={{ color: '#94a3b8', fontSize: 11 }}>Auto-discover scanlator groups and chapter counts</small>
+            </div>
+          </div>
+          <button
+            type="button"
+            className="modal-close-btn"
+            onClick={() => setIsSyncSourcesOpen(false)}
+            aria-label="Close dialog"
+          >
+            <X size={18} />
+          </button>
+        </div>
+
+        {/* Search Input Bar */}
+        <form
+          onSubmit={(e) => {
+            e.preventDefault();
+            void runSyncSources(syncQuery);
+          }}
+          className="sync-search-row"
+        >
+          <div className="sync-search-input-wrap">
+            <Search size={15} className="sync-search-icon" />
+            <input
+              type="text"
+              placeholder="Enter series title (e.g. Solo Leveling)"
+              value={syncQuery}
+              onChange={(e) => setSyncQuery(e.target.value)}
+              disabled={isSyncing}
+            />
+          </div>
+          <button
+            type="submit"
+            className="btn-dark"
+            disabled={isSyncing || !syncQuery.trim()}
+            style={{ padding: '0 16px', minWidth: 90, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}
+          >
+            {isSyncing ? (
+              <>
+                <LoaderCircle size={14} className="spin-animate" />
+                <span>Searching…</span>
+              </>
+            ) : (
+              <>
+                <Search size={14} />
+                <span>Search</span>
+              </>
+            )}
+          </button>
+        </form>
+
+        {/* Error Banner */}
+        {syncError && (
+          <div className="uploads-error-banner" style={{ margin: '8px 0 14px' }}>
+            <AlertCircle size={15} />
+            <span>{syncError}</span>
+          </div>
+        )}
+
+        {/* Matched Series Card */}
+        {syncResult?.matchedSeries && (
+          <div className="sync-series-card">
+            {syncResult.matchedSeries.image ? (
+              <img src={syncResult.matchedSeries.image} alt="" className="sync-series-thumb" />
+            ) : (
+              <div className="sync-series-thumb sync-series-thumb-placeholder">
+                <BookOpen size={18} />
+              </div>
+            )}
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+                <strong style={{ fontSize: 14, color: '#f8fafc' }}>
+                  {syncResult.matchedSeries.title}
+                </strong>
+                {syncResult.matchedSeries.year && (
+                  <span className="sync-meta-pill">
+                    {syncResult.matchedSeries.year}
+                  </span>
+                )}
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginTop: 4, flexWrap: 'wrap' }}>
+                {syncResult.matchedSeries.status && (
+                  <span style={{ fontSize: 12, color: '#94a3b8' }}>
+                    {syncResult.matchedSeries.status}
+                  </span>
+                )}
+                {syncResult.matchedSeries.totalChapters && (
+                  <span className="sync-ch-pill">
+                    {syncResult.matchedSeries.totalChapters} chapters total
+                  </span>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Source Results Controls (Filter tabs & Select all) */}
+        {syncResult && syncResult.sources.length > 0 && (
+          <div className="sync-controls-row">
+            <div className="sync-filter-pills">
+              <button
+                type="button"
+                className={`sync-filter-pill ${syncFilter === 'all' ? 'is-active' : ''}`}
+                onClick={() => setSyncFilter('all')}
+              >
+                All ({syncResult.sources.length})
+              </button>
+              <button
+                type="button"
+                className={`sync-filter-pill ${syncFilter === 'scanlator' ? 'is-active' : ''}`}
+                onClick={() => setSyncFilter('scanlator')}
+              >
+                Scanlators ({syncResult.sources.filter((s) => s.type === 'scanlator').length})
+              </button>
+              <button
+                type="button"
+                className={`sync-filter-pill ${syncFilter === 'official' ? 'is-active' : ''}`}
+                onClick={() => setSyncFilter('official')}
+              >
+                Official ({syncResult.sources.filter((s) => s.type === 'official').length})
+              </button>
+            </div>
+
+            <div className="sync-select-helpers">
+              <button
+                type="button"
+                className="sync-link-btn"
+                onClick={() => {
+                  const allIdxs = new Set(syncResult.sources.map((_, i) => i));
+                  setSelectedSourceIndices(allIdxs);
+                }}
+              >
+                Select all
+              </button>
+              <span style={{ color: '#475569' }}>•</span>
+              <button
+                type="button"
+                className="sync-link-btn"
+                onClick={() => setSelectedSourceIndices(new Set())}
+              >
+                Deselect all
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* List of Detected Sources */}
+        {syncResult && syncResult.sources.length > 0 && (
+          <div className="sync-sources-scroll-area">
+            {syncResult.sources
+              .map((src, originalIdx) => ({ src, originalIdx }))
+              .filter(({ src }) => (syncFilter === 'all' ? true : src.type === syncFilter))
+              .map(({ src, originalIdx }) => {
+                const isSelected = selectedSourceIndices.has(originalIdx);
+                return (
+                  <div
+                    key={originalIdx}
+                    className={`sync-source-card ${isSelected ? 'is-selected' : ''}`}
+                    onClick={() => {
+                      const next = new Set(selectedSourceIndices);
+                      if (isSelected) next.delete(originalIdx);
+                      else next.add(originalIdx);
+                      setSelectedSourceIndices(next);
+                    }}
+                  >
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 10, minWidth: 0 }}>
+                      <input
+                        type="checkbox"
+                        checked={isSelected}
+                        onChange={() => {}}
+                        style={{ cursor: 'pointer', accentColor: '#6366f1' }}
+                      />
+                      <div style={{ minWidth: 0 }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                          <strong style={{ fontSize: 13, color: '#f8fafc' }}>{src.name}</strong>
+                          {src.active && <span className="sync-active-dot" title="Active group" />}
+                          <span className={`sync-type-tag is-${src.type}`}>
+                            {src.type === 'scanlator' ? 'Scanlator' : 'Official'}
+                          </span>
+                        </div>
+                        {src.url ? (
+                          <a
+                            href={src.url}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="sync-source-url"
+                            onClick={(e) => e.stopPropagation()}
+                          >
+                            <span>{src.url.replace(/^https?:\/\//i, '').replace(/\/$/, '')}</span>
+                            <ExternalLink size={11} />
+                          </a>
+                        ) : (
+                          <span style={{ fontSize: 11, color: '#64748b' }}>No website listed</span>
+                        )}
+                      </div>
+                    </div>
+
+                    {src.chapterCount && (
+                      <div className="sync-ch-badge">
+                        <BookOpen size={12} />
+                        <span>{src.chapterCount}</span>
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+          </div>
+        )}
+
+        {/* Footer with Import Button */}
+        <div className="modal-footer" style={{ marginTop: 16 }}>
+          <button
+            type="button"
+            className="btn-light"
+            onClick={() => setIsSyncSourcesOpen(false)}
+          >
+            Cancel
+          </button>
+          <button
+            type="button"
+            className="btn-create"
+            disabled={!syncResult || selectedSourceIndices.size === 0}
+            onClick={handleImportSelectedSources}
+            style={{
+              background: 'linear-gradient(135deg, #6366f1, #8b5cf6)',
+              borderColor: '#6366f1',
+              color: '#ffffff',
+            }}
+          >
+            <Check size={15} />
+            <span>Import {selectedSourceIndices.size} Source{selectedSourceIndices.size === 1 ? '' : 's'}</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  ) : null;
+
   // ==========================================
   // RENDER: IMAGE 3, 4, 5 — NEW TITLE INTERFACE
   // ==========================================
@@ -1189,6 +1436,7 @@ export default function SeriesCatalogManager() {
             </button>
           </div>
         </form>
+        {syncSourcesModalElement}
       </div>
     );
   }
@@ -1607,255 +1855,7 @@ export default function SeriesCatalogManager() {
         </div>
       )}
 
-      {/* ========================================== */}
-      {/* SYNC SOURCES MODAL */}
-      {/* ========================================== */}
-      {isSyncSourcesOpen && (
-        <div className="modal-backdrop" onClick={() => setIsSyncSourcesOpen(false)}>
-          <div className="modal-dialog-card modal-sync-dialog" onClick={(e) => e.stopPropagation()}>
-            <div className="modal-header">
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                <div className="sync-modal-icon-badge">
-                  <Zap size={16} />
-                </div>
-                <div>
-                  <h2 className="modal-title" style={{ margin: 0 }}>Sync Translation Sources</h2>
-                  <small style={{ color: '#94a3b8', fontSize: 11 }}>Auto-discover scanlator groups and chapter counts</small>
-                </div>
-              </div>
-              <button
-                type="button"
-                className="modal-close-btn"
-                onClick={() => setIsSyncSourcesOpen(false)}
-                aria-label="Close dialog"
-              >
-                <X size={18} />
-              </button>
-            </div>
-
-            {/* Search Input Bar */}
-            <form
-              onSubmit={(e) => {
-                e.preventDefault();
-                void runSyncSources(syncQuery);
-              }}
-              className="sync-search-row"
-            >
-              <div className="sync-search-input-wrap">
-                <Search size={15} className="sync-search-icon" />
-                <input
-                  type="text"
-                  placeholder="Enter series title (e.g. Solo Leveling)"
-                  value={syncQuery}
-                  onChange={(e) => setSyncQuery(e.target.value)}
-                  disabled={isSyncing}
-                />
-              </div>
-              <button
-                type="submit"
-                className="btn-dark"
-                disabled={isSyncing || !syncQuery.trim()}
-                style={{ padding: '0 16px', minWidth: 90, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}
-              >
-                {isSyncing ? (
-                  <>
-                    <LoaderCircle size={14} className="spin-animate" />
-                    <span>Searching…</span>
-                  </>
-                ) : (
-                  <>
-                    <Search size={14} />
-                    <span>Search</span>
-                  </>
-                )}
-              </button>
-            </form>
-
-            {/* Error Banner */}
-            {syncError && (
-              <div className="uploads-error-banner" style={{ margin: '8px 0 14px' }}>
-                <AlertCircle size={15} />
-                <span>{syncError}</span>
-              </div>
-            )}
-
-            {/* Matched Series Card */}
-            {syncResult?.matchedSeries && (
-              <div className="sync-series-card">
-                {syncResult.matchedSeries.image ? (
-                  <img src={syncResult.matchedSeries.image} alt="" className="sync-series-thumb" />
-                ) : (
-                  <div className="sync-series-thumb sync-series-thumb-placeholder">
-                    <BookOpen size={18} />
-                  </div>
-                )}
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
-                    <strong style={{ fontSize: 14, color: '#f8fafc' }}>
-                      {syncResult.matchedSeries.title}
-                    </strong>
-                    {syncResult.matchedSeries.year && (
-                      <span className="sync-meta-pill">
-                        {syncResult.matchedSeries.year}
-                      </span>
-                    )}
-                  </div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginTop: 4, flexWrap: 'wrap' }}>
-                    {syncResult.matchedSeries.status && (
-                      <span style={{ fontSize: 12, color: '#94a3b8' }}>
-                        {syncResult.matchedSeries.status}
-                      </span>
-                    )}
-                    {syncResult.matchedSeries.totalChapters && (
-                      <span className="sync-ch-pill">
-                        {syncResult.matchedSeries.totalChapters} chapters total
-                      </span>
-                    )}
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {/* Source Results Controls (Filter tabs & Select all) */}
-            {syncResult && syncResult.sources.length > 0 && (
-              <div className="sync-controls-row">
-                <div className="sync-filter-pills">
-                  <button
-                    type="button"
-                    className={`sync-filter-pill ${syncFilter === 'all' ? 'is-active' : ''}`}
-                    onClick={() => setSyncFilter('all')}
-                  >
-                    All ({syncResult.sources.length})
-                  </button>
-                  <button
-                    type="button"
-                    className={`sync-filter-pill ${syncFilter === 'scanlator' ? 'is-active' : ''}`}
-                    onClick={() => setSyncFilter('scanlator')}
-                  >
-                    Scanlators ({syncResult.sources.filter((s) => s.type === 'scanlator').length})
-                  </button>
-                  <button
-                    type="button"
-                    className={`sync-filter-pill ${syncFilter === 'official' ? 'is-active' : ''}`}
-                    onClick={() => setSyncFilter('official')}
-                  >
-                    Official ({syncResult.sources.filter((s) => s.type === 'official').length})
-                  </button>
-                </div>
-
-                <div className="sync-select-helpers">
-                  <button
-                    type="button"
-                    className="sync-link-btn"
-                    onClick={() => {
-                      const allIdxs = new Set(syncResult.sources.map((_, i) => i));
-                      setSelectedSourceIndices(allIdxs);
-                    }}
-                  >
-                    Select all
-                  </button>
-                  <span style={{ color: '#475569' }}>•</span>
-                  <button
-                    type="button"
-                    className="sync-link-btn"
-                    onClick={() => setSelectedSourceIndices(new Set())}
-                  >
-                    Deselect all
-                  </button>
-                </div>
-              </div>
-            )}
-
-            {/* List of Detected Sources */}
-            {syncResult && syncResult.sources.length > 0 && (
-              <div className="sync-sources-scroll-area">
-                {syncResult.sources
-                  .map((src, originalIdx) => ({ src, originalIdx }))
-                  .filter(({ src }) => (syncFilter === 'all' ? true : src.type === syncFilter))
-                  .map(({ src, originalIdx }) => {
-                    const isSelected = selectedSourceIndices.has(originalIdx);
-                    return (
-                      <div
-                        key={originalIdx}
-                        className={`sync-source-card ${isSelected ? 'is-selected' : ''}`}
-                        onClick={() => {
-                          const next = new Set(selectedSourceIndices);
-                          if (isSelected) next.delete(originalIdx);
-                          else next.add(originalIdx);
-                          setSelectedSourceIndices(next);
-                        }}
-                      >
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 10, minWidth: 0 }}>
-                          <input
-                            type="checkbox"
-                            checked={isSelected}
-                            onChange={() => {}}
-                            style={{ cursor: 'pointer', accentColor: '#6366f1' }}
-                          />
-                          <div style={{ minWidth: 0 }}>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                              <strong style={{ fontSize: 13, color: '#f8fafc' }}>{src.name}</strong>
-                              {src.active && <span className="sync-active-dot" title="Active group" />}
-                              <span className={`sync-type-tag is-${src.type}`}>
-                                {src.type === 'scanlator' ? 'Scanlator' : 'Official'}
-                              </span>
-                            </div>
-                            {src.url ? (
-                              <a
-                                href={src.url}
-                                target="_blank"
-                                rel="noreferrer"
-                                className="sync-source-url"
-                                onClick={(e) => e.stopPropagation()}
-                              >
-                                <span>{src.url.replace(/^https?:\/\//i, '').replace(/\/$/, '')}</span>
-                                <ExternalLink size={11} />
-                              </a>
-                            ) : (
-                              <span style={{ fontSize: 11, color: '#64748b' }}>No website listed</span>
-                            )}
-                          </div>
-                        </div>
-
-                        {src.chapterCount && (
-                          <div className="sync-ch-badge">
-                            <BookOpen size={12} />
-                            <span>{src.chapterCount}</span>
-                          </div>
-                        )}
-                      </div>
-                    );
-                  })}
-              </div>
-            )}
-
-            {/* Footer with Import Button */}
-            <div className="modal-footer" style={{ marginTop: 16 }}>
-              <button
-                type="button"
-                className="btn-light"
-                onClick={() => setIsSyncSourcesOpen(false)}
-              >
-                Cancel
-              </button>
-              <button
-                type="button"
-                className="btn-create"
-                disabled={!syncResult || selectedSourceIndices.size === 0}
-                onClick={handleImportSelectedSources}
-                style={{
-                  background: 'linear-gradient(135deg, #6366f1, #8b5cf6)',
-                  borderColor: '#6366f1',
-                  color: '#ffffff',
-                }}
-              >
-                <Check size={15} />
-                <span>Import {selectedSourceIndices.size} Source{selectedSourceIndices.size === 1 ? '' : 's'}</span>
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      {syncSourcesModalElement}
     </div>
   );
 }
