@@ -155,19 +155,19 @@ function parseChapterAgeMinutes(status: string): number | null {
   if (s === 'today') return 720;
   if (s === 'yesterday') return 1440;
 
-  const minMatch = s.match(/(\d+)\s*min(?:ute)?s?\s*ago/);
+  const minMatch = s.match(/(\d+)\s*min(?:ute)?s?(?:\s*ago)?/);
   if (minMatch) return Number(minMatch[1]);
 
-  const hourMatch = s.match(/(\d+)\s*(?:hour|hr)s?\s*ago/);
+  const hourMatch = s.match(/(\d+)\s*(?:hour|hr)s?(?:\s*ago)?/);
   if (hourMatch) return Number(hourMatch[1]) * 60;
 
-  const dayMatch = s.match(/(\d+)\s*days?\s*ago/);
+  const dayMatch = s.match(/(\d+)\s*days?(?:\s*ago)?/);
   if (dayMatch) return Number(dayMatch[1]) * 1440;
 
-  const weekMatch = s.match(/(\d+)\s*weeks?\s*ago/);
+  const weekMatch = s.match(/(\d+)\s*weeks?(?:\s*ago)?/);
   if (weekMatch) return Number(weekMatch[1]) * 1440 * 7;
 
-  const monthMatch = s.match(/(\d+)\s*months?\s*ago/);
+  const monthMatch = s.match(/(\d+)\s*months?(?:\s*ago)?/);
   if (monthMatch) return Number(monthMatch[1]) * 1440 * 30;
 
   const parsedDate = Date.parse(s);
