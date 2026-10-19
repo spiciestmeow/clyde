@@ -1,7 +1,7 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState, type SyntheticEvent } from 'react';
 import { Link, useLocation, useParams } from 'wouter';
 import { Activity, ArrowLeft, ArrowUpRight, BookOpen, Bookmark, CalendarDays, Check, ChevronDown, ChevronRight, Clock3, Flag, Heart, Info, List, Maximize2, MessageSquare, MessageSquareText, PenLine, Rows3, Search, Share2, Square, Star, TriangleAlert, Type, X, ZoomIn } from 'lucide-react';
-import type { SeriesRecord } from '../lib/seriesCatalog';
+import { incrementSeriesViews, type SeriesRecord } from '../lib/seriesCatalog';
 import assets from '../../clone-data/asset-references.json';
 import vortexLogo from '../assets/vortex-logo.webp';
 import angryReactionIcon from '../assets/reactions/angry.webp';
@@ -23,8 +23,6 @@ import '../series-data-status.css';
 type Recommendation = { title: string; href: string; cover: string; rating: string | null; chapterCount: number };
 type ReactionKey = 'like' | 'love' | 'happy' | 'wow' | 'sad' | 'angry';
 type ReactionCounts = Record<ReactionKey, number>;
-type RailPosition = { left: number; top: number; width: number; maxHeight: number };
-type FixedRailPositions = { left: RailPosition; right: RailPosition };
 const assetList = assets as { src: string; alt: string }[];
 const logo = assetList[0]?.src;
 const reactionKeys: ReactionKey[] = ['like', 'love', 'happy', 'wow', 'sad', 'angry'];
@@ -227,8 +225,6 @@ export default function SeriesDetailPage() {
   const coverButtonRef = useRef<HTMLButtonElement>(null);
   const closeCoverRef = useRef<HTMLButtonElement>(null);
   const seriesLayoutRef = useRef<HTMLDivElement>(null);
-  const [fixedRailPositions, setFixedRailPositions] = useState<FixedRailPositions | null>(null);
-
   useEffect(() => {
     let active = true;
     void getSiteSettings()
@@ -257,74 +253,24 @@ export default function SeriesDetailPage() {
       } catch {
         setReaction(null);
       }
+
+      try {
+        const sessionKey = `vortex-viewed-series:${series.id}`;
+        if (!sessionStorage.getItem(sessionKey)) {
+          sessionStorage.setItem(sessionKey, '1');
+          void incrementSeriesViews(series.id);
+        }
+      } catch {
+        // Continue if sessionStorage is restricted
+      }
     }
   }, [slug, series]);
-
-  useLayoutEffect(() => {
-    const layout = seriesLayoutRef.current;
-    if (!layout) return;
-
-    const leftRail = layout.querySelector<HTMLElement>('.series-left-rail');
-    const rightRail = layout.querySelector<HTMLElement>('.series-sidebar');
-    if (!leftRail || !rightRail) {
-      setFixedRailPositions(null);
-      return;
-    }
-
-    const updateRailPositions = () => {
-      layout.classList.remove('series-layout--rails-fixed');
-      leftRail.removeAttribute('style');
-      rightRail.removeAttribute('style');
-
-      if (window.innerWidth <= 700) {
-        setFixedRailPositions(null);
-        return;
-      }
-
-      const leftRect = leftRail.getBoundingClientRect();
-      const rightRect = rightRail.getBoundingClientRect();
-      const main = layout.closest<HTMLElement>('.series-main');
-      const zoom = Number.parseFloat(main ? getComputedStyle(main).zoom : '1') || 1;
-      const headerHeight = layout.closest('.series-page')
-        ?.querySelector('.series-topbar')
-        ?.getBoundingClientRect().height ?? 60;
-      const top = Math.max(16, (headerHeight + 12) / zoom);
-      const maxHeight = Math.max(120, (window.innerHeight - top * zoom - 16) / zoom);
-
-      if (leftRect.height / zoom > maxHeight || rightRect.height / zoom > maxHeight) {
-        setFixedRailPositions(null);
-        return;
-      }
-
-      setFixedRailPositions({
-        left: { left: leftRect.left / zoom, top, width: leftRect.width / zoom, maxHeight },
-        right: { left: rightRect.left / zoom, top, width: rightRect.width / zoom, maxHeight },
-      });
-    };
-
-    let frame = 0;
-    const scheduleUpdate = () => {
-      window.cancelAnimationFrame(frame);
-      frame = window.requestAnimationFrame(updateRailPositions);
-    };
-
-    updateRailPositions();
-    window.addEventListener('resize', scheduleUpdate);
-    return () => {
-      window.cancelAnimationFrame(frame);
-      window.removeEventListener('resize', scheduleUpdate);
-    };
-  }, [slug, series, seriesPageVisibility.similarSeries]);
 
   useLayoutEffect(() => {
     window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
     document.documentElement.scrollTop = 0;
     document.body.scrollTop = 0;
-    if (!fixedRailPositions) return;
-    const layout = seriesLayoutRef.current;
-    layout?.querySelector<HTMLElement>('.series-left-rail')?.scrollTo(0, 0);
-    layout?.querySelector<HTMLElement>('.series-sidebar')?.scrollTo(0, 0);
-  }, [fixedRailPositions, slug]);
+  }, [slug]);
 
   useEffect(() => {
     if (!coverOpen) return;
@@ -498,9 +444,9 @@ export default function SeriesDetailPage() {
       <div className="series-breadcrumb"><Link href="/">Home</Link><ChevronRight size={13} /><span>Series</span><ChevronRight size={13} /><span>{title}</span></div>
       <div
         ref={seriesLayoutRef}
-        className={`series-layout${fixedRailPositions ? ' series-layout--rails-fixed' : ''}${seriesPageVisibility.similarSeries ? '' : ' series-layout--without-sidebar'}`}
+        className={`series-layout${seriesPageVisibility.similarSeries ? '' : ' series-layout--without-sidebar'}`}
       >
-        <aside className="series-left-rail" style={fixedRailPositions?.left}>
+        <aside className="series-left-rail">
           {series.cover ? <button
             type="button"
             ref={coverButtonRef}
@@ -633,7 +579,7 @@ export default function SeriesDetailPage() {
           </section>}
         </div>
 
-        {seriesPageVisibility.similarSeries && <aside className="series-sidebar" style={fixedRailPositions?.right}>
+        {seriesPageVisibility.similarSeries && <aside className="series-sidebar">
           <div className="series-sidebar-head"><h2>Similar series</h2></div>
           <div className="series-related-list">{related.map((item) => <Link href={item.href} className="series-related" key={item.href} data-testid={`link-related-${item.href.split('/').pop()}`} data-recommendation-item="true">
             <span className="series-related-cover"><img src={imageUrl(item.cover, 120)} alt={item.title} width={56} height={75} loading="lazy" /></span>

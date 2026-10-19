@@ -41,6 +41,7 @@ export type SeriesRecord = {
   sources: SeriesLink[];
   facts: Record<string, string | null>;
   favorites: string | null;
+  views?: number;
   reviewCount: number | null;
   pageNumber: number;
   pageOrder: number;
@@ -104,6 +105,7 @@ type SeriesDatabaseRow = {
   sources: SeriesLink[] | null;
   facts: Record<string, string | null> | null;
   favorites: string | number | null;
+  views?: number | null;
   review_count: number | null;
   page_number: number;
   page_order: number;
@@ -147,6 +149,7 @@ function toSeriesRecord(value: unknown): SeriesRecord {
     sources: row.sources ?? [],
     facts: row.facts ?? {},
     favorites: row.favorites == null ? null : String(row.favorites),
+    views: typeof row.views === 'number' ? row.views : Number(row.views) || 0,
     reviewCount: row.review_count,
     pageNumber: row.page_number,
     pageOrder: row.page_order,
@@ -343,4 +346,21 @@ export async function deleteSeriesRecord(id: number): Promise<void> {
 
   if (error) throw error;
 }
+
+export async function incrementSeriesViews(seriesId: number): Promise<number | null> {
+  if (!supabase) return null;
+  try {
+    const { data, error } = await supabase.rpc('increment_series_views', {
+      series_id: seriesId,
+    });
+    if (error) {
+      console.warn('Could not increment views via RPC:', error.message);
+      return null;
+    }
+    return Number(data);
+  } catch {
+    return null;
+  }
+}
+
 

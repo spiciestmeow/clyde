@@ -16,6 +16,7 @@ export type LatestRelease = {
   sources?: { name: string; url: string }[] | null;
   publishers?: string[] | null;
   favorites?: string | number | null;
+  views?: number | null;
   facts?: Record<string, string | null> | null;
 };
 
@@ -36,6 +37,7 @@ export function seriesToRelease(item: SeriesRecord): LatestRelease {
     sources: item.sources,
     publishers: item.publishers,
     favorites: item.favorites,
+    views: item.views,
     facts: item.facts,
   };
 }
@@ -80,6 +82,12 @@ function getSourcesDisplay(release: LatestRelease): string {
 }
 
 function formatViews(release: LatestRelease): string {
+  if (typeof release.views === 'number' && release.views > 0) {
+    const v = release.views;
+    if (v >= 1_000_000) return `${(v / 1_000_000).toFixed(1)}M`;
+    if (v >= 1_000) return `${(v / 1_000).toFixed(1)}k`;
+    return String(v);
+  }
   if (release.favorites) {
     const fav = release.favorites;
     if (typeof fav === 'number') {
@@ -91,7 +99,7 @@ function formatViews(release: LatestRelease): string {
     }
     return fav;
   }
-  return '20.1k';
+  return typeof release.views === 'number' ? String(release.views) : '0';
 }
 
 export function LatestReleaseCard({
