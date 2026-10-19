@@ -31,6 +31,12 @@ interface MangaUpdatesRelease {
   title: string;
   chapter?: string;
   groups?: { name: string; group_id: number }[];
+  release_date?: string;
+  time_added?: {
+    timestamp: number;
+    as_rfc3339?: string;
+    as_string?: string;
+  };
 }
 
 interface MangaUpdatesPublisher {
@@ -43,6 +49,11 @@ interface MangaUpdatesPublisher {
 const KNOWN_SCANLATOR_DOMAINS: Record<string, string> = {
   asura: 'https://asuracomic.net',
   'asura scans': 'https://asuracomic.net',
+  'diva scans': 'https://divascans.com',
+  divascans: 'https://divascans.com',
+  genztoons: 'https://genztoons.com',
+  'genz toons': 'https://genztoons.com',
+  'o translations': 'https://otranslations.com',
   'flame-scans': 'https://flamecomics.xyz',
   'flame scans': 'https://flamecomics.xyz',
   'flame comics': 'https://flamecomics.xyz',
@@ -60,6 +71,15 @@ const KNOWN_SCANLATOR_DOMAINS: Record<string, string> = {
   'luminous scans': 'https://luminousscans.net',
   'mangadex': 'https://mangadex.org',
 };
+
+function getFaviconUrl(rawUrl: string): string {
+  try {
+    const parsed = new URL(rawUrl);
+    return `https://www.google.com/s2/favicons?domain=${parsed.hostname}&sz=64`;
+  } catch {
+    return '';
+  }
+}
 
 export async function fetchScanlationSources(rawTitle: string) {
   const title = rawTitle.trim();
@@ -117,26 +137,56 @@ export async function fetchScanlationSources(rawTitle: string) {
     '';
 
   const groupLatestChapter = new Map<string, string>();
+  let overallHighestChapterNum = 0;
+  let overallHighestChapterStr = '';
+  let overallLatestReleaseTimestamp = 0;
+
   if (groupsData?.release_list && Array.isArray(groupsData.release_list)) {
     for (const rel of groupsData.release_list as MangaUpdatesRelease[]) {
+      const relTime = rel.time_added?.timestamp ? rel.time_added.timestamp * 1000 : 0;
+      if (relTime > overallLatestReleaseTimestamp) {
+        overallLatestReleaseTimestamp = relTime;
+      }
+
+      const rawCh = rel.chapter ? String(rel.chapter).trim() : '';
+      if (rawCh) {
+        const parts = rawCh.split(/[-–—]/);
+        const lastPart = parts[parts.length - 1]?.trim() || '';
+        const numVal = parseFloat(lastPart);
+        if (!Number.isNaN(numVal) && numVal > overallHighestChapterNum) {
+          overallHighestChapterNum = numVal;
+          overallHighestChapterStr = lastPart;
+        }
+      }
+
       if (rel.groups && Array.isArray(rel.groups)) {
         for (const g of rel.groups) {
-          const ch = rel.chapter ? String(rel.chapter).trim() : '';
-          if (
-            ch &&
-            (!groupLatestChapter.has(g.name) ||
-              Number(ch) > Number(groupLatestChapter.get(g.name)))
-          ) {
-            groupLatestChapter.set(g.name, ch);
+          if (rawCh) {
+            const currentStored = groupLatestChapter.get(g.name);
+            const currentNum = currentStored ? parseFloat(currentStored) : 0;
+            const newNum = parseFloat(rawCh.split(/[-–—]/).pop() || '0');
+            if (!currentStored || newNum > currentNum) {
+              groupLatestChapter.set(g.name, rawCh);
+            }
           }
         }
       }
     }
   }
 
+  // Fallback to detail totalChapters if higher
+  if (totalChapters) {
+    const totalNum = parseFloat(String(totalChapters));
+    if (!Number.isNaN(totalNum) && totalNum > overallHighestChapterNum) {
+      overallHighestChapterNum = totalNum;
+      overallHighestChapterStr = String(totalChapters);
+    }
+  }
+
   const sources: {
     name: string;
     url: string;
+    logo?: string;
     chapterCount?: string;
     active: boolean;
     type: 'scanlator' | 'official';
@@ -159,10 +209,12 @@ export async function fetchScanlationSources(rawTitle: string) {
       }
 
       const chCount = groupLatestChapter.get(rawName) || totalChapters || '';
+      const logo = siteUrl ? getFaviconUrl(siteUrl) : '';
 
       sources.push({
         name: rawName,
         url: siteUrl,
+        logo: logo || undefined,
         chapterCount: chCount ? `${chCount} ch` : undefined,
         active: Boolean(g.active),
         type: 'scanlator',
@@ -185,9 +237,13 @@ export async function fetchScanlationSources(rawTitle: string) {
             ? `${totalChapters} ch`
             : undefined;
 
+        const pubUrl = pub.url || '';
+        const logo = pubUrl ? getFaviconUrl(pubUrl) : '';
+
         sources.push({
           name: pub.publisher_name,
-          url: pub.url || '',
+          url: pubUrl,
+          logo: logo || undefined,
           chapterCount: chCount,
           active: true,
           type: 'official',
@@ -210,6 +266,8 @@ export async function fetchScanlationSources(rawTitle: string) {
       year: bestRecord.year ? String(bestRecord.year) : undefined,
       status: detail?.status?.split('\n')[0]?.trim() || '',
       totalChapters: totalChapters ? String(totalChapters) : undefined,
+      latestChapterNumber: overallHighestChapterStr || (totalChapters ? String(totalChapters) : undefined),
+      lastReleaseTimestamp: overallLatestReleaseTimestamp > 0 ? overallLatestReleaseTimestamp : undefined,
       url: detail?.url || bestRecord.url,
       image: detail?.image?.url?.original || undefined,
     },

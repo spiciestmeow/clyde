@@ -60,6 +60,8 @@ type FormDraft = {
   tags: string[];
   trackers: LinkDraft[];
   sources: LinkDraft[];
+  chapters?: SeriesRecord['chapters'];
+  facts?: Record<string, string | null>;
 };
 
 const ALL_GENRES = [
@@ -101,6 +103,8 @@ const initialFormDraft = (): FormDraft => ({
   tags: [],
   trackers: [],
   sources: [],
+  chapters: [],
+  facts: {},
 });
 
 function slugify(value: string) {
@@ -214,7 +218,7 @@ export default function SeriesCatalogManager() {
       .map((s) => ({
         name: s.name,
         url: s.url,
-        logo: '',
+        logo: s.logo || '',
         isSample: false,
       }));
 
@@ -230,9 +234,45 @@ export default function SeriesCatalogManager() {
         return true;
       });
 
+      // If synced series has a highest chapter, add or update a chapter entry if needed
+      const highestCh = syncResult.matchedSeries?.latestChapterNumber;
+      const releaseTimestamp = syncResult.matchedSeries?.lastReleaseTimestamp;
+      const existingChapters = prev.chapters ? [...prev.chapters] : [];
+      let updatedChapters = existingChapters;
+
+      if (highestCh) {
+        const chapterNumStr = highestCh.replace(/^ch(?:apter)?\.?\s*/i, '').trim();
+        const chapterTitle = `Chapter ${chapterNumStr}`;
+        const hasChapter = existingChapters.some((c) =>
+          c.title.toLowerCase().includes(`chapter ${chapterNumStr.toLowerCase()}`) ||
+          c.title.trim() === chapterTitle
+        );
+
+        if (!hasChapter) {
+          const seriesSlug = slugify(prev.title || syncResult.matchedSeries?.title || 'series');
+          const chSlug = slugify(chapterTitle);
+          const newCh = {
+            title: chapterTitle,
+            href: `/series/${seriesSlug}/${chSlug}`,
+            status: 'New',
+            locked: false,
+          };
+          updatedChapters = [newCh, ...existingChapters];
+        }
+      }
+
+      // Record release timestamp and latest chapter in facts
+      const updatedFacts = {
+        ...(prev.facts || {}),
+        ...(releaseTimestamp ? { last_chapter_added_at: new Date(releaseTimestamp).toISOString() } : {}),
+        ...(highestCh ? { latest_chapter_number: highestCh } : {}),
+      };
+
       return {
         ...prev,
         sources: [...prev.sources, ...newFiltered],
+        chapters: updatedChapters,
+        facts: updatedFacts,
       };
     });
 
@@ -526,6 +566,8 @@ export default function SeriesCatalogManager() {
         tags: draft.tags,
         trackers: draft.trackers.filter((t) => t.name && t.url),
         sources: draft.sources.filter((s) => s.name && s.url),
+        chapters: draft.chapters,
+        facts: draft.facts,
       };
       updateSeriesMutation.mutate(updatePayload);
     } else {
@@ -549,6 +591,8 @@ export default function SeriesCatalogManager() {
         tags: draft.tags.length ? draft.tags : undefined,
         trackers: draft.trackers.filter((t) => t.name && t.url),
         sources: draft.sources.filter((s) => s.name && s.url),
+        chapters: draft.chapters,
+        facts: draft.facts,
       };
       createSeriesMutation.mutate(payload);
     }
@@ -1592,6 +1636,8 @@ export default function SeriesCatalogManager() {
                         tags: series.tags || [],
                         trackers: series.trackers ? series.trackers.map((t) => ({ ...t, logo: t.logo || '', isSample: !!t.isSample })) : [],
                         sources: series.sources ? series.sources.map((s) => ({ ...s, logo: s.logo || '', isSample: !!s.isSample })) : [],
+                        chapters: series.chapters || [],
+                        facts: series.facts || {},
                       });
                       setImportUrl('');
                       setImportError(null);

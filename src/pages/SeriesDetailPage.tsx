@@ -231,7 +231,7 @@ export default function SeriesDetailPage() {
   const [copied, setCopied] = useState(false);
   const [mobileNav, setMobileNav] = useState(false);
   const { dark, toggleTheme } = useThemeMode();
-  const [activeTab, setActiveTab] = useState<'sources' | 'synopsis' | 'reviews'>('sources');
+  const [activeTab, setActiveTab] = useState<'chapters' | 'sources' | 'synopsis' | 'reviews'>('chapters');
   const [synopsisExpanded, setSynopsisExpanded] = useState(false);
   const [coverOpen, setCoverOpen] = useState(false);
   const coverButtonRef = useRef<HTMLButtonElement>(null);
@@ -548,7 +548,8 @@ export default function SeriesDetailPage() {
     { key: 'sad' as const, label: 'Sad', icon: cryReactionIcon, count: reactionCounts?.sad },
     { key: 'angry' as const, label: 'Angry', icon: angryReactionIcon, count: reactionCounts?.angry },
   ];
-  const visibleInfoTabs: ('sources' | 'synopsis' | 'reviews')[] = [];
+  const visibleInfoTabs: ('chapters' | 'sources' | 'synopsis' | 'reviews')[] = [];
+  visibleInfoTabs.push('chapters');
   if (seriesPageVisibility.sources) visibleInfoTabs.push('sources');
   if (seriesPageVisibility.synopsis) visibleInfoTabs.push('synopsis');
   if (seriesPageVisibility.reviews) visibleInfoTabs.push('reviews');
@@ -596,13 +597,46 @@ export default function SeriesDetailPage() {
           {seriesPageVisibility.seriesFacts && <section className="series-facts-panel" aria-label="Series information">
             <div className="series-facts-grid">{facts.map(([label, value]) => {
               const FactIcon = label === 'Status' ? Activity : label === 'Type' ? Type : label === 'Author' || label === 'Artist' ? PenLine : label === 'Chapters' ? BookOpen : CalendarDays;
-              return <div className="series-fact" key={label}>
-                <span className="series-fact-label"><FactIcon aria-hidden="true" />{label}</span>
-                <strong className={value === 'Not provided' ? 'is-missing' : ''} data-fact={label}>
-                  {label === 'Status' && value !== 'Not provided' && <i className="series-status-indicator" aria-hidden="true" />}
-                  {value}
-                </strong>
-              </div>;
+              const isReleaseLabel = label === 'Released' || label === 'Release';
+
+              return (
+                <div key={label} style={{ display: 'contents' }}>
+                  <div className="series-fact">
+                    <span className="series-fact-label"><FactIcon aria-hidden="true" />{label}</span>
+                    <strong className={value === 'Not provided' ? 'is-missing' : ''} data-fact={label}>
+                      {label === 'Status' && value !== 'Not provided' && <i className="series-status-indicator" aria-hidden="true" />}
+                      {value}
+                    </strong>
+                  </div>
+
+                  {isReleaseLabel && newestChapter && (
+                    <div className="series-fact series-fact--chapter-release" style={{ marginTop: 4, marginBottom: 4 }}>
+                      <span className="series-fact-label">
+                        <BookOpen size={12} aria-hidden="true" />
+                        Latest
+                      </span>
+                      <a
+                        href={newestChapter.href}
+                        className="series-fact-chapter-link"
+                        title={`Read ${newestChapter.title}`}
+                        style={{
+                          color: '#ed741b',
+                          fontWeight: 650,
+                          fontSize: 'clamp(7px, .48vw, 9px)',
+                          textDecoration: 'none',
+                          maxWidth: 'clamp(72px, 5.73vw, 110px)',
+                          overflow: 'hidden',
+                          textOverflow: 'ellipsis',
+                          whiteSpace: 'nowrap',
+                          textAlign: 'right',
+                        }}
+                      >
+                        {newestChapter.title}
+                      </a>
+                    </div>
+                  )}
+                </div>
+              );
             })}</div>
           </section>}
         </aside>
@@ -615,39 +649,114 @@ export default function SeriesDetailPage() {
 
           {visibleInfoTabs.length > 0 && <section className="series-chapters" id="sources">
             <div className="series-info-tabs" role="tablist" aria-label="Series information">
+              <button type="button" role="tab" aria-selected={visibleActiveTab === 'chapters'} className={visibleActiveTab === 'chapters' ? 'is-active' : ''} onClick={() => setActiveTab('chapters')}><BookOpen size={14} aria-hidden="true" /> Chapters ({series.chapters.length})</button>
               {seriesPageVisibility.sources && <button type="button" role="tab" aria-selected={visibleActiveTab === 'sources'} className={visibleActiveTab === 'sources' ? 'is-active' : ''} onClick={() => setActiveTab('sources')}><Rows3 size={14} aria-hidden="true" /> Sources ({series.sources.length})</button>}
               {seriesPageVisibility.synopsis && <button type="button" role="tab" aria-selected={visibleActiveTab === 'synopsis'} className={visibleActiveTab === 'synopsis' ? 'is-active' : ''} onClick={() => setActiveTab('synopsis')}><List size={14} aria-hidden="true" /> Synopsis</button>}
               {seriesPageVisibility.reviews && <button type="button" role="tab" aria-selected={visibleActiveTab === 'reviews'} className={visibleActiveTab === 'reviews' ? 'is-active' : ''} onClick={() => setActiveTab('reviews')}><MessageSquareText size={14} aria-hidden="true" /> Reviews{detail?.reviewCount !== undefined ? ` (${detail.reviewCount})` : ''}</button>}
             </div>
-            {visibleActiveTab === 'sources' ? <>
-              {series.sources.length ? <div className="series-source-list">{series.sources.map((source, index) =>
-                <div className="series-source-row" key={`${source.name}-${source.url}`}>
-                  <a className="series-source-main" href={source.url} target="_blank" rel="noopener noreferrer" data-testid={`link-source-${index}`}>
-                    <span className="series-source-logo">
-                      {source.logo ? <img src={imageUrl(source.logo, 96)} alt="" loading="lazy" /> : <span aria-hidden="true">{source.name.trim().charAt(0).toUpperCase()}</span>}
-                    </span>
-                    <span className="series-source-copy">
-                      <strong className="series-source-name">{source.name}</strong>
-                      <span className="series-source-meta">
-                        <span className="series-source-status">Available to read</span>
-                        {latestSeriesUpdate && latestSeriesUpdate.toLowerCase() !== 'new' && <span className="series-source-time" title="Series last update"><Clock3 size={12} aria-hidden="true" />Series updated {latestSeriesUpdate}</span>}
-                      </span>
-                    </span>
-                  </a>
-                  <button
-                    type="button"
-                    className={`series-source-reaction${sourceReactions.includes(source.url) ? ' is-selected' : ''}`}
-                    aria-label={`${sourceReactions.includes(source.url) ? 'Remove reaction from' : 'React to'} ${source.name}`}
-                    aria-pressed={sourceReactions.includes(source.url)}
-                    title="Your reaction is saved on this device"
-                    onClick={() => toggleSourceReaction(source.url)}
-                    data-testid={`button-source-reaction-${index}`}
-                  >
-                    <Heart size={16} fill={sourceReactions.includes(source.url) ? 'currentColor' : 'none'} aria-hidden="true" />
-                    <span>{sourceReactions.includes(source.url) ? 1 : 0}</span>
-                  </button>
+            {visibleActiveTab === 'chapters' ? <>
+              {series.chapters.length ? (
+                <div className="series-chapter-list" style={{ display: 'grid', gap: 6, marginTop: 8 }}>
+                  {series.chapters.map((ch, idx) => (
+                    <a
+                      key={`${ch.title}-${idx}`}
+                      href={ch.href}
+                      className="series-source-row"
+                      style={{ textDecoration: 'none', color: 'inherit', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 14px' }}
+                    >
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                        <div style={{ width: 28, height: 28, borderRadius: 6, background: '#ed741b18', color: '#ed741b', display: 'grid', placeItems: 'center' }}>
+                          <BookOpen size={14} />
+                        </div>
+                        <strong style={{ fontSize: 13, color: 'var(--series-ink)' }}>{ch.title}</strong>
+                      </div>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                        {latestSeriesUpdate && (
+                          <span style={{ fontSize: 11, color: 'var(--series-muted)' }}>
+                            {latestSeriesUpdate}
+                          </span>
+                        )}
+                        <span
+                          style={{
+                            padding: '2px 8px',
+                            borderRadius: 12,
+                            background: '#ed741b',
+                            color: '#fff',
+                            fontSize: 10,
+                            fontWeight: 700,
+                          }}
+                        >
+                          {ch.status || 'New'}
+                        </span>
+                      </div>
+                    </a>
+                  ))}
                 </div>
-              )}</div> : <div className="series-empty">No translation sources have been added for this series yet.</div>}
+              ) : (
+                <div className="series-empty">No chapters have been released yet.</div>
+              )}
+            </> : visibleActiveTab === 'sources' ? <>
+              {series.sources.length ? <div className="series-source-list">{series.sources.map((source, index) => {
+                const getSourceFavicon = (url?: string) => {
+                  if (!url) return '';
+                  try {
+                    const parsed = new URL(url);
+                    return `https://www.google.com/s2/favicons?domain=${parsed.hostname}&sz=64`;
+                  } catch {
+                    return '';
+                  }
+                };
+                const logoUrl = source.logo || getSourceFavicon(source.url);
+
+                return (
+                  <div className="series-source-row" key={`${source.name}-${source.url}`}>
+                    <a className="series-source-main" href={source.url} target="_blank" rel="noopener noreferrer" data-testid={`link-source-${index}`}>
+                      <span className="series-source-logo">
+                        {logoUrl ? (
+                          <img
+                            src={imageUrl(logoUrl, 96)}
+                            alt=""
+                            loading="lazy"
+                            onError={(e) => {
+                              (e.currentTarget as HTMLImageElement).style.display = 'none';
+                              const parent = e.currentTarget.parentElement;
+                              if (parent && !parent.querySelector('.series-source-logo-initial')) {
+                                const span = document.createElement('span');
+                                span.className = 'series-source-logo-initial';
+                                span.textContent = source.name.trim().charAt(0).toUpperCase();
+                                parent.appendChild(span);
+                              }
+                            }}
+                          />
+                        ) : (
+                          <span className="series-source-logo-initial" aria-hidden="true">
+                            {source.name.trim().charAt(0).toUpperCase()}
+                          </span>
+                        )}
+                      </span>
+                      <span className="series-source-copy">
+                        <strong className="series-source-name">{source.name}</strong>
+                        <span className="series-source-meta">
+                          <span className="series-source-status">Available to read</span>
+                          {latestSeriesUpdate && latestSeriesUpdate.toLowerCase() !== 'new' && <span className="series-source-time" title="Series last update"><Clock3 size={12} aria-hidden="true" />Series updated {latestSeriesUpdate}</span>}
+                        </span>
+                      </span>
+                    </a>
+                    <button
+                      type="button"
+                      className={`series-source-reaction${sourceReactions.includes(source.url) ? ' is-selected' : ''}`}
+                      aria-label={`${sourceReactions.includes(source.url) ? 'Remove reaction from' : 'React to'} ${source.name}`}
+                      aria-pressed={sourceReactions.includes(source.url)}
+                      title="Your reaction is saved on this device"
+                      onClick={() => toggleSourceReaction(source.url)}
+                      data-testid={`button-source-reaction-${index}`}
+                    >
+                      <Heart size={16} fill={sourceReactions.includes(source.url) ? 'currentColor' : 'none'} aria-hidden="true" />
+                      <span>{sourceReactions.includes(source.url) ? 1 : 0}</span>
+                    </button>
+                  </div>
+                );
+              })}</div> : <div className="series-empty">No translation sources have been added for this series yet.</div>}
               <p className="series-source-footnote">Only sources listed for this series are shown. Reactions are saved on this device only.</p>
             </> : visibleActiveTab === 'synopsis' ? <div className={`series-synopsis-panel${synopsis ? ' has-content' : ''}`}>
               <h2>Summary</h2>

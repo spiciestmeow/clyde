@@ -1,6 +1,7 @@
 export type DetectedSource = {
   name: string;
   url: string;
+  logo?: string;
   chapterCount?: string;
   active: boolean;
   type: 'scanlator' | 'official';
@@ -13,6 +14,8 @@ export type SyncSourcesResult = {
     year?: string;
     status?: string;
     totalChapters?: string;
+    latestChapterNumber?: string;
+    lastReleaseTimestamp?: number;
     url?: string;
     image?: string;
   } | null;

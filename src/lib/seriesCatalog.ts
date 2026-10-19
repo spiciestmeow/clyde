@@ -70,6 +70,8 @@ export type CreateSeriesRequest = {
   tags?: string[];
   trackers?: SeriesLink[];
   sources?: SeriesLink[];
+  chapters?: SeriesChapter[];
+  facts?: Record<string, string | null>;
 };
 
 export type SeriesCatalogResponse = {
@@ -135,7 +137,24 @@ function toSeriesRecord(value: unknown): SeriesRecord {
     status: row.status ?? 'Ongoing',
     pinned: row.pinned ?? false,
     isNew: row.facts?.is_new !== undefined ? String(row.facts.is_new).toLowerCase() === 'true' : false,
-    chapters: row.chapters ?? [],
+    chapters: (() => {
+      if (Array.isArray(row.chapters) && row.chapters.length > 0) {
+        return row.chapters;
+      }
+      const highestNum = row.facts?.latest_chapter_number || row.facts?.last_chapter_number;
+      if (highestNum) {
+        const cleanNum = String(highestNum).replace(/^ch(?:apter)?\.?\s*/i, '').trim();
+        const chSlug = slugify(`chapter-${cleanNum}`);
+        return [
+          {
+            title: `Chapter ${cleanNum}`,
+            href: `/series/${row.slug || slugify(row.title)}/${chSlug}`,
+            status: 'New',
+          },
+        ];
+      }
+      return [];
+    })(),
     alternateTitles: row.alternate_titles ?? [],
     synopsis: row.synopsis,
     author: row.author,
@@ -262,6 +281,7 @@ export async function createSeriesRecord(input: CreateSeriesRequest): Promise<Se
     released: input.year ? String(input.year) : null,
     lastUpdate: null,
     is_new: input.isNew !== undefined ? (input.isNew ? 'true' : 'false') : 'true',
+    ...(input.facts || {}),
   };
 
   const { data, error } = await client
@@ -275,7 +295,7 @@ export async function createSeriesRecord(input: CreateSeriesRequest): Promise<Se
       rating: null,
       status,
       pinned: false,
-      chapters: [],
+      chapters: input.chapters ?? [],
       alternate_titles: input.alternateTitles ?? [],
       synopsis: input.synopsis?.trim() || null,
       author: input.author?.trim() || null,
@@ -331,7 +351,7 @@ export async function updateSeriesRecord(input: UpdateSeriesRequest): Promise<Se
   if (input.sources !== undefined) updateData.sources = input.sources;
   if (input.chapters !== undefined) updateData.chapters = input.chapters;
 
-  if (input.isNew !== undefined) {
+  if (input.isNew !== undefined || input.facts !== undefined) {
     const { data: current } = await client
       .from('series')
       .select('facts')
@@ -341,7 +361,8 @@ export async function updateSeriesRecord(input: UpdateSeriesRequest): Promise<Se
     const existingFacts = (current?.facts as Record<string, unknown>) || {};
     updateData.facts = {
       ...existingFacts,
-      is_new: input.isNew ? 'true' : 'false',
+      ...(input.facts || {}),
+      ...(input.isNew !== undefined ? { is_new: input.isNew ? 'true' : 'false' } : {}),
     };
   }
 

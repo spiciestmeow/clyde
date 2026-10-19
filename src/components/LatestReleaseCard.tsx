@@ -164,6 +164,53 @@ function formatViews(release: LatestRelease): string {
   return typeof release.views === 'number' ? String(release.views) : '0';
 }
 
+function formatReleaseTime(release: LatestRelease): string | null {
+  const latestChapter = release.chapters[0];
+  const factDate = release.facts?.last_chapter_added_at || release.facts?.lastUpdate || release.facts?.['Last update'];
+
+  let timestamp = 0;
+  if (factDate) {
+    const parsed = Date.parse(factDate);
+    if (!Number.isNaN(parsed)) {
+      timestamp = parsed;
+    }
+  }
+
+  if (!timestamp && latestChapter?.status) {
+    const s = latestChapter.status.trim().toLowerCase();
+    if (s === 'new' || s === 'just now') return 'Just now';
+    if (s === 'today') return 'Today';
+    if (s === 'yesterday') return 'Yesterday';
+    if (/^\d+\s*(?:m|min|h|hr|hour|d|day|w|week|mo|month)s?(?:\s*ago)?$/i.test(s)) {
+      return s.includes('ago') ? s : `${s} ago`;
+    }
+    const parsed = Date.parse(latestChapter.status);
+    if (!Number.isNaN(parsed)) {
+      timestamp = parsed;
+    }
+  }
+
+  if (timestamp > 0) {
+    const diffMs = Date.now() - timestamp;
+    const diffMin = Math.floor(diffMs / 60000);
+    if (diffMin < 1) return 'Just now';
+    if (diffMin < 60) return `${diffMin}m ago`;
+    const diffHours = Math.floor(diffMin / 60);
+    if (diffHours < 24) return `${diffHours}h ago`;
+    const diffDays = Math.floor(diffHours / 24);
+    if (diffDays === 1) return 'Yesterday';
+    if (diffDays < 7) return `${diffDays}d ago`;
+    const diffWeeks = Math.floor(diffDays / 7);
+    if (diffWeeks < 5) return `${diffWeeks}w ago`;
+    const diffMonths = Math.floor(diffDays / 30);
+    if (diffMonths < 12) return `${diffMonths}mo ago`;
+    const diffYears = Math.floor(diffDays / 365);
+    return `${diffYears}y ago`;
+  }
+
+  return null;
+}
+
 export function LatestReleaseCard({
   release,
   imageSrc,
@@ -179,6 +226,7 @@ export function LatestReleaseCard({
   const viewsValue = formatViews(release);
 
   const latestChapter = release.chapters[0];
+  const relativeTime = formatReleaseTime(release);
 
   return (
     <article className="release-card">
@@ -222,7 +270,11 @@ export function LatestReleaseCard({
                 <span className="chapter-title">{latestChapter.title}</span>
               </div>
               <div className="release-box-right">
-                {latestChapter.status.trim().toLowerCase() === 'free now' ? (
+                {relativeTime ? (
+                  <span className="chapter-badge is-time">
+                    {relativeTime}
+                  </span>
+                ) : latestChapter.status.trim().toLowerCase() === 'free now' ? (
                   <span className="chapter-badge is-free">
                     Free now
                   </span>
@@ -240,12 +292,22 @@ export function LatestReleaseCard({
           ) : (
             <div className="release-box release-box--chapter is-empty">
               <div className="release-box-left">
-                <span className="chapter-title">Chapter 13</span>
+                <span className="chapter-title">
+                  {release.facts?.latest_chapter_number
+                    ? `Chapter ${release.facts.latest_chapter_number.replace(/^ch(?:apter)?\.?\s*/i, '')}`
+                    : 'Chapter 1'}
+                </span>
               </div>
               <div className="release-box-right">
-                <span className="chapter-badge is-new">
-                  <span className="pumpkin-icon">🎃</span> New
-                </span>
+                {relativeTime ? (
+                  <span className="chapter-badge is-time">
+                    {relativeTime}
+                  </span>
+                ) : (
+                  <span className="chapter-badge is-new">
+                    <span className="pumpkin-icon">🎃</span> New
+                  </span>
+                )}
               </div>
             </div>
           )}
