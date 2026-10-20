@@ -1149,12 +1149,35 @@ main { padding-bottom: 38px; }
   .desktop-nav { display: none !important; }.desktop-only { display: none !important; }
   .content-width { width: calc(100% - 16px); }.section-title h2 { font-size: 16px; }.popular-section { margin-top: 24px; }
    .continue-section,.latest-section,.collection-section,.community-grid,.most-popular { margin-top: 20px; }.continue-grid { grid-template-columns: repeat(6, 100px); gap: 9px; }.continue-card__title { font-size: 10px; }.continue-card__activity { font-size: 8px; }
-  .latest-section { width: 100%; padding: 10px 0; border-radius: 0; }.latest-heading { flex-wrap: nowrap; align-items: flex-start; gap: 8px; margin-bottom: 14px; }.latest-heading .section-title { flex: 1 1 auto; min-width: 0; }.latest-heading .section-title h2 { font-size: 26px; font-weight: 900; line-height: 1.1; white-space: normal; word-break: break-word; }.latest-tabs { flex-shrink: 0; display: flex; flex-direction: column; gap: 6px; align-items: flex-end; padding-top: 2px; }.latest-tabs button { padding: 7px 14px; font-size: 13px; font-weight: 600; border-radius: 9999px; white-space: nowrap; }
+  .latest-section { width: 100%; padding: 10px 0; border-radius: 0; }
+  .latest-heading { box-sizing: border-box; display: flex; flex-wrap: nowrap; align-items: center; gap: 8px; width: calc(100% - 24px); max-width: 420px; margin: 0 auto 14px; }
+  .latest-heading .section-title { flex: 1 1 138px; max-width: 160px; min-width: 0; }
+  .latest-heading .section-title h2 { font-size: 24px; font-weight: 900; line-height: 1.1; white-space: normal; word-break: normal; }
+  .latest-tabs { display: flex; flex: 0 0 auto; flex-direction: row; align-items: center; gap: 8px; padding-top: 0; }
+  .latest-tabs button { box-sizing: border-box; justify-content: center; min-height: 42px; padding: 8px 12px; border-radius: 8px; font-size: 14px; font-weight: 600; white-space: nowrap; }
+  .theme-light .latest-tabs button { background: transparent; }
+  .theme-light .latest-tabs button:hover:not(.on) { background: transparent; }
+  .theme-light .latest-tabs button.on { box-shadow: 0 10px 15px -3px rgba(0, 0, 0, .10), 0 4px 6px -4px rgba(0, 0, 0, .10); }
+  .latest-tabs button:first-child { min-width: 104px; }
+  .latest-tabs button:last-child { min-width: 92px; }
+  .latest-heading .view-all { flex: 0 0 36px; width: 36px; height: 36px; }
+  .latest-heading .view-all svg { width: 16px; height: 16px; }
+ 
    .release-grid { grid-template-columns: 1fr; gap: 12px; }.release-card { padding: 8px; gap: 10px; border-radius: 16px; }.release-cover { width: 130px; min-width: 130px; flex: 0 0 130px; align-self: stretch; height: auto; border-radius: 8px; }.release-title { font-size: 15px; font-weight: 800; line-height: 1.2; margin-bottom: 4px; }.release-meta { margin-bottom: 6px; font-size: 12px; }.release-boxes { gap: 5px; margin-top: 4px; }.release-box { height: 34px; padding: 0 10px; border-radius: 6px; }.release-box-label { font-size: 11.5px; }.release-box-value { font-size: 11px; }.chapter-title { font-size: 12px; }.chapter-badge.is-new { font-size: 11.5px; }
   .collection-grid { grid-template-columns: repeat(5, 128px); }.community-grid { gap: 10px; }.comments-panel,.members-panel { padding: 10px; }
    .popular-rank-grid { grid-template-columns: 1fr; row-gap: 12px; column-gap: 0; margin-top: 14px; }.rank-card { min-height: 68px; gap: 7px; }.rank-cover,.rank-card > img { width: 46px; height: 64px; }.rank-number { flex-basis: 22px; font-size: 22px; }.rank-info { gap: 5px; padding-left: 6px; }.rank-title { font-size: 13px; }.rank-genre { padding: 3px 6px; font-size: 9px; }
   .footer-links { gap: 18px; }
   .pumpkin { width: 38px; height: 40px; right: 8px; bottom: 8px; }
+}
+@media (max-width: 400px) {
+  .latest-heading { gap: 6px; }
+  .latest-heading .section-title h2 { font-size: 22px; }
+  .latest-tabs { gap: 5px; }
+  .latest-tabs button { padding: 8px; font-size: 13px; }
+  .latest-tabs button:first-child { min-width: 84px; }
+  .latest-tabs button:last-child { min-width: 74px; }
+  .latest-tabs button svg { width: 13px; height: 13px; }
+  .latest-heading .view-all { flex-basis: 32px; width: 32px; height: 32px; }
 }
 
 /* Admin control room */
@@ -1372,7 +1395,7 @@ main { padding-bottom: 38px; }
   flex-direction: column;
   justify-content: space-between;
   padding: 16px 14px 24px;
-  background: #ffffff;
+  background: #F9F7F5;
   color: #1a1a1e;
   -webkit-overflow-scrolling: touch;
   animation: mobileDrawerFade 0.18s ease-out;
