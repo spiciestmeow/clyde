@@ -11,6 +11,41 @@ function syncSourcesDevPlugin() {
     name: 'sync-sources-dev-server',
     configureServer(server: any) {
       server.middlewares.use(async (req: any, res: any, next: any) => {
+        if (req.url && req.url.startsWith('/api/sync-direct-sources')) {
+          try {
+            let body = '';
+            req.on('data', (chunk: any) => {
+              body += chunk;
+            });
+            req.on('end', async () => {
+              try {
+                let parsed: any = {};
+                if (body) {
+                  try {
+                    parsed = JSON.parse(body);
+                  } catch {
+                    // ignore
+                  }
+                }
+                const { scrapeDirectSources } = await import('./api/sync-direct-sources.ts');
+                const result = await scrapeDirectSources(parsed.sources || [], parsed.title || '');
+                res.statusCode = 200;
+                res.setHeader('Content-Type', 'application/json');
+                res.end(JSON.stringify(result));
+              } catch (err: any) {
+                res.statusCode = 500;
+                res.setHeader('Content-Type', 'application/json');
+                res.end(JSON.stringify({ success: false, message: err?.message || 'Direct sync failed' }));
+              }
+            });
+          } catch (err: any) {
+            res.statusCode = 500;
+            res.setHeader('Content-Type', 'application/json');
+            res.end(JSON.stringify({ success: false, message: err?.message || 'Direct sync failed' }));
+          }
+          return;
+        }
+
         if (req.url && req.url.startsWith('/api/sync-sources')) {
           try {
             const url = new URL(req.url, 'http://localhost');
