@@ -845,13 +845,15 @@ main { padding-bottom: 38px; }
   gap: 7px;
   margin-top: 6px;
 }
+
 .release-box {
+  position: relative;
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 8px;
   height: 35px;
-  padding: 0 10px 0 9px;
+  padding: 0 10px 0 14px; /* Increased left padding to accommodate accent tab */
   border-radius: 6px;
   border: 1px solid var(--line);
   background: var(--panel-soft);
@@ -859,23 +861,39 @@ main { padding-bottom: 38px; }
   font-size: 12px;
   line-height: 1.2;
   text-decoration: none;
+  overflow: hidden;
   transition: border-color .15s, background-color .15s;
 }
-.theme-light .release-box {
-  background: #ffffff;
-  border-color: #e2e8f0;
+
+/* Base Left Accent Bar (Styled like Chapter Card ::before) */
+.release-box::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 20%;
+  width: 4px;
+  height: 60%;
+  background: var(--faint);
+  border-radius: 0 4px 4px 0;
+  pointer-events: none;
+  transition: background-color .15s;
 }
+
+/* Chapter Box (Gold / Amber Accent) */
 .release-box--chapter {
-  border-left: 3px solid #f59e0b !important;
   color: #d97706;
 }
 .theme-dark .release-box--chapter {
   color: #fbbf24;
 }
+.release-box--chapter::before {
+  background: #f59e0b; /* Matching chapter card orange/gold accent */
+}
 .release-box--chapter:hover {
   border-color: #f59e0b;
   background: rgba(245, 158, 11, 0.08);
 }
+
 .release-box-left {
   display: inline-flex;
   align-items: center;
@@ -939,15 +957,22 @@ main { padding-bottom: 38px; }
   font-size: 11px;
   font-weight: 500;
 }
-.release-box--author {
-  border-left: 3px solid #10b981 !important;
+
+/* Author Box (Green Accent) */
+.release-box--author::before {
+  background: #10b981;
 }
-.release-box--artist {
-  border-left: 3px solid #d946ef !important;
+
+/* Artist Box (Purple Accent) */
+.release-box--artist::before {
+  background: #d946ef;
 }
-.release-box--sources {
-  border-left: 3px solid #ef4444 !important;
+
+/* Sources Box (Red Accent) */
+.release-box--sources::before {
+  background: #ef4444;
 }
+
 .release-box-label {
   font-weight: 700;
   font-size: 12px;
