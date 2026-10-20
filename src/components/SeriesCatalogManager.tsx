@@ -134,6 +134,7 @@ export default function SeriesCatalogManager() {
   const [listSearch, setListSearch] = useState('');
   const [typeFilter, setTypeFilter] = useState('All types');
   const [statusFilter, setStatusFilter] = useState('All statuses');
+  const [sortOrder, setSortOrder] = useState<'newest' | 'oldest'>('newest');
 
   // Modal search
   const [modalSearch, setModalSearch] = useState('');
@@ -379,7 +380,7 @@ export default function SeriesCatalogManager() {
 
   // Filtered titles for Main List (Image 1)
   const filteredTitles = useMemo(() => {
-    return catalogItems.filter((item) => {
+    const filtered = catalogItems.filter((item) => {
       if (typeFilter !== 'All types') {
         if ((item.category || '').toLowerCase() !== typeFilter.toLowerCase()) return false;
       }
@@ -398,7 +399,14 @@ export default function SeriesCatalogManager() {
       }
       return true;
     });
-  }, [catalogItems, listSearch, typeFilter, statusFilter]);
+    // Sort by date added (createdAt) or id as fallback
+    filtered.sort((a, b) => {
+      const aTime = a.createdAt ? new Date(a.createdAt).getTime() : (a.id || 0);
+      const bTime = b.createdAt ? new Date(b.createdAt).getTime() : (b.id || 0);
+      return sortOrder === 'newest' ? bTime - aTime : aTime - bTime;
+    });
+    return filtered;
+  }, [catalogItems, listSearch, typeFilter, statusFilter, sortOrder]);
 
   // Modal search matching
   const modalMatches = useMemo(() => {
@@ -1744,6 +1752,18 @@ export default function SeriesCatalogManager() {
             {ALL_STATUSES.map((s) => (
               <option key={s} value={s}>{s}</option>
             ))}
+          </select>
+          <ChevronDown className="select-arrow" size={14} />
+        </div>
+
+        <div className="filter-dropdown-wrap">
+          <select
+            className="filter-select"
+            value={sortOrder}
+            onChange={(e) => setSortOrder(e.target.value as 'newest' | 'oldest')}
+          >
+            <option value="newest">Newest first</option>
+            <option value="oldest">Oldest first</option>
           </select>
           <ChevronDown className="select-arrow" size={14} />
         </div>
