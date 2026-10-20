@@ -853,7 +853,7 @@ main { padding-bottom: 38px; }
   justify-content: space-between;
   gap: 8px;
   height: 35px;
-  padding: 0 10px 0 6px; /* Increased left padding to accommodate accent tab */
+  padding: 0 10px 0 3px; /* Increased left padding to accommodate accent tab */
   border-radius: 6px;
   border: 1px solid var(--line);
   background: var(--panel-soft);
