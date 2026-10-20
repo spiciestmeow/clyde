@@ -1768,7 +1768,7 @@ export default function SeriesCatalogManager() {
                     )}
                   </div>
                   <div className="title-stats">
-                    <span>{series.chapters?.length || 0} chapters</span>
+                    <span>{series.facts?.latest_chapter_number ? `Ch. ${series.facts.latest_chapter_number}` : `${series.chapters?.length || 0} chapters`}</span>
                   </div>
                 </div>
                 <div className="title-actions">
