@@ -853,7 +853,7 @@ main { padding-bottom: 38px; }
   justify-content: space-between;
   gap: 8px;
   height: 35px;
-  padding: 0 10px 0 14px; /* Increased left padding to accommodate accent tab */
+  padding: 0 10px 0 6px; /* Increased left padding to accommodate accent tab */
   border-radius: 6px;
   border: 1px solid var(--line);
   background: var(--panel-soft);
@@ -863,6 +863,11 @@ main { padding-bottom: 38px; }
   text-decoration: none;
   overflow: hidden;
   transition: border-color .15s, background-color .15s;
+}
+
+.theme-light .release-box {
+  background: #ffffff;
+  border-color: #e2e8f0;
 }
 
 /* Base Left Accent Bar (Styled like Chapter Card ::before) */
