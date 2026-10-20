@@ -37,6 +37,7 @@ import { useSeriesCatalog } from '../hooks/useSeriesCatalog';
 import { fetchMangaDexDetails } from '../lib/mangadex';
 import { uploadOrCompressCover } from '../lib/imageUpload';
 import './series-catalog-manager.css';
+import { BackgroundSyncTimer } from './BackgroundSyncTimer';
 
 type LinkDraft = { name: string; url: string; logo: string; isSample: boolean };
 
@@ -1649,6 +1650,8 @@ export default function SeriesCatalogManager() {
   return (
     <div className="uploads-theme-container">
       {/* Top Header Row (Image 1) */}
+      <BackgroundSyncTimer onManualTriggerSuccess={() => queryClient.invalidateQueries({ queryKey: SERIES_CATALOG_QUERY_KEY })} />
+
       <div className="uploads-header-row">
         <div>
           <h1 className="uploads-main-heading">Uploads</h1>
