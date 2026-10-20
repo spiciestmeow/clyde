@@ -4,14 +4,17 @@ import {
   Bell,
   Bookmark,
   ChevronDown,
+  ChevronRight,
   Grid2X2,
   Home,
   Menu,
   Moon,
   ShoppingBag,
   Sun,
+  Trophy,
   UserRound,
   UsersRound,
+  X,
 } from 'lucide-react';
 import { Link } from 'wouter';
 import HeroSpider from './HeroSpider';
@@ -58,6 +61,7 @@ export default function SiteHeader({
   const [savedVisibilityReady, setSavedVisibilityReady] = useState(
     () => !supabaseConfigReady || getCachedSiteSettings() !== null,
   );
+
   useEffect(() => {
     if (visibility !== undefined && visibilityReady === true) {
       setSavedVisibility(visibility);
@@ -83,24 +87,48 @@ export default function SiteHeader({
     };
   }, [visibility, visibilityReady]);
 
+  // Lock body scroll when mobile menu is open
+  useEffect(() => {
+    if (!mobileMenuOpen) return;
+    const prevOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => {
+      document.body.style.overflow = prevOverflow;
+    };
+  }, [mobileMenuOpen]);
+
   const headerVisibility = visibility ?? savedVisibility ?? DEFAULT_HEADER_VISIBILITY;
   const isSeriesPage = activeSection === 'series';
-  const showMenu = headerVisibility.home || headerVisibility.series || headerVisibility.shop || headerVisibility.community;
-  const navigation = (
-    <nav className={`main-nav${mobileMenuOpen ? ' open' : ''}`}>
+  const showMenu =
+    headerVisibility.home ||
+    headerVisibility.series ||
+    headerVisibility.shop ||
+    headerVisibility.community;
+
+  const closeMenu = () => {
+    if (mobileMenuOpen) {
+      onToggleMobileMenu();
+    }
+  };
+
+  const desktopNavigation = (
+    <nav className="main-nav desktop-nav">
       {headerVisibility.home && (
         <Link className={`nav-pill${activeSection === 'home' ? ' selected' : ''}`} href="/">
-          <Home size={15} />Home
+          <Home size={15} />
+          <span>Home</span>
         </Link>
       )}
       {headerVisibility.series && (
         <Link className={`nav-pill${activeSection === 'series' ? ' selected' : ''}`} href="/series">
-          <Grid2X2 size={15} />Series
+          <Grid2X2 size={15} />
+          <span>Series</span>
         </Link>
       )}
       {headerVisibility.shop && (
         <Link className="nav-pill" href="/shop">
-          <ShoppingBag size={15} />Shop
+          <ShoppingBag size={15} />
+          <span>Shop</span>
         </Link>
       )}
       {headerVisibility.community && (
@@ -112,64 +140,207 @@ export default function SiteHeader({
       )}
     </nav>
   );
+
   const searchContent = headerVisibility.search && search ? search : null;
-  const actions = (
-    <>
-      {headerVisibility.bookmarks && (
-        <Link className="bookmark-pill" href="/bookmarks">
-          <Bookmark size={15} />
-          <span>Bookmarks</span>
-        </Link>
-      )}
-      {headerVisibility.discord && (
-        <a className="icon-pill discord-short" href="https://discord.gg/2PuMt62fRN" aria-label="Discord">
-          <img src={discordSrc} alt="Discord" />
-        </a>
-      )}
-      {headerVisibility.notifications && (
-        <Link className="icon-pill" href="/notifications" aria-label="Notifications">
-          <Bell size={16} />
-        </Link>
-      )}
-      {headerVisibility.theme && (
-        <button
-          className="icon-pill"
-          aria-label="Toggle theme"
-          onClick={onToggleTheme}
-          data-testid={isSeriesPage ? 'button-toggle-series-theme' : undefined}
-        >
-          {dark ? <Moon size={16} fill="currentColor" /> : <Sun size={16} />}
-        </button>
-      )}
-      {headerVisibility.account && (
-        <Link className="icon-pill" href="/login" aria-label="Account">
-          <UserRound size={16} />
-        </Link>
-      )}
-    </>
-  );
 
   return (
-    <header className={`topbar${isSeriesPage ? ' series-topbar' : ''}`}>
-      <div className="nav-wrap">
-        {showMenu && (
-          <button
-            className="menu-trigger"
-            aria-label="Open menu"
-            aria-expanded={mobileMenuOpen}
-            onClick={onToggleMobileMenu}
-          >
-            <Menu />
-          </button>
-        )}
-        <Link href="/" className="brand">
-          <img src={logoSrc} alt="Vortex Scans logo" />
-        </Link>
-        {navigation}
-        {searchContent}
-        {actions}
-      </div>
-      <HeroSpider className="nav-spider" />
-    </header>
+    <>
+      <header className={`topbar${isSeriesPage ? ' series-topbar' : ''}`}>
+        <div className="nav-wrap">
+          {/* Logo on the left */}
+          <Link href="/" className="brand" onClick={closeMenu} aria-label="Vortex Scans">
+            <img src={logoSrc} alt="Vortex Scans logo" />
+          </Link>
+
+          {/* Desktop Nav in center */}
+          {desktopNavigation}
+
+          {/* Right actions cluster */}
+          <div className="topbar-actions">
+            {searchContent}
+
+            {headerVisibility.bookmarks && (
+              <Link className="bookmark-pill desktop-only" href="/bookmarks">
+                <Bookmark size={15} />
+                <span>Bookmarks</span>
+              </Link>
+            )}
+
+            {headerVisibility.discord && (
+              <a
+                className="icon-pill discord-short desktop-only"
+                href="https://discord.gg/2PuMt62fRN"
+                aria-label="Discord"
+                target="_blank"
+                rel="noreferrer"
+              >
+                <img src={discordSrc} alt="Discord" />
+              </a>
+            )}
+
+            {headerVisibility.notifications && (
+              <Link
+                className="icon-pill"
+                href="/notifications"
+                aria-label="Notifications"
+                onClick={closeMenu}
+              >
+                <Bell size={18} />
+              </Link>
+            )}
+
+            {headerVisibility.theme && (
+              <button
+                className="icon-pill theme-toggle-btn desktop-only"
+                aria-label="Toggle theme"
+                onClick={onToggleTheme}
+                data-testid={isSeriesPage ? 'button-toggle-series-theme' : undefined}
+              >
+                {dark ? <Moon size={18} fill="currentColor" /> : <Sun size={18} />}
+              </button>
+            )}
+
+            {headerVisibility.account && (
+              <Link className="icon-pill" href="/login" aria-label="Account" onClick={closeMenu}>
+                <UserRound size={18} />
+              </Link>
+            )}
+
+            {showMenu && (
+              <button
+                className="menu-trigger"
+                aria-label={mobileMenuOpen ? 'Close menu' : 'Open menu'}
+                aria-expanded={mobileMenuOpen}
+                onClick={onToggleMobileMenu}
+              >
+                {mobileMenuOpen ? <X size={22} /> : <Menu size={22} />}
+              </button>
+            )}
+          </div>
+        </div>
+        <HeroSpider className="nav-spider" />
+      </header>
+
+      {/* Mobile Drawer Overlay - 1:1 match of Image 3 */}
+      {mobileMenuOpen && (
+        <div className="mobile-menu-drawer" role="dialog" aria-modal="true" aria-label="Navigation Menu">
+          <div className="mobile-menu-drawer__content">
+            <nav className="mobile-nav-list">
+              {headerVisibility.home && (
+                <Link
+                  className={`mobile-nav-card${activeSection === 'home' ? ' is-active' : ''}`}
+                  href="/"
+                  onClick={closeMenu}
+                >
+                  <div className="mobile-nav-card__left">
+                    <Home size={19} />
+                    <span>Home</span>
+                  </div>
+                  {activeSection === 'home' && <span className="mobile-nav-card__dot" />}
+                </Link>
+              )}
+
+              {headerVisibility.series && (
+                <Link
+                  className={`mobile-nav-card${activeSection === 'series' ? ' is-active' : ''}`}
+                  href="/series"
+                  onClick={closeMenu}
+                >
+                  <div className="mobile-nav-card__left">
+                    <Grid2X2 size={19} />
+                    <span>Series</span>
+                  </div>
+                  {activeSection === 'series' && <span className="mobile-nav-card__dot" />}
+                </Link>
+              )}
+
+              {headerVisibility.shop && (
+                <Link
+                  className="mobile-nav-card"
+                  href="/shop"
+                  onClick={closeMenu}
+                >
+                  <div className="mobile-nav-card__left">
+                    <ShoppingBag size={19} />
+                    <span>Shop</span>
+                  </div>
+                </Link>
+              )}
+
+              {headerVisibility.community && (
+                <div className="mobile-nav-group">
+                  <Link
+                    className="mobile-nav-card"
+                    href={communityHref}
+                    onClick={closeMenu}
+                  >
+                    <div className="mobile-nav-card__left">
+                      <UsersRound size={19} />
+                      <span>Community</span>
+                    </div>
+                    <ChevronRight size={17} className="mobile-nav-card__chevron" />
+                  </Link>
+
+                  <div className="mobile-sub-menu">
+                    <Link
+                      className="mobile-sub-item"
+                      href="/#community"
+                      onClick={closeMenu}
+                    >
+                      <div className="mobile-sub-item__icon">
+                        <Trophy size={18} />
+                      </div>
+                      <div className="mobile-sub-item__text">
+                        <span className="mobile-sub-item__title">Leaderboard</span>
+                        <span className="mobile-sub-item__sub">Top readers</span>
+                      </div>
+                    </Link>
+                  </div>
+                </div>
+              )}
+
+              {headerVisibility.bookmarks && (
+                <Link
+                  className="mobile-nav-card"
+                  href="/bookmarks"
+                  onClick={closeMenu}
+                >
+                  <div className="mobile-nav-card__left">
+                    <Bookmark size={19} />
+                    <span>Bookmarks</span>
+                  </div>
+                </Link>
+              )}
+
+              {headerVisibility.theme && (
+                <button
+                  type="button"
+                  className="mobile-nav-card mobile-theme-card"
+                  onClick={onToggleTheme}
+                  aria-label="Toggle theme"
+                >
+                  <div className="mobile-nav-card__left">
+                    {dark ? <Moon size={19} fill="currentColor" /> : <Sun size={19} />}
+                    <span>{dark ? 'Dark Mode' : 'Light Mode'}</span>
+                  </div>
+                  <span className="mobile-theme-badge">{dark ? 'Dark' : 'Light'}</span>
+                </button>
+              )}
+            </nav>
+          </div>
+
+          <div className="mobile-menu-drawer__footer">
+            <Link
+              className="mobile-drawer-home-btn"
+              href="/"
+              onClick={closeMenu}
+            >
+              <Home size={18} />
+              <span>Home</span>
+            </Link>
+          </div>
+        </div>
+      )}
+    </>
   );
 }
