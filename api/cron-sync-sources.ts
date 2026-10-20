@@ -3,6 +3,9 @@ import { createClient } from '@supabase/supabase-js';
 import { fetchScanlationSources } from './sync-sources.js';
 import { scrapeDirectSources } from './sync-direct-sources.js';
 
+// Configure Vercel serverless function max execution time (up to 60s)
+export const maxDuration = 60;
+
 interface ApiRequest extends IncomingMessage {
   query?: Record<string, string>;
   body?: unknown;
@@ -51,6 +54,10 @@ export default async function handler(
     }
   }
 
+  const startTime = Date.now();
+  // Safe deadline budget: 22s ensures we always reply before cron-job.org's 25-30s timeout
+  const TIME_BUDGET_MS = 22000;
+
   try {
     const supabase = createClient(SUPABASE_URL, SUPABASE_KEY, {
       auth: { persistSession: false },
@@ -76,9 +83,10 @@ export default async function handler(
     }[] = [];
 
     const logs: string[] = [];
+    let checkedCount = 0;
 
-    // 2. Iterate through each series and check both MangaUpdates and direct sources
-    for (const item of seriesList) {
+    // Helper to check and sync a single series
+    async function checkSeries(item: typeof seriesList[0]) {
       try {
         const altTitles = Array.isArray(item.alternate_titles) ? item.alternate_titles : [];
         const syncResult = await fetchScanlationSources(item.title, altTitles);
@@ -117,7 +125,7 @@ export default async function handler(
 
         if (detectedChNum === 0) {
           logs.push(`[${item.title}] No release data found on MangaUpdates or direct sources`);
-          continue;
+          return;
         }
 
         // Current chapter number
@@ -191,7 +199,27 @@ export default async function handler(
       }
     }
 
-    // Persist latest sync execution log to site_settings so Admin UI can show real history
+    // 2. Process series concurrently (5 parallel workers)
+    const CONCURRENCY = 5;
+    let nextIndex = 0;
+
+    const workers = Array.from({ length: Math.min(CONCURRENCY, seriesList.length) }, async () => {
+      while (nextIndex < seriesList.length) {
+        // Enforce safety deadline so the function never times out
+        if (Date.now() - startTime >= TIME_BUDGET_MS) {
+          break;
+        }
+        const item = seriesList[nextIndex++];
+        checkedCount++;
+        await checkSeries(item);
+      }
+    });
+
+    await Promise.all(workers);
+
+    const elapsedSeconds = ((Date.now() - startTime) / 1000).toFixed(1);
+
+    // 3. Persist latest sync execution log to site_settings so Admin UI can show real history
     try {
       const { data: currentSettings } = await supabase
         .from('site_settings')
@@ -205,7 +233,7 @@ export default async function handler(
       const newLogEntry = {
         id: String(Date.now()),
         timestamp: new Date().toISOString(),
-        totalChecked: seriesList.length,
+        totalChecked: checkedCount,
         updatedCount: updatedSeries.length,
         updatedSeries: updatedSeries.map((u) => ({
           title: u.title,
@@ -235,8 +263,9 @@ export default async function handler(
 
     response.status(200).json({
       success: true,
-      timestamp: new Date().toISOString(),
-      totalSeriesChecked: seriesList.length,
+      duration: `${elapsedSeconds}s`,
+      totalCatalogCount: seriesList.length,
+      totalSeriesChecked: checkedCount,
       seriesUpdatedCount: updatedSeries.length,
       updatedSeries,
       logs,

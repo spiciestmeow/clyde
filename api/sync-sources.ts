@@ -187,6 +187,7 @@ export async function fetchScanlationSources(rawTitle: string, alternateTitles: 
           stype: 'title',
           perpage: 5,
         }),
+        signal: AbortSignal.timeout(4000),
       });
       if (!res.ok) return null;
       const data = (await res.json()) as {
@@ -217,15 +218,17 @@ export async function fetchScanlationSources(rawTitle: string, alternateTitles: 
   const bestRecord = searchResults[0].record;
   const seriesId = bestRecord.series_id;
 
-  // 2. Fetch detail & groups in parallel
+  // 2. Fetch detail & groups in parallel with 4s timeout
   const [detail, groupsData] = await Promise.all([
     fetch(`https://api.mangaupdates.com/v1/series/${seriesId}`, {
       headers: { 'User-Agent': 'VortexScans/1.0' },
+      signal: AbortSignal.timeout(4000),
     })
       .then((r) => (r.ok ? r.json() : null))
       .catch(() => null),
     fetch(`https://api.mangaupdates.com/v1/series/${seriesId}/groups`, {
       headers: { 'User-Agent': 'VortexScans/1.0' },
+      signal: AbortSignal.timeout(4000),
     })
       .then((r) => (r.ok ? r.json() : null))
       .catch(() => null),
