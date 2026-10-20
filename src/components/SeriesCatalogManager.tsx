@@ -629,6 +629,20 @@ export default function SeriesCatalogManager() {
     e.preventDefault();
     setSubmitError(null);
 
+    // Flush any pending tag-style inputs that weren't yet confirmed with Enter
+    const pendingAuthor = newAuthor.trim();
+    const pendingArtist = newArtist.trim();
+    const pendingPublisher = newPublisher.trim();
+    const finalAuthors = pendingAuthor && !draft.authors.includes(pendingAuthor)
+      ? [...draft.authors, pendingAuthor]
+      : draft.authors;
+    const finalArtists = pendingArtist && !draft.artists.includes(pendingArtist)
+      ? [...draft.artists, pendingArtist]
+      : draft.artists;
+    const finalPublishers = pendingPublisher && !draft.publishers.includes(pendingPublisher)
+      ? [...draft.publishers, pendingPublisher]
+      : draft.publishers;
+
     const title = draft.title.trim();
     if (!title) {
       setSubmitError('Title is required.');
@@ -650,9 +664,9 @@ export default function SeriesCatalogManager() {
         isNew: draft.isNew,
         synopsis: draft.synopsis.trim() || undefined,
         alternateTitles: draft.alternateTitles,
-        author: draft.authors.join(', ') || undefined,
-        artist: draft.artists.join(', ') || undefined,
-        publishers: draft.publishers,
+        author: finalAuthors.join(', ') || undefined,
+        artist: finalArtists.join(', ') || undefined,
+        publishers: finalPublishers,
         contentRating: draft.contentRating || 'Safe',
         year: draft.year ? Number(draft.year) : undefined,
         originalLanguage: draft.originalLanguage || undefined,
@@ -675,9 +689,9 @@ export default function SeriesCatalogManager() {
         isNew: draft.isNew,
         synopsis: draft.synopsis.trim() || undefined,
         alternateTitles: draft.alternateTitles.length ? draft.alternateTitles : undefined,
-        author: draft.authors.join(', ') || undefined,
-        artist: draft.artists.join(', ') || undefined,
-        publishers: draft.publishers.length ? draft.publishers : undefined,
+        author: finalAuthors.join(', ') || undefined,
+        artist: finalArtists.join(', ') || undefined,
+        publishers: finalPublishers.length ? finalPublishers : undefined,
         contentRating: draft.contentRating || 'Safe',
         year: draft.year ? Number(draft.year) : undefined,
         originalLanguage: draft.originalLanguage || undefined,
