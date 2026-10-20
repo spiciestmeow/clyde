@@ -38,6 +38,7 @@ import { fetchMangaDexDetails } from '../lib/mangadex';
 import { uploadOrCompressCover } from '../lib/imageUpload';
 import './series-catalog-manager.css';
 import { BackgroundSyncTimer } from './BackgroundSyncTimer';
+import { SyncActivityLogs } from './SyncActivityLogs';
 
 type LinkDraft = { name: string; url: string; logo: string; isSample: boolean };
 
@@ -1684,7 +1685,7 @@ export default function SeriesCatalogManager() {
           className={`uploads-tab ${mainTab === 'chapters' ? 'is-active' : ''}`}
           onClick={() => setMainTab('chapters')}
         >
-          Chapters
+          Sync Logs
         </button>
       </div>
 
@@ -1838,65 +1839,8 @@ export default function SeriesCatalogManager() {
           </div>
         )
       ) : (
-        /* Chapters Tab */
-        (() => {
-          const seriesWithChapters = catalogItems.filter((s) => s.chapters && s.chapters.length > 0);
-          if (seriesWithChapters.length === 0) {
-            return (
-              <div className="uploads-empty-state">
-                <div className="empty-icon-outline">
-                  <FileText size={32} strokeWidth={1.5} />
-                </div>
-                <h3 className="empty-title">No chapters.</h3>
-                <p className="empty-subtitle">Upload a chapter to any manga page to start.</p>
-              </div>
-            );
-          }
-          return (
-            <div className="uploads-list">
-              {seriesWithChapters.map((series) => (
-                <div key={series.id} className="uploads-item-row" style={{ flexDirection: 'column', alignItems: 'stretch', gap: 12 }}>
-                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 10 }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                      <div className="title-cover" style={{ width: 44, height: 60 }}>
-                        {series.cover ? <img src={series.cover} alt={series.title} /> : <BookOpen size={18} className="cover-fallback-icon" />}
-                      </div>
-                      <div>
-                        <h3 className="title-heading" style={{ margin: 0 }}>{series.title}</h3>
-                        <small style={{ color: '#94a3b8' }}>{series.chapters.length} chapter{series.chapters.length === 1 ? '' : 's'} • {series.category}</small>
-                      </div>
-                    </div>
-                    <button
-                      type="button"
-                      className="btn-teal"
-                      style={{ padding: '6px 14px', fontSize: 13 }}
-                      onClick={() => {
-                        setSelectedSeriesForChapter(series);
-                        setChapterTitleInput(`Chapter ${series.chapters.length + 1}`);
-                        setChapterStatusInput('New');
-                        setChapterError(null);
-                        setIsModalOpen(true);
-                      }}
-                    >
-                      <Plus size={14} style={{ marginRight: 4 }} />
-                      Add chapter
-                    </button>
-                  </div>
-                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, paddingLeft: 56 }}>
-                    {series.chapters.map((chap, idx) => (
-                      <span key={chap.href || idx} style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '4px 10px', borderRadius: 6, background: '#1e293b', fontSize: 12, color: '#f1f5f9' }}>
-                        <span>{chap.title}</span>
-                        <span style={{ fontSize: 10, padding: '1px 6px', borderRadius: 4, background: chap.status.toLowerCase() === 'new' ? '#059669' : '#334155', color: '#fff' }}>
-                          {chap.status}
-                        </span>
-                      </span>
-                    ))}
-                  </div>
-                </div>
-              ))}
-            </div>
-          );
-        })()
+        /* Sync Logs Tab */
+        <SyncActivityLogs />
       )}
 
       {/* ========================================== */}

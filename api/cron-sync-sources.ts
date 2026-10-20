@@ -191,6 +191,48 @@ export default async function handler(
       }
     }
 
+    // Persist latest sync execution log to site_settings so Admin UI can show real history
+    try {
+      const { data: currentSettings } = await supabase
+        .from('site_settings')
+        .select('header_visibility')
+        .eq('id', 'global')
+        .maybeSingle();
+
+      const currentHeader = (currentSettings?.header_visibility as any) || {};
+      const existingLogs = Array.isArray(currentHeader.sync_logs) ? currentHeader.sync_logs : [];
+
+      const newLogEntry = {
+        id: String(Date.now()),
+        timestamp: new Date().toISOString(),
+        totalChecked: seriesList.length,
+        updatedCount: updatedSeries.length,
+        updatedSeries: updatedSeries.map((u) => ({
+          title: u.title,
+          previousChapter: u.previousChapter,
+          newChapter: u.newChapter,
+          source: u.source,
+          time: u.releaseTime,
+        })),
+        logs: logs.slice(0, 30),
+      };
+
+      // Keep the 15 most recent logs
+      const nextLogs = [newLogEntry, ...existingLogs].slice(0, 15);
+
+      await supabase
+        .from('site_settings')
+        .update({
+          header_visibility: {
+            ...currentHeader,
+            sync_logs: nextLogs,
+          },
+        })
+        .eq('id', 'global');
+    } catch (logErr) {
+      console.warn('Could not persist sync log to site_settings:', logErr);
+    }
+
     response.status(200).json({
       success: true,
       timestamp: new Date().toISOString(),
