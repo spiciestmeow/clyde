@@ -1858,8 +1858,8 @@ export default function SeriesCatalogManager() {
                 <div key={series.id} className="uploads-item-row" style={{ flexDirection: 'column', alignItems: 'stretch', gap: 12 }}>
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 10 }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                      <div className="thumb-container">
-                        {series.cover ? <img src={series.cover} alt={series.title} /> : <div className="thumb-placeholder"><BookOpen size={18} /></div>}
+                      <div className="title-cover" style={{ width: 44, height: 60 }}>
+                        {series.cover ? <img src={series.cover} alt={series.title} /> : <BookOpen size={18} className="cover-fallback-icon" />}
                       </div>
                       <div>
                         <h3 className="title-heading" style={{ margin: 0 }}>{series.title}</h3>
