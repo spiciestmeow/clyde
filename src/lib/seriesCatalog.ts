@@ -5,6 +5,8 @@ export type SeriesChapter = {
   href: string;
   status: string;
   locked?: boolean;
+  createdAt?: string;
+  sourceName?: string;
 };
 
 export type SeriesLink = {

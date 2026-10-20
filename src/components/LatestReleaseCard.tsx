@@ -124,6 +124,14 @@ function cleanCredit(val?: string | null): string {
 }
 
 function getSourcesDisplay(release: LatestRelease): string {
+  const firstSource = release.facts?.first_source || release.facts?.firstSource;
+  if (firstSource) {
+    return firstSource;
+  }
+  const latestChapterSource = (release.chapters?.[0] as any)?.sourceName;
+  if (latestChapterSource) {
+    return latestChapterSource;
+  }
   if (release.sources && release.sources.length > 0) {
     const names = release.sources.map((s) => s.name).filter(Boolean);
     if (names.length > 0) return names.join(', ');

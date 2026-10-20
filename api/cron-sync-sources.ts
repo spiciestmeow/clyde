@@ -106,8 +106,11 @@ export default async function handler(
             if (!Number.isNaN(directNum) && directNum > detectedChNum) {
               detectedChNum = directNum;
               detectedChStr = directResult.highestChapter;
-              detectedTimestamp = Date.now();
-              detectionSource = `Direct Source (${directResult.sourceName})`;
+              const earliestMs = directResult.earliestReleaseAt
+                ? Date.parse(directResult.earliestReleaseAt)
+                : NaN;
+              detectedTimestamp = !Number.isNaN(earliestMs) ? earliestMs : Date.now();
+              detectionSource = `Direct Source (${directResult.earliestReleaseName || directResult.sourceName})`;
             }
           }
         }

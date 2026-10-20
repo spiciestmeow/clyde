@@ -306,11 +306,13 @@ export default function SeriesCatalogManager() {
       }
 
       setDraft((prev) => {
+        const uploadTimeIso = result.earliestReleaseAt || new Date().toISOString();
         const nextFacts = {
           ...(prev.facts || {}),
           latest_chapter_number: String(result.highestChapter),
-          last_chapter_added_at: new Date().toISOString(),
-          lastUpdate: new Date().toISOString(),
+          last_chapter_added_at: uploadTimeIso,
+          lastUpdate: uploadTimeIso,
+          ...(result.earliestReleaseName ? { first_source: result.earliestReleaseName } : {}),
         };
 
         const existingChapters = prev.chapters ? [...prev.chapters] : [];
@@ -323,6 +325,8 @@ export default function SeriesCatalogManager() {
             href: `/series/${seriesSlug}/chapter-${ch.number}`,
             status: ch.number === parseFloat(result.highestChapter) ? 'New' : '',
             locked: false,
+            createdAt: ch.releasedAt || uploadTimeIso,
+            sourceName: ch.sourceName,
           }));
 
           if (existingChapters.length <= 1) {
@@ -339,6 +343,8 @@ export default function SeriesCatalogManager() {
                   href: `/series/${seriesSlug}/chapter-${result.highestChapter}`,
                   status: 'New',
                   locked: false,
+                  createdAt: uploadTimeIso,
+                  sourceName: result.earliestReleaseName,
                 },
                 ...existingChapters,
               ];
