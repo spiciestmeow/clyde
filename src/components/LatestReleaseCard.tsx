@@ -124,16 +124,8 @@ function cleanCredit(val?: string | null): string {
 }
 
 function getSourcesDisplay(release: LatestRelease): string {
-  const firstSource = release.facts?.first_source || release.facts?.firstSource;
-  if (firstSource) {
-    return firstSource;
-  }
-  const latestChapterSource = (release.chapters?.[0] as any)?.sourceName;
-  if (latestChapterSource) {
-    return latestChapterSource;
-  }
   if (release.sources && release.sources.length > 0) {
-    const names = release.sources.map((s) => s.name).filter(Boolean);
+    const names = release.sources.map((s) => s.name?.trim()).filter(Boolean);
     if (names.length > 0) return names.join(', ');
   }
   if (release.publishers && release.publishers.length > 0) {
@@ -147,6 +139,10 @@ function getSourcesDisplay(release: LatestRelease): string {
       release.facts['publisher'] ||
       release.facts['Original publisher'];
     if (factSource) return factSource;
+  }
+  const firstSource = release.facts?.first_source || release.facts?.firstSource;
+  if (firstSource) {
+    return firstSource;
   }
   return 'value';
 }
