@@ -36,7 +36,12 @@ import '../series-detail.css';
 import '../series-data-status.css';
 import './series-browse.css';
 
-import type { SeriesRecord } from '../lib/seriesCatalog';
+import {
+  DEFAULT_SERIES_COVER,
+  getSeriesReleaseTimestamp,
+  getSeriesCreatedTimestamp,
+  type SeriesRecord,
+} from '../lib/seriesCatalog';
 
 type CatalogItem = SeriesRecord;
 const assetList = assets as { src: string; alt: string }[];
@@ -285,16 +290,17 @@ export default function SeriesBrowsePage() {
     matches.sort((a, b) => {
       let result = 0;
       if (sort === 'latest') {
-        const aReferenceRank = referenceLeadRanks.get(a.href) ?? Number.MAX_SAFE_INTEGER;
-        const bReferenceRank = referenceLeadRanks.get(b.href) ?? Number.MAX_SAFE_INTEGER;
-        result = aReferenceRank - bReferenceRank || a.pageNumber - b.pageNumber || a.pageOrder - b.pageOrder;
+        const aTime = getSeriesReleaseTimestamp(a);
+        const bTime = getSeriesReleaseTimestamp(b);
+        result = bTime - aTime || (getSeriesCreatedTimestamp(b) - getSeriesCreatedTimestamp(a));
       } else if (sort === 'updated') {
-        result = latestChapterAge(a) - latestChapterAge(b) ||
-          (catalogSourceRanks.get(a.href) ?? 0) - (catalogSourceRanks.get(b.href) ?? 0);
+        const aTime = getSeriesReleaseTimestamp(a);
+        const bTime = getSeriesReleaseTimestamp(b);
+        result = bTime - aTime;
       } else if (sort === 'popular') {
         result = Number(b.rating || 0) - Number(a.rating || 0);
       } else if (sort === 'newest') {
-        result = (catalogSourceRanks.get(a.href) ?? 0) - (catalogSourceRanks.get(b.href) ?? 0);
+        result = getSeriesCreatedTimestamp(b) - getSeriesCreatedTimestamp(a);
       } else if (sort === 'oldest') {
         result = (catalogSourceRanks.get(b.href) ?? 0) - (catalogSourceRanks.get(a.href) ?? 0);
       } else if (sort === 'chapters') {

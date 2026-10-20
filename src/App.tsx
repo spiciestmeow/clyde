@@ -16,7 +16,13 @@ import SeriesBrowsePage from './pages/SeriesBrowsePage';
 import { toSiteSearchItems, toTrendingSiteSearchItems } from './data/seriesSearchCatalog';
 import { useThemeMode } from './hooks/useThemeMode';
 import { useSeriesCatalog } from './hooks/useSeriesCatalog';
-import { DEFAULT_SERIES_COVER, type SeriesRecord } from './lib/seriesCatalog';
+import {
+  DEFAULT_SERIES_COVER,
+  getSeriesReleaseTimestamp,
+  getSeriesReleaseAgeMinutes,
+  getSeriesCreatedTimestamp,
+  type SeriesRecord,
+} from './lib/seriesCatalog';
 import vortexLogo from './assets/vortex-logo.webp';
 import assets from '../clone-data/asset-references.json';
 import {
@@ -145,75 +151,7 @@ function recoverImage(event: SyntheticEvent<HTMLDivElement>) {
 function SectionTitle({ children, icon }: { children: string; icon?: boolean }) {
   return <div className="section-title">{icon && <Flame size={17} fill="currentColor" />}<h2>{children}</h2></div>;
 }
-function parseChapterAgeMinutes(status: string): number | null {
-  const s = status.trim().toLowerCase();
-  if (!s) return null;
-  if (s === 'new' || s === 'just now') return 0;
-  if (s === 'today') return 720;
-  if (s === 'yesterday') return 1440;
 
-  const minMatch = s.match(/(\d+)\s*min(?:ute)?s?(?:\s*ago)?/);
-  if (minMatch) return Number(minMatch[1]);
-
-  const hourMatch = s.match(/(\d+)\s*(?:hour|hr)s?(?:\s*ago)?/);
-  if (hourMatch) return Number(hourMatch[1]) * 60;
-
-  const dayMatch = s.match(/(\d+)\s*days?(?:\s*ago)?/);
-  if (dayMatch) return Number(dayMatch[1]) * 1440;
-
-  const weekMatch = s.match(/(\d+)\s*weeks?(?:\s*ago)?/);
-  if (weekMatch) return Number(weekMatch[1]) * 1440 * 7;
-
-  const monthMatch = s.match(/(\d+)\s*months?(?:\s*ago)?/);
-  if (monthMatch) return Number(monthMatch[1]) * 1440 * 30;
-
-  const parsedDate = Date.parse(s);
-  if (!Number.isNaN(parsedDate)) {
-    const diffMin = (Date.now() - parsedDate) / (1000 * 60);
-    if (diffMin >= 0) return diffMin;
-  }
-
-  return null;
-}
-
-function getSeriesReleaseAgeMinutes(item: SeriesRecord): number {
-  const chapterAges: number[] = [];
-
-  // Check if a new chapter timestamp was explicitly recorded on the series
-  const lastChapterAddedAt = item.facts?.last_chapter_added_at || (item as any).last_chapter_added_at;
-  if (lastChapterAddedAt) {
-    const t = Date.parse(lastChapterAddedAt);
-    if (!Number.isNaN(t)) {
-      chapterAges.push(Math.max(0, (Date.now() - t) / (1000 * 60)));
-    }
-  }
-
-  // Check each chapter for explicit date or status
-  if (Array.isArray(item.chapters) && item.chapters.length > 0) {
-    for (const c of item.chapters) {
-      const explicitDate = (c as any).createdAt || (c as any).created_at || (c as any).date || (c as any).releasedAt;
-      if (explicitDate) {
-        const t = Date.parse(explicitDate);
-        if (!Number.isNaN(t)) {
-          chapterAges.push(Math.max(0, (Date.now() - t) / (1000 * 60)));
-        }
-      }
-      const age = parseChapterAgeMinutes(c.status);
-      if (age !== null) {
-        chapterAges.push(age);
-      }
-    }
-  }
-
-  if (chapterAges.length > 0) {
-    return Math.min(...chapterAges);
-  }
-
-  // IMPORTANT: Do NOT fall back to item.updatedAt!
-  // Updating series details (synopsis, cover, genres, etc.) touches updatedAt.
-  // Release sorting should ONLY prioritize series when a new chapter is added.
-  return Number.POSITIVE_INFINITY;
-}
 
 function HomePage() {
   const [slide, setSlide] = useState(0);
@@ -330,9 +268,13 @@ function HomePage() {
 
   // Section 2: Latest Releases (Sorted by newest chapter drop, preserving catalog order)
   const latestReleases = useMemo(() => [...seriesItems].sort((left, right) => {
-    const leftAge = getSeriesReleaseAgeMinutes(left);
-    const rightAge = getSeriesReleaseAgeMinutes(right);
-    if (leftAge !== rightAge) return leftAge - rightAge;
+    const rightTime = getSeriesReleaseTimestamp(right);
+    const leftTime = getSeriesReleaseTimestamp(left);
+    if (rightTime !== leftTime) return rightTime - leftTime;
+
+    const rightCreated = getSeriesCreatedTimestamp(right);
+    const leftCreated = getSeriesCreatedTimestamp(left);
+    if (rightCreated !== leftCreated) return rightCreated - leftCreated;
 
     return (
       left.pageNumber - right.pageNumber ||
@@ -395,7 +337,8 @@ function HomePage() {
 
   const visibleReleases = useMemo(() => {
     if (filter === 'Latest') return latestReleases;
-    return latestReleases.filter((release) => {
+
+    const filtered = seriesItems.filter((release) => {
       // 1. Explicit admin toggle from series upload/edit
       if (release.isNew) return true;
       if (release.facts?.is_new === 'true') return true;
@@ -403,7 +346,7 @@ function HomePage() {
       // If explicitly set to false by admin, exclude from New tab
       if (release.facts?.is_new === 'false') return false;
 
-      // 2. Fallback for legacy series: check for new chapter status
+      // 2. Fallback for legacy series: check for new chapter status or recent creation
       const hasNewChapter = release.chapters.some((chapter) => {
         const s = chapter.status.trim().toLowerCase();
         return s === 'new' || s === 'just now' || s.includes('min') || s.includes('hour') || s === 'today';
@@ -415,7 +358,15 @@ function HomePage() {
 
       return false;
     });
-  }, [filter, latestReleases]);
+
+    // When viewing New tab: newly added/uploaded series MUST be at the very first (newest uploaded -> oldest uploaded)
+    return filtered.sort((left, right) => {
+      const rightCreated = getSeriesCreatedTimestamp(right);
+      const leftCreated = getSeriesCreatedTimestamp(left);
+      if (rightCreated !== leftCreated) return rightCreated - leftCreated;
+      return (right.id || 0) - (left.id || 0);
+    });
+  }, [filter, latestReleases, seriesItems]);
   const releasePageCount = Math.max(1, Math.ceil(visibleReleases.length / RELEASES_PER_PAGE));
   const currentReleasePage = Math.min(releasePage, releasePageCount);
   const pagedReleases = visibleReleases.slice(

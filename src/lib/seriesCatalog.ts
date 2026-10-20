@@ -209,6 +209,82 @@ function arrayValue(value: unknown): string[] {
   return Array.isArray(value) ? value.filter((item): item is string => typeof item === 'string') : [];
 }
 
+export function parseChapterAgeMinutes(status?: string | null): number | null {
+  const s = (status || '').trim().toLowerCase();
+  if (!s) return null;
+  if (s === 'just now') return 0;
+  if (s === 'today') return 720;
+  if (s === 'yesterday') return 1440;
+
+  const minMatch = s.match(/(\d+)\s*min(?:ute)?s?(?:\s*ago)?/);
+  if (minMatch) return Number(minMatch[1]);
+
+  const hourMatch = s.match(/(\d+)\s*(?:hour|hr)s?(?:\s*ago)?/);
+  if (hourMatch) return Number(hourMatch[1]) * 60;
+
+  const dayMatch = s.match(/(\d+)\s*days?(?:\s*ago)?/);
+  if (dayMatch) return Number(dayMatch[1]) * 1440;
+
+  const weekMatch = s.match(/(\d+)\s*weeks?(?:\s*ago)?/);
+  if (weekMatch) return Number(weekMatch[1]) * 1440 * 7;
+
+  const monthMatch = s.match(/(\d+)\s*months?(?:\s*ago)?/);
+  if (monthMatch) return Number(monthMatch[1]) * 1440 * 30;
+
+  const parsedDate = Date.parse(s);
+  if (!Number.isNaN(parsedDate)) {
+    const diffMin = (Date.now() - parsedDate) / (1000 * 60);
+    if (diffMin >= 0) return diffMin;
+  }
+
+  return null;
+}
+
+export function getSeriesReleaseTimestamp(item: SeriesRecord): number {
+  const factDate = item.facts?.last_chapter_added_at || item.facts?.lastUpdate || item.facts?.['Last update'];
+  if (factDate) {
+    const t = Date.parse(factDate);
+    if (!Number.isNaN(t)) return t;
+  }
+
+  const latestChapter = Array.isArray(item.chapters) ? item.chapters[0] : null;
+  if (latestChapter) {
+    const explicitDate = (latestChapter as any).createdAt || (latestChapter as any).created_at || (latestChapter as any).date || (latestChapter as any).releasedAt;
+    if (explicitDate) {
+      const t = Date.parse(explicitDate);
+      if (!Number.isNaN(t)) return t;
+    }
+
+    const relMin = parseChapterAgeMinutes(latestChapter.status);
+    if (relMin !== null && relMin > 0) {
+      return Date.now() - relMin * 60 * 1000;
+    }
+  }
+
+  if (item.createdAt) {
+    const t = Date.parse(item.createdAt);
+    if (!Number.isNaN(t)) return t;
+  }
+
+  return 0;
+}
+
+export function getSeriesReleaseAgeMinutes(item: SeriesRecord): number {
+  const ts = getSeriesReleaseTimestamp(item);
+  if (ts > 0) {
+    return Math.max(0, (Date.now() - ts) / (1000 * 60));
+  }
+  return Number.POSITIVE_INFINITY;
+}
+
+export function getSeriesCreatedTimestamp(item: SeriesRecord): number {
+  if (item.createdAt) {
+    const t = Date.parse(item.createdAt);
+    if (!Number.isNaN(t)) return t;
+  }
+  return (item.id || 0) * 1000;
+}
+
 const CATALOG_CACHE_KEY = 'vortex-series-catalog-cache';
 
 export function getCachedSeriesCatalog(): SeriesCatalogResponse | null {
