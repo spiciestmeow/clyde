@@ -21,7 +21,7 @@ import {
   X,
   Zap,
 } from 'lucide-react';
-import { syncSeriesSources, type SyncSourcesResult } from '../lib/syncSources';
+import { syncSeriesSources, syncDirectSources, type SyncSourcesResult } from '../lib/syncSources';
 import {
   createSeriesRecord,
   updateSeriesRecord,
@@ -277,6 +277,94 @@ export default function SeriesCatalogManager() {
     });
 
     setIsSyncSourcesOpen(false);
+  };
+
+  const [isSyncingDirect, setIsSyncingDirect] = useState(false);
+  const [directSyncFeedback, setDirectSyncFeedback] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
+
+  const handleManualSyncDirectSources = async () => {
+    const validSources = draft.sources.filter((s) => s.url?.trim());
+    if (validSources.length === 0) {
+      setDirectSyncFeedback({
+        type: 'error',
+        message: 'Please add at least one source URL with a direct series link first.',
+      });
+      return;
+    }
+
+    setIsSyncingDirect(true);
+    setDirectSyncFeedback(null);
+
+    try {
+      const result = await syncDirectSources(validSources, draft.title);
+      if (!result.success || !result.highestChapter) {
+        setDirectSyncFeedback({
+          type: 'error',
+          message: result.message || 'Could not detect any chapters from the added source URLs.',
+        });
+        return;
+      }
+
+      setDraft((prev) => {
+        const nextFacts = {
+          ...(prev.facts || {}),
+          latest_chapter_number: String(result.highestChapter),
+          last_chapter_added_at: new Date().toISOString(),
+          lastUpdate: new Date().toISOString(),
+        };
+
+        const existingChapters = prev.chapters ? [...prev.chapters] : [];
+        let updatedChapters = existingChapters;
+
+        if (result.detectedChapters.length > 0) {
+          const seriesSlug = slugify(prev.title || 'series');
+          const generatedFromDetected = result.detectedChapters.map((ch) => ({
+            title: ch.title,
+            href: `/series/${seriesSlug}/chapter-${ch.number}`,
+            status: ch.number === parseFloat(result.highestChapter) ? 'New' : '',
+            locked: false,
+          }));
+
+          if (existingChapters.length <= 1) {
+            updatedChapters = generatedFromDetected;
+          } else {
+            const topTitle = `Chapter ${result.highestChapter}`;
+            const hasTop = existingChapters.some(
+              (c) => c.title.toLowerCase() === topTitle.toLowerCase() || c.title.includes(result.highestChapter)
+            );
+            if (!hasTop) {
+              updatedChapters = [
+                {
+                  title: topTitle,
+                  href: `/series/${seriesSlug}/chapter-${result.highestChapter}`,
+                  status: 'New',
+                  locked: false,
+                },
+                ...existingChapters,
+              ];
+            }
+          }
+        }
+
+        return {
+          ...prev,
+          facts: nextFacts,
+          chapters: updatedChapters,
+        };
+      });
+
+      setDirectSyncFeedback({
+        type: 'success',
+        message: result.message,
+      });
+    } catch (err: unknown) {
+      setDirectSyncFeedback({
+        type: 'error',
+        message: err instanceof Error ? err.message : 'Failed to scan direct sources.',
+      });
+    } finally {
+      setIsSyncingDirect(false);
+    }
   };
 
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -664,6 +752,23 @@ export default function SeriesCatalogManager() {
           <div className="uploads-error-banner" style={{ margin: '8px 0 14px' }}>
             <AlertCircle size={15} />
             <span>{syncError}</span>
+          </div>
+        )}
+
+        {syncError && (!syncResult || syncResult.sources.length === 0) && (
+          <div
+            style={{
+              padding: '10px 14px',
+              borderRadius: 8,
+              background: 'rgba(56, 189, 248, 0.08)',
+              border: '1px solid rgba(56, 189, 248, 0.2)',
+              fontSize: 12,
+              color: '#bae6fd',
+              marginBottom: 14,
+              lineHeight: 1.5,
+            }}
+          >
+            <strong>Direct Link Tip:</strong> If MangaUpdates has no records for this series, you can close this modal, paste your direct scanlator URLs (e.g. Asura, Qi Manga) directly into the <strong>Sources</strong> list, and click the new <strong>Manual Sync</strong> button!
           </div>
         )}
 
@@ -1394,16 +1499,63 @@ export default function SeriesCatalogManager() {
                 <h2 className="section-title" style={{ margin: 0 }}>Sources</h2>
                 <p className="section-description" style={{ margin: 0 }}>Scanlator teams, translation groups, and official platforms</p>
               </div>
-              <button
-                type="button"
-                className="btn-sync-sources"
-                onClick={() => openSyncSourcesModal(draft.title)}
-                title="Search and auto-detect scanlators, chapters, and links across the web"
-              >
-                <Zap size={14} />
-                <span>Sync Sources</span>
-              </button>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+                <button
+                  type="button"
+                  className="btn-sync-sources"
+                  onClick={() => openSyncSourcesModal(draft.title)}
+                  title="Search and auto-detect scanlators, chapters, and links across the web"
+                >
+                  <Zap size={14} />
+                  <span>Sync Sources</span>
+                </button>
+                <button
+                  type="button"
+                  className="btn-sync-direct-sources"
+                  disabled={isSyncingDirect || draft.sources.filter((s) => s.url?.trim()).length === 0}
+                  onClick={handleManualSyncDirectSources}
+                  title="Scan the direct source URLs entered below to auto-detect and update chapters for this series"
+                >
+                  <RefreshCw size={14} className={isSyncingDirect ? 'spin' : ''} />
+                  <span>{isSyncingDirect ? 'Scanning...' : 'Manual Sync'}</span>
+                </button>
+              </div>
             </div>
+
+            {directSyncFeedback && (
+              <div
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 8,
+                  padding: '9px 12px',
+                  borderRadius: 6,
+                  marginBottom: 12,
+                  fontSize: 13,
+                  background: directSyncFeedback.type === 'success' ? 'rgba(34, 197, 94, 0.12)' : 'rgba(239, 68, 68, 0.12)',
+                  color: directSyncFeedback.type === 'success' ? '#4ade80' : '#f87171',
+                  border: `1px solid ${directSyncFeedback.type === 'success' ? 'rgba(34, 197, 94, 0.3)' : 'rgba(239, 68, 68, 0.3)'}`,
+                }}
+              >
+                {directSyncFeedback.type === 'success' ? <Check size={16} /> : <AlertCircle size={16} />}
+                <span style={{ flex: 1 }}>{directSyncFeedback.message}</span>
+                <button
+                  type="button"
+                  onClick={() => setDirectSyncFeedback(null)}
+                  style={{
+                    background: 'transparent',
+                    border: 'none',
+                    color: 'inherit',
+                    cursor: 'pointer',
+                    padding: 2,
+                    display: 'flex',
+                  }}
+                  aria-label="Dismiss feedback"
+                >
+                  <X size={14} />
+                </button>
+              </div>
+            )}
             {draft.sources.map((source, idx) => (
               <div key={idx} className="link-edit-row">
                 <input
