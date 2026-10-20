@@ -16,7 +16,7 @@ import SeriesBrowsePage from './pages/SeriesBrowsePage';
 import { toSiteSearchItems, toTrendingSiteSearchItems } from './data/seriesSearchCatalog';
 import { useThemeMode } from './hooks/useThemeMode';
 import { useSeriesCatalog } from './hooks/useSeriesCatalog';
-import type { SeriesRecord } from './lib/seriesCatalog';
+import { DEFAULT_SERIES_COVER, type SeriesRecord } from './lib/seriesCatalog';
 import vortexLogo from './assets/vortex-logo.webp';
 import assets from '../clone-data/asset-references.json';
 import {
@@ -97,8 +97,8 @@ function normalizeRailScrollPosition(rail: HTMLDivElement, gesture?: RailGesture
     gesture.startScrollLeft += adjustment;
   }
 }
-function assetUrl(src: string, width = 400) {
-  if (!src) return '';
+function assetUrl(src?: string | null, width = 400) {
+  if (!src || !src.trim()) return DEFAULT_SERIES_COVER;
   if (src.startsWith('data:')) return src;
   if (src.startsWith('/theme/')) return `https://vortexscans.org${src}`;
   if (src.startsWith('https://i0.wp.com/')) {
@@ -127,10 +127,7 @@ function recoverImage(event: SyntheticEvent<HTMLDivElement>) {
   const failedUrl = image.currentSrc || image.src;
   if (failedUrl.startsWith('data:')) return;
   if (image.dataset.fallbackAttempted) {
-    image.hidden = true;
-    if (image.parentElement?.classList.contains('brand')) {
-      image.parentElement.classList.add('brand-fallback');
-    }
+    image.src = DEFAULT_SERIES_COVER;
     return;
   }
   image.dataset.fallbackAttempted = 'true';
@@ -143,7 +140,7 @@ function recoverImage(event: SyntheticEvent<HTMLDivElement>) {
     fallback = `https://i0.wp.com/${path}?w=400&quality=85&strip=all&ssl=1`;
   }
   if (fallback) image.src = fallback;
-  else image.hidden = true;
+  else image.src = DEFAULT_SERIES_COVER;
 }
 function SectionTitle({ children, icon }: { children: string; icon?: boolean }) {
   return <div className="section-title">{icon && <Flame size={17} fill="currentColor" />}<h2>{children}</h2></div>;
@@ -287,7 +284,6 @@ function HomePage() {
     });
 
     return unique
-      .filter((item) => item.cover)
       .slice(0, MAX_POPULAR_SERIES)
       .map((item) => ({ title: item.title, src: item.cover, href: item.href }));
   }, [seriesItems]);
@@ -328,7 +324,6 @@ function HomePage() {
     });
 
     return sorted
-      .filter((item) => item.cover)
       .slice(0, MAX_MOST_POPULAR_SERIES)
       .map((item) => ({ title: item.title, src: item.cover, href: item.href, genres: item.genres }));
   }, [seriesItems, popularPeriod]);
@@ -349,7 +344,7 @@ function HomePage() {
     const byTitle = new Map(seriesItems.map((item) => [item.title.toLocaleLowerCase(), item]));
     return continueReadingSeeds.flatMap((seed) => {
       const series = byTitle.get(seed.title.toLocaleLowerCase());
-      if (!series?.cover) return [];
+      if (!series) return [];
       return [{
         ...seed,
         href: series.href,

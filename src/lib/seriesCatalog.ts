@@ -82,6 +82,10 @@ export type SeriesCatalogResponse = {
 
 export const SERIES_CATALOG_QUERY_KEY = ['series-catalog'] as const;
 
+export const DEFAULT_SERIES_COVER =
+  'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 300 450" width="300" height="450"><rect width="300" height="450" fill="%2313141f"/><rect x="10" y="10" width="280" height="430" rx="10" fill="none" stroke="%232b2d42" stroke-width="2" stroke-dasharray="6 6"/><g transform="translate(150, 195)"><circle r="44" fill="%23ed741b" fill-opacity="0.12"/><path d="M-18 -14 C-9 -16 0 -11 0 -4 L0 20 C0 15 -9 11 -18 13 Z M18 -14 C9 -16 0 -11 0 -4 L0 20 C0 15 9 11 18 13 Z" fill="none" stroke="%23ed741b" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></g><text x="150" y="278" text-anchor="middle" fill="%23e2e8f0" font-size="16" font-family="-apple-system, BlinkMacSystemFont, Segoe UI, Roboto, sans-serif" font-weight="700" letter-spacing="1">NO COVER</text><text x="150" y="302" text-anchor="middle" fill="%2394a3b8" font-size="12" font-family="-apple-system, BlinkMacSystemFont, Segoe UI, Roboto, sans-serif">Artwork pending</text></svg>';
+
+
 type SeriesDatabaseRow = {
   id: number;
   slug: string;
