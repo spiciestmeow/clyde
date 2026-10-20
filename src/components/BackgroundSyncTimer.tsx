@@ -7,7 +7,7 @@ interface BackgroundSyncTimerProps {
 }
 
 export function BackgroundSyncTimer({ onManualTriggerSuccess }: BackgroundSyncTimerProps) {
-  // Interval in minutes (from your cron-job.org setting: every 15 minutes at :00, :15, :30, :45)
+  // Interval in minutes (from your cron-job.org setting: default 15 minutes)
   const [intervalMinutes, setIntervalMinutes] = useState<number>(() => {
     if (typeof window !== 'undefined') {
       const saved = localStorage.getItem('bg_sync_interval_min');
@@ -21,6 +21,20 @@ export function BackgroundSyncTimer({ onManualTriggerSuccess }: BackgroundSyncTi
     seconds: 0,
   });
   const [nextRunDate, setNextRunDate] = useState<Date>(new Date());
+  const [isSyncInProgress, setIsSyncInProgress] = useState(false);
+  const [lastSyncResult, setLastSyncResult] = useState<{
+    time: string;
+    message: string;
+  } | null>(() => {
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('bg_sync_last_result');
+      if (saved) {
+        try { return JSON.parse(saved); } catch {}
+      }
+    }
+    return null;
+  });
+
   const [isTriggeringNow, setIsTriggeringNow] = useState(false);
   const [triggerStatus, setTriggerStatus] = useState<{
     type: 'success' | 'error';
@@ -35,7 +49,6 @@ export function BackgroundSyncTimer({ onManualTriggerSuccess }: BackgroundSyncTi
       const currentSeconds = now.getSeconds();
       const currentMs = now.getMilliseconds();
 
-      // Next block boundary
       const step = intervalMinutes;
       const nextTargetMin = Math.ceil((currentMinutes + (currentSeconds > 0 || currentMs > 0 ? 0.001 : 0)) / step) * step;
 
@@ -52,6 +65,11 @@ export function BackgroundSyncTimer({ onManualTriggerSuccess }: BackgroundSyncTi
       const totalSec = Math.floor(diffMs / 1000);
       const m = Math.floor((totalSec % 3600) / 60);
       const s = totalSec % 60;
+
+      // When the countdown hits 00:00 (first 30 seconds after the minute marks),
+      // show the animated "Syncing in progress" state
+      const isWindowSyncing = totalSec <= 1 || (currentMinutes % step === 0 && currentSeconds <= 25);
+      setIsSyncInProgress(isWindowSyncing);
 
       setTimeLeft({ minutes: m, seconds: s });
     };
@@ -76,10 +94,19 @@ export function BackgroundSyncTimer({ onManualTriggerSuccess }: BackgroundSyncTi
       const res = await fetch('/api/cron-sync-sources');
       const data = await res.json().catch(() => ({}));
       if (res.ok && data.success) {
+        const msg = `Checked ${data.totalSeriesChecked || 0} series (${data.seriesUpdatedCount || 0} updated).`;
         setTriggerStatus({
           type: 'success',
-          message: `Sync finished! Checked ${data.totalSeriesChecked || 0} series (${data.seriesUpdatedCount || 0} updated).`,
+          message: `Sync finished! ${msg}`,
         });
+        const resultObj = {
+          time: new Date().toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' }),
+          message: msg,
+        };
+        setLastSyncResult(resultObj);
+        if (typeof window !== 'undefined') {
+          localStorage.setItem('bg_sync_last_result', JSON.stringify(resultObj));
+        }
         if (onManualTriggerSuccess) {
           onManualTriggerSuccess();
         }
@@ -114,13 +141,26 @@ export function BackgroundSyncTimer({ onManualTriggerSuccess }: BackgroundSyncTi
   });
 
   return (
-    <div className="bg-sync-timer-card">
+    <div className={`bg-sync-timer-card${isSyncInProgress ? ' is-syncing-active' : ''}`}>
       <div className="bg-sync-timer-header">
-        <div className="bg-sync-timer-icon-wrap">
-          <Clock size={18} className="bg-sync-timer-icon" />
+        <div className={`bg-sync-timer-icon-wrap${isSyncInProgress ? ' is-pulsing' : ''}`}>
+          {isSyncInProgress ? (
+            <RefreshCw size={18} className="spin" />
+          ) : (
+            <Clock size={18} className="bg-sync-timer-icon" />
+          )}
         </div>
         <div className="bg-sync-timer-title-group">
-          <h3 className="bg-sync-timer-title">Next Auto Chapter Sync</h3>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <h3 className="bg-sync-timer-title">
+              {isSyncInProgress ? 'Background Sync Running Now...' : 'Next Auto Chapter Sync'}
+            </h3>
+            {isSyncInProgress && (
+              <span className="bg-sync-live-badge">
+                <span className="bg-sync-live-dot" /> LIVE SYNC
+              </span>
+            )}
+          </div>
           <div className="bg-sync-interval-picker">
             <span>Runs via cron-job.org every</span>
             <select
@@ -139,7 +179,7 @@ export function BackgroundSyncTimer({ onManualTriggerSuccess }: BackgroundSyncTi
           type="button"
           className="bg-sync-run-now-btn"
           onClick={handleRunNow}
-          disabled={isTriggeringNow}
+          disabled={isTriggeringNow || isSyncInProgress}
           title="Run background chapter scraper now"
         >
           <RefreshCw size={14} className={isTriggeringNow ? 'spin' : ''} />
@@ -163,16 +203,35 @@ export function BackgroundSyncTimer({ onManualTriggerSuccess }: BackgroundSyncTi
       </div>
 
       <div className="bg-sync-pill-status">
-        <span className="bg-sync-pill">
-          <Zap size={13} />
-          <span>Auto-checks MangaUpdates & Direct Source URLs</span>
-        </span>
+        {isSyncInProgress ? (
+          <span className="bg-sync-pill is-syncing">
+            <RefreshCw size={13} className="spin" />
+            <span>Scanning MangaUpdates & Direct Source URLs for new chapters...</span>
+          </span>
+        ) : (
+          <span className="bg-sync-pill">
+            <Zap size={13} />
+            <span>Auto-checks MangaUpdates & Direct Source URLs</span>
+          </span>
+        )}
       </div>
 
       <div className="bg-sync-footer-time">
-        <span>📅 Next scheduled run: <strong>{formattedNextTime}</strong></span>
-        <span className="bg-sync-timezone-note">({formattedNextDate})</span>
+        {isSyncInProgress ? (
+          <span style={{ color: '#38bdf8' }}>⚡ Auto background job is running right now</span>
+        ) : (
+          <>
+            <span>📅 Next scheduled run: <strong>{formattedNextTime}</strong></span>
+            <span className="bg-sync-timezone-note">({formattedNextDate})</span>
+          </>
+        )}
       </div>
+
+      {lastSyncResult && !triggerStatus && !isSyncInProgress && (
+        <div className="bg-sync-last-run-info">
+          <span>✓ Last sync at {lastSyncResult.time}: {lastSyncResult.message}</span>
+        </div>
+      )}
 
       {triggerStatus && (
         <div className={`bg-sync-feedback-toast is-${triggerStatus.type}`}>
