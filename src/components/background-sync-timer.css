@@ -53,9 +53,29 @@
   letter-spacing: -0.01em;
 }
 
-.bg-sync-timer-subtitle {
+.bg-sync-interval-picker {
+  display: flex;
+  align-items: center;
+  gap: 6px;
   font-size: 12px;
   color: #94a3b8;
+  margin-top: 2px;
+}
+
+.bg-sync-select-interval {
+  background: #1e293b;
+  border: 1px solid rgba(16, 185, 129, 0.35);
+  color: #34d399;
+  font-size: 12px;
+  font-weight: 600;
+  padding: 2px 6px;
+  border-radius: 6px;
+  outline: none;
+  cursor: pointer;
+}
+
+.bg-sync-select-interval:focus {
+  border-color: #10b981;
 }
 
 .bg-sync-run-now-btn {

@@ -7,6 +7,15 @@ interface BackgroundSyncTimerProps {
 }
 
 export function BackgroundSyncTimer({ onManualTriggerSuccess }: BackgroundSyncTimerProps) {
+  // Interval in minutes (from your cron-job.org setting: every 15 minutes at :00, :15, :30, :45)
+  const [intervalMinutes, setIntervalMinutes] = useState<number>(() => {
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('bg_sync_interval_min');
+      return saved ? parseInt(saved, 10) || 15 : 15;
+    }
+    return 15;
+  });
+
   const [timeLeft, setTimeLeft] = useState<{ minutes: number; seconds: number }>({
     minutes: 0,
     seconds: 0,
@@ -18,13 +27,25 @@ export function BackgroundSyncTimer({ onManualTriggerSuccess }: BackgroundSyncTi
     message: string;
   } | null>(null);
 
-  // Compute countdown to the top of the next hour (:00 UTC / local)
+  // Calculate the next execution time based on intervalMinutes (:00, :15, :30, :45 for 15m)
   useEffect(() => {
     const updateCountdown = () => {
       const now = new Date();
-      // Next run is at minute 0 of next hour
+      const currentMinutes = now.getMinutes();
+      const currentSeconds = now.getSeconds();
+      const currentMs = now.getMilliseconds();
+
+      // Next block boundary
+      const step = intervalMinutes;
+      const nextTargetMin = Math.ceil((currentMinutes + (currentSeconds > 0 || currentMs > 0 ? 0.001 : 0)) / step) * step;
+
       const next = new Date(now);
-      next.setHours(now.getHours() + 1, 0, 0, 0);
+      if (nextTargetMin >= 60) {
+        next.setHours(now.getHours() + 1, nextTargetMin % 60, 0, 0);
+      } else {
+        next.setMinutes(nextTargetMin, 0, 0);
+      }
+
       setNextRunDate(next);
 
       const diffMs = Math.max(0, next.getTime() - now.getTime());
@@ -38,7 +59,14 @@ export function BackgroundSyncTimer({ onManualTriggerSuccess }: BackgroundSyncTi
     updateCountdown();
     const interval = setInterval(updateCountdown, 1000);
     return () => clearInterval(interval);
-  }, []);
+  }, [intervalMinutes]);
+
+  const handleIntervalChange = (mins: number) => {
+    setIntervalMinutes(mins);
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('bg_sync_interval_min', String(mins));
+    }
+  };
 
   const handleRunNow = async () => {
     if (isTriggeringNow) return;
@@ -73,10 +101,10 @@ export function BackgroundSyncTimer({ onManualTriggerSuccess }: BackgroundSyncTi
 
   const pad = (n: number) => String(n).padStart(2, '0');
 
-  // Format date display like: "Tuesday, Oct 20, 2026 at 11:00 AM • your time"
   const formattedNextTime = nextRunDate.toLocaleTimeString([], {
     hour: 'numeric',
     minute: '2-digit',
+    second: '2-digit',
   });
   const formattedNextDate = nextRunDate.toLocaleDateString([], {
     weekday: 'long',
@@ -93,7 +121,19 @@ export function BackgroundSyncTimer({ onManualTriggerSuccess }: BackgroundSyncTi
         </div>
         <div className="bg-sync-timer-title-group">
           <h3 className="bg-sync-timer-title">Next Auto Chapter Sync</h3>
-          <span className="bg-sync-timer-subtitle">Every 1 hour at :00 (UTC+0)</span>
+          <div className="bg-sync-interval-picker">
+            <span>Runs via cron-job.org every</span>
+            <select
+              value={intervalMinutes}
+              onChange={(e) => handleIntervalChange(Number(e.target.value))}
+              className="bg-sync-select-interval"
+              title="Set interval to match your cron-job.org schedule"
+            >
+              <option value={15}>15 minutes</option>
+              <option value={30}>30 minutes</option>
+              <option value={60}>1 hour</option>
+            </select>
+          </div>
         </div>
         <button
           type="button"
@@ -130,8 +170,8 @@ export function BackgroundSyncTimer({ onManualTriggerSuccess }: BackgroundSyncTi
       </div>
 
       <div className="bg-sync-footer-time">
-        <span>📅 {formattedNextDate} at {formattedNextTime}</span>
-        <span className="bg-sync-timezone-note">• your time</span>
+        <span>📅 Next scheduled run: <strong>{formattedNextTime}</strong></span>
+        <span className="bg-sync-timezone-note">({formattedNextDate})</span>
       </div>
 
       {triggerStatus && (
