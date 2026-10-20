@@ -316,25 +316,31 @@ export function LatestReleaseCard({
             </div>
           )}
 
-          {/* Author Box (Green accent) */}
-          {isSameAuthorArtist ? (
-            <div className="release-box release-box--author">
-              <span className="release-box-label">Author & Artist</span>
-              <MarqueeValue text={author} />
-            </div>
-          ) : (
-            <>
+          {/* Author/Artist boxes — only show if there's real data */}
+          {(author !== 'value' || artist !== 'value') && (
+            isSameAuthorArtist ? (
               <div className="release-box release-box--author">
-                <span className="release-box-label">Author</span>
+                <span className="release-box-label">Author & Artist</span>
                 <MarqueeValue text={author} />
               </div>
+            ) : (
+              <>
+                {author !== 'value' && (
+                  <div className="release-box release-box--author">
+                    <span className="release-box-label">Author</span>
+                    <MarqueeValue text={author} />
+                  </div>
+                )}
 
-              {/* Artist Box (Purple accent) */}
-              <div className="release-box release-box--artist">
-                <span className="release-box-label">Artist</span>
-                <MarqueeValue text={artist} />
-              </div>
-            </>
+                {/* Artist Box (Purple accent) */}
+                {artist !== 'value' && (
+                  <div className="release-box release-box--artist">
+                    <span className="release-box-label">Artist</span>
+                    <MarqueeValue text={artist} />
+                  </div>
+                )}
+              </>
+            )
           )}
 
           {/* Sources Box (Red accent) */}
