@@ -50,6 +50,13 @@ export default function SiteSearch({
     navigate(`/series?search=${encodeURIComponent(searchTerm)}`);
     closeSearch();
   };
+  const handleSearchButtonClick = () => {
+    if (window.matchMedia('(max-width: 1023px)').matches) {
+      navigate('/series');
+      return;
+    }
+    setOpen(true);
+  };
 
   const renderHighlightedTitle = (title: string) => {
     if (!normalizedQuery) return title;
@@ -88,7 +95,7 @@ export default function SiteSearch({
         aria-label="Search series"
         aria-haspopup="dialog"
         aria-expanded={open}
-        onClick={() => setOpen(true)}
+        onClick={handleSearchButtonClick}
       >
         <Search size={15} aria-hidden="true" />
         <span>What are you looking for?</span>

@@ -1,9 +1,11 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState, type PointerEvent as ReactPointerEvent, type SyntheticEvent } from 'react';
-import { ArrowLeft, ArrowRight, ArrowUpRight, ChevronDown, ChevronLeft, ChevronRight, Clock3, Flame, ListFilter, Share2 } from 'lucide-react';
+import { ArrowLeft, ArrowRight, ArrowUpRight, ChevronDown, ChevronLeft, ChevronRight, Clock3, Flame, RefreshCw } from 'lucide-react';
 import { Route, Switch, Router as WouterRouter, useLocation } from 'wouter';
 import SiteSearch from './components/SiteSearch';
 import SiteFooter from './components/SiteFooter';
 import SiteHeader from './components/SiteHeader';
+import { Shareable } from './components/Shareable';
+import { ReportIssue } from './components/ReportIssue';
 import NavigationProgress from './components/NavigationProgress';
 import HeroSlider from './components/HeroSlider';
 import { PopularNowCard, type PopularNowCardItem } from './components/PopularNowCard';
@@ -161,24 +163,11 @@ function HomePage() {
   const periodDropdownRef = useRef<HTMLDivElement>(null);
   const [releasePage, setReleasePage] = useState(1);
   const [copiedShare, setCopiedShare] = useState(false);
+  const [shareModalOpen, setShareModalOpen] = useState(false);
+  const [reportModalOpen, setReportModalOpen] = useState(false);
 
-  const handleShare = async () => {
-    if (navigator.share) {
-      try {
-        await navigator.share({
-          title: 'Vortex Scans',
-          url: window.location.href,
-        });
-        return;
-      } catch {
-        // Fallback to clipboard if share was cancelled or failed
-      }
-    }
-    if (navigator.clipboard) {
-      await navigator.clipboard.writeText(window.location.href);
-      setCopiedShare(true);
-      setTimeout(() => setCopiedShare(false), 2000);
-    }
+  const handleShare = () => {
+    setShareModalOpen(true);
   };
 
   const catalogQuery = useSeriesCatalog();
@@ -471,7 +460,7 @@ function HomePage() {
                     <svg className="social-btn-icon" width="18" height="18" fill="currentColor" viewBox="0 0 512 512">
                       <path d="M307 34.8c-11.5 5.1-19 16.6-19 29.2v64H176C78.8 128 0 206.8 0 304C0 417.3 81.5 467.9 100.2 478.1c2.5 1.4 5.3 1.9 8.1 1.9c10.9 0 19.7-8.9 19.7-19.7c0-7.5-4.3-14.4-9.8-19.5C108.8 431.9 96 414.4 96 384c0-53 43-96 96-96h96v64c0 12.6 7.4 24.1 19 29.2s25 3 34.4-5.4l160-144c6.7-6.1 10.6-14.7 10.6-23.8s-3.8-17.7-10.6-23.8l-160-144c-9.4-8.5-22.9-10.6-34.4-5.4z" />
                     </svg>
-                    <span>{copiedShare ? 'Copied!' : 'Share'}</span>
+                    <span>Share</span>
                   </button>
                 </div>
 
@@ -499,8 +488,9 @@ function HomePage() {
                 {/* Mobile-only Report Issue button (matches vortexscans.org layout) */}
                 {homepageVisibility.issueBanner && (
                   <div className="social-mobile-report">
-                    <a
-                      href="/community/report"
+                    <button
+                      type="button"
+                      onClick={() => setReportModalOpen(true)}
                       className="social-action-btn report-btn"
                       title="Report Issue"
                     >
@@ -510,7 +500,7 @@ function HomePage() {
                         <path d="M12 17h.01" />
                       </svg>
                       <span>Report Issue</span>
-                    </a>
+                    </button>
                   </div>
                 )}
               </div>
@@ -532,14 +522,14 @@ function HomePage() {
                       <p className="issue-banner-sub">Report bugs, payment issues, or other problems • Get rewards</p>
                     </div>
                   </div>
-                  <a href="/community/report" className="social-action-btn report-btn">
+                  <button type="button" onClick={() => setReportModalOpen(true)} className="social-action-btn report-btn">
                     <svg className="social-btn-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                       <path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3" />
                       <path d="M12 9v4" />
                       <path d="M12 17h.01" />
                     </svg>
                     <span>Report Issue</span>
-                  </a>
+                  </button>
                 </div>
               </section>
             )}
@@ -577,12 +567,13 @@ function HomePage() {
         )}
 
         {homepageVisibility.latestReleases && <section className="latest-section content-width">
-          <div className="latest-heading"><div className="section-title"><h2>Latest Releases</h2></div><div className="latest-tabs"><button className={filter === 'Latest' ? 'on' : ''} onClick={() => { setFilter('Latest'); setReleasePage(1); }}><Clock3 size={15} />Latest</button><button className={filter === 'New' ? 'on' : ''} onClick={() => { setFilter('New'); setReleasePage(1); }}><ListFilter size={15} />New</button></div><a className="view-all" href="/latest-updates" aria-label="View All Latest Updates"><ArrowUpRight /></a></div>
+          <div className="latest-heading"><div className="section-title"><h2>Latest Releases</h2></div><div className="latest-tabs"><button className={filter === 'Latest' ? 'on' : ''} onClick={() => { setFilter('Latest'); setReleasePage(1); }}><RefreshCw size={15} />Latest</button><button className={filter === 'New' ? 'on' : ''} onClick={() => { setFilter('New'); setReleasePage(1); }}><Clock3 size={15} />New</button></div><a className="view-all" href="/latest-updates" aria-label="View All Latest Updates"><ArrowUpRight /></a></div>
           <div className="release-grid">{pagedReleases.map((release) => (
             <LatestReleaseCard
               key={release.slug}
               release={release}
               imageSrc={assetUrl(release.cover, 300)}
+              variant="series"
             />
           ))}</div>
           {!catalogQuery.isLoading && !catalogQuery.isError && visibleReleases.length === 0 && <div className="series-data-status" role="status"><p>No series match this release filter yet.</p></div>}
@@ -737,7 +728,8 @@ function HomePage() {
           tagline="Read Comics, manga, manhua, manhwa, translated swiftly: Clydee, your ultimate library."
         />
       )}
-      <button className="pumpkin" aria-label="Trick or treat?"><img src={assetUrl(manifest[1].src, 128)} alt="" /></button>
+      <Shareable open={shareModalOpen} onOpenChange={setShareModalOpen} />
+      <ReportIssue open={reportModalOpen} onOpenChange={setReportModalOpen} />
     </div>
   );
 }

@@ -247,6 +247,20 @@ export default function SeriesBrowsePage() {
     };
   }, [sortMenuOpen]);
 
+  useEffect(() => {
+    if (!filtersOpen || !window.matchMedia('(max-width: 850px)').matches) return;
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    const closeOnEscape = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') setFiltersOpen(false);
+    };
+    window.addEventListener('keydown', closeOnEscape);
+    return () => {
+      document.body.style.overflow = previousOverflow;
+      window.removeEventListener('keydown', closeOnEscape);
+    };
+  }, [filtersOpen]);
+
   const filtered = useMemo(() => {
     const term = query.trim().toLocaleLowerCase();
     const includedGenres = Object.entries(genreModes)
@@ -364,7 +378,7 @@ export default function SeriesBrowsePage() {
     options[nextIndex]?.focus();
   };
 
-  return <div className={`vortex-page series-page catalog-page ${dark ? 'theme-dark' : 'theme-light'}`} onErrorCapture={recoverImage}>
+  return <div className={`vortex-page series-page catalog-page ${dark ? 'theme-dark' : 'theme-light'}${filtersOpen ? ' has-filter-sheet' : ''}`} onErrorCapture={recoverImage}>
     <SiteHeader
       activeSection="series"
       logoSrc={vortexLogo}
@@ -496,6 +510,7 @@ export default function SeriesBrowsePage() {
           </div>
         </div>
         <div className={`catalog-results-layout${filtersOpen ? ' has-filters' : ''}`}>
+          {filtersOpen && <button className="catalog-filter-backdrop" type="button" aria-label="Close filters" onClick={() => setFiltersOpen(false)} />}
           <aside
             id="series-filters-panel"
             className="catalog-filter-drawer"
@@ -503,6 +518,7 @@ export default function SeriesBrowsePage() {
             aria-hidden={!filtersOpen}
             inert={!filtersOpen}
           >
+          <div className="catalog-filter-sheet-handle" aria-hidden="true"><span /></div>
           <div className="catalog-filter-panel">
             <div className="catalog-filter-heading">
               <h2>Filters</h2>
@@ -627,6 +643,7 @@ export default function SeriesBrowsePage() {
               </div>}
             </section>
           </div>
+          <div className="catalog-filter-apply"><button type="button" onClick={() => setFiltersOpen(false)}>Show {filtered.length} {filtered.length === 1 ? 'result' : 'results'}</button></div>
           </aside>
           {visibleItems.length ? <div className="catalog-grid">
             {visibleItems.map((item) => (
@@ -634,6 +651,7 @@ export default function SeriesBrowsePage() {
                 key={item.href}
                 release={seriesToRelease(item)}
                 imageSrc={imageUrl(item.cover, 360)}
+                variant="series"
               />
             ))}
           </div> : <div className="catalog-empty">

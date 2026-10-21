@@ -20,6 +20,7 @@ import wowReactionIcon from '../assets/reactions/wow.webp';
 import SiteFooter from '../components/SiteFooter';
 import SiteHeader from '../components/SiteHeader';
 import SiteSearch from '../components/SiteSearch';
+import { Shareable } from '../components/Shareable';
 import { toSiteSearchItems, toTrendingSiteSearchItems } from '../data/seriesSearchCatalog';
 import { useThemeMode } from '../hooks/useThemeMode';
 import { useSeriesCatalog } from '../hooks/useSeriesCatalog';
@@ -278,6 +279,7 @@ export default function SeriesDetailPage() {
     (item) => item.slug.toLocaleLowerCase() === slug.toLocaleLowerCase(),
   );
   const detail = series;
+  const alternateTitleText = detail?.alternateTitles?.join(' · ') ?? '';
   const searchItems = useMemo(() => toSiteSearchItems(catalogQuery.items), [catalogQuery.items]);
   const trendingSearchItems = useMemo(() => toTrendingSiteSearchItems(catalogQuery.items), [catalogQuery.items]);
   const [bookmarks, setBookmarks] = useState<string[]>([]);
@@ -294,18 +296,34 @@ export default function SeriesDetailPage() {
     () => getCachedSiteSettings()?.seriesPage ?? DEFAULT_SERIES_PAGE_VISIBILITY,
   );
   const [sourceReactions, setSourceReactions] = useState<string[]>([]);
-  const [copied, setCopied] = useState(false);
+  const [shareModalOpen, setShareModalOpen] = useState(false);
   const [mobileNav, setMobileNav] = useState(false);
   const { dark, toggleTheme } = useThemeMode();
   const [activeTab, setActiveTab] = useState<'sources' | 'synopsis' | 'reviews'>('sources');
   const [, setTick] = useState(0);
   const [synopsisExpanded, setSynopsisExpanded] = useState(false);
+  const [alternateTitlesExpanded, setAlternateTitlesExpanded] = useState(false);
+  const [alternateTitlesOverflow, setAlternateTitlesOverflow] = useState(false);
   const [coverOpen, setCoverOpen] = useState(false);
+  const alternateTitlesRef = useRef<HTMLParagraphElement>(null);
   const coverButtonRef = useRef<HTMLButtonElement>(null);
   const closeCoverRef = useRef<HTMLButtonElement>(null);
   const seriesLayoutRef = useRef<HTMLDivElement>(null);
   const [fixedRailPositions, setFixedRailPositions] = useState<FixedRailPositions | null>(null);
   const lastIncrementedSeriesIdRef = useRef<number | null>(null);
+
+  useLayoutEffect(() => {
+    const element = alternateTitlesRef.current;
+    if (!element || alternateTitlesExpanded || !alternateTitleText) return;
+
+    const measureOverflow = () => {
+      setAlternateTitlesOverflow(element.scrollHeight > element.clientHeight + 1);
+    };
+    measureOverflow();
+    const observer = new ResizeObserver(measureOverflow);
+    observer.observe(element);
+    return () => observer.disconnect();
+  }, [alternateTitleText, alternateTitlesExpanded]);
 
   useEffect(() => {
     let active = true;
@@ -327,6 +345,7 @@ export default function SeriesDetailPage() {
     setSourceReactions(readSet(`vortex-source-reactions:${slug}`));
     setActiveTab('sources');
     setSynopsisExpanded(false);
+    setAlternateTitlesExpanded(false);
     setReactionCounts(readReactionCounts(slug));
     if (series) {
       try {
@@ -463,12 +482,15 @@ export default function SeriesDetailPage() {
     const previousOverflow = document.body.style.overflow;
     document.body.style.overflow = 'hidden';
     closeCoverRef.current?.focus();
-    const closeOnEscape = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') setCoverOpen(false);
+    const closeOnKeyboard = (event: KeyboardEvent) => {
+      if (event.key === 'Escape' || event.key === 'Enter') {
+        event.preventDefault();
+        setCoverOpen(false);
+      }
     };
-    window.addEventListener('keydown', closeOnEscape);
+    window.addEventListener('keydown', closeOnKeyboard);
     return () => {
-      window.removeEventListener('keydown', closeOnEscape);
+      window.removeEventListener('keydown', closeOnKeyboard);
       document.body.style.overflow = previousOverflow;
       coverButtonRef.current?.focus();
     };
@@ -504,27 +526,7 @@ export default function SeriesDetailPage() {
     setBookmarks(next);
     try { localStorage.setItem('vortex-series-bookmarks', JSON.stringify(next)); } catch { /* storage may be unavailable */ }
   };
-  const share = async () => {
-    const url = window.location.href;
-    try {
-      if (navigator.share) await navigator.share({ title: detail?.title || series?.title, url });
-      else if (navigator.clipboard?.writeText) await navigator.clipboard.writeText(url);
-      else {
-        const input = document.createElement('textarea');
-        input.value = url;
-        input.style.position = 'fixed';
-        input.style.opacity = '0';
-        document.body.append(input);
-        input.select();
-        document.execCommand('copy');
-        input.remove();
-      }
-      setCopied(true);
-      window.setTimeout(() => setCopied(false), 1800);
-    } catch {
-      setCopied(false);
-    }
-  };
+  const share = () => setShareModalOpen(true);
   const chooseReaction = (key: ReactionKey) => {
     const next = reaction === key ? null : key;
     const nextCounts = { ...reactionCounts };
@@ -735,7 +737,12 @@ export default function SeriesDetailPage() {
 
         <div className="series-primary">
           <section className="series-overview series-overview--main">
-            {detail?.alternateTitles?.length ? <p className="series-alias" aria-label="Alternate series titles">{detail.alternateTitles.join(' · ')}</p> : null}
+            {alternateTitleText && <div className={`series-alias-wrap${alternateTitlesExpanded ? ' is-expanded' : ''}`}>
+              <p ref={alternateTitlesRef} className="series-alias" aria-label="Alternate series titles">{alternateTitleText}</p>
+              {alternateTitlesOverflow && <button type="button" className="series-alias-toggle" onClick={() => setAlternateTitlesExpanded((expanded) => !expanded)} aria-label={alternateTitlesExpanded ? 'Show less alternate titles' : 'Show more alternate titles'} aria-expanded={alternateTitlesExpanded}>
+                <ChevronDown className={alternateTitlesExpanded ? 'is-expanded' : ''} size={18} aria-hidden="true" />
+              </button>}
+            </div>}
             <h1>{title}</h1>
           </section>
 
@@ -831,7 +838,7 @@ export default function SeriesDetailPage() {
           {(seriesPageVisibility.shareCard || seriesPageVisibility.discordCard) && <div className={`series-social-strip${seriesPageVisibility.shareCard !== seriesPageVisibility.discordCard ? ' series-social-strip--single' : ''}`}>
             {seriesPageVisibility.shareCard && <div className="series-social-card">
               <div className="series-social-copy"><div><span>Share Clydee</span><small>to your friends</small></div></div>
-              <button onClick={share}>{copied ? <Check size={13} /> : <Share2 size={13} />}{copied ? 'Copied' : 'Share'}</button>
+              <button type="button" onClick={share}><Share2 size={13} />Share</button>
             </div>}
             {seriesPageVisibility.discordCard && <div className="series-social-card series-social-card--join">
               <div className="series-social-copy"><div><span>Join Our Socials</span></div></div>
@@ -898,6 +905,7 @@ export default function SeriesDetailPage() {
       <span className="series-cover-lightbox-hint">Click anywhere or press Esc to close</span>
     </div>}
     {seriesPageVisibility.footer && siteFooter}
+    <Shareable open={shareModalOpen} onOpenChange={setShareModalOpen} />
   </div>;
 }
 

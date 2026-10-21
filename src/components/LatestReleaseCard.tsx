@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { Eye, Pin, Star } from 'lucide-react';
 import type { SeriesRecord } from '../lib/seriesCatalog';
 
-function MarqueeValue({ text }: { text: string }) {
+function MarqueeValue({ text, forceStatic = false }: { text: string; forceStatic?: boolean }) {
   const containerRef = useRef<HTMLDivElement>(null);
   const measureRef = useRef<HTMLSpanElement>(null);
   const [isOverflowing, setIsOverflowing] = useState(false);
@@ -42,13 +42,13 @@ function MarqueeValue({ text }: { text: string }) {
   return (
     <div
       ref={containerRef}
-      className={`release-box-value${isOverflowing ? ' is-overflowing' : ''}`}
+      className={`release-box-value${isOverflowing && !forceStatic ? ' is-overflowing' : ''}`}
       title={text}
     >
       <span ref={measureRef} className="release-box-value-measure" aria-hidden="true">
         {text}
       </span>
-      {isOverflowing ? (
+      {isOverflowing && !forceStatic ? (
         <div
           className="release-box-marquee-track"
           style={{ animationDuration: `${duration}s` }}
@@ -107,6 +107,7 @@ export function seriesToRelease(item: SeriesRecord): LatestRelease {
 type LatestReleaseCardProps = {
   release: LatestRelease;
   imageSrc: string;
+  variant?: 'default' | 'series';
 };
 
 function cleanCredit(val?: string | null): string {
@@ -218,6 +219,7 @@ function formatReleaseTime(release: LatestRelease): string | null {
 export function LatestReleaseCard({
   release,
   imageSrc,
+  variant = 'default',
 }: LatestReleaseCardProps) {
   const author = cleanCredit(release.author);
   const artist = cleanCredit(release.artist);
@@ -234,7 +236,7 @@ export function LatestReleaseCard({
   const categoryLabel = release.category?.trim() || 'Manhwa';
 
   return (
-    <article className="release-card">
+    <article className={`release-card${variant === 'series' ? ' release-card--series' : ''}`}>
       <a className="release-cover" href={release.href} title={release.title}>
         <img src={imageSrc} alt={release.title} loading="lazy" />
         <span className="release-type" data-category={categoryLabel.toLowerCase()}>
@@ -349,7 +351,7 @@ export function LatestReleaseCard({
           {/* Sources Box (Red accent) */}
           <div className="release-box release-box--sources">
             <span className="release-box-label">Sources</span>
-            <MarqueeValue text={sourcesValue} />
+            <MarqueeValue text={sourcesValue} forceStatic={variant === 'series'} />
           </div>
         </div>
       </div>
