@@ -327,6 +327,7 @@ main { padding-bottom: 38px; }
 .hero-spider__button:hover { rotate: -6deg; scale: 1.18; }
 .hero-spider__button:focus-visible { outline: 2px solid #ff9a31; outline-offset: 3px; }
 .hero-spider.is-dropping .hero-spider__thread { animation: 1.5s forwards hero-spider-thread-drop; }
+.theme-light .hero-spider__thread { background: #979797; }
 .hero-spider.is-dropping .hero-spider__button { animation: 1.5s forwards hero-spider-drop; }
 .hero-spider.is-climbing .hero-spider__thread { animation: 1.6s ease-in-out forwards hero-spider-thread-climb; }
 .hero-spider.is-climbing .hero-spider__button { animation: 1.6s ease-in-out forwards hero-spider-climb; }
@@ -753,6 +754,22 @@ main { padding-bottom: 38px; }
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
   z-index: 2;
 }
+
+.release-type[data-category="manhua"] {
+  background: #17a673;
+  color: #fff;
+}
+
+.release-type[data-category="manhwa"] {
+  background: #d62e86;
+  color: #fff;
+}
+
+.release-type[data-category="manga"] {
+  background: #2f82d5;
+  color: #fff;
+}
+
 .release-cover-pill,
 .release-views {
   position: absolute;
@@ -1066,7 +1083,7 @@ main { padding-bottom: 38px; }
 .release-page-button:focus-visible { outline: 2px solid color-mix(in srgb, var(--red) 60%, transparent); outline-offset: 2px; }
 .release-page-button:disabled { opacity: .4; cursor: not-allowed; }
 .release-page-button:disabled:hover { border-color: rgba(255,255,255,.1); background: rgba(255,255,255,.05); }
-.release-page-button.is-current { border-color: #f97316; background: #f97316; color: #1a0b02; box-shadow: 0 6px 24px -6px rgba(239,68,68,.65); }
+.release-page-button.is-current { border-color: #f97316; background: #f97316; color: #ffffff; box-shadow: 0 6px 24px -6px rgba(239,68,68,.65); }
 .release-pagination__status { display: none; color: color-mix(in srgb, var(--text) 50%, transparent); font-size: 12px; font-variant-numeric: tabular-nums; white-space: nowrap; }
 .release-pagination__status b { color: color-mix(in srgb, var(--text) 80%, transparent); font-weight: 600; }
 .theme-light .release-page-button:not(.is-current) { border-color: rgba(25,25,29,.12); background: rgba(25,25,29,.04); }
@@ -1147,7 +1164,7 @@ main { padding-bottom: 38px; }
   .release-grid { gap: clamp(12px, 1.15vw, 22px) clamp(10px, .95vw, 18px); }
   .release-card { gap: 16px; padding: 8px; }
   .release-cover { width: 180px; min-width: 180px; flex: 0 0 180px; aspect-ratio: 2 / 3; align-self: stretch; height: auto; }
-  .release-type { padding: 3px 8px; font-size: 11px; }
+  .release-type { padding: 5px 9px; font-size: 11px; }
   .release-title { margin-bottom: 6px; font-size: 18px; }
   .release-meta { margin-bottom: 10px; font-size: 13px; }
   .release-status { font-size: 13px; }
@@ -1402,6 +1419,36 @@ main { padding-bottom: 38px; }
   .hero-spider { --hero-spider-thread: 30px; --hero-spider-drop: 82px; width: 36px; inset-inline-end: 13%; }
   .hero-spider__button { top: calc(var(--hero-spider-thread) - 6px); width: 36px; height: 30px; }
 }
+@media (max-width: 520px) {
+  .theme-light .topbar {
+    border-bottom-color: transparent;
+  }
+  .theme-light .topbar::after {
+    height: 2px;
+    background: linear-gradient(
+      90deg,
+      transparent 0%,
+      rgba(220, 137, 65, 0.62) 14%,
+      rgba(234, 145, 61, 0.92) 50%,
+      rgba(218, 125, 48, 0.62) 86%,
+      transparent 100%
+    );
+    box-shadow: 0 1px 7px rgba(220, 126, 44, 0.22);
+  }
+  .hero-spider {
+    --hero-spider-thread: 40px;
+    --hero-spider-drop: 82px;
+    width: 54px;
+    inset-inline-end: 13%;
+  }
+
+  .hero-spider__button {
+    top: calc(var(--hero-spider-thread) - 6px);
+    width: 54px;
+    height: 48px;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .hero-spider, .hero-spider__button { animation: none !important; transition: none !important; }
   .hero-spider.is-dropping .hero-spider__thread { height: calc(var(--hero-spider-thread) + var(--hero-spider-drop)); transform: none; }
@@ -1424,7 +1471,7 @@ main { padding-bottom: 38px; }
   display: flex;
   flex-direction: column;
   justify-content: space-between;
-  padding: 16px 14px 24px;
+  padding: 16px 14px 16px;
   background: #F9F7F5;
   color: #1a1a1e;
   -webkit-overflow-scrolling: touch;
@@ -1456,14 +1503,19 @@ main { padding-bottom: 38px; }
   padding: 0 16px;
   border-radius: 14px;
   font-size: 16px;
-  font-weight: 600;
-  color: inherit;
+  font-weight: 400;
+  color: #6b6b6b;
   text-decoration: none;
   background: transparent;
   border: 1px solid transparent;
   cursor: pointer;
   transition: background 0.15s, color 0.15s;
 }
+
+.theme-dark .mobile-nav-card {
+  color: #a1a1aa;
+}
+
 .mobile-nav-card:hover {
   background: rgba(0, 0, 0, 0.04);
 }
@@ -1515,9 +1567,14 @@ main { padding-bottom: 38px; }
   padding: 8px 10px;
   border-radius: 12px;
   text-decoration: none;
-  color: inherit;
+  color: #6b6b6b;
   transition: background 0.15s;
 }
+
+.theme-dark .mobile-sub-item {
+  color: #a1a1aa;
+}
+
 .mobile-sub-item:hover {
   background: rgba(0, 0, 0, 0.04);
 }
@@ -1546,7 +1603,7 @@ main { padding-bottom: 38px; }
 }
 .mobile-sub-item__title {
   font-size: 14px;
-  font-weight: 600;
+  font-weight: 400;
   line-height: 1.2;
 }
 .mobile-sub-item__sub {
@@ -1572,24 +1629,35 @@ main { padding-bottom: 38px; }
 }
 .mobile-menu-drawer__footer {
   margin-top: auto;
-  padding-top: 16px;
-  width: 100%;
+  margin-left: -14px;
+  margin-right: -14px;
+  padding: 16px 20px 0;
+  width: calc(100% + 28px);
+  border-top: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+.theme-dark .mobile-menu-drawer__footer {
+  border-top-color: rgba(255, 255, 255, 0.12);
 }
 .mobile-drawer-home-btn {
   width: 100%;
-  height: 48px;
+  height: 44px;
   border-radius: 14px;
   display: flex;
   align-items: center;
   justify-content: center;
   gap: 8px;
-  font-size: 15px;
-  font-weight: 700;
+  font-size: 14px;
+  font-weight: 500;
   text-decoration: none;
-  background: #faeee5;
+  background: #f7e7dd;
   color: #d9531e;
-  border: 1px solid rgba(217, 83, 30, 0.15);
+  border: 1px solid rgba(217, 83, 30, 0.08);
   transition: opacity 0.15s;
+}
+.mobile-drawer-home-btn svg {
+  width: 16px;
+  height: 16px;
 }
 .theme-dark .mobile-drawer-home-btn {
   background: rgba(234, 88, 12, 0.16);

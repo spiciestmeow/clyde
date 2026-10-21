@@ -197,7 +197,7 @@ export default function SeriesBrowsePage() {
 
   useEffect(() => {
     const title = 'Browse Series | Vortex Scans';
-    const description = 'Explore manga, manhwa, and manhua series on Vortex Scans. Search the library and browse the latest chapters.';
+    const description = 'Explore manga, manhwa, and manhua series on Clydee. Search the library and browse the latest chapters.';
     document.title = title;
     const setMeta = (selector: string, attribute: string, value: string, name: string) => {
       let element = document.querySelector<HTMLMetaElement>(selector);
@@ -655,6 +655,6 @@ export default function SeriesBrowsePage() {
       </section>
       </>}
     </main>
-    <SiteFooter className="footer series-footer" logoSrc={imageUrl(logo, 360)} tagline="Read comics, manga, manhua, and manhwa translated swiftly. Vortex, your ultimate library." />
+    <SiteFooter className="footer series-footer" logoSrc={imageUrl(logo, 360)} tagline="Read comics, manga, manhua, and manhwa translated swiftly. Clydee, your ultimate library." />
   </div>;
 }

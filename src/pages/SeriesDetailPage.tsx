@@ -571,7 +571,7 @@ export default function SeriesDetailPage() {
     <SiteFooter
       className="footer series-footer"
       logoSrc={imageUrl(logo || '', 360)}
-      tagline="Read comics, manga, manhua, and manhwa translated swiftly. Vortex, your ultimate library."
+      tagline="Read comics, manga, manhua, and manhwa translated swiftly. Clydee, your ultimate library."
     />
   );
 
@@ -587,7 +587,7 @@ export default function SeriesDetailPage() {
     const failedToLoad = seriesQuery.isError;
     return <div className={`vortex-page series-page ${dark ? 'theme-dark' : 'theme-light'}`}>
       {siteHeader}
-      <main className="series-not-found"><div className="series-not-found__mark"><Search size={23} /></div><p className="series-eyebrow">VORTEX SCANS / SERIES</p><h1>{failedToLoad ? 'Series unavailable' : 'Series not found'}</h1><p>{failedToLoad ? 'The series could not be loaded from the catalog. Please try again.' : 'We couldn’t match this address to a series in the library.'}</p>{failedToLoad && <button type="button" className="series-action series-action--primary" onClick={() => void seriesQuery.refetch()}>Try again</button>}<Link href="/" className="series-action series-action--bookmark"><ArrowLeft size={16} /> Back to library</Link></main>
+      <main className="series-not-found"><div className="series-not-found__mark"><Search size={23} /></div><p className="series-eyebrow">CLYDEE / SERIES</p><h1>{failedToLoad ? 'Series unavailable' : 'Series not found'}</h1><p>{failedToLoad ? 'The series could not be loaded from the catalog. Please try again.' : 'We couldn’t match this address to a series in the library.'}</p>{failedToLoad && <button type="button" className="series-action series-action--primary" onClick={() => void seriesQuery.refetch()}>Try again</button>}<Link href="/" className="series-action series-action--bookmark"><ArrowLeft size={16} /> Back to library</Link></main>
       {seriesPageVisibility.reportIssue && <ReportCallout />}
       {seriesPageVisibility.footer && siteFooter}
     </div>;
@@ -597,7 +597,6 @@ export default function SeriesDetailPage() {
   const synopsis = detail?.synopsis?.trim() || '';
   const hasExpandableSynopsis = synopsis.length > 180;
   const newestChapter = series.chapters[0];
-  const firstChapter = series.chapters[series.chapters.length - 1] || newestChapter;
   const chapterAddedAt = series.facts?.last_chapter_added_at as string | undefined;
   const chapterAddedMs = chapterAddedAt ? Date.parse(chapterAddedAt) : NaN;
   const isNewChapter = !Number.isNaN(chapterAddedMs) && Date.now() - chapterAddedMs < 3_600_000;
@@ -672,7 +671,7 @@ export default function SeriesDetailPage() {
             <div className="series-cover-pending"><Info size={23} /><strong>Cover pending</strong><span>Artwork will appear here when uploaded.</span></div>
           </div>}
           <div className="series-left-actions">
-            {firstChapter ? <a href={firstChapter.href} className="series-action series-action--primary"><span>Read {firstChapter.title}</span></a> : <button className="series-action series-action--primary" disabled title="No chapter link is available yet">Reading unavailable</button>}
+            {newestChapter ? <a href={newestChapter.href} className="series-action series-action--primary"><span>Read {newestChapter.title}</span></a> : <button className="series-action series-action--primary" disabled title="No chapter link is available yet">Reading unavailable</button>}
             <button className={`series-action series-action--bookmark${bookmarked ? ' is-saved' : ''}`} onClick={toggleBookmark} aria-pressed={bookmarked} data-testid="button-bookmark-series">{bookmarked ? <Check size={15} /> : <Bookmark size={15} />}{bookmarked ? 'Bookmarked' : 'Bookmark'}</button>
           </div>
           {seriesPageVisibility.reportIssue && <ReportCallout />}
@@ -831,7 +830,7 @@ export default function SeriesDetailPage() {
           </section>}
           {(seriesPageVisibility.shareCard || seriesPageVisibility.discordCard) && <div className={`series-social-strip${seriesPageVisibility.shareCard !== seriesPageVisibility.discordCard ? ' series-social-strip--single' : ''}`}>
             {seriesPageVisibility.shareCard && <div className="series-social-card">
-              <div className="series-social-copy"><div><span>Share Vortex Scans</span><small>to your friends</small></div></div>
+              <div className="series-social-copy"><div><span>Share Clydee</span><small>to your friends</small></div></div>
               <button onClick={share}>{copied ? <Check size={13} /> : <Share2 size={13} />}{copied ? 'Copied' : 'Share'}</button>
             </div>}
             {seriesPageVisibility.discordCard && <div className="series-social-card series-social-card--join">

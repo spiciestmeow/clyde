@@ -231,12 +231,15 @@ export function LatestReleaseCard({
 
   const latestChapter = release.chapters[0];
   const relativeTime = formatReleaseTime(release);
+  const categoryLabel = release.category?.trim() || 'Manhwa';
 
   return (
     <article className="release-card">
       <a className="release-cover" href={release.href} title={release.title}>
         <img src={imageSrc} alt={release.title} loading="lazy" />
-        <span className="release-type">{release.category || 'Manhwa'}</span>
+        <span className="release-type" data-category={categoryLabel.toLowerCase()}>
+          {categoryLabel}
+        </span>
         {release.pinned ? (
           <span className="release-cover-pill is-pinned">
             <Pin size={11} className="pin-icon" fill="currentColor" />

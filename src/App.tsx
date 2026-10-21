@@ -458,7 +458,7 @@ function HomePage() {
                 <div className="social-card">
                   <div className="social-card-left">
                     <div className="social-card-text">
-                      <span className="social-card-title">Share Vortex Scans</span>
+                      <span className="social-card-title">Share Clydee</span>
                       <span className="social-card-sub">to your friends</span>
                     </div>
                   </div>
@@ -734,7 +734,7 @@ function HomePage() {
         <SiteFooter
           id="footer"
           logoSrc={manifest[0].src}
-          tagline="Read Comics, manga, manhua, manhwa, translated swiftly: Vortex, your ultimate library."
+          tagline="Read Comics, manga, manhua, manhwa, translated swiftly: Clydee, your ultimate library."
         />
       )}
       <button className="pumpkin" aria-label="Trick or treat?"><img src={assetUrl(manifest[1].src, 128)} alt="" /></button>
