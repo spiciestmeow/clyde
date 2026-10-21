@@ -853,7 +853,7 @@ main { padding-bottom: 38px; }
   justify-content: space-between;
   gap: 8px;
   height: 35px;
-  padding: 0 10px 0 14px; /* Increased left padding to accommodate accent tab */
+  padding: 0 10px 0 14px;
   border-radius: 6px;
   border: 1px solid var(--line);
   background: var(--panel-soft);
@@ -876,10 +876,10 @@ main { padding-bottom: 38px; }
   position: absolute;
   left: 0;
   top: 20%;
-  width: 2px;
-  height: 60%;
+  width: 1.5px;
+  height: 65%;
   background: var(--faint);
-  border-radius: 0 4px 4px 0;
+  border-radius: 1px 6px 6px 1px;
   pointer-events: none;
   transition: background-color .15s;
 }
