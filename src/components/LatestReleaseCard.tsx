@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { Eye, Pin, Star } from 'lucide-react';
 import type { SeriesRecord } from '../lib/seriesCatalog';
+import { formatScanlatorSeriesUrl } from '../lib/scanlatorLinks';
 
 function MarqueeValue({ text, forceStatic = false }: { text: string; forceStatic?: boolean }) {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -232,6 +233,10 @@ export function LatestReleaseCard({
   const viewsValue = formatViews(release);
 
   const latestChapter = release.chapters[0];
+  const firstSource = release.sources?.find((source) => source.url.trim());
+  const chapterTarget = firstSource
+    ? formatScanlatorSeriesUrl(firstSource.name, firstSource.url, release.title)
+    : latestChapter?.href;
   const relativeTime = formatReleaseTime(release);
   const categoryLabel = release.category?.trim() || 'Manhwa';
 
@@ -274,7 +279,7 @@ export function LatestReleaseCard({
         <div className="release-boxes">
           {/* Chapter Box (Amber accent) */}
           {latestChapter ? (
-            <a className="release-box release-box--chapter" href={latestChapter.href}>
+            <a className="release-box release-box--chapter" href={chapterTarget || latestChapter.href} target={firstSource ? '_blank' : undefined} rel={firstSource ? 'noopener noreferrer' : undefined}>
               <div className="release-box-left">
                 <span className="chapter-title">{latestChapter.title}</span>
               </div>
