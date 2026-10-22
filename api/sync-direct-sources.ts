@@ -36,6 +36,11 @@ export interface DirectSourceScrapeResult {
     latestChapterNumber: string;
     latestChapterAt?: string;
   }[];
+  sourceIssues: {
+    name: string;
+    url: string;
+    reason: string;
+  }[];
   detectedChapters: DetectedChapterItem[];
   message: string;
 }
@@ -66,7 +71,9 @@ function parseRelativeTime(text: string): number | null {
   }
 
   if (s === 'yesterday') return Date.now() - 24 * 60 * 60 * 1000;
-  if (s === 'today' || s === 'just now' || s === 'new') return Date.now();
+  // "New" is often a chapter-status badge, not a posting time. Treating it as
+  // now makes background sync overwrite the real release age with cron time.
+  if (s === 'today' || s === 'just now') return Date.now();
 
   // Try standard ISO / date parsing
   const parsed = Date.parse(text);
@@ -97,6 +104,22 @@ function extractTimeFromContext(surroundingHtml: string): number | null {
     if (ts) return ts;
   }
 
+  // Some chapter rows keep upload dates or relative-time labels in data
+  // attributes instead of visible text (for example data-time or
+  // data-published-at). Inspect only time/date-related data attributes.
+  const dataTimeMatches = surroundingHtml.matchAll(/\b(data-[\w-]*(?:time|date|ago|publish|created|tooltip)[\w-]*)=["']([^"']+)["']/gi);
+  for (const dataTimeMatch of dataTimeMatches) {
+    const value = dataTimeMatch[2].trim();
+    const relativeTs = parseRelativeTime(value);
+    if (relativeTs) return relativeTs;
+
+    const numericTimestamp = Number(value);
+    if (Number.isFinite(numericTimestamp)) {
+      const timestampMs = numericTimestamp < 1e12 ? numericTimestamp * 1000 : numericTimestamp;
+      if (timestampMs > 946684800000 && timestampMs <= Date.now() + 86400000) return timestampMs;
+    }
+  }
+
   // 2. Strip tags, look for relative time text
   const textOnly = surroundingHtml
     .replace(/<[^>]+>/g, ' ')
@@ -123,6 +146,22 @@ function extractTimeFromContext(surroundingHtml: string): number | null {
     }
   }
 
+  // Some sources display a calendar date (e.g. "October 4, 2026") instead
+  // of a relative age. Extract just the date token so unrelated chapter
+  // numbers elsewhere in the row cannot confuse Date.parse.
+  const absoluteDatePatterns = [
+    /\b(?:Jan(?:uary)?|Feb(?:ruary)?|Mar(?:ch)?|Apr(?:il)?|May|Jun(?:e)?|Jul(?:y)?|Aug(?:ust)?|Sep(?:tember)?|Oct(?:ober)?|Nov(?:ember)?|Dec(?:ember)?)\s+\d{1,2}(?:st|nd|rd|th)?[,]?\s+\d{4}(?:\s+\d{1,2}:\d{2}(?:\s*[AP]M)?)?/i,
+    /\b\d{4}-\d{2}-\d{2}(?:[T ]\d{2}:\d{2}(?::\d{2}(?:\.\d+)?)?(?:Z|[+-]\d{2}:?\d{2})?)?\b/i,
+    /\b\d{1,2}[/-]\d{1,2}[/-]\d{4}\b/,
+  ];
+  for (const pattern of absoluteDatePatterns) {
+    const match = textOnly.match(pattern);
+    if (match) {
+      const ts = parseRelativeTime(match[0]);
+      if (ts) return ts;
+    }
+  }
+
   return null;
 }
 
@@ -131,14 +170,23 @@ function extractTimeFromContext(surroundingHtml: string): number | null {
  * accidentally attributed to this chapter. Many scanlator pages put the time
  * in a sibling element rather than inside the chapter link itself.
  */
-function extractChapterRowContext(html: string, matchStart: number, matchEnd: number): string | null {
+function extractChapterRowContext(
+  html: string,
+  matchStart: number,
+  matchEnd: number,
+  chapterNumber?: number,
+): string | null {
   const searchStart = Math.max(0, matchStart - 2500);
   const prefix = html.slice(searchStart, matchStart);
-  const rowOpenRegex = /<(li|tr|article)\b[^>]*>|<div\b[^>]*class=["'][^"']*(?:chapter|episode|release|list-item)[^"']*["'][^>]*>/gi;
+  // Some sites (including Kayn Scans) use generic nested divs for chapter
+  // rows, with the release time in a sibling inside the same row. Walk those
+  // ancestors too, while only accepting a small context that identifies this
+  // chapter uniquely so we don't borrow the next row's timestamp.
+  const rowOpenRegex = /<(li|tr|article|div)\b[^>]*>/gi;
   const candidates: { index: number; tag: string }[] = [];
   let openMatch: RegExpExecArray | null;
   while ((openMatch = rowOpenRegex.exec(prefix)) !== null) {
-    const tag = openMatch[1]?.toLowerCase() || 'div';
+    const tag = openMatch[1].toLowerCase();
     candidates.push({ index: searchStart + openMatch.index, tag });
   }
 
@@ -156,7 +204,18 @@ function extractChapterRowContext(html: string, matchStart: number, matchEnd: nu
         depth -= 1;
         if (depth === 0) {
           if (tagMatch.index < matchEnd) break;
-          return html.slice(candidate.index, tagRegex.lastIndex);
+          const context = html.slice(candidate.index, tagRegex.lastIndex);
+          const visibleText = context.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ');
+          const chapterMatches = Array.from(visibleText.matchAll(/\b(?:chapter|episode)\s*(\d+(?:\.\d+)?)/gi))
+            .map((chapterMatch) => parseFloat(chapterMatch[1]));
+          const uniqueChapters = new Set(chapterMatches);
+          if (
+            extractTimeFromContext(context) &&
+            (chapterNumber === undefined || (uniqueChapters.size === 1 && uniqueChapters.has(chapterNumber)))
+          ) {
+            return context;
+          }
+          break;
         }
       } else {
         depth += 1;
@@ -165,6 +224,21 @@ function extractChapterRowContext(html: string, matchStart: number, matchEnd: nu
   }
 
   return null;
+}
+
+function normalizeSeriesPathSegment(value: string): string {
+  let decoded = value;
+  try {
+    decoded = decodeURIComponent(value);
+  } catch {
+    // Keep the original segment when it contains malformed percent encoding.
+  }
+
+  return decoded
+    .normalize('NFKD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLocaleLowerCase()
+    .replace(/[^a-z0-9]/g, '');
 }
 
 export function extractChaptersFromHtml(
@@ -205,8 +279,24 @@ export function extractChaptersFromHtml(
     const innerHtml = m[2];
     const fullMatchEnd = m.index + m[0].length;
 
-    // Check if the link is for THIS series
-    const isSeriesLink = (seriesSlug && href.includes(seriesSlug)) || href.includes(seriesPath);
+    // Source page URLs and chapter links can encode punctuation differently
+    // (for example, a curly apostrophe versus an ASCII apostrophe). Compare
+    // normalized path segments before rejecting a series-style chapter URL.
+    let chapterPath = href;
+    try {
+      chapterPath = new URL(href, parsedUrl).pathname;
+    } catch {
+      // Fall back to checking the href text itself.
+    }
+    const normalizedSeriesSlug = normalizeSeriesPathSegment(seriesSlug);
+    const hasMatchingSeriesPathSegment = Boolean(normalizedSeriesSlug) && chapterPath
+      .split('/')
+      .filter(Boolean)
+      .some((segment) => normalizeSeriesPathSegment(segment) === normalizedSeriesSlug);
+    const isSeriesLink =
+      (seriesSlug && href.includes(seriesSlug)) ||
+      href.includes(seriesPath) ||
+      hasMatchingSeriesPathSegment;
 
     if (!isSeriesLink) {
       // Reject links pointing to other series paths
@@ -219,13 +309,13 @@ export function extractChaptersFromHtml(
     if (!hrefChMatch) continue;
 
     const num = parseFloat(hrefChMatch[1]);
-    if (Number.isNaN(num) || num <= 0 || num >= 5000) continue;
+    if (Number.isNaN(num) || num < 0 || num >= 5000) continue;
 
     // Prefer the chapter link itself, then its containing row. Do not search
     // arbitrary text before/after the link: that can belong to an adjacent row.
     let ts = extractTimeFromContext(innerHtml);
     if (!ts) {
-      const rowContext = extractChapterRowContext(cleanHtml, m.index, fullMatchEnd);
+      const rowContext = extractChapterRowContext(cleanHtml, m.index, fullMatchEnd, num);
       if (rowContext) ts = extractTimeFromContext(rowContext);
     }
 
@@ -245,12 +335,63 @@ export function extractChaptersFromHtml(
     }
   }
 
+  // Some series pages use chapter URLs that do not include the word "chapter"
+  // (or expose the chapter number only in the link text). If the standard
+  // route-based scan found nothing, inspect same-site anchors labelled
+  // "Chapter N" as a conservative fallback. Recommendations and sidebars
+  // have already been removed from cleanHtml above.
+  if (foundChapters.size === 0) {
+    const anchorRegex = /<a\b([^>]*)>([\s\S]*?)<\/a>/gi;
+    while ((m = anchorRegex.exec(cleanHtml)) !== null) {
+      const attributes = m[1];
+      const innerHtml = m[2];
+      const hrefMatch = attributes.match(/\bhref\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s>]+))/i);
+      const href = hrefMatch?.[1] ?? hrefMatch?.[2] ?? hrefMatch?.[3];
+      if (!href) continue;
+
+      let linkUrl: URL;
+      try {
+        linkUrl = new URL(href, parsedUrl);
+      } catch {
+        continue;
+      }
+      if (linkUrl.origin !== parsedUrl.origin) continue;
+
+      const anchorText = innerHtml
+        .replace(/<[^>]+>/g, ' ')
+        .replace(/&nbsp;|&#160;/gi, ' ')
+        .replace(/\s+/g, ' ')
+        .trim();
+      const chapterMatch = anchorText.match(/\bchapter\s*(\d+(?:\.\d+)?)/i)
+        || href.match(/(?:chapter|ch|ep|episode)[-_/](\d+(?:\.\d+)?)/i);
+      if (!chapterMatch) continue;
+
+      const num = parseFloat(chapterMatch[1]);
+      if (Number.isNaN(num) || num < 0 || num >= 5000) continue;
+
+      let ts = extractTimeFromContext(innerHtml);
+      if (!ts) {
+        const rowContext = extractChapterRowContext(cleanHtml, m.index, m.index + m[0].length, num);
+        if (rowContext) ts = extractTimeFromContext(rowContext);
+      }
+
+      if (!foundChapters.has(num)) {
+        foundChapters.set(num, {
+          number: num,
+          title: `Chapter ${chapterMatch[1]}`,
+          url: href,
+          releasedAt: ts ? new Date(ts).toISOString() : undefined,
+        });
+      }
+    }
+  }
+
   // 3. Also check for non-link chapter rows (aria-label patterns, Qi Manga style)
   const ariaRegex =
     /<(?:a|div|li)[^>]*aria-label=["']Chapter\s*(\d+(?:\.\d+)?)["'][^>]*>([\s\S]*?)(?:<\/(?:a|div|li)>)/gi;
   while ((m = ariaRegex.exec(cleanHtml)) !== null) {
     const num = parseFloat(m[1]);
-    if (Number.isNaN(num) || num <= 0 || num >= 5000) continue;
+    if (Number.isNaN(num) || num < 0 || num >= 5000) continue;
     if (foundChapters.has(num)) {
       // Try to fill in missing time
       const existing = foundChapters.get(num)!;
@@ -283,44 +424,62 @@ export async function scrapeDirectSources(
     number,
     DetectedChapterItem & { releaseTimestamp: number }
   >();
-  let overallHighest = 0;
+  // `null` means no chapter was found; numeric zero is a valid chapter label.
+  let overallHighest: number | null = null;
   let bestSourceName = '';
   let bestSourceUrl = '';
   let bestSourceReleaseTimestamp: number | undefined;
   let anySourceWorked = false;
   const sourceResults: DirectSourceScrapeResult['sourceResults'] = [];
+  const sourceIssues: DirectSourceScrapeResult['sourceIssues'] = [];
 
   for (const src of sources) {
     if (!src?.url) continue;
+    let sourceName = src.name?.trim() || 'Unnamed source';
     try {
       const parsed = new URL(src.url);
+      sourceName = src.name?.trim() || parsed.hostname;
       if (!parsed.pathname || parsed.pathname === '/' || parsed.pathname.length <= 1) {
+        sourceIssues.push({ name: sourceName, url: src.url, reason: 'URL does not point to a series page.' });
         continue;
       }
 
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 4000);
 
-      const res = await fetch(src.url, {
-        signal: controller.signal,
-        headers: {
-          'User-Agent':
-            'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36',
-          Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
-        },
-      });
-      clearTimeout(timeoutId);
+      let res: Response;
+      try {
+        res = await fetch(src.url, {
+          signal: controller.signal,
+          headers: {
+            'User-Agent':
+              'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36',
+            Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+          },
+        });
+      } finally {
+        clearTimeout(timeoutId);
+      }
 
-      if (!res.ok) continue;
+      if (!res.ok) {
+        sourceIssues.push({ name: sourceName, url: src.url, reason: `Site returned HTTP ${res.status}.` });
+        continue;
+      }
       const html = await res.text();
 
       const chapters = extractChaptersFromHtml(html, src.url, title);
-      if (chapters.length === 0) continue;
+      if (chapters.length === 0) {
+        sourceIssues.push({
+          name: sourceName,
+          url: src.url,
+          reason: 'Page loaded, but no supported chapter links were found. The page may render chapters with JavaScript or use a layout the scraper does not recognize.',
+        });
+        continue;
+      }
       anySourceWorked = true;
 
-      const srcName = src.name || parsed.hostname;
       sourceResults.push({
-        name: srcName,
+        name: sourceName,
         url: src.url,
         latestChapterNumber: String(chapters[0].number),
         ...(chapters[0].releasedAt ? { latestChapterAt: chapters[0].releasedAt } : {}),
@@ -333,7 +492,7 @@ export async function scrapeDirectSources(
         if (!existing) {
           mergedChapters.set(ch.number, {
             ...ch,
-            sourceName: srcName,
+            sourceName,
             releaseTimestamp: chTs || 0,
           });
         } else {
@@ -342,7 +501,7 @@ export async function scrapeDirectSources(
           if (chTs > 0 && (existing.releaseTimestamp === 0 || chTs < existing.releaseTimestamp)) {
             existing.releasedAt = ch.releasedAt;
             existing.releaseTimestamp = chTs;
-            existing.sourceName = srcName;
+            existing.sourceName = sourceName;
           }
         }
       }
@@ -352,25 +511,43 @@ export async function scrapeDirectSources(
         ? Date.parse(chapters[0].releasedAt)
         : undefined;
       if (
+        overallHighest === null ||
         topNum > overallHighest ||
         (topNum === overallHighest &&
           topReleaseTimestamp &&
           (!bestSourceReleaseTimestamp || topReleaseTimestamp < bestSourceReleaseTimestamp))
       ) {
         overallHighest = topNum;
-        bestSourceName = srcName;
+        bestSourceName = sourceName;
         bestSourceUrl = src.url;
         bestSourceReleaseTimestamp = topReleaseTimestamp;
       }
-    } catch {
-      // Continue to next source
+    } catch (error) {
+      const reason = error instanceof Error && error.name === 'AbortError'
+        ? 'Request timed out after 4 seconds.'
+        : error instanceof Error
+          ? `Could not fetch or parse this source: ${error.message}`
+          : 'Could not fetch or parse this source.';
+      sourceIssues.push({ name: sourceName, url: src.url, reason });
     }
   }
 
-  if (overallHighest > 0 && mergedChapters.size > 0) {
+  if (overallHighest !== null && mergedChapters.size > 0) {
     const sorted = Array.from(mergedChapters.values())
       .sort((a, b) => b.number - a.number)
       .map(({ releaseTimestamp: _rt, ...rest }) => rest);
+    const orderedSourceResults = [...sourceResults].sort((a, b) => {
+      const chapterDifference = parseFloat(b.latestChapterNumber) - parseFloat(a.latestChapterNumber);
+      if (chapterDifference !== 0) return chapterDifference;
+
+      const aTimestamp = a.latestChapterAt ? Date.parse(a.latestChapterAt) : Number.NaN;
+      const bTimestamp = b.latestChapterAt ? Date.parse(b.latestChapterAt) : Number.NaN;
+      if (Number.isNaN(aTimestamp) && Number.isNaN(bTimestamp)) return 0;
+      if (Number.isNaN(aTimestamp)) return 1;
+      if (Number.isNaN(bTimestamp)) return -1;
+      // For equal chapter numbers, show the oldest posting first.
+      return aTimestamp - bTimestamp;
+    });
 
     // Find the earliest reported posting time of the highest chapter
     const highestEntry = mergedChapters.get(overallHighest);
@@ -384,7 +561,8 @@ export async function scrapeDirectSources(
       highestChapter: String(overallHighest),
       latestReleaseAt,
       latestReleaseName,
-      sourceResults,
+      sourceResults: orderedSourceResults,
+      sourceIssues,
       detectedChapters: sorted,
       message: `Successfully detected ${sorted.length} chapter(s). Latest is Chapter ${overallHighest}${latestReleaseName ? ` (most recently reported by ${latestReleaseName})` : ''}.`,
     };
@@ -396,6 +574,7 @@ export async function scrapeDirectSources(
     sourceUrl: '',
     highestChapter: '',
     sourceResults: [],
+    sourceIssues,
     detectedChapters: [],
     message: anySourceWorked
       ? 'Sources were reachable but no chapter links were detected. Ensure the URLs point to the series page.'

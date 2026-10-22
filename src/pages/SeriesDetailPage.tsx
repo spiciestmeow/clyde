@@ -536,9 +536,27 @@ export default function SeriesDetailPage() {
   const hasExpandableSynopsis = synopsis.length > 180;
   const newestChapter = series.chapters[0];
   const latestChapterSourceUrl = series.facts?.latest_source_url?.trim();
-  const prioritizedSources = latestChapterSourceUrl
-    ? [...series.sources].sort((a, b) => Number(b.url.trim() === latestChapterSourceUrl) - Number(a.url.trim() === latestChapterSourceUrl))
-    : series.sources;
+  const prioritizedSources = [...series.sources].sort((a, b) => {
+    const parseChapter = (value?: string) => {
+      const chapter = Number.parseFloat(String(value || '').replace(/^ch(?:apter)?\.?\s*/i, ''));
+      return Number.isFinite(chapter) ? chapter : Number.NEGATIVE_INFINITY;
+    };
+    const chapterDifference = parseChapter(b.latestChapterNumber) - parseChapter(a.latestChapterNumber);
+    if (chapterDifference !== 0) return chapterDifference;
+
+    const aTimestamp = a.latestChapterAt ? Date.parse(a.latestChapterAt) : Number.NaN;
+    const bTimestamp = b.latestChapterAt ? Date.parse(b.latestChapterAt) : Number.NaN;
+    if (!Number.isNaN(aTimestamp) && !Number.isNaN(bTimestamp) && aTimestamp !== bTimestamp) {
+      // Equal chapter counts: older upload first, matching manual-sync results.
+      return aTimestamp - bTimestamp;
+    }
+    if (Number.isNaN(aTimestamp) !== Number.isNaN(bTimestamp)) {
+      return Number.isNaN(aTimestamp) ? 1 : -1;
+    }
+
+    // Keep the series-wide winning source first when timestamps tie.
+    return Number(b.url.trim() === latestChapterSourceUrl) - Number(a.url.trim() === latestChapterSourceUrl);
+  });
   const firstSource = prioritizedSources.find((source) => source.url.trim());
   const readChapterHref = firstSource
     ? formatScanlatorSeriesUrl(firstSource.name, firstSource.url, series.title)

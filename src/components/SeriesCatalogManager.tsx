@@ -21,7 +21,7 @@ import {
   X,
   Zap,
 } from 'lucide-react';
-import { syncSeriesSources, syncDirectSources, type SyncSourcesResult } from '../lib/syncSources';
+import { syncSeriesSources, syncDirectSources, type SyncSourcesResult, type DirectSourceResult } from '../lib/syncSources';
 import {
   createSeriesRecord,
   updateSeriesRecord,
@@ -90,6 +90,21 @@ const ALL_DEMOGRAPHICS = ['Josei', 'Seinen', 'Shoujo', 'Shounen'];
 const ALL_TYPES = ['Manga', 'Manhwa', 'Manhua', 'Comic', 'Novel'];
 const ALL_RATINGS = ['Safe', 'Suggestive', 'Erotica', 'Pornographic'];
 const ALL_STATUSES = ['Releasing', 'Completed', 'Hiatus', 'Cancelled'];
+
+function formatDetectedSourceAge(timestamp?: string): string {
+  if (!timestamp) return 'time unavailable';
+  const parsed = Date.parse(timestamp);
+  if (Number.isNaN(parsed)) return 'time unavailable';
+
+  const elapsedMinutes = Math.max(0, Math.floor((Date.now() - parsed) / 60_000));
+  if (elapsedMinutes < 1) return 'just now';
+  if (elapsedMinutes < 60) return `${elapsedMinutes} min${elapsedMinutes === 1 ? '' : 's'} ago`;
+  const elapsedHours = Math.floor(elapsedMinutes / 60);
+  if (elapsedHours < 24) return `${elapsedHours} hr${elapsedHours === 1 ? '' : 's'} ago`;
+  const elapsedDays = Math.floor(elapsedHours / 24);
+  if (elapsedDays === 1) return '1 day ago';
+  return `${elapsedDays} days ago`;
+}
 const ALL_LANGUAGES = ['Japanese', 'Korean', 'Chinese', 'English', 'Other'];
 
 const initialFormDraft = (): FormDraft => ({
@@ -290,7 +305,12 @@ export default function SeriesCatalogManager() {
   };
 
   const [isSyncingDirect, setIsSyncingDirect] = useState(false);
-  const [directSyncFeedback, setDirectSyncFeedback] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
+  const [directSyncFeedback, setDirectSyncFeedback] = useState<{
+    type: 'success' | 'error';
+    message: string;
+    sourceResults?: DirectSourceResult['sourceResults'];
+    sourceIssues?: DirectSourceResult['sourceIssues'];
+  } | null>(null);
 
   const handleManualSyncDirectSources = async () => {
     const validSources = draft.sources.filter((s) => s.url?.trim());
@@ -311,6 +331,7 @@ export default function SeriesCatalogManager() {
         setDirectSyncFeedback({
           type: 'error',
           message: result.message || 'Could not detect any chapters from the added source URLs.',
+          sourceIssues: result.sourceIssues,
         });
         return;
       }
@@ -391,7 +412,9 @@ export default function SeriesCatalogManager() {
 
       setDirectSyncFeedback({
         type: 'success',
-        message: result.message,
+        message: `Manual sync complete. Detected chapter data from ${result.sourceResults.length} of ${validSources.length} source${validSources.length === 1 ? '' : 's'}.`,
+        sourceResults: result.sourceResults,
+        sourceIssues: result.sourceIssues,
       });
     } catch (err: unknown) {
       setDirectSyncFeedback({
@@ -1581,21 +1604,32 @@ export default function SeriesCatalogManager() {
 
             {directSyncFeedback && (
               <div
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 8,
-                  padding: '9px 12px',
-                  borderRadius: 6,
-                  marginBottom: 12,
-                  fontSize: 13,
-                  background: directSyncFeedback.type === 'success' ? 'rgba(34, 197, 94, 0.12)' : 'rgba(239, 68, 68, 0.12)',
-                  color: directSyncFeedback.type === 'success' ? '#4ade80' : '#f87171',
-                  border: `1px solid ${directSyncFeedback.type === 'success' ? 'rgba(34, 197, 94, 0.3)' : 'rgba(239, 68, 68, 0.3)'}`,
-                }}
+                className={`manual-sync-feedback manual-sync-feedback--${directSyncFeedback.type}`}
+                role="status"
+                aria-live="polite"
               >
-                {directSyncFeedback.type === 'success' ? <Check size={16} /> : <AlertCircle size={16} />}
-                <span style={{ flex: 1 }}>{directSyncFeedback.message}</span>
+                {directSyncFeedback.type === 'success' ? <Check size={16} aria-hidden="true" /> : <AlertCircle size={16} aria-hidden="true" />}
+                <div className="manual-sync-feedback__content">
+                  <p className="manual-sync-feedback__summary">{directSyncFeedback.message}</p>
+                  {directSyncFeedback.sourceResults && directSyncFeedback.sourceResults.length > 0 && (
+                    <ul className="manual-sync-feedback__sources">
+                      {directSyncFeedback.sourceResults.map((source) => (
+                        <li key={source.url}>
+                          Latest is Chapter {source.latestChapterNumber.replace(/^ch(?:apter)?\.?\s*/i, '')} ({formatDetectedSourceAge(source.latestChapterAt)}) (reported by {source.name})
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                  {directSyncFeedback.sourceIssues && directSyncFeedback.sourceIssues.length > 0 && (
+                    <ul className="manual-sync-feedback__sources manual-sync-feedback__sources--issues">
+                      {directSyncFeedback.sourceIssues.map((source) => (
+                        <li key={source.url}>
+                          No chapter data detected for {source.name}: {source.reason}
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </div>
                 <button
                   type="button"
                   onClick={() => setDirectSyncFeedback(null)}

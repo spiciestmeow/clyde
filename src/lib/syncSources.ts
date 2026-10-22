@@ -75,6 +75,11 @@ export type DirectSourceResult = {
     latestChapterNumber: string;
     latestChapterAt?: string;
   }[];
+  sourceIssues: {
+    name: string;
+    url: string;
+    reason: string;
+  }[];
   detectedChapters: DirectSourceChapter[];
   message: string;
 };

@@ -90,7 +90,8 @@ export default async function handler(
     // Helper to check and sync a single series
     async function checkSeries(item: SeriesRecord) {
       try {
-        let detectedChNum = 0;
+        // `null` means no release was detected; chapter zero is valid data.
+        let detectedChNum: number | null = null;
         let detectedChStr = '';
         let detectedTimestamp: number | undefined;
         let detectionSource = '';
@@ -107,7 +108,7 @@ export default async function handler(
         if (itemSources.length > 0) {
           const directResult = await scrapeDirectSources(itemSources, item.title);
           const directNum = parseFloat(directResult.highestChapter);
-          if (!directResult.success || !directResult.highestChapter || Number.isNaN(directNum) || directNum <= 0) {
+          if (!directResult.success || !directResult.highestChapter || Number.isNaN(directNum) || directNum < 0) {
             logs.push(
               `[${item.title}] Direct source URLs are configured, but no chapter data could be read. MangaUpdates fallback skipped${directResult.message ? `: ${directResult.message}` : '.'}`,
             );
@@ -152,7 +153,7 @@ export default async function handler(
           }
         }
 
-        if (detectedChNum === 0) {
+        if (detectedChNum === null) {
           logs.push(`[${item.title}] No release data found on ${detectionSource || 'available sources'}`);
           return;
         }
@@ -160,12 +161,13 @@ export default async function handler(
         // Current chapter number
         const currentChStr =
           item.facts?.latest_chapter_number ||
-          (item.chapters?.[0]?.title ? String(item.chapters[0].title).replace(/^[^\d.]*/, '') : '0');
-        const currentNum = parseFloat(currentChStr) || 0;
+          (item.chapters?.[0]?.title ? String(item.chapters[0].title).replace(/^[^\d.]*/, '') : '');
+        const parsedCurrentNum = currentChStr ? parseFloat(currentChStr) : Number.NaN;
+        const currentNum = Number.isFinite(parsedCurrentNum) ? parsedCurrentNum : null;
 
         // Only advance the catalog automatically. Lower direct-source results
         // are reported as mismatches for review rather than rolling data back.
-        if (detectedChNum > currentNum) {
+        if (currentNum === null || detectedChNum > currentNum) {
           const newChTitle = `Chapter ${detectedChStr}`;
           const newChHref = `/series/${item.slug}/chapter-${detectedChStr}`;
           const releaseIso = detectedTimestamp
@@ -220,12 +222,12 @@ export default async function handler(
             updatedSeries.push({
               id: item.id,
               title: item.title,
-              previousChapter: String(currentNum),
+              previousChapter: String(currentNum ?? 0),
               newChapter: String(detectedChNum),
               releaseTime: releaseIso,
               source: detectionSource,
             });
-            logs.push(`[${item.title}] Updated: Ch.${currentNum} -> Ch.${detectedChNum} (via ${detectionSource})`);
+            logs.push(`[${item.title}] Updated: Ch.${currentNum ?? 'none'} -> Ch.${detectedChNum} (via ${detectionSource})`);
           }
         } else if (detectedChNum < currentNum) {
           const hasNewTopSource = Boolean(
