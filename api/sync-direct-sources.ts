@@ -45,6 +45,29 @@ export interface DirectSourceScrapeResult {
   message: string;
 }
 
+function parseMonthDayWithoutYear(text: string): number | null {
+  const match = text.match(
+    /\b(Jan(?:uary)?|Feb(?:ruary)?|Mar(?:ch)?|Apr(?:il)?|May|Jun(?:e)?|Jul(?:y)?|Aug(?:ust)?|Sep(?:tember)?|Oct(?:ober)?|Nov(?:ember)?|Dec(?:ember)?)\s+(\d{1,2})(?:st|nd|rd|th)?\b(?!\s*,?\s+\d{4})/i,
+  );
+  if (!match) return null;
+
+  const monthKey = match[1].slice(0, 3).toLowerCase();
+  const month = ['jan', 'feb', 'mar', 'apr', 'may', 'jun', 'jul', 'aug', 'sep', 'oct', 'nov', 'dec'].indexOf(monthKey);
+  const day = Number(match[2]);
+  if (month < 0 || day < 1 || day > 31) return null;
+
+  const now = new Date();
+  let date = new Date(now.getFullYear(), month, day);
+  if (date.getMonth() !== month || date.getDate() !== day) return null;
+
+  // Yearless calendar labels refer to the latest occurrence of that date.
+  // This handles a date near New Year without interpreting it as a future post.
+  if (date.getTime() > now.getTime() + 24 * 60 * 60 * 1000) {
+    date = new Date(now.getFullYear() - 1, month, day);
+  }
+  return date.getTime();
+}
+
 /**
  * Parse relative time strings like "3 hours ago", "about 9 hours", "7h ago",
  * "10 mins ago", "yesterday", "2 days ago" into an absolute timestamp (ms).
@@ -74,6 +97,11 @@ function parseRelativeTime(text: string): number | null {
   // "New" is often a chapter-status badge, not a posting time. Treating it as
   // now makes background sync overwrite the real release age with cron time.
   if (s === 'today' || s === 'just now') return Date.now();
+
+  // Some chapter lists show calendar labels such as "May 29" without a year.
+  // Resolve these explicitly instead of relying on browser-specific Date.parse.
+  const yearlessDate = parseMonthDayWithoutYear(text);
+  if (yearlessDate !== null) return yearlessDate;
 
   // Try standard ISO / date parsing
   const parsed = Date.parse(text);
