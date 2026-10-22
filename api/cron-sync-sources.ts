@@ -73,6 +73,8 @@ export default async function handler(
       throw new Error(fetchError?.message || 'Failed to fetch series catalog from Supabase.');
     }
 
+    type SeriesRecord = NonNullable<typeof seriesList>[number];
+
     const updatedSeries: {
       id: number;
       title: string;
@@ -86,7 +88,7 @@ export default async function handler(
     let checkedCount = 0;
 
     // Helper to check and sync a single series
-    async function checkSeries(item: typeof seriesList[0]) {
+    async function checkSeries(item: SeriesRecord) {
       try {
         const altTitles = Array.isArray(item.alternate_titles) ? item.alternate_titles : [];
         const syncResult = await fetchScanlationSources(item.title, altTitles);
