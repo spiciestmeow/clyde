@@ -27,6 +27,7 @@ import { useThemeMode } from '../hooks/useThemeMode';
 import { useSeriesCatalog } from '../hooks/useSeriesCatalog';
 import { DEFAULT_SERIES_PAGE_VISIBILITY, getCachedSiteSettings, getSiteSettings } from '../lib/siteSettings';
 import { formatScanlatorSeriesUrl } from '../lib/scanlatorLinks';
+import { getWinningChapterSource } from '../lib/sourcePriority';
 import '../series-detail.css';
 import '../series-data-status.css';
 
@@ -163,6 +164,13 @@ function formatRelativeTime(timestamp: number): string {
 }
 
 function getLatestSeriesUpdate(series: SeriesRecord): string {
+  const winningSource = getWinningChapterSource(series.sources, series.facts?.latest_source_url || undefined);
+  if (winningSource) {
+    if (!winningSource.latestChapterAt) return 'Time unavailable';
+    const sourceTimestamp = Date.parse(winningSource.latestChapterAt);
+    return Number.isNaN(sourceTimestamp) ? 'Time unavailable' : formatRelativeTime(sourceTimestamp);
+  }
+
   const factUpdate = (series.facts?.lastUpdate || series.facts?.['Last update'] || '').trim();
   if (factUpdate && factUpdate.toLowerCase() !== 'not provided') {
     const parsed = Date.parse(factUpdate);
@@ -557,11 +565,15 @@ export default function SeriesDetailPage() {
     // Keep the series-wide winning source first when timestamps tie.
     return Number(b.url.trim() === latestChapterSourceUrl) - Number(a.url.trim() === latestChapterSourceUrl);
   });
+  const winningChapterSource = getWinningChapterSource(prioritizedSources, latestChapterSourceUrl);
+  const winningSourceUrl = winningChapterSource?.url?.trim() || latestChapterSourceUrl;
   const firstSource = prioritizedSources.find((source) => source.url.trim());
   const readChapterHref = firstSource
     ? formatScanlatorSeriesUrl(firstSource.name, firstSource.url, series.title)
     : newestChapter?.href;
-  const chapterLabel = newestChapter
+  const chapterLabel = winningChapterSource?.latestChapterNumber
+    ? `Chapter ${winningChapterSource.latestChapterNumber.replace(/^ch(?:apter)?\.?\s*/i, '')}`
+    : newestChapter
     ? newestChapter.title
     : (series.facts?.latest_chapter_number ? `Chapter ${series.facts.latest_chapter_number}` : String(series.chapters.length));
 
@@ -690,7 +702,7 @@ export default function SeriesDetailPage() {
                 };
                 const logoUrl = source.logo || getSourceFavicon(source.url);
                 const targetUrl = formatScanlatorSeriesUrl(source.name, source.url, series.title);
-                const isTopSource = Boolean(latestChapterSourceUrl && source.url.trim() === latestChapterSourceUrl);
+                const isTopSource = Boolean(winningSourceUrl && source.url.trim() === winningSourceUrl);
                 const sourceReleaseTimestamp = source.latestChapterAt ? Date.parse(source.latestChapterAt) : NaN;
                 const sourceReleaseTime = !Number.isNaN(sourceReleaseTimestamp)
                   ? formatRelativeTime(sourceReleaseTimestamp)
@@ -732,7 +744,7 @@ export default function SeriesDetailPage() {
                           {source.latestChapterNumber && <span className="series-source-chapter"><BookOpen size={11} aria-hidden="true" />Chapter {source.latestChapterNumber}</span>}
                           {sourceReleaseTime ? (
                             <span className="series-source-time" title={`Chapter ${source.latestChapterNumber || ''} release time`}><Clock3 size={12} aria-hidden="true" />{sourceReleaseTime}</span>
-                          ) : latestSeriesUpdate && latestSeriesUpdate.toLowerCase() !== 'new' ? (
+                          ) : latestSeriesUpdate && latestSeriesUpdate.toLowerCase() !== 'new' && latestSeriesUpdate.toLowerCase() !== 'time unavailable' ? (
                             <span className="series-source-time" title="Series last update"><Clock3 size={12} aria-hidden="true" />Series updated {latestSeriesUpdate}</span>
                           ) : null}
                         </span>

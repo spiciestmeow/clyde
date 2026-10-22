@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { Eye, Pin, Star } from 'lucide-react';
 import type { SeriesRecord } from '../lib/seriesCatalog';
 import { formatScanlatorSeriesUrl } from '../lib/scanlatorLinks';
+import { getWinningChapterSource } from '../lib/sourcePriority';
 
 function MarqueeValue({ text, forceStatic = false }: { text: string; forceStatic?: boolean }) {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -76,7 +77,7 @@ export type LatestRelease = {
   chapters: { title: string; status: string; href: string }[];
   author?: string | null;
   artist?: string | null;
-  sources?: { name: string; url: string }[] | null;
+  sources?: { name: string; url: string; latestChapterNumber?: string; latestChapterAt?: string }[] | null;
   publishers?: string[] | null;
   favorites?: string | number | null;
   views?: number | null;
@@ -172,11 +173,15 @@ function formatViews(release: LatestRelease): string {
 
 function formatReleaseTime(release: LatestRelease): string | null {
   const latestChapter = release.chapters[0];
+  const winningSource = getWinningChapterSource(release.sources, release.facts?.latest_source_url || undefined);
+  const sourceDate = winningSource?.latestChapterAt;
   const factDate = release.facts?.last_chapter_added_at || release.facts?.lastUpdate || release.facts?.['Last update'];
 
   let timestamp = 0;
-  if (factDate) {
-    const parsed = Date.parse(factDate);
+  if (winningSource && !sourceDate) return 'Time unavailable';
+  const preferredDate = winningSource ? sourceDate : factDate;
+  if (preferredDate) {
+    const parsed = Date.parse(preferredDate);
     if (!Number.isNaN(parsed)) {
       timestamp = parsed;
     }
@@ -233,7 +238,8 @@ export function LatestReleaseCard({
   const viewsValue = formatViews(release);
 
   const latestChapter = release.chapters[0];
-  const preferredSourceUrl = release.facts?.latest_source_url?.trim();
+  const winningSource = getWinningChapterSource(release.sources, release.facts?.latest_source_url || undefined);
+  const preferredSourceUrl = winningSource?.url?.trim() || release.facts?.latest_source_url?.trim();
   const prioritizedSources = preferredSourceUrl
     ? [...(release.sources || [])].sort(
         (a, b) => Number(b.url.trim() === preferredSourceUrl) - Number(a.url.trim() === preferredSourceUrl),
@@ -287,7 +293,9 @@ export function LatestReleaseCard({
           {latestChapter ? (
             <a className="release-box release-box--chapter" href={chapterTarget || latestChapter.href} target={firstSource ? '_blank' : undefined} rel={firstSource ? 'noopener noreferrer' : undefined}>
               <div className="release-box-left">
-                <span className="chapter-title">{latestChapter.title}</span>
+                <span className="chapter-title">{winningSource?.latestChapterNumber
+                  ? `Chapter ${winningSource.latestChapterNumber.replace(/^ch(?:apter)?\.?\s*/i, '')}`
+                  : latestChapter.title}</span>
               </div>
               <div className="release-box-right">
                 {relativeTime ? (
@@ -313,7 +321,9 @@ export function LatestReleaseCard({
             <div className="release-box release-box--chapter is-empty">
               <div className="release-box-left">
                 <span className="chapter-title">
-                  {release.facts?.latest_chapter_number
+                  {winningSource?.latestChapterNumber
+                    ? `Chapter ${winningSource.latestChapterNumber.replace(/^ch(?:apter)?\.?\s*/i, '')}`
+                    : release.facts?.latest_chapter_number
                     ? `Chapter ${release.facts.latest_chapter_number.replace(/^ch(?:apter)?\.?\s*/i, '')}`
                     : 'Chapter 1'}
                 </span>

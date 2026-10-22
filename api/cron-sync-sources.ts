@@ -258,20 +258,21 @@ export default async function handler(
           );
         } else {
           // A series can already have the correct chapter number while its
-          // saved release time is stale. Refresh the timestamp only when a
-          // direct source supplied a real, newer release time.
+          // saved release time or winning source is stale. The direct scraper
+          // chooses the canonical (earliest reported) posting time for that
+          // chapter, so accept a different timestamp in either direction.
           const currentUpdateValue = item.facts?.last_chapter_added_at || item.facts?.lastUpdate;
           const currentUpdateMs = currentUpdateValue ? Date.parse(String(currentUpdateValue)) : NaN;
-          const hasNewerReleaseTime = Boolean(
+          const hasDifferentReleaseTime = Boolean(
             detectedTimestamp &&
-            (Number.isNaN(currentUpdateMs) || detectedTimestamp > currentUpdateMs),
+            (Number.isNaN(currentUpdateMs) || detectedTimestamp !== currentUpdateMs),
           );
           const hasNewTopSource = Boolean(
             latestDirectSourceUrl &&
             (item.facts?.latest_source_url !== latestDirectSourceUrl || item.facts?.latest_source_name !== latestDirectSourceName),
           );
-          if (detectionSource.startsWith('Direct Source (') && (hasNewerReleaseTime || hasNewTopSource || hasSourceStatsChange)) {
-            const releaseIso = hasNewerReleaseTime && detectedTimestamp
+          if (detectionSource.startsWith('Direct Source (') && (hasDifferentReleaseTime || hasNewTopSource || hasSourceStatsChange)) {
+            const releaseIso = hasDifferentReleaseTime && detectedTimestamp
               ? new Date(detectedTimestamp).toISOString()
               : undefined;
             const { error: updateError } = await supabase
@@ -297,7 +298,7 @@ export default async function handler(
               logs.push(`[${item.title}] Chapter ${currentNum} is up-to-date, but source metadata refresh failed: ${updateError.message}`);
             } else {
               const refreshed = [
-                hasNewerReleaseTime ? 'release time' : '',
+                hasDifferentReleaseTime ? 'release time' : '',
                 hasNewTopSource ? 'top source' : '',
                 hasSourceStatsChange ? 'per-source chapter data' : '',
               ].filter(Boolean).join(' and ');

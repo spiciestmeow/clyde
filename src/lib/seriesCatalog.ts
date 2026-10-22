@@ -1,4 +1,5 @@
 import { supabase } from './supabase';
+import { getWinningChapterSource } from './sourcePriority';
 
 export type SeriesChapter = {
   title: string;
@@ -245,6 +246,13 @@ export function parseChapterAgeMinutes(status?: string | null): number | null {
 }
 
 export function getSeriesReleaseTimestamp(item: SeriesRecord): number {
+  const winningSource = getWinningChapterSource(item.sources, item.facts?.latest_source_url || undefined);
+  if (winningSource) {
+    if (!winningSource.latestChapterAt) return 0;
+    const sourceTimestamp = Date.parse(winningSource.latestChapterAt);
+    return Number.isNaN(sourceTimestamp) ? 0 : sourceTimestamp;
+  }
+
   const factDate = item.facts?.last_chapter_added_at || item.facts?.lastUpdate || item.facts?.['Last update'];
   if (factDate) {
     const t = Date.parse(factDate);
