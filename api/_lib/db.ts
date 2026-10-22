@@ -20,6 +20,14 @@ export interface SiteSettings {
   updatedAt: string | null;
 }
 
+export interface SeriesIssueReportInput {
+  seriesSlug: string;
+  seriesTitle: string;
+  issueType: string;
+  details: string;
+  requesterHash: string | null;
+}
+
 let database: ReturnType<typeof postgres> | undefined;
 
 function getDatabase(): ReturnType<typeof postgres> {
@@ -90,5 +98,28 @@ export async function saveSiteSettings(
   `;
 
   return getSiteSettings();
+}
+
+export async function createSeriesIssueReport(input: SeriesIssueReportInput): Promise<void> {
+  const sql = getDatabase();
+
+  if (input.requesterHash) {
+    const rows = await sql`
+      SELECT COUNT(*)::int AS report_count
+      FROM public.series_issue_reports
+      WHERE requester_hash = ${input.requesterHash}
+        AND created_at > NOW() - INTERVAL '10 minutes'
+    `;
+    if (Number(rows[0]?.report_count ?? 0) >= 5) {
+      throw new Error('SERIES_REPORT_RATE_LIMIT');
+    }
+  }
+
+  await sql`
+    INSERT INTO public.series_issue_reports
+      (series_slug, series_title, issue_type, details, requester_hash)
+    VALUES
+      (${input.seriesSlug}, ${input.seriesTitle}, ${input.issueType}, ${input.details}, ${input.requesterHash})
+  `;
 }
 

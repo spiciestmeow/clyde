@@ -20,6 +20,7 @@ import wowReactionIcon from '../assets/reactions/wow.webp';
 import SiteFooter from '../components/SiteFooter';
 import SiteHeader from '../components/SiteHeader';
 import SiteSearch from '../components/SiteSearch';
+import { SeriesReportIssue } from '../components/SeriesReportIssue';
 import { Shareable } from '../components/Shareable';
 import { toSiteSearchItems, toTrendingSiteSearchItems } from '../data/seriesSearchCatalog';
 import { useThemeMode } from '../hooks/useThemeMode';
@@ -590,7 +591,7 @@ export default function SeriesDetailPage() {
     return <div className={`vortex-page series-page ${dark ? 'theme-dark' : 'theme-light'}`}>
       {siteHeader}
       <main className="series-not-found"><div className="series-not-found__mark"><Search size={23} /></div><p className="series-eyebrow">CLYDEE / SERIES</p><h1>{failedToLoad ? 'Series unavailable' : 'Series not found'}</h1><p>{failedToLoad ? 'The series could not be loaded from the catalog. Please try again.' : 'We couldn’t match this address to a series in the library.'}</p>{failedToLoad && <button type="button" className="series-action series-action--primary" onClick={() => void seriesQuery.refetch()}>Try again</button>}<Link href="/" className="series-action series-action--bookmark"><ArrowLeft size={16} /> Back to library</Link></main>
-      {seriesPageVisibility.reportIssue && <ReportCallout />}
+      {seriesPageVisibility.reportIssue && <ReportCallout seriesSlug={slug} seriesTitle={slug} />}
       {seriesPageVisibility.footer && siteFooter}
     </div>;
   }
@@ -599,16 +600,6 @@ export default function SeriesDetailPage() {
   const synopsis = detail?.synopsis?.trim() || '';
   const hasExpandableSynopsis = synopsis.length > 180;
   const newestChapter = series.chapters[0];
-  const chapterAddedAt = series.facts?.last_chapter_added_at as string | undefined;
-  const chapterAddedMs = chapterAddedAt ? Date.parse(chapterAddedAt) : NaN;
-  const isNewChapter = !Number.isNaN(chapterAddedMs) && Date.now() - chapterAddedMs < 3_600_000;
-  const chapterBadge = isNewChapter
-    ? 'New'
-    : !Number.isNaN(chapterAddedMs)
-      ? formatRelativeTime(chapterAddedMs)
-      : newestChapter?.status?.toLowerCase() === 'new'
-        ? 'New'
-        : '';
   const chapterLabel = newestChapter
     ? newestChapter.title
     : (series.facts?.latest_chapter_number ? `Chapter ${series.facts.latest_chapter_number}` : String(series.chapters.length));
@@ -676,7 +667,7 @@ export default function SeriesDetailPage() {
             {newestChapter ? <a href={newestChapter.href} className="series-action series-action--primary"><span>Read {newestChapter.title}</span></a> : <button className="series-action series-action--primary" disabled title="No chapter link is available yet">Reading unavailable</button>}
             <button className={`series-action series-action--bookmark${bookmarked ? ' is-saved' : ''}`} onClick={toggleBookmark} aria-pressed={bookmarked} data-testid="button-bookmark-series">{bookmarked ? <Check size={15} /> : <Bookmark size={15} />}{bookmarked ? 'Bookmarked' : 'Bookmark'}</button>
           </div>
-          {seriesPageVisibility.reportIssue && <ReportCallout />}
+          {seriesPageVisibility.reportIssue && <ReportCallout seriesSlug={slug} seriesTitle={title} />}
           {seriesPageVisibility.ratingStats && <div className="series-quick-stats">
             <div><Star size={15} fill="currentColor" /><strong>{detail?.rating ?? series.rating ?? '—'}</strong><small>Ratings</small></div>
             <div><Bookmark size={15} fill="currentColor" /><strong>{detail?.favorites ?? '—'}</strong><small>Favorites</small></div>
@@ -690,37 +681,10 @@ export default function SeriesDetailPage() {
                   <div className="series-fact">
                     <span className="series-fact-label"><FactIcon aria-hidden="true" />{label}</span>
                     {label === 'Chapters' && newestChapter ? (
-                      <strong data-fact={label} style={{ display: 'flex', alignItems: 'center', gap: 4, justifyContent: 'flex-end', flexWrap: 'wrap' }}>
-                        <a
-                          href={newestChapter.href}
-                          title={`Read ${newestChapter.title}`}
-                          style={{
-                            color: '#ed741b',
-                            fontWeight: 650,
-                            fontSize: 'clamp(7px, .48vw, 9px)',
-                            textDecoration: 'none',
-                            maxWidth: 'clamp(72px, 5.73vw, 110px)',
-                            overflow: 'hidden',
-                            textOverflow: 'ellipsis',
-                            whiteSpace: 'nowrap',
-                          }}
-                        >
+                      <strong data-fact={label}>
+                        <a className="series-chapter-fact-link" href={newestChapter.href} title={`Read ${newestChapter.title}`}>
                           {value}
                         </a>
-                        {chapterBadge && (
-                          <span style={{
-                            padding: '1px 5px',
-                            borderRadius: 8,
-                            background: isNewChapter || newestChapter.status?.toLowerCase() === 'new' ? '#ed741b' : 'var(--series-muted, #888)',
-                            color: '#fff',
-                            fontSize: 9,
-                            fontWeight: 700,
-                            lineHeight: 1.4,
-                            whiteSpace: 'nowrap',
-                          }}>
-                            {chapterBadge}
-                          </span>
-                        )}
                       </strong>
                     ) : (
                       <strong className={value === 'Not provided' ? 'is-missing' : ''} data-fact={label}>
@@ -815,7 +779,6 @@ export default function SeriesDetailPage() {
                   </div>
                 );
               })}</div> : <div className="series-empty">No translation sources have been added for this series yet.</div>}
-              <p className="series-source-footnote">Only sources listed for this series are shown. Reactions are saved on this device only.</p>
             </> : visibleActiveTab === 'synopsis' ? <div className={`series-synopsis-panel${synopsis ? ' has-content' : ''}`}>
               <h2>Summary</h2>
               <p className={`series-synopsis-copy${hasExpandableSynopsis && !synopsisExpanded ? ' is-collapsed' : ''}`}>
@@ -909,10 +872,13 @@ export default function SeriesDetailPage() {
   </div>;
 }
 
-function ReportCallout() {
+function ReportCallout({ seriesSlug, seriesTitle }: { seriesSlug: string; seriesTitle: string }) {
+  const [reportModalOpen, setReportModalOpen] = useState(false);
+
   return <section className="series-report">
     <div className="series-report-icon"><TriangleAlert size={18} /></div>
     <div className="series-report-copy"><strong>Need help or found an issue?</strong><span>Report bugs, payment issues, or other problems · Get rewards</span></div>
-    <a className="series-report-button" href="/community/report"><Flag size={13} /> Report Issue</a>
+    <button type="button" className="series-report-button" onClick={() => setReportModalOpen(true)}><Flag size={13} /> Report Issue</button>
+    <SeriesReportIssue open={reportModalOpen} onOpenChange={setReportModalOpen} seriesSlug={seriesSlug} seriesTitle={seriesTitle} />
   </section>;
 }
