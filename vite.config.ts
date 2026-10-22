@@ -138,7 +138,15 @@ function syncSourcesDevPlugin() {
 
 export default defineConfig(({ mode }) => {
   const serverEnv = loadEnv(mode, root, '');
-  for (const key of ['DATABASE_URL', 'SESSION_SECRET', 'REPORT_RATE_LIMIT_SECRET']) {
+  for (const key of [
+    'SUPABASE_URL',
+    'VITE_SUPABASE_URL',
+    'DATABASE_URL',
+    'SESSION_SECRET',
+    'REPORT_RATE_LIMIT_SECRET',
+    'SUPABASE_SECRET_KEY',
+    'SUPABASE_SERVICE_ROLE_KEY',
+  ]) {
     if (!process.env[key] && serverEnv[key]) process.env[key] = serverEnv[key];
   }
 

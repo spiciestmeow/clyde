@@ -13,14 +13,12 @@ interface ApiResponse extends ServerResponse {
 
 const SUPABASE_URL =
   process.env.SUPABASE_URL ||
-  process.env.VITE_SUPABASE_URL ||
-  'https://iaxnqgjcglhsdnikazxc.supabase.co';
+  process.env.VITE_SUPABASE_URL;
 
-const SUPABASE_KEY =
-  process.env.SUPABASE_SERVICE_ROLE_KEY ||
-  process.env.SUPABASE_ANON_KEY ||
-  process.env.VITE_SUPABASE_ANON_KEY ||
-  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImlheG5xZ2pjZ2xoc2RuaWthenhjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTIzNDU3MTAsImV4cCI6MjEwNzkyMTcxMH0.vkRAjHvs5v8NG9BiCV_pH1eRQhEXLfhfePUETlL_w40';
+// Use a server-only key; never fall back to the browser's anon key here.
+const SUPABASE_SERVER_KEY =
+  process.env.SUPABASE_SECRET_KEY ||
+  process.env.SUPABASE_SERVICE_ROLE_KEY;
 
 const ISSUE_TYPES = new Set([
   'Wrong chapter',
@@ -44,7 +42,10 @@ function getRequesterHash(request: ApiRequest): string | null {
   const realIp = Array.isArray(realIpHeader) ? realIpHeader[0] : realIpHeader;
   const rawIp = (forwardedIp || realIp || '').split(',')[0].trim();
   // Use a fallback secret if none is configured
-  const secret = process.env.REPORT_RATE_LIMIT_SECRET || process.env.SESSION_SECRET || SUPABASE_KEY;
+  const secret =
+    process.env.REPORT_RATE_LIMIT_SECRET ||
+    process.env.SESSION_SECRET ||
+    SUPABASE_SERVER_KEY;
   if (!rawIp || !secret) return null;
   return createHmac('sha256', secret).update(rawIp).digest('hex');
 }
@@ -55,6 +56,13 @@ export default async function handler(request: ApiRequest, response: ApiResponse
   if (request.method !== 'POST') {
     response.setHeader('Allow', 'POST');
     response.status(405).json({ error: 'Method not allowed.' });
+    return;
+  }
+
+  if (!SUPABASE_URL || !SUPABASE_SERVER_KEY) {
+    response.status(503).json({
+      error: 'Report submission is not configured. Please try again later.',
+    });
     return;
   }
 
@@ -82,7 +90,7 @@ export default async function handler(request: ApiRequest, response: ApiResponse
   }
 
   try {
-    const supabase = createClient(SUPABASE_URL, SUPABASE_KEY, {
+    const supabase = createClient(SUPABASE_URL, SUPABASE_SERVER_KEY, {
       auth: { persistSession: false },
     });
 
@@ -91,11 +99,13 @@ export default async function handler(request: ApiRequest, response: ApiResponse
     // Rate limit: max 5 reports per IP hash per 10 minutes
     if (requesterHash) {
       const tenMinutesAgo = new Date(Date.now() - 10 * 60 * 1000).toISOString();
-      const { count } = await supabase
+      const { count, error: countError } = await supabase
         .from('series_issue_reports')
         .select('id', { count: 'exact', head: true })
         .eq('requester_hash', requesterHash)
         .gte('created_at', tenMinutesAgo);
+
+      if (countError) throw countError;
 
       if ((count ?? 0) >= 5) {
         response.status(429).json({
@@ -113,21 +123,7 @@ export default async function handler(request: ApiRequest, response: ApiResponse
       requester_hash: requesterHash,
     });
 
-    if (insertError) {
-      // Gracefully handle: table missing OR permission denied (RLS not configured yet)
-      // Return success so users aren't blocked — fix by setting up RLS policy in Supabase dashboard
-      if (
-        insertError.code === '42P01' ||
-        insertError.code === '42501' ||
-        insertError.message?.includes('does not exist') ||
-        insertError.message?.includes('permission denied')
-      ) {
-        console.warn('series_issue_reports insert skipped (table missing or RLS blocks anon):', insertError.code, insertError.message);
-        response.status(201).json({ ok: true });
-        return;
-      }
-      throw insertError;
-    }
+    if (insertError) throw insertError;
 
     response.status(201).json({ ok: true });
   } catch (error) {

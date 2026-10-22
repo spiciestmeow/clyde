@@ -1,4 +1,4 @@
--- Series issue reports are inserted by the server-side API using DATABASE_URL.
+-- Series issue reports are inserted by the server-side API using a Supabase secret key.
 -- Keep direct client access disabled so public users cannot bypass API validation.
 create table if not exists public.series_issue_reports (
   id bigint generated always as identity primary key,
