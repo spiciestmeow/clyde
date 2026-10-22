@@ -233,7 +233,13 @@ export function LatestReleaseCard({
   const viewsValue = formatViews(release);
 
   const latestChapter = release.chapters[0];
-  const firstSource = release.sources?.find((source) => source.url.trim());
+  const preferredSourceUrl = release.facts?.latest_source_url?.trim();
+  const prioritizedSources = preferredSourceUrl
+    ? [...(release.sources || [])].sort(
+        (a, b) => Number(b.url.trim() === preferredSourceUrl) - Number(a.url.trim() === preferredSourceUrl),
+      )
+    : release.sources || [];
+  const firstSource = prioritizedSources.find((source) => source.url.trim());
   const chapterTarget = firstSource
     ? formatScanlatorSeriesUrl(firstSource.name, firstSource.url, release.title)
     : latestChapter?.href;

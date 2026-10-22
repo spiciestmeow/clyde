@@ -82,12 +82,18 @@ function parseRelativeTime(text: string): number | null {
  * in the nearby text (e.g. "3 hours ago", "7h ago", or a `<time>` tag).
  */
 function extractTimeFromContext(surroundingHtml: string): number | null {
-  // 1. Check for <time> or <span> with datetime attribute
-  const datetimeMatch = surroundingHtml.match(
-    /(?:datetime|title|aria-label)=["']([^"']+)["']/i,
-  );
-  if (datetimeMatch) {
+  // Prefer explicit machine-readable dates. Other attributes such as
+  // aria-label="Chapter 24" may appear before the actual <time> element.
+  const datetimeMatches = surroundingHtml.matchAll(/\bdatetime=["']([^"']+)["']/gi);
+  for (const datetimeMatch of datetimeMatches) {
     const ts = parseRelativeTime(datetimeMatch[1]);
+    if (ts) return ts;
+  }
+
+  // Only inspect title/aria-label values when they themselves contain a time.
+  const labelMatches = surroundingHtml.matchAll(/\b(?:title|aria-label)=["']([^"']+)["']/gi);
+  for (const labelMatch of labelMatches) {
+    const ts = parseRelativeTime(labelMatch[1]);
     if (ts) return ts;
   }
 
@@ -114,6 +120,47 @@ function extractTimeFromContext(surroundingHtml: string): number | null {
     if (match) {
       const ts = parseRelativeTime(match[0]);
       if (ts) return ts;
+    }
+  }
+
+  return null;
+}
+
+/**
+ * Find a nearby chapter/list row so a timestamp from the next chapter is not
+ * accidentally attributed to this chapter. Many scanlator pages put the time
+ * in a sibling element rather than inside the chapter link itself.
+ */
+function extractChapterRowContext(html: string, matchStart: number, matchEnd: number): string | null {
+  const searchStart = Math.max(0, matchStart - 2500);
+  const prefix = html.slice(searchStart, matchStart);
+  const rowOpenRegex = /<(li|tr|article)\b[^>]*>|<div\b[^>]*class=["'][^"']*(?:chapter|episode|release|list-item)[^"']*["'][^>]*>/gi;
+  const candidates: { index: number; tag: string }[] = [];
+  let openMatch: RegExpExecArray | null;
+  while ((openMatch = rowOpenRegex.exec(prefix)) !== null) {
+    const tag = openMatch[1]?.toLowerCase() || 'div';
+    candidates.push({ index: searchStart + openMatch.index, tag });
+  }
+
+  for (let candidateIndex = candidates.length - 1; candidateIndex >= 0; candidateIndex -= 1) {
+    const candidate = candidates[candidateIndex];
+    const openingEnd = html.indexOf('>', candidate.index);
+    if (openingEnd < 0 || openingEnd >= matchStart) continue;
+    const scanEnd = Math.min(html.length, matchEnd + 6000);
+    const tagRegex = new RegExp(`<\\/?${candidate.tag}\\b[^>]*>`, 'gi');
+    tagRegex.lastIndex = candidate.index;
+    let depth = 0;
+    let tagMatch: RegExpExecArray | null;
+    while ((tagMatch = tagRegex.exec(html)) !== null && tagMatch.index < scanEnd) {
+      if (/^<\//.test(tagMatch[0])) {
+        depth -= 1;
+        if (depth === 0) {
+          if (tagMatch.index < matchEnd) break;
+          return html.slice(candidate.index, tagRegex.lastIndex);
+        }
+      } else {
+        depth += 1;
+      }
     }
   }
 
@@ -174,18 +221,12 @@ export function extractChaptersFromHtml(
     const num = parseFloat(hrefChMatch[1]);
     if (Number.isNaN(num) || num <= 0 || num >= 5000) continue;
 
-    // Extract time from: (a) inner HTML of the <a> tag, or (b) surrounding context (next ~500 chars)
-    const contextAfter = cleanHtml.slice(fullMatchEnd, fullMatchEnd + 500);
-    // For Asura-style: time is in a sibling div right after the chapter text inside the <a>
+    // Prefer the chapter link itself, then its containing row. Do not search
+    // arbitrary text before/after the link: that can belong to an adjacent row.
     let ts = extractTimeFromContext(innerHtml);
     if (!ts) {
-      // For sites where time is a sibling element after the <a> (like some WordPress themes)
-      ts = extractTimeFromContext(contextAfter);
-    }
-    // Also look slightly before the match for container context
-    if (!ts) {
-      const contextBefore = cleanHtml.slice(Math.max(0, m.index - 300), m.index);
-      ts = extractTimeFromContext(contextBefore);
+      const rowContext = extractChapterRowContext(cleanHtml, m.index, fullMatchEnd);
+      if (rowContext) ts = extractTimeFromContext(rowContext);
     }
 
     if (!foundChapters.has(num)) {
@@ -235,7 +276,9 @@ export async function scrapeDirectSources(
   title?: string,
 ): Promise<DirectSourceScrapeResult> {
   // Collect chapters from ALL sources, then merge: for each chapter number,
-  // keep the most recent release time reported by any source.
+  // keep the earliest valid posting time. Mirror sites can publish later than
+  // the original listing; the series-level timer should reflect when the
+  // chapter first appeared, while each source card retains its own timestamp.
   const mergedChapters = new Map<
     number,
     DetectedChapterItem & { releaseTimestamp: number }
@@ -243,6 +286,7 @@ export async function scrapeDirectSources(
   let overallHighest = 0;
   let bestSourceName = '';
   let bestSourceUrl = '';
+  let bestSourceReleaseTimestamp: number | undefined;
   let anySourceWorked = false;
   const sourceResults: DirectSourceScrapeResult['sourceResults'] = [];
 
@@ -293,9 +337,9 @@ export async function scrapeDirectSources(
             releaseTimestamp: chTs || 0,
           });
         } else {
-          // Keep the freshest real release time so stale mirror dates do not
-          // make the series appear older than an active source reports.
-          if (chTs > existing.releaseTimestamp) {
+          // Prefer the earliest real posting time for the series-level timer.
+          // Keep the source-specific timestamps separately in sourceResults.
+          if (chTs > 0 && (existing.releaseTimestamp === 0 || chTs < existing.releaseTimestamp)) {
             existing.releasedAt = ch.releasedAt;
             existing.releaseTimestamp = chTs;
             existing.sourceName = srcName;
@@ -304,10 +348,19 @@ export async function scrapeDirectSources(
       }
 
       const topNum = chapters[0].number;
-      if (topNum > overallHighest) {
+      const topReleaseTimestamp = chapters[0].releasedAt
+        ? Date.parse(chapters[0].releasedAt)
+        : undefined;
+      if (
+        topNum > overallHighest ||
+        (topNum === overallHighest &&
+          topReleaseTimestamp &&
+          (!bestSourceReleaseTimestamp || topReleaseTimestamp < bestSourceReleaseTimestamp))
+      ) {
         overallHighest = topNum;
         bestSourceName = srcName;
         bestSourceUrl = src.url;
+        bestSourceReleaseTimestamp = topReleaseTimestamp;
       }
     } catch {
       // Continue to next source
@@ -319,7 +372,7 @@ export async function scrapeDirectSources(
       .sort((a, b) => b.number - a.number)
       .map(({ releaseTimestamp: _rt, ...rest }) => rest);
 
-    // Find the most recent reported release of the highest chapter
+    // Find the earliest reported posting time of the highest chapter
     const highestEntry = mergedChapters.get(overallHighest);
     const latestReleaseAt = highestEntry?.releasedAt;
     const latestReleaseName = highestEntry?.sourceName;
