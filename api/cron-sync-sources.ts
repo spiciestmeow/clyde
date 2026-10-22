@@ -90,43 +90,70 @@ export default async function handler(
     // Helper to check and sync a single series
     async function checkSeries(item: SeriesRecord) {
       try {
-        const altTitles = Array.isArray(item.alternate_titles) ? item.alternate_titles : [];
-        const syncResult = await fetchScanlationSources(item.title, altTitles);
-
         let detectedChNum = 0;
         let detectedChStr = '';
         let detectedTimestamp: number | undefined;
-        let detectionSource = 'MangaUpdates';
+        let detectionSource = '';
+        let latestDirectSourceName = '';
+        let latestDirectSourceUrl = '';
+        let refreshedSources = Array.isArray(item.sources) ? item.sources : [];
+        let hasSourceStatsChange = false;
+        const itemSources = Array.isArray(item.sources)
+          ? item.sources.filter((source: any) => typeof source?.url === 'string' && source.url.trim())
+          : [];
 
-        if (syncResult.matchedSeries?.latestChapterNumber) {
-          const num = parseFloat(syncResult.matchedSeries.latestChapterNumber);
-          if (!Number.isNaN(num)) {
-            detectedChNum = num;
-            detectedChStr = syncResult.matchedSeries.latestChapterNumber;
-            detectedTimestamp = syncResult.matchedSeries.lastReleaseTimestamp;
-          }
-        }
-
-        // Also check any custom / manually added source URLs on the series
-        const itemSources = Array.isArray(item.sources) ? item.sources : [];
+        // Configured links are series-specific, so use them as the source of
+        // truth. MangaUpdates is only a fallback when no direct URLs are saved.
         if (itemSources.length > 0) {
           const directResult = await scrapeDirectSources(itemSources, item.title);
-          if (directResult.success && directResult.highestChapter) {
-            const directNum = parseFloat(directResult.highestChapter);
-            if (!Number.isNaN(directNum) && directNum > detectedChNum) {
-              detectedChNum = directNum;
-              detectedChStr = directResult.highestChapter;
-              const earliestMs = directResult.earliestReleaseAt
-                ? Date.parse(directResult.earliestReleaseAt)
-                : NaN;
-              detectedTimestamp = !Number.isNaN(earliestMs) ? earliestMs : Date.now();
-              detectionSource = `Direct Source (${directResult.earliestReleaseName || directResult.sourceName})`;
+          const directNum = parseFloat(directResult.highestChapter);
+          if (!directResult.success || !directResult.highestChapter || Number.isNaN(directNum) || directNum <= 0) {
+            logs.push(
+              `[${item.title}] Direct source URLs are configured, but no chapter data could be read. MangaUpdates fallback skipped${directResult.message ? `: ${directResult.message}` : '.'}`,
+            );
+            return;
+          }
+
+          detectedChNum = directNum;
+          detectedChStr = directResult.highestChapter;
+          const latestMs = directResult.latestReleaseAt
+            ? Date.parse(directResult.latestReleaseAt)
+            : NaN;
+          detectedTimestamp = !Number.isNaN(latestMs) ? latestMs : undefined;
+          detectionSource = `Direct Source (${directResult.latestReleaseName || directResult.sourceName})`;
+          latestDirectSourceName = directResult.sourceName;
+          latestDirectSourceUrl = directResult.sourceUrl;
+          const sourceResultsByUrl = new Map(directResult.sourceResults.map((source) => [source.url.trim(), source]));
+          refreshedSources = (Array.isArray(item.sources) ? item.sources : []).map((source: any) => {
+            const scanResult = sourceResultsByUrl.get(typeof source?.url === 'string' ? source.url.trim() : '');
+            if (!scanResult) return source;
+            const chapterChanged = String(source.latestChapterNumber || '') !== scanResult.latestChapterNumber;
+            return {
+              ...source,
+              latestChapterNumber: scanResult.latestChapterNumber,
+              ...(scanResult.latestChapterAt
+                ? { latestChapterAt: scanResult.latestChapterAt }
+                : chapterChanged ? { latestChapterAt: undefined } : {}),
+            };
+          });
+          hasSourceStatsChange = JSON.stringify(refreshedSources) !== JSON.stringify(item.sources || []);
+        } else {
+          const altTitles = Array.isArray(item.alternate_titles) ? item.alternate_titles : [];
+          const syncResult = await fetchScanlationSources(item.title, altTitles);
+          const mangaUpdatesChapter = syncResult.matchedSeries?.latestChapterNumber;
+          if (mangaUpdatesChapter) {
+            const num = parseFloat(mangaUpdatesChapter);
+            if (!Number.isNaN(num) && num > 0) {
+              detectedChNum = num;
+              detectedChStr = mangaUpdatesChapter;
+              detectedTimestamp = syncResult.matchedSeries?.lastReleaseTimestamp;
+              detectionSource = 'MangaUpdates';
             }
           }
         }
 
         if (detectedChNum === 0) {
-          logs.push(`[${item.title}] No release data found on MangaUpdates or direct sources`);
+          logs.push(`[${item.title}] No release data found on ${detectionSource || 'available sources'}`);
           return;
         }
 
@@ -136,13 +163,14 @@ export default async function handler(
           (item.chapters?.[0]?.title ? String(item.chapters[0].title).replace(/^[^\d.]*/, '') : '0');
         const currentNum = parseFloat(currentChStr) || 0;
 
-        // If newly detected chapter is higher than current
+        // Only advance the catalog automatically. Lower direct-source results
+        // are reported as mismatches for review rather than rolling data back.
         if (detectedChNum > currentNum) {
           const newChTitle = `Chapter ${detectedChStr}`;
           const newChHref = `/series/${item.slug}/chapter-${detectedChStr}`;
           const releaseIso = detectedTimestamp
             ? new Date(detectedTimestamp).toISOString()
-            : new Date().toISOString();
+            : undefined;
 
           const existingChapters = Array.isArray(item.chapters) ? item.chapters : [];
           const alreadyHasCh = existingChapters.some((ch: any) => {
@@ -158,7 +186,7 @@ export default async function handler(
                   href: newChHref,
                   status: 'New',
                   locked: false,
-                  createdAt: releaseIso,
+                  createdAt: releaseIso || new Date().toISOString(),
                 },
                 ...existingChapters,
               ];
@@ -166,14 +194,21 @@ export default async function handler(
           const nextFacts = {
             ...(item.facts || {}),
             latest_chapter_number: String(detectedChStr),
-            last_chapter_added_at: releaseIso,
-            lastUpdate: releaseIso,
+            ...(latestDirectSourceUrl ? {
+              latest_source_name: latestDirectSourceName,
+              latest_source_url: latestDirectSourceUrl,
+            } : {}),
+            ...(releaseIso ? {
+              last_chapter_added_at: releaseIso,
+              lastUpdate: releaseIso,
+            } : {}),
           };
 
           const { error: updateError } = await supabase
             .from('series')
             .update({
               chapters: nextChapters,
+              sources: refreshedSources,
               facts: nextFacts,
               updated_at: new Date().toISOString(),
             })
@@ -192,8 +227,83 @@ export default async function handler(
             });
             logs.push(`[${item.title}] Updated: Ch.${currentNum} -> Ch.${detectedChNum} (via ${detectionSource})`);
           }
+        } else if (detectedChNum < currentNum) {
+          const hasNewTopSource = Boolean(
+            latestDirectSourceUrl &&
+            (item.facts?.latest_source_url !== latestDirectSourceUrl || item.facts?.latest_source_name !== latestDirectSourceName),
+          );
+          if (hasSourceStatsChange || hasNewTopSource) {
+            const { error: sourceUpdateError } = await supabase
+              .from('series')
+              .update({
+                ...(hasSourceStatsChange ? { sources: refreshedSources } : {}),
+                facts: {
+                  ...(item.facts || {}),
+                  ...(latestDirectSourceUrl ? {
+                    latest_source_name: latestDirectSourceName,
+                    latest_source_url: latestDirectSourceUrl,
+                  } : {}),
+                },
+                updated_at: new Date().toISOString(),
+              })
+              .eq('id', item.id);
+            if (sourceUpdateError) {
+              logs.push(`[${item.title}] Could not refresh per-source chapter data: ${sourceUpdateError.message}`);
+            }
+          }
+          logs.push(
+            `[${item.title}] Mismatch: catalog says Ch.${currentNum}, but ${detectionSource} detects Ch.${detectedChNum}. Catalog was not changed; review the saved chapter data.`,
+          );
         } else {
-          logs.push(`[${item.title}] Up-to-date (Current: ${currentNum}, Detected: ${detectedChNum} via ${detectionSource})`);
+          // A series can already have the correct chapter number while its
+          // saved release time is stale. Refresh the timestamp only when a
+          // direct source supplied a real, newer release time.
+          const currentUpdateValue = item.facts?.last_chapter_added_at || item.facts?.lastUpdate;
+          const currentUpdateMs = currentUpdateValue ? Date.parse(String(currentUpdateValue)) : NaN;
+          const hasNewerReleaseTime = Boolean(
+            detectedTimestamp &&
+            (Number.isNaN(currentUpdateMs) || detectedTimestamp > currentUpdateMs),
+          );
+          const hasNewTopSource = Boolean(
+            latestDirectSourceUrl &&
+            (item.facts?.latest_source_url !== latestDirectSourceUrl || item.facts?.latest_source_name !== latestDirectSourceName),
+          );
+          if (detectionSource.startsWith('Direct Source (') && (hasNewerReleaseTime || hasNewTopSource || hasSourceStatsChange)) {
+            const releaseIso = hasNewerReleaseTime && detectedTimestamp
+              ? new Date(detectedTimestamp).toISOString()
+              : undefined;
+            const { error: updateError } = await supabase
+              .from('series')
+              .update({
+                ...(hasSourceStatsChange ? { sources: refreshedSources } : {}),
+                facts: {
+                  ...(item.facts || {}),
+                  ...(latestDirectSourceUrl ? {
+                    latest_source_name: latestDirectSourceName,
+                    latest_source_url: latestDirectSourceUrl,
+                  } : {}),
+                  ...(releaseIso ? {
+                    last_chapter_added_at: releaseIso,
+                    lastUpdate: releaseIso,
+                  } : {}),
+                },
+                updated_at: new Date().toISOString(),
+              })
+              .eq('id', item.id);
+
+            if (updateError) {
+              logs.push(`[${item.title}] Chapter ${currentNum} is up-to-date, but source metadata refresh failed: ${updateError.message}`);
+            } else {
+              const refreshed = [
+                hasNewerReleaseTime ? 'release time' : '',
+                hasNewTopSource ? 'top source' : '',
+                hasSourceStatsChange ? 'per-source chapter data' : '',
+              ].filter(Boolean).join(' and ');
+              logs.push(`[${item.title}] Chapter ${currentNum} is up-to-date; refreshed ${refreshed}.`);
+            }
+          } else {
+            logs.push(`[${item.title}] Up-to-date (Current: ${currentNum}, Detected: ${detectedChNum} via ${detectionSource})`);
+          }
         }
       } catch (seriesErr) {
         const msg = seriesErr instanceof Error ? seriesErr.message : String(seriesErr);

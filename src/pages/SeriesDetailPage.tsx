@@ -535,7 +535,11 @@ export default function SeriesDetailPage() {
   const synopsis = detail?.synopsis?.trim() || '';
   const hasExpandableSynopsis = synopsis.length > 180;
   const newestChapter = series.chapters[0];
-  const firstSource = series.sources.find((source) => source.url.trim());
+  const latestChapterSourceUrl = series.facts?.latest_source_url?.trim();
+  const prioritizedSources = latestChapterSourceUrl
+    ? [...series.sources].sort((a, b) => Number(b.url.trim() === latestChapterSourceUrl) - Number(a.url.trim() === latestChapterSourceUrl))
+    : series.sources;
+  const firstSource = prioritizedSources.find((source) => source.url.trim());
   const readChapterHref = firstSource
     ? formatScanlatorSeriesUrl(firstSource.name, firstSource.url, series.title)
     : newestChapter?.href;
@@ -656,7 +660,7 @@ export default function SeriesDetailPage() {
               {seriesPageVisibility.reviews && <button type="button" role="tab" aria-selected={visibleActiveTab === 'reviews'} className={visibleActiveTab === 'reviews' ? 'is-active' : ''} onClick={() => setActiveTab('reviews')}><MessageSquareText size={14} aria-hidden="true" /> Reviews{detail?.reviewCount !== undefined ? ` (${detail.reviewCount})` : ''}</button>}
             </div>
             {visibleActiveTab === 'sources' ? <>
-              {series.sources.length ? <div className="series-source-list">{series.sources.map((source, index) => {
+              {prioritizedSources.length ? <div className="series-source-list">{prioritizedSources.map((source, index) => {
                 const getSourceFavicon = (url?: string) => {
                   if (!url) return '';
                   try {
@@ -668,9 +672,14 @@ export default function SeriesDetailPage() {
                 };
                 const logoUrl = source.logo || getSourceFavicon(source.url);
                 const targetUrl = formatScanlatorSeriesUrl(source.name, source.url, series.title);
+                const isTopSource = Boolean(latestChapterSourceUrl && source.url.trim() === latestChapterSourceUrl);
+                const sourceReleaseTimestamp = source.latestChapterAt ? Date.parse(source.latestChapterAt) : NaN;
+                const sourceReleaseTime = !Number.isNaN(sourceReleaseTimestamp)
+                  ? formatRelativeTime(sourceReleaseTimestamp)
+                  : '';
 
                 return (
-                  <div className="series-source-row" key={`${source.name}-${source.url}`}>
+                  <div className={`series-source-row${isTopSource ? ' is-priority' : ''}`} key={`${source.name}-${source.url}`}>
                     <a className="series-source-main" href={targetUrl} target="_blank" rel="noopener noreferrer" data-testid={`link-source-${index}`}>
                       <span className="series-source-logo">
                         {logoUrl ? (
@@ -696,10 +705,18 @@ export default function SeriesDetailPage() {
                         )}
                       </span>
                       <span className="series-source-copy">
-                        <strong className="series-source-name">{source.name}</strong>
+                        <span className="series-source-heading">
+                          <strong className="series-source-name">{source.name}</strong>
+                          {isTopSource && <span className="series-source-priority">Most chapters</span>}
+                        </span>
                         <span className="series-source-meta">
                           <span className="series-source-status">Available to read</span>
-                          {latestSeriesUpdate && latestSeriesUpdate.toLowerCase() !== 'new' && <span className="series-source-time" title="Series last update"><Clock3 size={12} aria-hidden="true" />Series updated {latestSeriesUpdate}</span>}
+                          {source.latestChapterNumber && <span className="series-source-chapter"><BookOpen size={11} aria-hidden="true" />Chapter {source.latestChapterNumber}</span>}
+                          {sourceReleaseTime ? (
+                            <span className="series-source-time" title={`Chapter ${source.latestChapterNumber || ''} release time`}><Clock3 size={12} aria-hidden="true" />{sourceReleaseTime}</span>
+                          ) : latestSeriesUpdate && latestSeriesUpdate.toLowerCase() !== 'new' ? (
+                            <span className="series-source-time" title="Series last update"><Clock3 size={12} aria-hidden="true" />Series updated {latestSeriesUpdate}</span>
+                          ) : null}
                         </span>
                       </span>
                     </a>

@@ -215,7 +215,24 @@ export async function fetchScanlationSources(rawTitle: string, alternateTitles: 
     return { matchedSeries: null, sources: [] };
   }
 
-  const bestRecord = searchResults[0].record;
+  const comparableTitles = new Set(
+    [title, ...alternateTitles]
+      .map((value) => value.normalize('NFKD').replace(/[\u0300-\u036f]/g, '').toLocaleLowerCase().replace(/[^\p{L}\p{N}]+/gu, ' ').trim())
+      .filter(Boolean),
+  );
+  const bestRecord = searchResults
+    .map((result) => result.record)
+    .find((record) => comparableTitles.has(
+      record.title.normalize('NFKD').replace(/[\u0300-\u036f]/g, '').toLocaleLowerCase().replace(/[^\p{L}\p{N}]+/gu, ' ').trim(),
+    ));
+
+  // MangaUpdates search can return a similarly named but unrelated series first.
+  // Never use its chapter count unless the result title matches this catalog entry
+  // or one of its known alternate titles.
+  if (!bestRecord) {
+    return { matchedSeries: null, sources: [] };
+  }
+
   const seriesId = bestRecord.series_id;
 
   // 2. Fetch detail & groups in parallel with 4s timeout

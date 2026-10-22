@@ -14,6 +14,8 @@ export type SeriesLink = {
   url: string;
   logo?: string;
   isSample?: boolean;
+  latestChapterNumber?: string;
+  latestChapterAt?: string;
 };
 
 export type SeriesRecord = {

@@ -67,8 +67,14 @@ export type DirectSourceResult = {
   sourceName: string;
   sourceUrl: string;
   highestChapter: string;
-  earliestReleaseAt?: string;
-  earliestReleaseName?: string;
+  latestReleaseAt?: string;
+  latestReleaseName?: string;
+  sourceResults: {
+    name: string;
+    url: string;
+    latestChapterNumber: string;
+    latestChapterAt?: string;
+  }[];
   detectedChapters: DirectSourceChapter[];
   message: string;
 };

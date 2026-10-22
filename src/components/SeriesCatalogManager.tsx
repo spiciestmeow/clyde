@@ -40,7 +40,14 @@ import './series-catalog-manager.css';
 import { BackgroundSyncTimer } from './BackgroundSyncTimer';
 import { SyncActivityLogs } from './SyncActivityLogs';
 
-type LinkDraft = { name: string; url: string; logo: string; isSample: boolean };
+type LinkDraft = {
+  name: string;
+  url: string;
+  logo: string;
+  isSample: boolean;
+  latestChapterNumber?: string;
+  latestChapterAt?: string;
+};
 
 type FormDraft = {
   title: string;
@@ -309,13 +316,32 @@ export default function SeriesCatalogManager() {
       }
 
       setDraft((prev) => {
-        const uploadTimeIso = result.earliestReleaseAt || new Date().toISOString();
+        const uploadTimeIso = result.latestReleaseAt;
+        const sourceResultsByUrl = new Map(result.sourceResults.map((source) => [source.url.trim(), source]));
+        const nextSources = prev.sources.map((source) => {
+          const scanResult = sourceResultsByUrl.get(source.url.trim());
+          if (!scanResult) return source;
+          const chapterChanged = String(source.latestChapterNumber || '') !== scanResult.latestChapterNumber;
+          return {
+            ...source,
+            latestChapterNumber: scanResult.latestChapterNumber,
+            ...(scanResult.latestChapterAt
+              ? { latestChapterAt: scanResult.latestChapterAt }
+              : chapterChanged ? { latestChapterAt: undefined } : {}),
+          };
+        });
         const nextFacts = {
           ...(prev.facts || {}),
           latest_chapter_number: String(result.highestChapter),
-          last_chapter_added_at: uploadTimeIso,
-          lastUpdate: uploadTimeIso,
-          ...(result.earliestReleaseName ? { first_source: result.earliestReleaseName } : {}),
+          ...(uploadTimeIso ? {
+            last_chapter_added_at: uploadTimeIso,
+            lastUpdate: uploadTimeIso,
+          } : {}),
+          ...(result.sourceUrl ? {
+            latest_source_name: result.sourceName,
+            latest_source_url: result.sourceUrl,
+          } : {}),
+          ...(result.latestReleaseName ? { last_source: result.latestReleaseName } : {}),
         };
 
         const existingChapters = prev.chapters ? [...prev.chapters] : [];
@@ -328,7 +354,7 @@ export default function SeriesCatalogManager() {
             href: `/series/${seriesSlug}/chapter-${ch.number}`,
             status: ch.number === parseFloat(result.highestChapter) ? 'New' : '',
             locked: false,
-            createdAt: ch.releasedAt || uploadTimeIso,
+            ...(ch.releasedAt ? { createdAt: ch.releasedAt } : {}),
             sourceName: ch.sourceName,
           }));
 
@@ -346,8 +372,8 @@ export default function SeriesCatalogManager() {
                   href: `/series/${seriesSlug}/chapter-${result.highestChapter}`,
                   status: 'New',
                   locked: false,
-                  createdAt: uploadTimeIso,
-                  sourceName: result.earliestReleaseName,
+                  ...(uploadTimeIso ? { createdAt: uploadTimeIso } : {}),
+                  sourceName: result.latestReleaseName,
                 },
                 ...existingChapters,
               ];
@@ -358,6 +384,7 @@ export default function SeriesCatalogManager() {
         return {
           ...prev,
           facts: nextFacts,
+          sources: nextSources,
           chapters: updatedChapters,
         };
       });

@@ -25,10 +25,17 @@ export interface DirectSourceScrapeResult {
   sourceName: string;
   sourceUrl: string;
   highestChapter: string;
-  /** ISO timestamp of the earliest upload of the latest chapter across all sources */
-  earliestReleaseAt?: string;
-  /** Name of the source that uploaded it first */
-  earliestReleaseName?: string;
+  /** Most recent ISO release timestamp reported for the latest chapter */
+  latestReleaseAt?: string;
+  /** Source reporting that most recent release timestamp */
+  latestReleaseName?: string;
+  /** Latest chapter/time detected independently for each successfully scraped source */
+  sourceResults: {
+    name: string;
+    url: string;
+    latestChapterNumber: string;
+    latestChapterAt?: string;
+  }[];
   detectedChapters: DetectedChapterItem[];
   message: string;
 }
@@ -228,7 +235,7 @@ export async function scrapeDirectSources(
   title?: string,
 ): Promise<DirectSourceScrapeResult> {
   // Collect chapters from ALL sources, then merge: for each chapter number,
-  // keep the EARLIEST upload time across all sources.
+  // keep the most recent release time reported by any source.
   const mergedChapters = new Map<
     number,
     DetectedChapterItem & { releaseTimestamp: number }
@@ -237,6 +244,7 @@ export async function scrapeDirectSources(
   let bestSourceName = '';
   let bestSourceUrl = '';
   let anySourceWorked = false;
+  const sourceResults: DirectSourceScrapeResult['sourceResults'] = [];
 
   for (const src of sources) {
     if (!src?.url) continue;
@@ -267,6 +275,12 @@ export async function scrapeDirectSources(
       anySourceWorked = true;
 
       const srcName = src.name || parsed.hostname;
+      sourceResults.push({
+        name: srcName,
+        url: src.url,
+        latestChapterNumber: String(chapters[0].number),
+        ...(chapters[0].releasedAt ? { latestChapterAt: chapters[0].releasedAt } : {}),
+      });
 
       for (const ch of chapters) {
         const chTs = ch.releasedAt ? Date.parse(ch.releasedAt) : 0;
@@ -279,8 +293,9 @@ export async function scrapeDirectSources(
             releaseTimestamp: chTs || 0,
           });
         } else {
-          // Keep the EARLIEST real upload time (the first source to upload)
-          if (chTs > 0 && (existing.releaseTimestamp === 0 || chTs < existing.releaseTimestamp)) {
+          // Keep the freshest real release time so stale mirror dates do not
+          // make the series appear older than an active source reports.
+          if (chTs > existing.releaseTimestamp) {
             existing.releasedAt = ch.releasedAt;
             existing.releaseTimestamp = chTs;
             existing.sourceName = srcName;
@@ -304,20 +319,21 @@ export async function scrapeDirectSources(
       .sort((a, b) => b.number - a.number)
       .map(({ releaseTimestamp: _rt, ...rest }) => rest);
 
-    // Find the earliest release of the highest chapter across all sources
+    // Find the most recent reported release of the highest chapter
     const highestEntry = mergedChapters.get(overallHighest);
-    const earliestReleaseAt = highestEntry?.releasedAt;
-    const earliestReleaseName = highestEntry?.sourceName;
+    const latestReleaseAt = highestEntry?.releasedAt;
+    const latestReleaseName = highestEntry?.sourceName;
 
     return {
       success: true,
       sourceName: bestSourceName,
       sourceUrl: bestSourceUrl,
       highestChapter: String(overallHighest),
-      earliestReleaseAt,
-      earliestReleaseName,
+      latestReleaseAt,
+      latestReleaseName,
+      sourceResults,
       detectedChapters: sorted,
-      message: `Successfully detected ${sorted.length} chapter(s). Latest is Chapter ${overallHighest}${earliestReleaseName ? ` (first uploaded by ${earliestReleaseName})` : ''}.`,
+      message: `Successfully detected ${sorted.length} chapter(s). Latest is Chapter ${overallHighest}${latestReleaseName ? ` (most recently reported by ${latestReleaseName})` : ''}.`,
     };
   }
 
@@ -326,6 +342,7 @@ export async function scrapeDirectSources(
     sourceName: '',
     sourceUrl: '',
     highestChapter: '',
+    sourceResults: [],
     detectedChapters: [],
     message: anySourceWorked
       ? 'Sources were reachable but no chapter links were detected. Ensure the URLs point to the series page.'
