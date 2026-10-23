@@ -359,9 +359,12 @@ export function extractChaptersFromHtml(
         releasedAt: ts ? new Date(ts).toISOString() : undefined,
       });
     } else if (ts) {
-      // If we already have this chapter but no time, update it
+      // A chapter can appear more than once in a page (for example, in a
+      // featured item and in the chapter list). Keep the newest timestamp
+      // reported for that same chapter instead of locking onto the first one.
       const existing = foundChapters.get(num)!;
-      if (!existing.releasedAt) {
+      const existingTs = existing.releasedAt ? Date.parse(existing.releasedAt) : Number.NaN;
+      if (Number.isNaN(existingTs) || ts > existingTs) {
         existing.releasedAt = new Date(ts).toISOString();
       }
     }
@@ -414,6 +417,12 @@ export function extractChaptersFromHtml(
           url: href,
           releasedAt: ts ? new Date(ts).toISOString() : undefined,
         });
+      } else if (ts) {
+        const existing = foundChapters.get(num)!;
+        const existingTs = existing.releasedAt ? Date.parse(existing.releasedAt) : Number.NaN;
+        if (Number.isNaN(existingTs) || ts > existingTs) {
+          existing.releasedAt = new Date(ts).toISOString();
+        }
       }
     }
   }
@@ -425,11 +434,13 @@ export function extractChaptersFromHtml(
     const num = parseFloat(m[1]);
     if (Number.isNaN(num) || num < 0 || num >= 5000) continue;
     if (foundChapters.has(num)) {
-      // Try to fill in missing time
       const existing = foundChapters.get(num)!;
-      if (!existing.releasedAt) {
-        const ts = extractTimeFromContext(m[2]);
-        if (ts) existing.releasedAt = new Date(ts).toISOString();
+      const ts = extractTimeFromContext(m[2]);
+      if (ts) {
+        const existingTs = existing.releasedAt ? Date.parse(existing.releasedAt) : Number.NaN;
+        if (Number.isNaN(existingTs) || ts > existingTs) {
+          existing.releasedAt = new Date(ts).toISOString();
+        }
       }
       continue;
     }
