@@ -286,7 +286,7 @@ function ComixLoginScreen({
       <section className="comix-login-content">
         <div className="comix-login-brand-mark"><AdminBrand /></div>
         <div className="comix-login-header">
-          <h1><span>WELCOME</span><br />BACK</h1>
+          <h1><span>CLYDEE</span><br />WELCOME BACK</h1>
           <div className="comix-login-divider"><i /></div>
           <p>Sign in to manage titles, chapters, and site settings.</p>
         </div>
