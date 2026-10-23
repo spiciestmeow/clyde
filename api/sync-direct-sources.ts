@@ -438,9 +438,19 @@ export function extractChaptersFromHtml(
   while ((m = ariaRegex.exec(cleanHtml)) !== null) {
     const num = parseFloat(m[1]);
     if (Number.isNaN(num) || num < 0 || num >= 5000) continue;
+    let ts = extractTimeFromContext(m[2], timestampPreference);
+    if (!ts) {
+      const rowContext = extractChapterRowContext(
+        cleanHtml,
+        m.index,
+        m.index + m[0].length,
+        num,
+        timestampPreference,
+      );
+      if (rowContext) ts = extractTimeFromContext(rowContext, timestampPreference);
+    }
     if (foundChapters.has(num)) {
       const existing = foundChapters.get(num)!;
-      const ts = extractTimeFromContext(m[2], timestampPreference);
       if (ts) {
         const existingTs = existing.releasedAt ? Date.parse(existing.releasedAt) : Number.NaN;
         if (Number.isNaN(existingTs) || ts > existingTs) {
@@ -449,7 +459,6 @@ export function extractChaptersFromHtml(
       }
       continue;
     }
-    const ts = extractTimeFromContext(m[2], timestampPreference);
     foundChapters.set(num, {
       number: num,
       title: `Chapter ${m[1]}`,
