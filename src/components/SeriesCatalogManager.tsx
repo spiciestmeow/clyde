@@ -13,6 +13,7 @@ import {
   Image as ImageIcon,
   List,
   LoaderCircle,
+  MoreVertical,
   Plus,
   RefreshCw,
   Search,
@@ -21,6 +22,12 @@ import {
   X,
   Zap,
 } from 'lucide-react';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from './ui/dropdown-menu';
 import { syncSeriesSources, syncDirectSources, type SyncSourcesResult, type DirectSourceResult } from '../lib/syncSources';
 import {
   createSeriesRecord,
@@ -1867,67 +1874,84 @@ export default function SeriesCatalogManager() {
                   </div>
                 </div>
                 <div className="title-actions">
-                  <button
-                    type="button"
-                    className="title-action-btn"
-                    title="Edit series details"
-                    onClick={() => {
-                      setEditingSeriesId(series.id);
-                      setDraft({
-                        title: series.title || '',
-                        cover: series.cover || '',
-                        category: series.category || 'Manga',
-                        status: series.status || 'Ongoing',
-                        isNew: series.isNew ?? (series.facts?.is_new === 'true' || false),
-                        synopsis: series.synopsis || '',
-                        alternateTitles: series.alternateTitles || [],
-                        authors: series.author ? series.author.split(',').map((s) => s.trim()) : [],
-                        artists: series.artist ? series.artist.split(',').map((s) => s.trim()) : [],
-                        publishers: series.publishers || [],
-                        contentRating: series.contentRating || 'Safe',
-                        year: series.year ? String(series.year) : '',
-                        originalLanguage: series.originalLanguage || 'Japanese',
-                        demographics: series.demographics || [],
-                        genres: series.genres || [],
-                        formats: series.formats || [],
-                        tags: series.tags || [],
-                        trackers: series.trackers ? series.trackers.map((t) => ({ ...t, logo: t.logo || '', isSample: !!t.isSample })) : [],
-                        sources: series.sources ? series.sources.map((s) => ({ ...s, logo: s.logo || '', isSample: !!s.isSample })) : [],
-                        chapters: series.chapters || [],
-                        facts: series.facts || {},
-                      });
-                      setImportUrl('');
-                      setImportError(null);
-                      setDuplicateTitle(null);
-                      setImportSuccess(null);
-                      setSubmitError(null);
-                      setView('new-title');
-                    }}
-                  >
-                    <Edit2 size={16} />
-                  </button>
-                  <button
-                    type="button"
-                    className="title-action-btn title-action-btn-danger"
-                    title="Delete series"
-                    disabled={deleteSeriesMutation.isPending}
-                    onClick={() => {
-                      if (window.confirm(`Are you sure you want to delete "${series.title}"? This cannot be undone.`)) {
-                        deleteSeriesMutation.mutate(series.id);
-                      }
-                    }}
-                  >
-                    <Trash2 size={16} />
-                  </button>
-                  <a
-                    href={series.href || `/series/${series.slug}`}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="title-action-btn"
-                    title="View public page"
-                  >
-                    <ExternalLink size={16} />
-                  </a>
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <button
+                        type="button"
+                        className="title-actions-trigger"
+                        aria-label={`More actions for ${series.title}`}
+                        title="More actions"
+                      >
+                        <MoreVertical size={18} />
+                      </button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end" sideOffset={6} className="title-actions-menu">
+                      <DropdownMenuItem
+                        className="title-actions-menu-item"
+                        aria-label="Edit"
+                        data-label="Edit"
+                        onSelect={() => {
+                          setEditingSeriesId(series.id);
+                          setDraft({
+                            title: series.title || '',
+                            cover: series.cover || '',
+                            category: series.category || 'Manga',
+                            status: series.status || 'Ongoing',
+                            isNew: series.isNew ?? (series.facts?.is_new === 'true' || false),
+                            synopsis: series.synopsis || '',
+                            alternateTitles: series.alternateTitles || [],
+                            authors: series.author ? series.author.split(',').map((s) => s.trim()) : [],
+                            artists: series.artist ? series.artist.split(',').map((s) => s.trim()) : [],
+                            publishers: series.publishers || [],
+                            contentRating: series.contentRating || 'Safe',
+                            year: series.year ? String(series.year) : '',
+                            originalLanguage: series.originalLanguage || 'Japanese',
+                            demographics: series.demographics || [],
+                            genres: series.genres || [],
+                            formats: series.formats || [],
+                            tags: series.tags || [],
+                            trackers: series.trackers ? series.trackers.map((t) => ({ ...t, logo: t.logo || '', isSample: !!t.isSample })) : [],
+                            sources: series.sources ? series.sources.map((s) => ({ ...s, logo: s.logo || '', isSample: !!s.isSample })) : [],
+                            chapters: series.chapters || [],
+                            facts: series.facts || {},
+                          });
+                          setImportUrl('');
+                          setImportError(null);
+                          setDuplicateTitle(null);
+                          setImportSuccess(null);
+                          setSubmitError(null);
+                          setView('new-title');
+                        }}
+                      >
+                        <Edit2 size={15} />
+                        Edit
+                      </DropdownMenuItem>
+                      <DropdownMenuItem
+                        className="title-actions-menu-item is-danger"
+                        aria-label="Delete"
+                        data-label="Delete"
+                        disabled={deleteSeriesMutation.isPending}
+                        onSelect={() => {
+                          if (window.confirm(`Are you sure you want to delete "${series.title}"? This cannot be undone.`)) {
+                            deleteSeriesMutation.mutate(series.id);
+                          }
+                        }}
+                      >
+                        <Trash2 size={15} />
+                        Delete
+                      </DropdownMenuItem>
+                      <DropdownMenuItem asChild className="title-actions-menu-item" aria-label="View" data-label="View">
+                        <a
+                          href={series.href || `/series/${series.slug}`}
+                          target="_blank"
+                          rel="noreferrer"
+                        >
+                          <ExternalLink size={15} />
+                          View
+                        </a>
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
                 </div>
               </div>
             ))}
