@@ -1,0 +1,95 @@
+.credits-page {
+  width: min(660px, calc(100% - 32px));
+  margin: 34px auto 56px;
+}
+
+.credits-card {
+  padding: 20px;
+  color: var(--text);
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  box-shadow: 0 1px 3px rgb(0 0 0 / 8%), 0 1px 2px rgb(0 0 0 / 4%);
+}
+
+.credits-card h1 {
+  margin: 0 0 20px;
+  color: var(--text);
+  font-size: 24px;
+  font-weight: 700;
+  line-height: 1.3;
+  text-align: center;
+}
+
+.credits-card-intro,
+.credits-section p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 16px;
+  line-height: 1.55;
+}
+
+.credits-section {
+  margin-top: 18px;
+  padding-top: 16px;
+  border-top: 1px solid var(--line);
+}
+
+.credits-card-intro + .credits-section {
+  margin-top: 18px;
+  padding-top: 0;
+  border-top: 0;
+}
+
+.credits-section h2 {
+  margin: 0 0 8px;
+  color: var(--text);
+  font-size: 20px;
+  font-weight: 700;
+  line-height: 1.4;
+}
+
+.credits-page-footer hr {
+  border-top: 0;
+}
+
+.vortex-page .footer.credits-page-footer {
+  box-shadow: none;
+  border: 0;
+}
+
+@media (max-width: 640px) {
+  .credits-page {
+    width: calc(100% - 24px);
+    margin: 20px auto 36px;
+  }
+
+  .credits-card {
+    padding: 18px 16px;
+    border-radius: 10px;
+  }
+
+  .credits-card h1 {
+    margin-bottom: 16px;
+    font-size: 22px;
+  }
+
+  .credits-card-intro,
+  .credits-section p {
+    font-size: 15px;
+  }
+
+  .credits-section {
+    margin-top: 16px;
+    padding-top: 14px;
+  }
+
+  .credits-card-intro + .credits-section {
+    margin-top: 16px;
+    padding-top: 0;
+  }
+
+  .credits-section h2 {
+    font-size: 18px;
+  }
+}

@@ -22,7 +22,6 @@ import {
   Tag,
   X,
 } from 'lucide-react';
-import vortexLogo from '../assets/vortex-logo.webp';
 import SiteHeader from '../components/SiteHeader';
 import SiteFooter from '../components/SiteFooter';
 import SiteSearch from '../components/SiteSearch';
@@ -170,7 +169,6 @@ export default function SeriesBrowsePage() {
   const sortMenuRef = useRef<HTMLDivElement>(null);
   const [page, setPage] = useState(1);
   const [filtersOpen, setFiltersOpen] = useState(false);
-  const logo = assetList[0]?.src ?? '';
   const discord = assetList.find((item) => item.alt === 'Discord Image Link')?.src ?? '';
   const activeSortLabel = sortOptions.find((option) => option.value === sort)?.label ?? 'Latest Chapters';
   const activeFilterCount = Object.keys(genreModes).length +
@@ -196,7 +194,7 @@ export default function SeriesBrowsePage() {
   }, [routeSearch]);
 
   useEffect(() => {
-    const title = 'Browse Series | Vortex Scans';
+    const title = 'Browse Series | Clydee';
     const description = 'Explore manga, manhwa, and manhua series on Clydee. Search the library and browse the latest chapters.';
     document.title = title;
     const setMeta = (selector: string, attribute: string, value: string, name: string) => {
@@ -381,7 +379,7 @@ export default function SeriesBrowsePage() {
   return <div className={`vortex-page series-page catalog-page ${dark ? 'theme-dark' : 'theme-light'}${filtersOpen ? ' has-filter-sheet' : ''}`} onErrorCapture={recoverImage}>
     <SiteHeader
       activeSection="series"
-      logoSrc={vortexLogo}
+      logoSrc="/clydee-logo.png"
       discordSrc={imageUrl(discord, 64)}
       mobileMenuOpen={mobileMenu}
       onToggleMobileMenu={() => setMobileMenu((open) => !open)}
@@ -673,6 +671,6 @@ export default function SeriesBrowsePage() {
       </section>
       </>}
     </main>
-    <SiteFooter className="footer series-footer" logoSrc={imageUrl(logo, 360)} tagline="Read comics, manga, manhua, and manhwa translated swiftly. Clydee, your ultimate library." />
+    <SiteFooter className="footer series-footer" logoSrc="/clydee-logo.png" tagline="Read comics, manga, manhua, and manhwa translated swiftly. Clydee, your ultimate library." />
   </div>;
 }

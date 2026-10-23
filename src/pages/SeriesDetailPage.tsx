@@ -10,7 +10,6 @@ import {
   type SeriesRecord,
 } from '../lib/seriesCatalog';
 import assets from '../../clone-data/asset-references.json';
-import vortexLogo from '../assets/vortex-logo.webp';
 import angryReactionIcon from '../assets/reactions/angry.webp';
 import cryReactionIcon from '../assets/reactions/cry.webp';
 import laughReactionIcon from '../assets/reactions/laugh.webp';
@@ -37,7 +36,6 @@ type ReactionCounts = Record<ReactionKey, number>;
 type RailPosition = { left: number; top: number; width: number; maxHeight: number };
 type FixedRailPositions = { left: RailPosition; right: RailPosition };
 const assetList = assets as { src: string; alt: string }[];
-const logo = assetList[0]?.src;
 const reactionKeys: ReactionKey[] = ['like', 'love', 'happy', 'wow', 'sad', 'angry'];
 const emptyReactionCounts: ReactionCounts = {
   like: 0,
@@ -498,7 +496,7 @@ export default function SeriesDetailPage() {
   const siteHeader = (
     <SiteHeader
       activeSection="series"
-      logoSrc={vortexLogo}
+      logoSrc="/clydee-logo.png"
       discordSrc={imageUrl(assetList.find((asset) => asset.alt === 'Discord Image Link')?.src || '', 64)}
       mobileMenuOpen={mobileNav}
       onToggleMobileMenu={() => setMobileNav(!mobileNav)}
@@ -516,7 +514,7 @@ export default function SeriesDetailPage() {
   const siteFooter = (
     <SiteFooter
       className="footer series-footer"
-      logoSrc={imageUrl(logo || '', 360)}
+      logoSrc="/clydee-logo.png"
       tagline="Read comics, manga, manhua, and manhwa translated swiftly. Clydee, your ultimate library."
     />
   );

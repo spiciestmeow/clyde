@@ -15,12 +15,12 @@ export function Shareable({ open, onOpenChange }: ShareableProps) {
 
   const shareOnX = () => {
     const url = encodeURIComponent(window.location.href);
-    window.open(`https://twitter.com/intent/tweet?url=${url}&text=Vortex%20Scans`, '_blank');
+    window.open(`https://twitter.com/intent/tweet?url=${url}&text=Clydee`, '_blank');
     onOpenChange(false);
   };
 
   const shareOnWhatsApp = () => {
-    const text = encodeURIComponent('Vortex Scans');
+    const text = encodeURIComponent('Clydee');
     const url = encodeURIComponent(window.location.href);
     window.open(`https://wa.me/?text=${text}%20${url}`, '_blank');
     onOpenChange(false);
@@ -34,7 +34,7 @@ export function Shareable({ open, onOpenChange }: ShareableProps) {
   const shareMoreOptions = () => {
     if (navigator.share) {
       navigator.share({
-        title: 'Vortex Scans',
+        title: 'Clydee',
         url: window.location.href,
       }).catch(() => {});
     } else {
@@ -50,7 +50,7 @@ export function Shareable({ open, onOpenChange }: ShareableProps) {
         className="w-[calc(100%-2rem)] max-w-[256px] gap-0 overflow-hidden rounded-[20px] border-0 bg-[#f5f3f1] p-0 text-[#242220] shadow-2xl dark:bg-[#f5f3f1] dark:text-[#242220] data-[state=open]:animate-none data-[state=closed]:animate-none"
       >
         <div className="flex flex-col gap-1 border-b border-[#dedbd7] px-[14px] py-[14px] pr-10">
-          <h2 className="text-sm font-semibold leading-5">Share Vortex Scans</h2>
+          <h2 className="text-sm font-semibold leading-5">Share Clydee</h2>
           <p className="text-xs leading-4 text-[#77716c]">Choose your platform</p>
         </div>
         <div className="px-2 py-2">

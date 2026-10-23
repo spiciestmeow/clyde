@@ -148,8 +148,8 @@ export default function SiteHeader({
       <header className={`topbar${isSeriesPage ? ' series-topbar' : ''}`}>
         <div className="nav-wrap">
           {/* Logo on the left */}
-          <Link href="/" className="brand" onClick={closeMenu} aria-label="Vortex Scans">
-            <img src={logoSrc} alt="Vortex Scans logo" />
+          <Link href="/" className="brand" onClick={closeMenu} aria-label="Clydee">
+            <img src={logoSrc} alt="Clydee logo" />
           </Link>
 
           {/* Desktop Nav in center */}

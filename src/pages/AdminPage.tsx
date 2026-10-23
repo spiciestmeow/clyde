@@ -100,16 +100,16 @@ const homepageVisibilityOptions: { key: keyof HomepageVisibility; label: string;
 ];
 
 const headerVisibilityOptions: { key: keyof HeaderVisibility; label: string; description: string; group: string }[] = [
-  { key: 'home', label: 'Home', description: 'Primary route back to the Vortex Scans homepage.', group: 'Navigation' },
+  { key: 'home', label: 'Home', description: 'Primary route back to the Clydee homepage.', group: 'Navigation' },
   { key: 'series', label: 'Series', description: 'Browse the full catalogue of manga and comics.', group: 'Navigation' },
-  { key: 'shop', label: 'Shop', description: 'Link to the Vortex Scans shop.', group: 'Navigation' },
+  { key: 'shop', label: 'Shop', description: 'Link to the Clydee shop.', group: 'Navigation' },
   { key: 'community', label: 'Community', description: 'Community hub and discussion entry point.', group: 'Navigation' },
   { key: 'search', label: 'Search', description: 'Quick search field in the site header.', group: 'Reader tools' },
   { key: 'bookmarks', label: 'Bookmarks', description: 'A reader’s saved series and reading list.', group: 'Reader tools' },
   { key: 'notifications', label: 'Notifications', description: 'Updates and activity notifications.', group: 'Reader tools' },
   { key: 'theme', label: 'Theme control', description: 'Light and dark appearance control.', group: 'Reader tools' },
   { key: 'account', label: 'Account', description: 'Sign in and account access.', group: 'Reader tools' },
-  { key: 'discord', label: 'Discord', description: 'Direct link to the Vortex Scans Discord.', group: 'Community' },
+  { key: 'discord', label: 'Discord', description: 'Direct link to the Clydee Discord.', group: 'Community' },
 ];
 
 const seriesPageVisibilityOptions: { key: keyof SeriesPageVisibility; label: string; description: string; group: string }[] = [
@@ -120,7 +120,7 @@ const seriesPageVisibilityOptions: { key: keyof SeriesPageVisibility; label: str
   { key: 'synopsis', label: 'Synopsis', description: 'Series summary and genres.', group: 'Information tabs' },
   { key: 'reviews', label: 'Reviews', description: 'Reviews tab and its content.', group: 'Information tabs' },
   { key: 'shareCard', label: 'Share card', description: 'Share this series with other readers.', group: 'Community and discovery' },
-  { key: 'discordCard', label: 'Discord card', description: 'Invite readers to the Vortex Scans Discord.', group: 'Community and discovery' },
+  { key: 'discordCard', label: 'Discord card', description: 'Invite readers to the Clydee Discord.', group: 'Community and discovery' },
   { key: 'reactions', label: 'Reactions', description: 'Like, Love, Laugh, Wow, Sad, and Angry reactions.', group: 'Community and discovery' },
   { key: 'discussion', label: 'Discussion', description: 'Series discussion prompt and comments area.', group: 'Community and discovery' },
   { key: 'similarSeries', label: 'Similar series', description: 'Recommended series list beside the page content.', group: 'Community and discovery' },

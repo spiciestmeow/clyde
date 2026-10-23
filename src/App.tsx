@@ -15,7 +15,7 @@ import { ContinueReadingSection, type ContinueReadingItem } from './components/C
 import AdminPage from './pages/AdminPage';
 import SeriesDetailPage from './pages/SeriesDetailPage';
 import SeriesBrowsePage from './pages/SeriesBrowsePage';
-import DmcaPolicyPage from './pages/DmcaPolicyPage';
+import CreditsPage from './pages/CreditsPage';
 import { toSiteSearchItems, toTrendingSiteSearchItems } from './data/seriesSearchCatalog';
 import { useThemeMode } from './hooks/useThemeMode';
 import { useSeriesCatalog } from './hooks/useSeriesCatalog';
@@ -26,7 +26,6 @@ import {
   getSeriesCreatedTimestamp,
   type SeriesRecord,
 } from './lib/seriesCatalog';
-import vortexLogo from './assets/vortex-logo.webp';
 import assets from '../clone-data/asset-references.json';
 import {
   DEFAULT_SITE_SETTINGS,
@@ -420,7 +419,7 @@ function HomePage() {
     <div className={`vortex-page ${dark ? 'theme-dark' : 'theme-light'}`} onErrorCapture={recoverImage}>
       <SiteHeader
         activeSection="home"
-        logoSrc={vortexLogo}
+        logoSrc="/clydee-logo.png"
         discordSrc={assetUrl(manifest[5].src, 64)}
         mobileMenuOpen={mobileMenu}
         onToggleMobileMenu={() => setMobileMenu(!mobileMenu)}
@@ -456,7 +455,7 @@ function HomePage() {
                     type="button"
                     className="social-action-btn share-btn"
                     onClick={handleShare}
-                    title="Share Vortex Scans"
+                    title="Share Clydee"
                   >
                     <svg className="social-btn-icon" width="18" height="18" fill="currentColor" viewBox="0 0 512 512">
                       <path d="M307 34.8c-11.5 5.1-19 16.6-19 29.2v64H176C78.8 128 0 206.8 0 304C0 417.3 81.5 467.9 100.2 478.1c2.5 1.4 5.3 1.9 8.1 1.9c10.9 0 19.7-8.9 19.7-19.7c0-7.5-4.3-14.4-9.8-19.5C108.8 431.9 96 414.4 96 384c0-53 43-96 96-96h96v64c0 12.6 7.4 24.1 19 29.2s25 3 34.4-5.4l160-144c6.7-6.1 10.6-14.7 10.6-23.8s-3.8-17.7-10.6-23.8l-160-144c-9.4-8.5-22.9-10.6-34.4-5.4z" />
@@ -725,7 +724,7 @@ function HomePage() {
       {homepageVisibility.footer && (
         <SiteFooter
           id="footer"
-          logoSrc={manifest[0].src}
+          logoSrc="/clydee-logo.png"
           tagline="Read Comics, manga, manhua, manhwa, translated swiftly: Clydee, your ultimate library."
         />
       )}
@@ -753,7 +752,8 @@ function App() {
       <NavigationProgress />
       <Switch>
         <Route path="/admin" component={AdminPage} />
-        <Route path="/dmca-policy" component={DmcaPolicyPage} />
+        <Route path="/credits" component={CreditsPage} />
+        <Route path="/dmca-policy" component={CreditsPage} />
         <Route path="/series" component={SeriesBrowsePage} />
         <Route path="/series/:slug" component={SeriesDetailPage} />
         <Route component={HomePage} />
