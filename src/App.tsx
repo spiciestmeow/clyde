@@ -15,6 +15,7 @@ import { ContinueReadingSection, type ContinueReadingItem } from './components/C
 import AdminPage from './pages/AdminPage';
 import SeriesDetailPage from './pages/SeriesDetailPage';
 import SeriesBrowsePage from './pages/SeriesBrowsePage';
+import DmcaPolicyPage from './pages/DmcaPolicyPage';
 import { toSiteSearchItems, toTrendingSiteSearchItems } from './data/seriesSearchCatalog';
 import { useThemeMode } from './hooks/useThemeMode';
 import { useSeriesCatalog } from './hooks/useSeriesCatalog';
@@ -752,6 +753,7 @@ function App() {
       <NavigationProgress />
       <Switch>
         <Route path="/admin" component={AdminPage} />
+        <Route path="/dmca-policy" component={DmcaPolicyPage} />
         <Route path="/series" component={SeriesBrowsePage} />
         <Route path="/series/:slug" component={SeriesDetailPage} />
         <Route component={HomePage} />

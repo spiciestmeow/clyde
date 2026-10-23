@@ -286,6 +286,209 @@ function normalizeSeriesPathSegment(value: string): string {
     .replace(/[^a-z0-9]/g, '');
 }
 
+function isSameSiteHost(candidate: URL, page: URL): boolean {
+  const normalizeHost = (hostname: string) => hostname.toLowerCase().replace(/^www\./, '');
+  return normalizeHost(candidate.hostname) === normalizeHost(page.hostname);
+}
+
+function matchChapterNumberInUrl(value: string): RegExpMatchArray | null {
+  // Some sites use opaque IDs after `/chapter/` (for example, `/chapter/64f1...`).
+  // Require a separator/end after the number so an ID prefix is never treated
+  // as the chapter number. Delimiters still allow routes like `chapter-64-vol-2`.
+  return value.match(/(?:chapter|ch|ep|episode)[-_/](\d+(?:\.\d+)?)(?![a-z0-9])/i);
+}
+
+function matchChapterNumberInLabel(html: string): RegExpMatchArray | null {
+  const labelText = html
+    .replace(/<script\b[^>]*>[\s\S]*?<\/script>/gi, ' ')
+    .replace(/<style\b[^>]*>[\s\S]*?<\/style>/gi, ' ')
+    .replace(/<[^>]+>/g, ' ')
+    .replace(/&nbsp;|&#160;/gi, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+  return labelText.match(/\b(?:chapter|episode)\s*(\d+(?:\.\d+)?)/i);
+}
+
+function extractGenzToonsChapters(
+  html: string,
+  pageUrl: URL,
+  timestampPreference: 'rightmost' | 'newest',
+): DetectedChapterItem[] {
+  type GenzChapterLink = {
+    href: string;
+    label: RegExpMatchArray;
+    routeKey: string;
+    timestamp?: string;
+  };
+
+  const links: GenzChapterLink[] = [];
+  const routeCounts = new Map<string, number>();
+  const anchorRegex = /<a\b([^>]*)>([\s\S]*?)<\/a>/gi;
+  let anchorMatch: RegExpExecArray | null;
+
+  while ((anchorMatch = anchorRegex.exec(html)) !== null) {
+    const attributes = anchorMatch[1];
+    const innerHtml = anchorMatch[2];
+    const hrefMatch = attributes.match(/\bhref\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s>]+))/i);
+    const href = hrefMatch?.[1] ?? hrefMatch?.[2] ?? hrefMatch?.[3];
+    if (!href) continue;
+
+    let linkUrl: URL;
+    try {
+      linkUrl = new URL(href, pageUrl);
+    } catch {
+      continue;
+    }
+    if (!isSameSiteHost(linkUrl, pageUrl) || !/(?:^|\/)chapter\//i.test(linkUrl.pathname)) continue;
+
+    const routeId = linkUrl.pathname.split('/').filter(Boolean).at(-1) || '';
+    const routeKey = routeId.match(/^([a-z\d]{8,})-[a-z\d]{8,}$/i)?.[1] || '';
+    // GenzToons' /chapter/<series-id>-<chapter-id> routes contain no chapter
+    // number. Only accept a number explicitly shown in the link label/ARIA.
+    let chapterLabel = matchChapterNumberInLabel(`${attributes} ${innerHtml}`);
+    if (!chapterLabel) {
+      const rowContext = extractChapterRowContext(
+        html,
+        anchorMatch.index,
+        anchorMatch.index + anchorMatch[0].length,
+        undefined,
+        timestampPreference,
+      );
+      if (rowContext) chapterLabel = matchChapterNumberInLabel(rowContext);
+    }
+    if (!chapterLabel) continue;
+
+    const number = Number.parseFloat(chapterLabel[1]);
+    if (!Number.isFinite(number) || number < 0 || number >= 5000) continue;
+
+    let timestamp = extractTimeFromContext(`${attributes} ${innerHtml}`, timestampPreference);
+    if (!timestamp) {
+      const rowContext = extractChapterRowContext(
+        html,
+        anchorMatch.index,
+        anchorMatch.index + anchorMatch[0].length,
+        number,
+        timestampPreference,
+      );
+      if (rowContext) timestamp = extractTimeFromContext(rowContext, timestampPreference);
+    }
+
+    links.push({
+      href,
+      label: chapterLabel,
+      routeKey,
+      ...(timestamp ? { timestamp: new Date(timestamp).toISOString() } : {}),
+    });
+    if (routeKey) routeCounts.set(routeKey, (routeCounts.get(routeKey) || 0) + 1);
+  }
+
+  // Chapter list entries share a series ID in the opaque route. Ignore any
+  // other labeled chapter links on the same page that belong to recommendations.
+  const primaryRouteKey = Array.from(routeCounts.entries())
+    .sort((a, b) => b[1] - a[1])[0]?.[0];
+  const chapters = new Map<number, DetectedChapterItem>();
+  for (const link of links) {
+    if (primaryRouteKey && link.routeKey !== primaryRouteKey) continue;
+    const number = Number.parseFloat(link.label[1]);
+    const existing = chapters.get(number);
+    if (!existing) {
+      chapters.set(number, {
+        number,
+        title: `Chapter ${link.label[1]}`,
+        url: link.href,
+        ...(link.timestamp ? { releasedAt: link.timestamp } : {}),
+      });
+    } else if (link.timestamp) {
+      const existingTimestamp = existing.releasedAt ? Date.parse(existing.releasedAt) : Number.NaN;
+      if (Number.isNaN(existingTimestamp) || Date.parse(link.timestamp) > existingTimestamp) {
+        existing.releasedAt = link.timestamp;
+      }
+    }
+  }
+
+  return Array.from(chapters.values()).sort((a, b) => b.number - a.number);
+}
+
+function extractMistScanChapters(
+  html: string,
+  pageUrl: URL,
+  seriesSlug: string,
+  timestampPreference: 'rightmost' | 'newest',
+): DetectedChapterItem[] {
+  const normalizedSeriesSlug = normalizeSeriesPathSegment(seriesSlug);
+  if (!normalizedSeriesSlug) return [];
+
+  const chapters = new Map<number, DetectedChapterItem>();
+  const anchorRegex = /<a\b([^>]*)>([\s\S]*?)<\/a>/gi;
+  let anchorMatch: RegExpExecArray | null;
+
+  while ((anchorMatch = anchorRegex.exec(html)) !== null) {
+    const attributes = anchorMatch[1];
+    const innerHtml = anchorMatch[2];
+    const hrefMatch = attributes.match(/\bhref\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s>]+))/i);
+    const href = hrefMatch?.[1] ?? hrefMatch?.[2] ?? hrefMatch?.[3];
+    if (!href) continue;
+
+    let linkUrl: URL;
+    try {
+      linkUrl = new URL(href, pageUrl);
+    } catch {
+      continue;
+    }
+    if (!isSameSiteHost(linkUrl, pageUrl)) continue;
+
+    const decodedPath = (() => {
+      try {
+        return decodeURIComponent(linkUrl.pathname);
+      } catch {
+        return linkUrl.pathname;
+      }
+    })();
+    const normalizedLinkPath = normalizeSeriesPathSegment(decodedPath);
+    if (!normalizedLinkPath.startsWith(`${normalizedSeriesSlug}chapter`)) continue;
+
+    // Mist Scans uses routes such as /solo-ex-rank-summoner-chapter-44.
+    // Read the displayed chapter label first, then use this series-specific
+    // route as a fallback when its link text contains only the date/actions.
+    const visibleLabel = matchChapterNumberInLabel(`${attributes} ${innerHtml}`);
+    const routeLabel = decodedPath.match(/chapter[-_/]?(\d+(?:\.\d+)?)(?:\/|$)/i);
+    const chapterMatch = visibleLabel ?? routeLabel;
+    if (!chapterMatch) continue;
+
+    const number = Number.parseFloat(chapterMatch[1]);
+    if (!Number.isFinite(number) || number < 0 || number >= 5000) continue;
+
+    let timestamp = extractTimeFromContext(`${attributes} ${innerHtml}`, timestampPreference);
+    if (!timestamp) {
+      const rowContext = extractChapterRowContext(
+        html,
+        anchorMatch.index,
+        anchorMatch.index + anchorMatch[0].length,
+        number,
+        timestampPreference,
+      );
+      if (rowContext) timestamp = extractTimeFromContext(rowContext, timestampPreference);
+    }
+
+    const existing = chapters.get(number);
+    if (!existing) {
+      chapters.set(number, {
+        number,
+        title: `Chapter ${chapterMatch[1]}`,
+        url: href,
+        releasedAt: timestamp ? new Date(timestamp).toISOString() : undefined,
+      });
+    } else if (timestamp) {
+      const existingTimestamp = existing.releasedAt ? Date.parse(existing.releasedAt) : Number.NaN;
+      if (Number.isNaN(existingTimestamp) || timestamp > existingTimestamp) {
+        existing.releasedAt = new Date(timestamp).toISOString();
+      }
+    }
+  }
+
+  return Array.from(chapters.values()).sort((a, b) => b.number - a.number);
+}
+
 export function extractChaptersFromHtml(
   html: string,
   pageUrl: string,
@@ -314,6 +517,21 @@ export function extractChaptersFromHtml(
     /(^|\.)asurascans\.com$/i.test(parsedUrl.hostname) ? 'rightmost' : 'newest';
 
   const foundChapters = new Map<number, DetectedChapterItem>();
+
+  if (/(^|\.)genztoons\.org$/i.test(parsedUrl.hostname)) {
+    return extractGenzToonsChapters(cleanHtml, parsedUrl, timestampPreference);
+  }
+
+  if (/(^|\.)mistscans\.org$/i.test(parsedUrl.hostname)) {
+    for (const chapter of extractMistScanChapters(
+      cleanHtml,
+      parsedUrl,
+      seriesSlug,
+      timestampPreference,
+    )) {
+      foundChapters.set(chapter.number, chapter);
+    }
+  }
 
   // 2. Scan for chapter links with surrounding context for time extraction
   // We use a wider regex that captures the chapter link AND a chunk of surrounding HTML
@@ -352,10 +570,13 @@ export function extractChaptersFromHtml(
       }
     }
 
-    const hrefChMatch = href.match(/(?:chapter|ch|ep|episode)[-_/](\d+(?:\.\d+)?)/i);
-    if (!hrefChMatch) continue;
+    // Opaque chapter URLs may begin with an ID (for example `/chapter/64f1…`)
+    // instead of the chapter number. In that case, use the visible label in
+    // the chapter link rather than interpreting part of the ID as a number.
+    const chapterMatch = matchChapterNumberInUrl(href) ?? matchChapterNumberInLabel(innerHtml);
+    if (!chapterMatch) continue;
 
-    const num = parseFloat(hrefChMatch[1]);
+    const num = parseFloat(chapterMatch[1]);
     if (Number.isNaN(num) || num < 0 || num >= 5000) continue;
 
     // Prefer the chapter link itself, then its containing row. Do not search
@@ -369,7 +590,7 @@ export function extractChaptersFromHtml(
     if (!foundChapters.has(num)) {
       foundChapters.set(num, {
         number: num,
-        title: `Chapter ${hrefChMatch[1]}`,
+        title: `Chapter ${chapterMatch[1]}`,
         url: href,
         releasedAt: ts ? new Date(ts).toISOString() : undefined,
       });
@@ -437,7 +658,7 @@ export function extractChaptersFromHtml(
       } catch {
         continue;
       }
-      if (linkUrl.origin !== parsedUrl.origin) continue;
+      if (!isSameSiteHost(linkUrl, parsedUrl)) continue;
 
       const anchorText = innerHtml
         .replace(/<[^>]+>/g, ' ')
@@ -445,7 +666,7 @@ export function extractChaptersFromHtml(
         .replace(/\s+/g, ' ')
         .trim();
       const chapterMatch = anchorText.match(/\bchapter\s*(\d+(?:\.\d+)?)/i)
-        || href.match(/(?:chapter|ch|ep|episode)[-_/](\d+(?:\.\d+)?)/i);
+        || matchChapterNumberInUrl(href);
       if (!chapterMatch) continue;
 
       const num = parseFloat(chapterMatch[1]);
@@ -566,7 +787,10 @@ export async function scrapeDirectSources(
       }
       const html = await res.text();
 
-      const chapters = extractChaptersFromHtml(html, src.url, title);
+      // Parse relative chapter URLs against the final URL after redirects.
+      // Some scan sites switch between www and apex hosts or canonicalize
+      // their series route before serving the chapter list.
+      const chapters = extractChaptersFromHtml(html, res.url || src.url, title);
       if (chapters.length === 0) {
         sourceIssues.push({
           name: sourceName,

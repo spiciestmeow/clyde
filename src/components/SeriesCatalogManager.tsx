@@ -46,6 +46,7 @@ import { uploadOrCompressCover } from '../lib/imageUpload';
 import './series-catalog-manager.css';
 import { BackgroundSyncTimer } from './BackgroundSyncTimer';
 import { SyncActivityLogs } from './SyncActivityLogs';
+import { ConfirmationDialog } from './ConfirmationDialog';
 
 type LinkDraft = {
   name: string;
@@ -191,6 +192,8 @@ export default function SeriesCatalogManager() {
   // Form draft & editing state
   const [editingSeriesId, setEditingSeriesId] = useState<number | null>(() => savedTitleEditor?.editingSeriesId ?? null);
   const [draft, setDraft] = useState<FormDraft>(() => savedTitleEditor?.draft ?? initialFormDraft());
+  const [pendingSourceRemovalIndex, setPendingSourceRemovalIndex] = useState<number | null>(null);
+  const [seriesPendingDelete, setSeriesPendingDelete] = useState<SeriesRecord | null>(null);
   const [newAltTitle, setNewAltTitle] = useState('');
   const [newAuthor, setNewAuthor] = useState('');
   const [newArtist, setNewArtist] = useState('');
@@ -550,6 +553,7 @@ export default function SeriesCatalogManager() {
     mutationFn: deleteSeriesRecord,
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: SERIES_CATALOG_QUERY_KEY });
+      setSeriesPendingDelete(null);
     },
     onError: (err: any) => {
       alert(err?.message || 'Failed to delete series.');
@@ -1735,7 +1739,8 @@ export default function SeriesCatalogManager() {
                 <button
                   type="button"
                   className="btn-icon-danger"
-                  onClick={() => setDraft((c) => ({ ...c, sources: c.sources.filter((_, i) => i !== idx) }))}
+                  aria-label={`Remove ${source.name || 'source'}`}
+                  onClick={() => setPendingSourceRemovalIndex(idx)}
                 >
                   <Trash2 size={16} />
                 </button>
@@ -1781,6 +1786,26 @@ export default function SeriesCatalogManager() {
           </div>
         </form>
         {syncSourcesModalElement}
+        <ConfirmationDialog
+          open={pendingSourceRemovalIndex !== null}
+          onOpenChange={(open) => {
+            if (!open) setPendingSourceRemovalIndex(null);
+          }}
+          title="Remove source?"
+          description={pendingSourceRemovalIndex === null
+            ? ''
+            : `Remove “${draft.sources[pendingSourceRemovalIndex]?.name || 'this source'}” from this title? The change will be applied when you save.`}
+          confirmLabel="Remove source"
+          onConfirm={() => {
+            if (pendingSourceRemovalIndex === null) return;
+            const index = pendingSourceRemovalIndex;
+            setDraft((current) => ({
+              ...current,
+              sources: current.sources.filter((_, sourceIndex) => sourceIndex !== index),
+            }));
+            setPendingSourceRemovalIndex(null);
+          }}
+        />
       </div>
     );
   }
@@ -1982,11 +2007,7 @@ export default function SeriesCatalogManager() {
                         aria-label="Delete"
                         data-label="Delete"
                         disabled={deleteSeriesMutation.isPending}
-                        onSelect={() => {
-                          if (window.confirm(`Are you sure you want to delete "${series.title}"? This cannot be undone.`)) {
-                            deleteSeriesMutation.mutate(series.id);
-                          }
-                        }}
+                        onSelect={() => setSeriesPendingDelete(series)}
                       >
                         <Trash2 size={15} />
                         Delete
@@ -2177,6 +2198,21 @@ export default function SeriesCatalogManager() {
       )}
 
       {syncSourcesModalElement}
+      <ConfirmationDialog
+        open={seriesPendingDelete !== null}
+        onOpenChange={(open) => {
+          if (!open) setSeriesPendingDelete(null);
+        }}
+        title="Delete title?"
+        description={seriesPendingDelete
+          ? `Are you sure you want to delete “${seriesPendingDelete.title}”? This cannot be undone.`
+          : ''}
+        confirmLabel="Delete title"
+        pending={deleteSeriesMutation.isPending}
+        onConfirm={() => {
+          if (seriesPendingDelete) deleteSeriesMutation.mutate(seriesPendingDelete.id);
+        }}
+      />
     </div>
   );
 }

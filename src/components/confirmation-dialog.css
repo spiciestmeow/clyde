@@ -1,0 +1,181 @@
+.confirmation-dialog__overlay {
+  z-index: 1000 !important;
+  background: rgb(15 23 42 / 52%) !important;
+  backdrop-filter: blur(3px);
+}
+
+.confirmation-dialog__content {
+  z-index: 1001 !important;
+  display: block !important;
+  width: min(440px, calc(100vw - 32px)) !important;
+  max-width: min(440px, calc(100vw - 32px)) !important;
+  max-height: min(85vh, 520px) !important;
+  overflow: auto !important;
+  padding: 24px !important;
+  border: 1px solid #28333f !important;
+  border-radius: 16px !important;
+  background: #161c22 !important;
+  color: #e6edf3 !important;
+  box-shadow: 0 24px 60px rgb(0 0 0 / 30%) !important;
+}
+
+.confirmation-dialog__close {
+  top: 17px !important;
+  right: 17px !important;
+  color: #8b98a5 !important;
+  opacity: 1 !important;
+}
+
+.confirmation-dialog__close:hover {
+  color: #e6edf3 !important;
+}
+
+.confirmation-dialog__header {
+  display: flex !important;
+  flex-direction: row !important;
+  align-items: flex-start !important;
+  gap: 14px !important;
+  padding-right: 22px;
+  text-align: left !important;
+}
+
+.confirmation-dialog__icon {
+  display: grid;
+  flex: 0 0 42px;
+  width: 42px;
+  height: 42px;
+  place-items: center;
+  border: 1px solid #7f1d1d;
+  border-radius: 12px;
+  background: #2d1616;
+  color: #f87171;
+}
+
+.confirmation-dialog__copy {
+  min-width: 0;
+  padding-top: 2px;
+}
+
+.confirmation-dialog__title {
+  margin: 0 !important;
+  color: #f8fafc !important;
+  font-size: 18px !important;
+  font-weight: 700 !important;
+  line-height: 1.35 !important;
+}
+
+.confirmation-dialog__description {
+  margin-top: 7px !important;
+  color: #9aa7b5 !important;
+  font-size: 14px !important;
+  line-height: 1.55 !important;
+}
+
+.confirmation-dialog__footer {
+  display: flex !important;
+  flex-direction: row !important;
+  justify-content: flex-end !important;
+  gap: 10px !important;
+  margin-top: 24px;
+}
+
+.confirmation-dialog__button {
+  display: inline-flex;
+  min-height: 40px;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 0 15px;
+  border: 1px solid transparent;
+  border-radius: 9px;
+  font: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 120ms ease, border-color 120ms ease, color 120ms ease;
+}
+
+.confirmation-dialog__button:focus-visible {
+  outline: 2px solid #2dd4bf;
+  outline-offset: 2px;
+}
+
+.confirmation-dialog__button:disabled {
+  cursor: not-allowed;
+  opacity: 0.65;
+}
+
+.confirmation-dialog__button--cancel {
+  border-color: #374656;
+  background: #1b232c;
+  color: #cbd5e1;
+}
+
+.confirmation-dialog__button--cancel:hover:not(:disabled) {
+  background: #242d38;
+}
+
+.confirmation-dialog__button--confirm {
+  background: #dc2626;
+  color: #fff;
+}
+
+.confirmation-dialog__button--confirm:hover:not(:disabled) {
+  background: #b91c1c;
+}
+
+.confirmation-dialog__spinner {
+  animation: confirmation-dialog-spin 900ms linear infinite;
+}
+
+@keyframes confirmation-dialog-spin {
+  to { transform: rotate(360deg); }
+}
+
+body:has(.comix-admin-wrapper.theme-light) .confirmation-dialog__content {
+  border-color: #e2e8f0 !important;
+  background: #fff !important;
+  color: #0f172a !important;
+  box-shadow: 0 24px 60px rgb(15 23 42 / 22%) !important;
+}
+
+body:has(.comix-admin-wrapper.theme-light) .confirmation-dialog__close {
+  color: #64748b !important;
+}
+
+body:has(.comix-admin-wrapper.theme-light) .confirmation-dialog__close:hover {
+  color: #0f172a !important;
+}
+
+body:has(.comix-admin-wrapper.theme-light) .confirmation-dialog__title {
+  color: #0f172a !important;
+}
+
+body:has(.comix-admin-wrapper.theme-light) .confirmation-dialog__description {
+  color: #64748b !important;
+}
+
+body:has(.comix-admin-wrapper.theme-light) .confirmation-dialog__button--cancel {
+  border-color: #cbd5e1;
+  background: #f8fafc;
+  color: #334155;
+}
+
+body:has(.comix-admin-wrapper.theme-light) .confirmation-dialog__button--cancel:hover:not(:disabled) {
+  background: #f1f5f9;
+}
+
+@media (max-width: 480px) {
+  .confirmation-dialog__content {
+    padding: 20px !important;
+    border-radius: 14px !important;
+  }
+
+  .confirmation-dialog__footer {
+    flex-direction: column-reverse !important;
+  }
+
+  .confirmation-dialog__button {
+    width: 100%;
+  }
+}
