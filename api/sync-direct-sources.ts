@@ -375,6 +375,38 @@ export function extractChaptersFromHtml(
     }
   }
 
+  // Thunder Scans renders locked chapters as <li data-num="N"> rows. Those
+  // rows have no chapter href, while a separate "New Chapter" link provides
+  // the latest number without its date. Read the chapter number and date from
+  // the same list row so the timestamp is not lost for locked chapters.
+  if (/(^|\.)en-thunderscans\.com$/i.test(parsedUrl.hostname)) {
+    const thunderRowRegex = /<li\b([^>]*)>([\s\S]*?)<\/li>/gi;
+    let rowMatch: RegExpExecArray | null;
+    while ((rowMatch = thunderRowRegex.exec(cleanHtml)) !== null) {
+      const attributes = rowMatch[1];
+      const rowHtml = rowMatch[2];
+      const dataNumMatch = attributes.match(/\bdata-num\s*=\s*["'](\d+(?:\.\d+)?)["']/i);
+      if (!dataNumMatch || !/class=["'][^"']*chapternum/i.test(rowHtml)) continue;
+
+      const num = parseFloat(dataNumMatch[1]);
+      if (Number.isNaN(num) || num < 0 || num >= 5000) continue;
+      const ts = extractTimeFromContext(rowHtml, timestampPreference);
+      const existing = foundChapters.get(num);
+      if (!existing) {
+        foundChapters.set(num, {
+          number: num,
+          title: `Chapter ${dataNumMatch[1]}`,
+          releasedAt: ts ? new Date(ts).toISOString() : undefined,
+        });
+      } else if (ts) {
+        const existingTs = existing.releasedAt ? Date.parse(existing.releasedAt) : Number.NaN;
+        if (Number.isNaN(existingTs) || ts > existingTs) {
+          existing.releasedAt = new Date(ts).toISOString();
+        }
+      }
+    }
+  }
+
   // Some series pages use chapter URLs that do not include the word "chapter"
   // (or expose the chapter number only in the link text). If the standard
   // route-based scan found nothing, inspect same-site anchors labelled
