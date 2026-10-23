@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState, type ChangeEvent, type FormEvent } from 'react';
+import { useEffect, useMemo, useRef, useState, type ChangeEvent, type FormEvent } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import {
   AlertCircle,
@@ -138,6 +138,25 @@ const initialFormDraft = (): FormDraft => ({
   facts: {},
 });
 
+const TITLE_EDITOR_SESSION_KEY = 'comix-admin-title-editor-v1';
+
+function loadTitleEditorSession(): { draft: FormDraft; editingSeriesId: number | null } | null {
+  try {
+    const saved = sessionStorage.getItem(TITLE_EDITOR_SESSION_KEY);
+    if (!saved) return null;
+
+    const parsed = JSON.parse(saved) as { draft?: FormDraft; editingSeriesId?: number | null };
+    if (!parsed.draft || typeof parsed.draft !== 'object') return null;
+
+    return {
+      draft: { ...initialFormDraft(), ...parsed.draft },
+      editingSeriesId: typeof parsed.editingSeriesId === 'number' ? parsed.editingSeriesId : null,
+    };
+  } catch {
+    return null;
+  }
+}
+
 function slugify(value: string) {
   return value
     .normalize('NFKD')
@@ -151,9 +170,10 @@ export default function SeriesCatalogManager() {
   const queryClient = useQueryClient();
   const catalogQuery = useSeriesCatalog();
   const catalogItems = catalogQuery.items;
+  const [savedTitleEditor] = useState(loadTitleEditorSession);
 
   // View state: 'list' (Image 1) or 'new-title' (Image 3)
-  const [view, setView] = useState<'list' | 'new-title'>('list');
+  const [view, setView] = useState<'list' | 'new-title'>(() => savedTitleEditor ? 'new-title' : 'list');
   // Modal state: Image 2 "Upload chapter" dialog
   const [isModalOpen, setIsModalOpen] = useState(false);
   // Main tabs: 'titles' or 'chapters'
@@ -169,8 +189,8 @@ export default function SeriesCatalogManager() {
   const [modalSearch, setModalSearch] = useState('');
 
   // Form draft & editing state
-  const [editingSeriesId, setEditingSeriesId] = useState<number | null>(null);
-  const [draft, setDraft] = useState<FormDraft>(initialFormDraft);
+  const [editingSeriesId, setEditingSeriesId] = useState<number | null>(() => savedTitleEditor?.editingSeriesId ?? null);
+  const [draft, setDraft] = useState<FormDraft>(() => savedTitleEditor?.draft ?? initialFormDraft());
   const [newAltTitle, setNewAltTitle] = useState('');
   const [newAuthor, setNewAuthor] = useState('');
   const [newArtist, setNewArtist] = useState('');
@@ -184,6 +204,20 @@ export default function SeriesCatalogManager() {
   const [duplicateTitle, setDuplicateTitle] = useState<{ title: string; href: string } | null>(null);
   const [importSuccess, setImportSuccess] = useState<string | null>(null);
   const [submitError, setSubmitError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (view !== 'new-title') {
+      sessionStorage.removeItem(TITLE_EDITOR_SESSION_KEY);
+      return;
+    }
+
+    const session = JSON.stringify({ draft, editingSeriesId });
+    try {
+      sessionStorage.setItem(TITLE_EDITOR_SESSION_KEY, session);
+    } catch {
+      // Keep the editor state in memory if the browser storage quota is exhausted.
+    }
+  }, [view, draft, editingSeriesId]);
 
   // Chapter upload states
   const [selectedSeriesForChapter, setSelectedSeriesForChapter] = useState<SeriesRecord | null>(null);
@@ -349,13 +383,12 @@ export default function SeriesCatalogManager() {
         const nextSources = prev.sources.map((source) => {
           const scanResult = sourceResultsByUrl.get(source.url.trim());
           if (!scanResult) return source;
-          const chapterChanged = String(source.latestChapterNumber || '') !== scanResult.latestChapterNumber;
           return {
             ...source,
             latestChapterNumber: scanResult.latestChapterNumber,
-            ...(scanResult.latestChapterAt
-              ? { latestChapterAt: scanResult.latestChapterAt }
-              : chapterChanged ? { latestChapterAt: undefined } : {}),
+            // Replace stale release dates as well as chapter counts. An
+            // unavailable date should stay unknown, not retain a prior sync time.
+            latestChapterAt: scanResult.latestChapterAt,
           };
         });
         const nextFacts = {
@@ -714,6 +747,11 @@ export default function SeriesCatalogManager() {
       return;
     }
 
+    if (!draft.year.trim()) {
+      setSubmitError('Year is required.');
+      return;
+    }
+
     if (duplicateTitle) {
       setSubmitError('This title already exists in your website catalog. Prevent duplicate.');
       return;
@@ -810,7 +848,12 @@ export default function SeriesCatalogManager() {
               type="text"
               placeholder="Enter series title (e.g. Solo Leveling)"
               value={syncQuery}
-              onChange={(e) => setSyncQuery(e.target.value)}
+              onChange={(e) => {
+                setSyncQuery(e.target.value);
+                // A previous empty-title/search error is no longer relevant once
+                // the user starts entering a title.
+                setSyncError(null);
+              }}
               disabled={isSyncing}
             />
           </div>
@@ -836,25 +879,14 @@ export default function SeriesCatalogManager() {
 
         {/* Error Banner */}
         {syncError && (
-          <div className="uploads-error-banner" style={{ margin: '8px 0 14px' }}>
+          <div className="sync-search-error" role="alert">
             <AlertCircle size={15} />
             <span>{syncError}</span>
           </div>
         )}
 
         {syncError && (!syncResult || syncResult.sources.length === 0) && (
-          <div
-            style={{
-              padding: '10px 14px',
-              borderRadius: 8,
-              background: 'rgba(56, 189, 248, 0.08)',
-              border: '1px solid rgba(56, 189, 248, 0.2)',
-              fontSize: 12,
-              color: '#bae6fd',
-              marginBottom: 14,
-              lineHeight: 1.5,
-            }}
-          >
+          <div className="sync-direct-link-tip">
             <strong>Direct Link Tip:</strong> If MangaUpdates has no records for this series, you can close this modal, paste your direct scanlator URLs (e.g. Asura, Qi Manga) directly into the <strong>Sources</strong> list, and click the new <strong>Manual Sync</strong> button!
           </div>
         )}
@@ -1010,7 +1042,7 @@ export default function SeriesCatalogManager() {
         )}
 
         {/* Footer with Import Button */}
-        <div className="modal-footer" style={{ marginTop: 16 }}>
+        <div className="modal-footer sync-modal-footer" style={{ marginTop: 16 }}>
           <button
             type="button"
             className="btn-light"
@@ -1072,7 +1104,7 @@ export default function SeriesCatalogManager() {
               <input
                 type="text"
                 className="import-input"
-                placeholder="Paste MangaDex or MangaBaka link..."
+                placeholder="Paste MangaDex or MangaBaka URL"
                 value={importUrl}
                 onChange={(e) => {
                   setImportUrl(e.target.value);
@@ -1334,7 +1366,19 @@ export default function SeriesCatalogManager() {
                   <select
                     className="select-input"
                     value={draft.category}
-                    onChange={(e) => setDraft((c) => ({ ...c, category: e.target.value }))}
+                    onChange={(e) => {
+                      const category = e.target.value;
+                      const languageByType: Record<string, string> = {
+                        Manhwa: 'Korean',
+                        Manga: 'Japanese',
+                        Manhua: 'Chinese',
+                      };
+                      setDraft((c) => ({
+                        ...c,
+                        category,
+                        originalLanguage: languageByType[category] || c.originalLanguage,
+                      }));
+                    }}
                   >
                     {ALL_TYPES.map((t) => (
                       <option key={t} value={t}>{t}</option>
@@ -1381,12 +1425,18 @@ export default function SeriesCatalogManager() {
               </div>
 
               <div className="field-group">
-                <label className="field-label">Year</label>
+                <label className="field-label">
+                  Year <span className="required-star">*</span>
+                </label>
                 <input
-                  type="text"
+                  type="number"
+                  min="1000"
+                  max="9999"
+                  step="1"
                   className="text-input"
                   placeholder="e.g. 2024"
                   value={draft.year}
+                  required
                   onChange={(e) => setDraft((c) => ({ ...c, year: e.target.value }))}
                 />
               </div>
@@ -1871,6 +1921,7 @@ export default function SeriesCatalogManager() {
                   </div>
                   <div className="title-stats">
                     <span>{series.facts?.latest_chapter_number ? `Ch. ${series.facts.latest_chapter_number}` : `${series.chapters?.length || 0} chapters`}</span>
+                    <span>{series.sources?.length ?? 0} sources</span>
                   </div>
                 </div>
                 <div className="title-actions">

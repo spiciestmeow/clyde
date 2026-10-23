@@ -6,6 +6,7 @@ import {
   BookOpen,
   Bookmark,
   Check,
+  ChevronDown,
   Clock,
   Database,
   Download,
@@ -66,6 +67,24 @@ type SidebarTab =
   | 'import-export'
   | 'blocked-users'
   | 'settings';
+
+const mobileSidebarItems = [
+  { id: 'edit-profile', label: 'Edit Profile', Icon: UserCheck },
+  { id: 'followed-titles', label: 'Followed Titles', Icon: Bookmark },
+  { id: 'followed-users', label: 'Followed Users', Icon: Users },
+  { id: 'followed-groups', label: 'Followed Groups', Icon: Users },
+  { id: 'read-history', label: 'Read History', Icon: History },
+  { id: 'collections', label: 'Collections', Icon: FolderKanban },
+  { id: 'feed', label: 'Feed', Icon: Rss },
+  { id: 'notifications', label: 'Notifications', Icon: Bell },
+  { id: 'comments', label: 'Comments', Icon: MessageSquare },
+  { id: 'posts', label: 'Posts', Icon: FileText },
+  { id: 'uploads', label: 'Uploaded Chapters', Icon: Upload },
+  { id: 'hero-slides', label: 'Hero Slides', Icon: LayoutTemplate },
+  { id: 'import-export', label: 'Import / Export', Icon: Database },
+  { id: 'blocked-users', label: 'Blocked Users', Icon: UserX },
+  { id: 'settings', label: 'Settings', Icon: Settings },
+] satisfies { id: SidebarTab; label: string; Icon: typeof UserCheck }[];
 
 const homepageVisibilityOptions: { key: keyof HomepageVisibility; label: string; description: string; group: string }[] = [
   { key: 'featuredSeries', label: 'Featured series', description: 'Featured-series carousel at the top of the homepage.', group: 'Featured content' },
@@ -321,6 +340,7 @@ function ComixDashboard({
   onLogout: () => void;
 }) {
   const [activeTab, setActiveTab] = useState<SidebarTab>('uploads');
+  const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const [settingsSubTab, setSettingsSubTab] = useState<'homepage' | 'header' | 'series'>('homepage');
   const [topSearch, setTopSearch] = useState('');
 
@@ -478,6 +498,44 @@ function ComixDashboard({
 
         {/* Dashboard 2-Column Grid */}
         <div className="comix-layout-grid">
+          <div className={`comix-mobile-nav ${mobileNavOpen ? 'is-open' : ''}`}>
+            <button
+              type="button"
+              className="comix-mobile-nav-trigger"
+              aria-expanded={mobileNavOpen}
+              onClick={() => setMobileNavOpen((open) => !open)}
+            >
+              {(() => {
+                const selected = mobileSidebarItems.find((item) => item.id === activeTab) ?? mobileSidebarItems[10];
+                const SelectedIcon = selected.Icon;
+                return <><SelectedIcon size={16} /><span>{selected.label}</span></>;
+              })()}
+              <ChevronDown size={16} className="comix-mobile-nav-chevron" />
+            </button>
+            {mobileNavOpen && (
+              <div className="comix-mobile-nav-list">
+                {mobileSidebarItems.map(({ id, label, Icon }) => (
+                  <button
+                    type="button"
+                    key={id}
+                    className={`comix-mobile-nav-option ${activeTab === id ? 'is-active' : ''}`}
+                    onClick={() => {
+                      setActiveTab(id);
+                      setMobileNavOpen(false);
+                    }}
+                  >
+                    <Icon size={16} />
+                    <span>{label}</span>
+                    {id === 'uploads' && <span className="nav-badge">{catalogItems.length}</span>}
+                  </button>
+                ))}
+                <button type="button" className="comix-mobile-nav-option" onClick={handleSignOut}>
+                  <LogOut size={16} />
+                  <span>Sign out</span>
+                </button>
+              </div>
+            )}
+          </div>
           {/* Left Sidebar */}
           <aside className="comix-sidebar">
             <button

@@ -128,13 +128,18 @@ export default async function handler(
           refreshedSources = (Array.isArray(item.sources) ? item.sources : []).map((source: any) => {
             const scanResult = sourceResultsByUrl.get(typeof source?.url === 'string' ? source.url.trim() : '');
             if (!scanResult) return source;
-            const chapterChanged = String(source.latestChapterNumber || '') !== scanResult.latestChapterNumber;
+            const isWinningSource = typeof source?.url === 'string' && source.url.trim() === latestDirectSourceUrl.trim();
+            const winningReleaseAt = detectedTimestamp
+              ? new Date(detectedTimestamp).toISOString()
+              : scanResult.latestChapterAt;
             return {
               ...source,
               latestChapterNumber: scanResult.latestChapterNumber,
-              ...(scanResult.latestChapterAt
-                ? { latestChapterAt: scanResult.latestChapterAt }
-                : chapterChanged ? { latestChapterAt: undefined } : {}),
+              // A successful scrape with no date means the date is unknown;
+              // never keep an old timestamp that may reflect the sync time.
+              // Keep the winning source aligned with the canonical timestamp
+              // used for the series-level release date.
+              latestChapterAt: isWinningSource ? winningReleaseAt : scanResult.latestChapterAt,
             };
           });
           hasSourceStatsChange = JSON.stringify(refreshedSources) !== JSON.stringify(item.sources || []);
@@ -188,7 +193,7 @@ export default async function handler(
                   href: newChHref,
                   status: 'New',
                   locked: false,
-                  createdAt: releaseIso || new Date().toISOString(),
+                  ...(releaseIso ? { createdAt: releaseIso } : {}),
                 },
                 ...existingChapters,
               ];
@@ -302,7 +307,8 @@ export default async function handler(
                 hasNewTopSource ? 'top source' : '',
                 hasSourceStatsChange ? 'per-source chapter data' : '',
               ].filter(Boolean).join(' and ');
-              logs.push(`[${item.title}] Chapter ${currentNum} is up-to-date; refreshed ${refreshed}.`);
+              const releaseDetail = releaseIso ? ` to ${releaseIso}` : '';
+              logs.push(`[${item.title}] Chapter ${currentNum} is up-to-date; refreshed ${refreshed}${releaseDetail}.`);
             }
           } else {
             logs.push(`[${item.title}] Up-to-date (Current: ${currentNum}, Detected: ${detectedChNum} via ${detectionSource})`);

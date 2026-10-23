@@ -218,7 +218,7 @@ export default function HeroSlidesManager({
           </p>
         </div>
 
-        <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
+        <div className="hero-slides-header-actions" style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
           <button type="button" className="btn-teal" onClick={openAddModal}>
             <Plus size={16} /> Add new slide
           </button>

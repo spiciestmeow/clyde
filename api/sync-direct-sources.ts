@@ -131,6 +131,7 @@ function extractTimeFromContext(
     .trim();
 
   const visibleTimeCandidates: { index: number; timestamp: number }[] = [];
+  const visibleCalendarDateCandidates: { index: number; timestamp: number }[] = [];
   const relativeTimePattern =
     /(?:about\s+)?\d+(?:\.\d+)?\s*(?:seconds?|secs?|s|minutes?|mins?|m|hours?|hrs?|h|days?|d|weeks?|wks?|w|months?|mos?|mo|years?|yrs?|y)(?:\s*ago)?|\b(?:yesterday|just now|today)\b/gi;
   for (const match of textOnly.matchAll(relativeTimePattern)) {
@@ -149,19 +150,28 @@ function extractTimeFromContext(
   for (const pattern of absoluteDatePatterns) {
     for (const match of textOnly.matchAll(new RegExp(pattern.source, `${pattern.flags}g`))) {
       const ts = parseRelativeTime(match[0]);
-      if (ts) visibleTimeCandidates.push({ index: match.index, timestamp: ts });
+      if (ts) visibleCalendarDateCandidates.push({ index: match.index, timestamp: ts });
     }
   }
 
   // Some sources (such as Asura) render the upload age at the right side of
   // each chapter row. Other sources use different layouts, so keep their
   // existing newest-timestamp selection behavior.
+  if (timestampPreference === 'rightmost' && (visibleTimeCandidates.length > 0 || visibleCalendarDateCandidates.length > 0)) {
+    const candidates = [...visibleTimeCandidates, ...visibleCalendarDateCandidates];
+    return candidates.reduce((rightmost, candidate) =>
+      candidate.index > rightmost.index ? candidate : rightmost,
+    ).timestamp;
+  }
+
+  // Calendar dates such as "May 29" are the source's actual posted date.
+  // Prefer them over nearby relative labels (which can describe page refresh
+  // or sync activity rather than this chapter's release).
+  if (visibleCalendarDateCandidates.length > 0) {
+    return Math.max(...visibleCalendarDateCandidates.map((candidate) => candidate.timestamp));
+  }
+
   if (visibleTimeCandidates.length > 0) {
-    if (timestampPreference === 'rightmost') {
-      return visibleTimeCandidates.reduce((rightmost, candidate) =>
-        candidate.index > rightmost.index ? candidate : rightmost,
-      ).timestamp;
-    }
     return Math.max(...visibleTimeCandidates.map((candidate) => candidate.timestamp));
   }
 
