@@ -51,6 +51,20 @@ import { supabase, supabaseConfigReady } from '../lib/supabase';
 import { useSeriesCatalog } from '../hooks/useSeriesCatalog';
 import './admin-comix.css';
 
+function AdminBrand({ href }: { href?: string }) {
+  const contents = (
+    <img className="comix-logo-image" src="/clydee-logo.png" alt="Clydee" />
+  );
+
+  return href ? (
+    <a href={href} className="comix-logo" title="Back to Clydee">
+      {contents}
+    </a>
+  ) : (
+    <div className="comix-logo">{contents}</div>
+  );
+}
+
 type SidebarTab =
   | 'edit-profile'
   | 'followed-titles'
@@ -130,6 +144,8 @@ const seriesPageVisibilityOptions: { key: keyof SeriesPageVisibility; label: str
 export default function AdminPage() {
   const [session, setSession] = useState<Session | null>(null);
   const [checkingSession, setCheckingSession] = useState(true);
+  const catalogQuery = useSeriesCatalog();
+  const loginCovers = catalogQuery.items.map((item) => item.cover).filter(Boolean).slice(0, 12);
 
   // Theme toggle state (light / dark)
   const [theme, setTheme] = useState<'dark' | 'light'>(() => {
@@ -178,7 +194,7 @@ export default function AdminPage() {
 
   if (checkingSession) {
     return (
-      <div className={`comix-admin-wrapper theme-${theme} comix-login-screen`}>
+      <div className={`comix-admin-wrapper theme-${theme} comix-login-loading`}>
         <LoaderCircle className="spin-icon" size={32} style={{ color: 'var(--cx-teal)' }} />
       </div>
     );
@@ -186,12 +202,11 @@ export default function AdminPage() {
 
   if (!supabaseConfigReady) {
     return (
-      <div className={`comix-admin-wrapper theme-${theme} comix-login-screen`}>
-        <div className="comix-login-card">
+      <div className={`comix-admin-wrapper theme-${theme} comix-login-setup`}>
+        <div className="comix-login-setup-card">
           <div className="comix-login-header">
-            <div className="comix-logo" style={{ justifyContent: 'center', marginBottom: 12 }}>
-              <span className="comix-logo-badge">X</span>
-              <span>COMIX ADMIN</span>
+            <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 12 }}>
+              <AdminBrand />
             </div>
             <h1>Connect Supabase</h1>
             <p>Add VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY to your environment variables.</p>
@@ -210,6 +225,7 @@ export default function AdminPage() {
         theme={theme}
         onToggleTheme={toggleTheme}
         onSignedIn={(s) => setSession(s)}
+        coverImages={loginCovers}
       />
     );
   }
@@ -231,10 +247,12 @@ function ComixLoginScreen({
   theme,
   onToggleTheme,
   onSignedIn,
+  coverImages,
 }: {
   theme: 'dark' | 'light';
   onToggleTheme: () => void;
   onSignedIn: (session: Session) => void;
+  coverImages: string[];
 }) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -264,63 +282,66 @@ function ComixLoginScreen({
 
   return (
     <div className={`comix-admin-wrapper theme-${theme} comix-login-screen`}>
-      <div className="comix-login-card">
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
-          <div className="comix-logo">
-            <span className="comix-logo-badge">X</span>
-            <span>COMIX</span>
-          </div>
-          <button type="button" className="comix-icon-btn" onClick={onToggleTheme} title="Toggle theme">
-            {theme === 'dark' ? <Sun size={18} /> : <Moon size={18} />}
-          </button>
-        </div>
-
+      <a href="/" className="comix-login-back"><ArrowLeft size={15} /> Go back</a>
+      <section className="comix-login-content">
+        <div className="comix-login-brand-mark"><AdminBrand /></div>
         <div className="comix-login-header">
-          <h1>Admin sign in</h1>
-          <p>Manage titles, chapters, and site settings.</p>
+          <h1><span>WELCOME</span><br />BACK</h1>
+          <div className="comix-login-divider"><i /></div>
+          <p>Sign in to manage titles, chapters, and site settings.</p>
         </div>
 
-        {formError && <div className="comix-login-error" role="alert">{formError}</div>}
-
-        <form onSubmit={submit}>
-          <div className="comix-login-field">
-            <label htmlFor="login-email">Admin email</label>
-            <input
-              id="login-email"
-              type="email"
-              className="comix-login-input"
-              placeholder="you@example.com"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              required
-            />
+        <div className="comix-login-card">
+          <div className="comix-login-card-top">
+            <span>ADMIN ACCESS</span>
+            <button type="button" className="comix-icon-btn" onClick={onToggleTheme} title="Toggle theme">
+              {theme === 'dark' ? <Sun size={17} /> : <Moon size={17} />}
+            </button>
           </div>
+          {formError && <div className="comix-login-error" role="alert">{formError}</div>}
 
-          <div className="comix-login-field">
-            <label htmlFor="login-password">Password</label>
-            <input
-              id="login-password"
-              type="password"
-              className="comix-login-input"
-              placeholder="••••••••"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
-            />
-          </div>
+          <form onSubmit={submit}>
+            <div className="comix-login-field">
+              <label htmlFor="login-email">Email address</label>
+              <input
+                id="login-email"
+                type="email"
+                className="comix-login-input"
+                placeholder="you@example.com"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                required
+              />
+            </div>
 
-          <button type="submit" className="btn-teal comix-login-btn" disabled={busy || !email || !password}>
-            {busy ? <LoaderCircle className="spin-icon" size={16} /> : <ShieldCheck size={16} />}
-            {busy ? 'Signing in...' : 'Sign in to Admin'}
-          </button>
-        </form>
+            <div className="comix-login-field">
+              <label htmlFor="login-password">Password</label>
+              <input
+                id="login-password"
+                type="password"
+                className="comix-login-input"
+                placeholder="Enter your password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+              />
+            </div>
 
-        <div style={{ textAlign: 'center', marginTop: 20 }}>
-          <a href="/" style={{ color: 'var(--cx-text-muted)', fontSize: 13, textDecoration: 'none' }}>
-            ← Back to website
-          </a>
+            <button type="submit" className="btn-teal comix-login-btn" disabled={busy || !email || !password}>
+              {busy ? <LoaderCircle className="spin-icon" size={16} /> : <ShieldCheck size={16} />}
+              {busy ? 'Signing in...' : 'Log in'}
+            </button>
+          </form>
         </div>
-      </div>
+      </section>
+      <aside className="comix-login-art" aria-hidden="true">
+        <div className="comix-login-collage">
+          {coverImages.map((cover, index) => (
+            <img key={`${cover}-${index}`} src={cover} alt="" loading="lazy" />
+          ))}
+        </div>
+        <div className="comix-login-art-overlay" />
+      </aside>
     </div>
   );
 }
@@ -413,10 +434,7 @@ function ComixDashboard({
       {/* Top Navbar */}
       <header className="comix-topbar">
         <div className="comix-topbar-left">
-          <a href="/" className="comix-logo" title="Back to home">
-            <span className="comix-logo-badge">X</span>
-            <span>COMIX</span>
-          </a>
+          <AdminBrand href="/" />
 
           <div className="comix-search-wrap">
             <Search className="comix-search-icon" size={15} />

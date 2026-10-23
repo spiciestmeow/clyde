@@ -159,7 +159,7 @@ export function parseHeroSlides(value: unknown): HeroSlide[] {
     }))
     .filter((item) => Boolean(item.src));
 
-  return slides.length > 0 ? slides : [...DEFAULT_HERO_SLIDES];
+  return slides;
 }
 
 function parseSiteSettings(value: unknown): SiteSettings | null {

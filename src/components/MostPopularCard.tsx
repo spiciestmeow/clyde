@@ -1,3 +1,5 @@
+import { Link } from 'wouter';
+
 export type MostPopularCardItem = {
   title: string;
   src: string;
@@ -17,7 +19,7 @@ export function MostPopularCard({
   rank,
 }: MostPopularCardProps) {
   return (
-    <a className="rank-card" href={item.href}>
+    <Link className="rank-card" href={item.href}>
       <span className="rank-cover">
         <img src={imageSrc} alt={item.title} loading="lazy" />
       </span>
@@ -34,6 +36,7 @@ export function MostPopularCard({
           </div>
         )}
       </div>
-    </a>
+    </Link>
   );
 }
+

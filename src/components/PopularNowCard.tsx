@@ -1,3 +1,5 @@
+import { Link } from 'wouter';
+
 export type PopularNowCardItem = {
   title: string;
   src: string;
@@ -16,7 +18,7 @@ export function PopularNowCard({
   copyIndex = 0,
 }: PopularNowCardProps) {
   return (
-    <a
+    <Link
       className="popular-card"
       href={item.href}
       data-loop-copy={copyIndex}
@@ -37,6 +39,7 @@ export function PopularNowCard({
           <h3>{item.title}</h3>
         </div>
       </div>
-    </a>
+    </Link>
   );
 }
+

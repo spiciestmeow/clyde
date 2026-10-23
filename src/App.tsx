@@ -29,7 +29,6 @@ import {
 import assets from '../clone-data/asset-references.json';
 import {
   DEFAULT_SITE_SETTINGS,
-  DEFAULT_HERO_SLIDES,
   getCachedSiteSettings,
   getSiteSettings,
   SITE_SETTINGS_UPDATED_EVENT,
@@ -285,7 +284,9 @@ function HomePage() {
   }, [seriesItems]);
   const { dark, toggleTheme } = useThemeMode();
   const [mobileMenu, setMobileMenu] = useState(false);
-  const [siteSettings, setSiteSettings] = useState<SiteSettings>(() => getCachedSiteSettings() ?? DEFAULT_SITE_SETTINGS);
+  const [siteSettings, setSiteSettings] = useState<SiteSettings>(() =>
+    getCachedSiteSettings() ?? { ...DEFAULT_SITE_SETTINGS, heroSlides: [] },
+  );
   const { header: headerVisibility, homepage: homepageVisibility } = siteSettings;
   const railRef = useRef<HTMLDivElement>(null);
   const railGestureRef = useRef<RailGesture | null>(null);
@@ -363,9 +364,7 @@ function HomePage() {
     currentReleasePage * RELEASES_PER_PAGE,
   );
   const paginationItems = getPaginationItems(releasePageCount, currentReleasePage);
-  const slides = (siteSettings.heroSlides && siteSettings.heroSlides.length > 0)
-    ? siteSettings.heroSlides
-    : DEFAULT_HERO_SLIDES;
+  const slides = siteSettings.heroSlides;
   const moveCarousel = (direction: number) => setSlide((current) => (current + direction + slides.length) % slides.length);
   const startRailGesture = (event: ReactPointerEvent<HTMLDivElement>) => {
     if (event.pointerType !== 'mouse' || event.button !== 0) return;

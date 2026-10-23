@@ -16,6 +16,7 @@ export function useThemeMode() {
   const toggleTheme = () => {
     const nextDark = !dark;
     setDark(nextDark);
+    document.documentElement.classList.toggle('theme-light', !nextDark);
     try {
       window.localStorage.setItem(THEME_STORAGE_KEY, nextDark ? 'dark' : 'light');
     } catch {

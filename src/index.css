@@ -1163,9 +1163,16 @@ main { padding-bottom: 38px; }
 .footer { margin: 32px auto 0; padding: 24px; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,.08), 0 1px 2px rgba(0,0,0,.04); color: var(--text); font-size: 14px; }
 .footer-inner { max-width: 1280px; margin: 0 auto; }
 .footer-logo-row { display: flex; justify-content: center; }
-.footer-logo-link { display: inline-flex; justify-content: center; margin-bottom: 16px; transition: opacity .2s; }
-.footer-logo-link:hover { opacity: .9; }
+.footer-logo-link { position: relative; display: inline-flex; justify-content: center; margin-bottom: 16px; isolation: isolate; }
 .footer-logo-link img { width: 96px; height: 96px; max-width: none; object-fit: contain; }
+.footer-logo-link::after { content: ''; position: absolute; z-index: 1; inset: 0; pointer-events: none; background: linear-gradient(135deg, transparent 39%, rgb(255 255 255 / 3%) 43%, rgb(255 255 255 / 14%) 47%, rgb(255 255 255 / 78%) 49.5%, rgb(255 248 235 / 34%) 51%, rgb(255 255 255 / 8%) 54%, transparent 59%); background-size: 280% 280%; background-position: 100% 100%; opacity: .78; mix-blend-mode: screen; animation: footer-logo-glass-sweep 6s ease-in-out infinite; -webkit-mask: url('/clydee-logo.png') center / contain no-repeat; mask: url('/clydee-logo.png') center / contain no-repeat; }
+@keyframes footer-logo-glass-sweep {
+  0%, 12% { background-position: 100% 100%; }
+  72%, 100% { background-position: 0 0; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .footer-logo-link::after { animation: none; opacity: 0; }
+}
 .footer-tagline { margin-bottom: 24px; text-align: center; }
 .footer-tagline p { max-width: 672px; margin: 0 auto; color: var(--muted); font-size: 14px; }
 .footer-links { display: flex; align-items: center; justify-content: center; flex-wrap: wrap; gap: 24px; margin: 0 0 24px; padding: 0; list-style: none; color: var(--muted); font-size: 14px; font-weight: 500; }
@@ -1765,9 +1772,10 @@ main { padding-bottom: 38px; }
 .release-card--series .chapter-badge.is-free { padding: var(--series-free-padding); font-size: var(--series-free-size); }
 .release-card--series .chapter-badge.is-time { font-size: var(--series-time-size); }
 .release-card--series .release-type { padding: var(--series-type-padding); font-size: var(--series-type-size); font-weight: var(--series-type-weight); }
+.catalog-page .release-card--series .release-type { font-weight: 400; }
 .release-card--series .release-cover-pill,
 .release-card--series .release-views { gap: 3px; padding: var(--series-pill-padding); font-size: var(--series-pill-size); }
-.release-card--series .release-box--sources .release-box-value { filter: blur(3px); user-select: none; }
+.release-card--series .release-box--sources .release-box-value { user-select: none; }
 
 @media (min-width: 601px) {
   .latest-section .release-card--series {

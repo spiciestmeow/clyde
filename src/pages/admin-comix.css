@@ -83,16 +83,12 @@
   letter-spacing: 0.04em;
 }
 
-.comix-logo-badge {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  border: 1.5px solid var(--cx-teal);
-  color: var(--cx-teal);
-  font-size: 13px;
-  font-weight: 900;
-  padding: 1px 5px;
-  border-radius: 4px;
+.comix-logo-image {
+  display: block;
+  width: 32px;
+  height: 32px;
+  flex: 0 0 auto;
+  object-fit: contain;
 }
 
 .comix-search-wrap {
@@ -544,95 +540,148 @@
 }
 
 /* ====================================================
-   LOGIN CARD (COMIX STYLE)
+   ADMIN SIGN-IN
    ==================================================== */
 .comix-login-screen {
+  position: relative;
+  display: grid;
+  grid-template-columns: minmax(420px, 45%) minmax(0, 55%);
+  align-items: stretch;
   min-height: 100vh;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 24px;
-  background-color: var(--cx-bg);
+  padding: 0;
+  overflow: hidden;
+  background-color: #0b0811;
+  color: #f7f3fb;
 }
+
+.comix-login-screen::before {
+  position: absolute;
+  z-index: 0;
+  inset: 0 auto 0 0;
+  width: 45%;
+  content: '';
+  background-image: linear-gradient(rgb(255 255 255 / 3%) 1px, transparent 1px), linear-gradient(90deg, rgb(255 255 255 / 3%) 1px, transparent 1px);
+  background-size: 40px 40px;
+  pointer-events: none;
+}
+
+.comix-login-back {
+  position: absolute;
+  z-index: 3;
+  top: 64px;
+  left: max(28px, calc((45vw - 402px) / 2));
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 38px;
+  padding: 0 13px;
+  border: 1px solid #342c3d;
+  border-radius: 8px;
+  background: rgb(255 255 255 / 4%);
+  color: #d6cde0;
+  font-size: 13px;
+  text-decoration: none;
+  transition: background .18s ease, border-color .18s ease;
+}
+
+.comix-login-back:hover { background: rgb(255 255 255 / 8%); border-color: #5b476c; }
+
+.comix-login-content {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  width: min(100%, 402px);
+  margin: 0 auto;
+  padding: 112px 0 48px;
+}
+
+.comix-login-brand-mark { display: flex; justify-content: center; margin-bottom: 14px; }
+.comix-login-brand-mark .comix-logo { justify-content: center; }
+.comix-login-brand-mark .comix-logo-image { width: 54px; height: 54px; }
+
+.comix-login-header { text-align: center; margin-bottom: 23px; }
+.comix-login-header h1 {
+  margin: 0;
+  color: #f8f4fb;
+  font-family: Impact, 'Arial Narrow', sans-serif;
+  font-size: clamp(34px, 3.2vw, 46px);
+  font-weight: 800;
+  line-height: .98;
+  letter-spacing: .025em;
+}
+.comix-login-header h1 span { color: #a23cf1; }
+.comix-login-header p { margin: 14px 0 0; color: #a9a0b7; font-size: 13px; }
+.comix-login-divider { position: relative; width: 76px; height: 2px; margin: 17px auto 0; background: linear-gradient(90deg, transparent, #9c39ea, transparent); }
+.comix-login-divider i { position: absolute; left: 50%; top: 50%; width: 8px; height: 8px; background: #a23cf1; transform: translate(-50%, -50%) rotate(45deg); }
 
 .comix-login-card {
   width: 100%;
-  max-width: 420px;
-  background-color: var(--cx-surface);
-  border: 1px solid var(--cx-border);
-  border-radius: 14px;
-  padding: 32px 28px;
-  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
+  padding: 20px 24px 24px;
+  border: 1px solid #362b43;
+  border-radius: 16px;
+  background: #1a1522;
+  box-shadow: 0 18px 42px rgb(0 0 0 / 28%);
 }
-
-.comix-login-header {
-  text-align: center;
-  margin-bottom: 24px;
-}
-
-.comix-login-header h1 {
-  font-size: 22px;
-  font-weight: 700;
-  color: var(--cx-text);
-  margin: 10px 0 4px;
-}
-
-.comix-login-header p {
-  font-size: 13px;
-  color: var(--cx-text-muted);
-  margin: 0;
-}
-
-.comix-login-field {
-  margin-bottom: 18px;
-}
-
-.comix-login-field label {
-  display: block;
-  font-size: 13px;
-  font-weight: 600;
-  color: var(--cx-text);
-  margin-bottom: 6px;
-}
-
-.comix-login-input-wrap {
-  position: relative;
-  display: flex;
-  align-items: center;
-}
-
+.comix-login-card-top { display: flex; align-items: center; justify-content: flex-end; min-height: 20px; margin-bottom: 13px; }
+.comix-login-card-top > span { margin-right: auto; color: #80748f; font-size: 10px; font-weight: 750; letter-spacing: .13em; }
+.comix-login-card .comix-icon-btn { width: 30px; height: 30px; border-color: #3d3349; background: #211b2b; color: #d5c9e1; }
+.comix-login-field { margin-bottom: 17px; }
+.comix-login-field label { display: block; margin-bottom: 7px; color: #c7bbd4; font-size: 13px; font-weight: 600; }
 .comix-login-input {
   width: 100%;
-  height: 42px;
-  background-color: var(--cx-input-bg);
-  border: 1px solid var(--cx-border);
-  border-radius: 8px;
+  height: 47px;
   padding: 0 14px;
-  color: var(--cx-text);
-  font-size: 14px;
   outline: none;
-}
-
-.comix-login-input:focus {
-  border-color: var(--cx-teal);
-}
-
-.comix-login-btn {
-  width: 100%;
-  height: 44px;
-  margin-top: 10px;
+  border: 1px solid #3a3244;
+  border-radius: 9px;
+  background: #272230;
+  color: #f6f0fb;
   font-size: 14px;
+  transition: border-color .16s ease, box-shadow .16s ease;
 }
+.comix-login-input::placeholder { color: #756c80; }
+.comix-login-input:focus { border-color: #a23cf1; box-shadow: 0 0 0 3px rgb(162 60 241 / 15%); }
+.comix-login-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  height: 47px;
+  margin-top: 7px;
+  border: 0;
+  border-radius: 9px;
+  background: linear-gradient(100deg, #a23ce9, #782fe8);
+  color: #fff;
+  font-size: 14px;
+  font-weight: 700;
+  box-shadow: 0 8px 20px rgb(126 47 232 / 25%);
+}
+.comix-login-btn:hover:not(:disabled) { filter: brightness(1.08); }
+.comix-login-btn:disabled { opacity: .62; cursor: wait; }
+.comix-login-error { margin-bottom: 16px; padding: 10px 14px; border: 1px solid #7f1d1d; border-radius: 7px; background: #2d1616; color: #f87171; font-size: 12px; }
 
-.comix-login-error {
-  background-color: #2d1616;
-  border: 1px solid #7f1d1d;
-  color: #f87171;
-  padding: 10px 14px;
-  border-radius: 6px;
-  font-size: 12px;
-  margin-bottom: 16px;
+.comix-login-art { position: relative; min-width: 0; min-height: 100vh; overflow: hidden; background: radial-gradient(ellipse at 54% 40%, #38204b 0, #19111f 54%, #100c15 100%); }
+.comix-login-collage {
+  position: absolute;
+  inset: -8% -11%;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(130px, 1fr));
+  grid-auto-rows: clamp(190px, 26vh, 310px);
+  gap: 12px;
+  transform: rotate(-9deg) scale(1.08);
 }
+.comix-login-collage img { width: 100%; height: 100%; object-fit: cover; border: 1px solid rgb(255 255 255 / 10%); border-radius: 10px; filter: brightness(.62) saturate(.82); }
+.comix-login-collage img:nth-child(3n + 1) { transform: translateY(18px); }
+.comix-login-collage img:nth-child(3n + 2) { transform: translateY(-12px); }
+.comix-login-art-overlay { position: absolute; inset: 0; background: linear-gradient(90deg, #0b0811 0%, rgb(11 8 17 / 76%) 12%, rgb(11 8 17 / 15%) 54%, rgb(11 8 17 / 44%) 100%), linear-gradient(0deg, rgb(11 8 17 / 42%), transparent 24%, transparent 76%, rgb(11 8 17 / 26%)); pointer-events: none; }
+
+.comix-login-loading,.comix-login-setup { min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 24px; background: #0b0811; }
+.comix-login-setup-card { width: 100%; max-width: 420px; padding: 32px 28px; border: 1px solid #362b43; border-radius: 14px; background: #1a1522; box-shadow: 0 10px 25px rgb(0 0 0 / 30%); }
+.comix-login-setup .comix-login-header h1 { margin: 10px 0 4px; color: var(--cx-text); font-family: inherit; font-size: 22px; line-height: 1.2; letter-spacing: normal; }
+.comix-login-setup .comix-login-header p { margin: 0; color: var(--cx-text-muted); }
 
 /* ====================================================
    RESPONSIVE DESIGN
@@ -744,4 +793,19 @@
     flex-direction: column;
     align-items: flex-start;
   }
+}
+
+@media (max-width: 760px) {
+  .comix-login-screen { grid-template-columns: minmax(0, 1fr); overflow-y: auto; }
+  .comix-login-screen::before { width: 100%; }
+  .comix-login-art { display: none; }
+  .comix-login-back { top: 20px; left: 20px; }
+  .comix-login-content { width: min(100%, 402px); padding: 88px 22px 32px; }
+  .comix-login-brand-mark .comix-logo-image { width: 48px; height: 48px; }
+}
+
+@media (max-width: 420px) {
+  .comix-login-content { padding-inline: 16px; }
+  .comix-login-card { padding: 18px 18px 20px; }
+  .comix-login-header h1 { font-size: 38px; }
 }

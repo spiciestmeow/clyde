@@ -118,7 +118,7 @@ function parseRelativeTime(text: string): number | null {
  */
 function extractTimeFromContext(
   surroundingHtml: string,
-  timestampPreference: 'rightmost' | 'newest' = 'newest',
+  timestampPreference: 'rightmost' | 'newest' | 'oldest' = 'newest',
 ): number | null {
   // Prefer the date shown to readers in this chapter row. Some pages retain
   // stale `datetime` attributes after updating the visible relative age.
@@ -157,6 +157,13 @@ function extractTimeFromContext(
   // Some sources (such as Asura) render the upload age at the right side of
   // each chapter row. Other sources use different layouts, so keep their
   // existing newest-timestamp selection behavior.
+  if (timestampPreference === 'oldest' && (visibleTimeCandidates.length > 0 || visibleCalendarDateCandidates.length > 0)) {
+    const candidates = [...visibleTimeCandidates, ...visibleCalendarDateCandidates];
+    return candidates.reduce((oldest, candidate) =>
+      candidate.timestamp < oldest.timestamp ? candidate : oldest,
+    ).timestamp;
+  }
+
   if (timestampPreference === 'rightmost' && (visibleTimeCandidates.length > 0 || visibleCalendarDateCandidates.length > 0)) {
     const candidates = [...visibleTimeCandidates, ...visibleCalendarDateCandidates];
     return candidates.reduce((rightmost, candidate) =>
@@ -164,15 +171,33 @@ function extractTimeFromContext(
     ).timestamp;
   }
 
-  // Calendar dates such as "May 29" are the source's actual posted date.
-  // Prefer them over nearby relative labels (which can describe page refresh
-  // or sync activity rather than this chapter's release).
-  if (visibleCalendarDateCandidates.length > 0) {
-    return Math.max(...visibleCalendarDateCandidates.map((candidate) => candidate.timestamp));
-  }
+  // Chapter rows can include multiple timestamps, including unrelated page or
+  // activity times. Associate the timestamp nearest the chapter label instead
+  // of blindly choosing the newest (which can turn a months-old chapter into
+  // "17 mins ago").
+  const visibleCandidates = [...visibleTimeCandidates, ...visibleCalendarDateCandidates];
+  if (visibleCandidates.length > 0) {
+    const chapterLabel = textOnly.match(/\b(?:chapter|episode)\s*#?\s*\d+(?:\.\d+)?/i);
+    if (chapterLabel) {
+      const labelStart = chapterLabel.index ?? 0;
+      const labelEnd = labelStart + chapterLabel[0].length;
+      const nearestCandidate = visibleCandidates.reduce((nearest, candidate) => {
+        const distance = candidate.index > labelEnd
+          ? candidate.index - labelEnd
+          : candidate.index < labelStart
+            ? labelStart - candidate.index
+            : 0;
+        const nearestDistance = nearest.index > labelEnd
+          ? nearest.index - labelEnd
+          : nearest.index < labelStart
+            ? labelStart - nearest.index
+            : 0;
+        return distance < nearestDistance ? candidate : nearest;
+      });
+      return nearestCandidate.timestamp;
+    }
 
-  if (visibleTimeCandidates.length > 0) {
-    return Math.max(...visibleTimeCandidates.map((candidate) => candidate.timestamp));
+    return Math.max(...visibleCandidates.map((candidate) => candidate.timestamp));
   }
 
   // Prefer explicit machine-readable dates. Other attributes such as
@@ -219,7 +244,7 @@ function extractChapterRowContext(
   matchStart: number,
   matchEnd: number,
   chapterNumber?: number,
-  timestampPreference: 'rightmost' | 'newest' = 'newest',
+  timestampPreference: 'rightmost' | 'newest' | 'oldest' = 'newest',
 ): string | null {
   const searchStart = Math.max(0, matchStart - 2500);
   const prefix = html.slice(searchStart, matchStart);
@@ -312,7 +337,7 @@ function matchChapterNumberInLabel(html: string): RegExpMatchArray | null {
 function extractGenzToonsChapters(
   html: string,
   pageUrl: URL,
-  timestampPreference: 'rightmost' | 'newest',
+  timestampPreference: 'rightmost' | 'newest' | 'oldest',
 ): DetectedChapterItem[] {
   type GenzChapterLink = {
     href: string;
@@ -413,7 +438,7 @@ function extractMistScanChapters(
   html: string,
   pageUrl: URL,
   seriesSlug: string,
-  timestampPreference: 'rightmost' | 'newest',
+  timestampPreference: 'rightmost' | 'newest' | 'oldest',
 ): DetectedChapterItem[] {
   const normalizedSeriesSlug = normalizeSeriesPathSegment(seriesSlug);
   if (!normalizedSeriesSlug) return [];
@@ -513,8 +538,12 @@ export function extractChaptersFromHtml(
 
   const seriesPath = parsedUrl.pathname.replace(/\/+$/, '');
   const seriesSlug = seriesPath.split('/').filter(Boolean).pop() || '';
-  const timestampPreference: 'rightmost' | 'newest' =
-    /(^|\.)asurascans\.com$/i.test(parsedUrl.hostname) ? 'rightmost' : 'newest';
+  const timestampPreference: 'rightmost' | 'newest' | 'oldest' =
+    /(^|\.)nyxscans\.com$/i.test(parsedUrl.hostname)
+      ? 'oldest'
+      : /(^|\.)asurascans\.com$/i.test(parsedUrl.hostname)
+        ? 'rightmost'
+        : 'newest';
 
   const foundChapters = new Map<number, DetectedChapterItem>();
 

@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { Link } from 'wouter';
 import { Eye, Pin, Star } from 'lucide-react';
 import type { SeriesRecord } from '../lib/seriesCatalog';
 import { formatScanlatorSeriesUrl } from '../lib/scanlatorLinks';
@@ -216,6 +217,7 @@ function formatReleaseTime(release: LatestRelease): string | null {
     const diffMonths = Math.floor(diffDays / 30);
     if (diffMonths < 12) return `${diffMonths}mo ago`;
     const diffYears = Math.floor(diffDays / 365);
+    if (diffYears < 1) return `${diffMonths}mo ago`;
     return `${diffYears}y ago`;
   }
 
@@ -254,7 +256,7 @@ export function LatestReleaseCard({
 
   return (
     <article className={`release-card${variant === 'series' ? ' release-card--series' : ''}`}>
-      <a className="release-cover" href={release.href} title={release.title}>
+      <Link className="release-cover" href={release.href} title={release.title}>
         <img src={imageSrc} alt={release.title} loading="lazy" />
         <span className="release-type" data-category={categoryLabel.toLowerCase()}>
           {categoryLabel}
@@ -270,12 +272,12 @@ export function LatestReleaseCard({
             <span>{viewsValue}</span>
           </span>
         )}
-      </a>
+      </Link>
 
       <div className="release-info">
-        <a className="release-title" href={release.href} title={release.title}>
+        <Link className="release-title" href={release.href} title={release.title}>
           {release.title}
-        </a>
+        </Link>
 
         <div className="release-meta">
           <div className="release-rating">
@@ -372,7 +374,7 @@ export function LatestReleaseCard({
           {/* Sources Box (Red accent) */}
           <div className="release-box release-box--sources">
             <span className="release-box-label">Sources</span>
-            <MarqueeValue text={sourcesValue} forceStatic={variant === 'series'} />
+            <MarqueeValue text={sourcesValue} />
           </div>
         </div>
       </div>

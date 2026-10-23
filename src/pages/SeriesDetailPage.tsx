@@ -158,6 +158,7 @@ function formatRelativeTime(timestamp: number): string {
   const diffMonths = Math.floor(diffDays / 30);
   if (diffMonths < 12) return `${diffMonths} month${diffMonths > 1 ? 's' : ''} ago`;
   const diffYears = Math.floor(diffDays / 365);
+  if (diffYears < 1) return `${diffMonths} months ago`;
   return `${diffYears} year${diffYears > 1 ? 's' : ''} ago`;
 }
 
@@ -307,19 +308,28 @@ export default function SeriesDetailPage() {
         ) {
           lastIncrementedSeriesIdRef.current = series.id;
           localStorage.setItem(cooldownKey, String(now));
+          const updateCachedViews = (views: number) => {
+            queryClient.setQueryData<SeriesCatalogResponse>(SERIES_CATALOG_QUERY_KEY, (old) => {
+              if (!old) return old;
+              const nextResponse = {
+                ...old,
+                items: old.items.map((item) =>
+                  item.id === series.id ? { ...item, views } : item,
+                ),
+              };
+              cacheSeriesCatalog(nextResponse);
+              return nextResponse;
+            });
+          };
+
+          // Update the visible count immediately; reconcile it with the server response afterward.
+          void queryClient.cancelQueries({ queryKey: SERIES_CATALOG_QUERY_KEY });
+          updateCachedViews((series.views ?? 0) + 1);
           void incrementSeriesViews(series.id).then((newViews) => {
             if (typeof newViews === 'number') {
-              queryClient.setQueryData<SeriesCatalogResponse>(SERIES_CATALOG_QUERY_KEY, (old) => {
-                if (!old) return old;
-                const nextResponse = {
-                  ...old,
-                  items: old.items.map((item) =>
-                    item.id === series.id ? { ...item, views: newViews } : item,
-                  ),
-                };
-                cacheSeriesCatalog(nextResponse);
-                return nextResponse;
-              });
+              updateCachedViews(newViews);
+            } else {
+              void queryClient.invalidateQueries({ queryKey: SERIES_CATALOG_QUERY_KEY });
             }
           });
         }

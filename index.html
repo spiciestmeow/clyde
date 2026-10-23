@@ -16,6 +16,15 @@
     <meta property="og:type" content="website" />
     <link rel="icon" type="image/png" href="/clydee-logo.png" />
     <title>Clydee</title>
+    <script>
+      try {
+        if (localStorage.getItem('vortex-theme-mode') !== 'dark') {
+          document.documentElement.classList.add('theme-light');
+        }
+      } catch {
+        document.documentElement.classList.add('theme-light');
+      }
+    </script>
     <style id="vcomics-progress-style">
       #vcomics-navigation-progress {
         position: fixed;
