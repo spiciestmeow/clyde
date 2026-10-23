@@ -194,7 +194,6 @@ export default function SeriesCatalogManager() {
   const [draft, setDraft] = useState<FormDraft>(() => savedTitleEditor?.draft ?? initialFormDraft());
   const [pendingSourceRemovalIndex, setPendingSourceRemovalIndex] = useState<number | null>(null);
   const [seriesPendingDelete, setSeriesPendingDelete] = useState<SeriesRecord | null>(null);
-  const [newAltTitle, setNewAltTitle] = useState('');
   const [newAuthor, setNewAuthor] = useState('');
   const [newArtist, setNewArtist] = useState('');
   const [newPublisher, setNewPublisher] = useState('');
@@ -259,7 +258,7 @@ export default function SeriesCatalogManager() {
     setIsSyncing(true);
     setSyncError(null);
     try {
-      const result = await syncSeriesSources(q, draft.alternateTitles || []);
+      const result = await syncSeriesSources(q, draft.alternateTitles.map((title) => title.trim()).filter(Boolean));
       setSyncResult(result);
       if (!result.matchedSeries || result.sources.length === 0) {
         setSyncError(`No scanlation sources found for "${q}". Try another alias or spelling.`);
@@ -680,11 +679,7 @@ export default function SeriesCatalogManager() {
   };
 
   const addAltTitle = () => {
-    const val = newAltTitle.trim();
-    if (val && !draft.alternateTitles.includes(val)) {
-      setDraft((curr) => ({ ...curr, alternateTitles: [...curr.alternateTitles, val] }));
-      setNewAltTitle('');
-    }
+    setDraft((curr) => ({ ...curr, alternateTitles: [...curr.alternateTitles, ''] }));
   };
 
   const removeAltTitle = (index: number) => {
@@ -770,7 +765,7 @@ export default function SeriesCatalogManager() {
         status: draft.status || 'Releasing',
         isNew: draft.isNew,
         synopsis: draft.synopsis.trim() || undefined,
-        alternateTitles: draft.alternateTitles,
+        alternateTitles: draft.alternateTitles.map((alt) => alt.trim()).filter(Boolean),
         author: finalAuthors.join(', ') || undefined,
         artist: finalArtists.join(', ') || undefined,
         publishers: finalPublishers,
@@ -795,7 +790,9 @@ export default function SeriesCatalogManager() {
         status: draft.status || 'Releasing',
         isNew: draft.isNew,
         synopsis: draft.synopsis.trim() || undefined,
-        alternateTitles: draft.alternateTitles.length ? draft.alternateTitles : undefined,
+        alternateTitles: draft.alternateTitles.map((alt) => alt.trim()).filter(Boolean).length
+          ? draft.alternateTitles.map((alt) => alt.trim()).filter(Boolean)
+          : undefined,
         author: finalAuthors.join(', ') || undefined,
         artist: finalArtists.join(', ') || undefined,
         publishers: finalPublishers.length ? finalPublishers : undefined,
@@ -1224,34 +1221,31 @@ export default function SeriesCatalogManager() {
 
             <div className="field-group">
               <label className="field-label">Alternative titles</label>
-              <div className="alt-titles-list">
+              <div className="alt-title-edit-list">
                 {draft.alternateTitles.map((alt, idx) => (
-                  <span key={idx} className="alt-title-chip">
-                    {alt}
-                    <button type="button" onClick={() => removeAltTitle(idx)}>
+                  <div key={idx} className="alt-title-edit-row">
+                    <input
+                      type="text"
+                      className="text-input"
+                      placeholder="Alternative title..."
+                      value={alt}
+                      onChange={(e) => setDraft((curr) => ({
+                        ...curr,
+                        alternateTitles: curr.alternateTitles.map((title, titleIndex) => titleIndex === idx ? e.target.value : title),
+                      }))}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') e.preventDefault();
+                      }}
+                    />
+                    <button type="button" className="alt-title-remove-button" onClick={() => removeAltTitle(idx)} aria-label={`Remove alternative title ${idx + 1}`}>
                       <X size={12} />
                     </button>
-                  </span>
+                  </div>
                 ))}
               </div>
-              <div className="input-with-button-row">
-                <input
-                  type="text"
-                  className="text-input"
-                  placeholder="Add alternative title..."
-                  value={newAltTitle}
-                  onChange={(e) => setNewAltTitle(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter') {
-                      e.preventDefault();
-                      addAltTitle();
-                    }
-                  }}
-                />
-                <button type="button" className="btn-dark" onClick={addAltTitle}>
-                  + Add alternative title
-                </button>
-              </div>
+              <button type="button" className="alt-title-add-button" onClick={addAltTitle}>
+                + Add alternative title
+              </button>
               <p className="hint-text">Other names this title is known by (romanizations, English title, etc.).</p>
             </div>
 
@@ -1286,19 +1280,24 @@ export default function SeriesCatalogManager() {
                   </span>
                 ))}
               </div>
-              <input
-                type="text"
-                className="text-input"
-                placeholder="Add author..."
-                value={newAuthor}
-                onChange={(e) => setNewAuthor(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter') {
-                    e.preventDefault();
-                    addAuthor();
-                  }
-                }}
-              />
+              <div className="input-with-button-row credits-input-row">
+                <input
+                  type="text"
+                  className="text-input"
+                  placeholder="Add author..."
+                  value={newAuthor}
+                  onChange={(e) => setNewAuthor(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      e.preventDefault();
+                      addAuthor();
+                    }
+                  }}
+                />
+                <button type="button" className="credits-add-button" onClick={addAuthor} disabled={!newAuthor.trim()} aria-label="Add author" title="Add author">
+                  <Plus size={18} />
+                </button>
+              </div>
             </div>
 
             <div className="field-group">
@@ -1313,19 +1312,24 @@ export default function SeriesCatalogManager() {
                   </span>
                 ))}
               </div>
-              <input
-                type="text"
-                className="text-input"
-                placeholder="Add artist..."
-                value={newArtist}
-                onChange={(e) => setNewArtist(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter') {
-                    e.preventDefault();
-                    addArtist();
-                  }
-                }}
-              />
+              <div className="input-with-button-row credits-input-row">
+                <input
+                  type="text"
+                  className="text-input"
+                  placeholder="Add artist..."
+                  value={newArtist}
+                  onChange={(e) => setNewArtist(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      e.preventDefault();
+                      addArtist();
+                    }
+                  }}
+                />
+                <button type="button" className="credits-add-button" onClick={addArtist} disabled={!newArtist.trim()} aria-label="Add artist" title="Add artist">
+                  <Plus size={18} />
+                </button>
+              </div>
             </div>
 
             <div className="field-group">
@@ -1340,19 +1344,24 @@ export default function SeriesCatalogManager() {
                   </span>
                 ))}
               </div>
-              <input
-                type="text"
-                className="text-input"
-                placeholder="Add publisher..."
-                value={newPublisher}
-                onChange={(e) => setNewPublisher(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter') {
-                    e.preventDefault();
-                    addPublisher();
-                  }
-                }}
-              />
+              <div className="input-with-button-row credits-input-row">
+                <input
+                  type="text"
+                  className="text-input"
+                  placeholder="Add publisher..."
+                  value={newPublisher}
+                  onChange={(e) => setNewPublisher(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      e.preventDefault();
+                      addPublisher();
+                    }
+                  }}
+                />
+                <button type="button" className="credits-add-button" onClick={addPublisher} disabled={!newPublisher.trim()} aria-label="Add publisher" title="Add publisher">
+                  <Plus size={18} />
+                </button>
+              </div>
             </div>
           </section>
 

@@ -1161,6 +1161,102 @@ body:has(.comix-admin-wrapper.theme-dark) .title-actions-menu-item::after {
   gap: 8px;
 }
 
+.alt-title-add-button {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-height: 40px;
+  padding: 0 14px;
+  color: var(--up-text-muted);
+  background: transparent;
+  border: 1px dashed var(--up-border-light);
+  border-radius: 6px;
+  font-size: 13px;
+  cursor: pointer;
+  transition: color 0.15s ease, border-color 0.15s ease, background-color 0.15s ease;
+}
+
+.alt-title-add-button:hover {
+  color: var(--up-teal);
+  border-color: var(--up-teal);
+  background: color-mix(in srgb, var(--up-teal) 7%, transparent);
+}
+
+.alt-title-edit-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.alt-title-edit-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.alt-title-edit-row .text-input {
+  flex: 1;
+  min-width: 0;
+}
+
+.alt-title-remove-button {
+  display: inline-flex;
+  flex: 0 0 28px;
+  align-items: center;
+  justify-content: center;
+  height: 40px;
+  padding: 0;
+  color: var(--up-text-muted);
+  background: transparent;
+  border: 0;
+  cursor: pointer;
+}
+
+.alt-title-remove-button:hover {
+  color: var(--up-danger);
+}
+
+.credits-input-row {
+  align-items: stretch;
+}
+
+.credits-input-row .text-input {
+  flex: 1;
+  min-width: 0;
+}
+
+.credits-add-button {
+  display: none;
+  flex: 0 0 40px;
+  align-items: center;
+  justify-content: center;
+  min-height: 40px;
+  padding: 0;
+  color: var(--up-teal-text);
+  background: var(--up-teal);
+  border: 0;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background-color 0.15s ease, opacity 0.15s ease;
+}
+
+.credits-add-button:hover:not(:disabled) {
+  background: var(--up-teal-hover);
+}
+
+.credits-add-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.credits-add-button:focus-visible {
+  outline: 2px solid var(--up-teal);
+  outline-offset: 2px;
+}
+
 /* Grid classification */
 .grid-2col {
   display: grid;
@@ -1247,6 +1343,9 @@ body:has(.comix-admin-wrapper.theme-dark) .title-actions-menu-item::after {
 
 /* Responsive adjustments */
 @media (max-width: 640px) {
+  .credits-add-button {
+    display: inline-flex;
+  }
   .modal-sync-dialog {
     width: 100% !important;
     max-height: calc(100dvh - 24px);
