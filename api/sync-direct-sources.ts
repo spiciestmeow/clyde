@@ -116,7 +116,10 @@ function parseRelativeTime(text: string): number | null {
  * Given raw HTML surrounding a chapter link/row, try to find a time indicator
  * in the nearby text (e.g. "3 hours ago", "7h ago", or a `<time>` tag).
  */
-function extractTimeFromContext(surroundingHtml: string): number | null {
+function extractTimeFromContext(
+  surroundingHtml: string,
+  timestampPreference: 'rightmost' | 'newest' = 'newest',
+): number | null {
   // Prefer the date shown to readers in this chapter row. Some pages retain
   // stale `datetime` attributes after updating the visible relative age.
   const textOnly = surroundingHtml
@@ -150,13 +153,16 @@ function extractTimeFromContext(surroundingHtml: string): number | null {
     }
   }
 
-  // Chapter rows commonly render the title/details on the left and upload age
-  // on the right. If markup contains multiple age labels, the rightmost label
-  // in the row is the one users see beside the chapter.
+  // Some sources (such as Asura) render the upload age at the right side of
+  // each chapter row. Other sources use different layouts, so keep their
+  // existing newest-timestamp selection behavior.
   if (visibleTimeCandidates.length > 0) {
-    return visibleTimeCandidates.reduce((rightmost, candidate) =>
-      candidate.index > rightmost.index ? candidate : rightmost,
-    ).timestamp;
+    if (timestampPreference === 'rightmost') {
+      return visibleTimeCandidates.reduce((rightmost, candidate) =>
+        candidate.index > rightmost.index ? candidate : rightmost,
+      ).timestamp;
+    }
+    return Math.max(...visibleTimeCandidates.map((candidate) => candidate.timestamp));
   }
 
   // Prefer explicit machine-readable dates. Other attributes such as
@@ -203,6 +209,7 @@ function extractChapterRowContext(
   matchStart: number,
   matchEnd: number,
   chapterNumber?: number,
+  timestampPreference: 'rightmost' | 'newest' = 'newest',
 ): string | null {
   const searchStart = Math.max(0, matchStart - 2500);
   const prefix = html.slice(searchStart, matchStart);
@@ -238,7 +245,7 @@ function extractChapterRowContext(
             .map((chapterMatch) => parseFloat(chapterMatch[1]));
           const uniqueChapters = new Set(chapterMatches);
           if (
-            extractTimeFromContext(context) &&
+            extractTimeFromContext(context, timestampPreference) &&
             (chapterNumber === undefined || (uniqueChapters.size === 1 && uniqueChapters.has(chapterNumber)))
           ) {
             return context;
@@ -293,6 +300,8 @@ export function extractChaptersFromHtml(
 
   const seriesPath = parsedUrl.pathname.replace(/\/+$/, '');
   const seriesSlug = seriesPath.split('/').filter(Boolean).pop() || '';
+  const timestampPreference: 'rightmost' | 'newest' =
+    /(^|\.)asurascans\.com$/i.test(parsedUrl.hostname) ? 'rightmost' : 'newest';
 
   const foundChapters = new Map<number, DetectedChapterItem>();
 
@@ -341,10 +350,10 @@ export function extractChaptersFromHtml(
 
     // Prefer the chapter link itself, then its containing row. Do not search
     // arbitrary text before/after the link: that can belong to an adjacent row.
-    let ts = extractTimeFromContext(innerHtml);
+    let ts = extractTimeFromContext(innerHtml, timestampPreference);
     if (!ts) {
-      const rowContext = extractChapterRowContext(cleanHtml, m.index, fullMatchEnd, num);
-      if (rowContext) ts = extractTimeFromContext(rowContext);
+      const rowContext = extractChapterRowContext(cleanHtml, m.index, fullMatchEnd, num, timestampPreference);
+      if (rowContext) ts = extractTimeFromContext(rowContext, timestampPreference);
     }
 
     if (!foundChapters.has(num)) {
@@ -400,10 +409,10 @@ export function extractChaptersFromHtml(
       const num = parseFloat(chapterMatch[1]);
       if (Number.isNaN(num) || num < 0 || num >= 5000) continue;
 
-      let ts = extractTimeFromContext(innerHtml);
+      let ts = extractTimeFromContext(innerHtml, timestampPreference);
       if (!ts) {
-        const rowContext = extractChapterRowContext(cleanHtml, m.index, m.index + m[0].length, num);
-        if (rowContext) ts = extractTimeFromContext(rowContext);
+        const rowContext = extractChapterRowContext(cleanHtml, m.index, m.index + m[0].length, num, timestampPreference);
+        if (rowContext) ts = extractTimeFromContext(rowContext, timestampPreference);
       }
 
       if (!foundChapters.has(num)) {
@@ -431,7 +440,7 @@ export function extractChaptersFromHtml(
     if (Number.isNaN(num) || num < 0 || num >= 5000) continue;
     if (foundChapters.has(num)) {
       const existing = foundChapters.get(num)!;
-      const ts = extractTimeFromContext(m[2]);
+      const ts = extractTimeFromContext(m[2], timestampPreference);
       if (ts) {
         const existingTs = existing.releasedAt ? Date.parse(existing.releasedAt) : Number.NaN;
         if (Number.isNaN(existingTs) || ts > existingTs) {
@@ -440,7 +449,7 @@ export function extractChaptersFromHtml(
       }
       continue;
     }
-    const ts = extractTimeFromContext(m[2]);
+    const ts = extractTimeFromContext(m[2], timestampPreference);
     foundChapters.set(num, {
       number: num,
       title: `Chapter ${m[1]}`,
