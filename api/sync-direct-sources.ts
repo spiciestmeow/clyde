@@ -117,6 +117,52 @@ function parseRelativeTime(text: string): number | null {
  * in the nearby text (e.g. "3 hours ago", "7h ago", or a `<time>` tag).
  */
 function extractTimeFromContext(surroundingHtml: string): number | null {
+  // Prefer the date shown to readers in this chapter row. Some pages retain
+  // stale `datetime` attributes after updating the visible relative age.
+  const textOnly = surroundingHtml
+    .replace(/<script\b[^>]*>[\s\S]*?<\/script>/gi, ' ')
+    .replace(/<style\b[^>]*>[\s\S]*?<\/style>/gi, ' ')
+    .replace(/<[^>]+>/g, ' ')
+    .replace(/&nbsp;|&#160;/gi, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+
+  const timePatterns = [
+    /(?:about\s+)?(\d+)\s*(?:seconds?|secs?|s)\s*(?:ago)?/i,
+    /(?:about\s+)?(\d+)\s*(?:minutes?|mins?|m)\s*(?:ago)?/i,
+    /(?:about\s+)?(\d+)\s*(?:hours?|hrs?|h)\s*(?:ago)?/i,
+    /(?:about\s+)?(\d+)\s*(?:days?|d)\s*(?:ago)?/i,
+    /(?:about\s+)?(\d+)\s*(?:weeks?|wks?|w)\s*(?:ago)?/i,
+    /(?:about\s+)?(\d+)\s*(?:months?|mos?)\s*(?:ago)?/i,
+    /\byesterday\b/i,
+    /\bjust now\b/i,
+    /\btoday\b/i,
+  ];
+
+  for (const pattern of timePatterns) {
+    const match = textOnly.match(pattern);
+    if (match) {
+      const ts = parseRelativeTime(match[0]);
+      if (ts) return ts;
+    }
+  }
+
+  // Extract a calendar date token so chapter numbers and other text in the
+  // row cannot cause Date.parse to select an unrelated date.
+  const absoluteDatePatterns = [
+    /\b(?:Jan(?:uary)?|Feb(?:ruary)?|Mar(?:ch)?|Apr(?:il)?|May|Jun(?:e)?|Jul(?:y)?|Aug(?:ust)?|Sep(?:tember)?|Oct(?:ober)?|Nov(?:ember)?|Dec(?:ember)?)\s+\d{1,2}(?:st|nd|rd|th)?[,]?\s+\d{4}(?:\s+\d{1,2}:\d{2}(?:\s*[AP]M)?)?/i,
+    /\b(?:Jan(?:uary)?|Feb(?:ruary)?|Mar(?:ch)?|Apr(?:il)?|May|Jun(?:e)?|Jul(?:y)?|Aug(?:ust)?|Sep(?:tember)?|Oct(?:ober)?|Nov(?:ember)?|Dec(?:ember)?)\s+\d{1,2}(?:st|nd|rd|th)?\b(?!\s*,?\s+\d{4})/i,
+    /\b\d{4}-\d{2}-\d{2}(?:[T ]\d{2}:\d{2}(?::\d{2}(?:\.\d+)?)?(?:Z|[+-]\d{2}:?\d{2})?)?\b/i,
+    /\b\d{1,2}[/-]\d{1,2}[/-]\d{4}\b/,
+  ];
+  for (const pattern of absoluteDatePatterns) {
+    const match = textOnly.match(pattern);
+    if (match) {
+      const ts = parseRelativeTime(match[0]);
+      if (ts) return ts;
+    }
+  }
+
   // Prefer explicit machine-readable dates. Other attributes such as
   // aria-label="Chapter 24" may appear before the actual <time> element.
   const datetimeMatches = surroundingHtml.matchAll(/\bdatetime=["']([^"']+)["']/gi);
@@ -145,48 +191,6 @@ function extractTimeFromContext(surroundingHtml: string): number | null {
     if (Number.isFinite(numericTimestamp)) {
       const timestampMs = numericTimestamp < 1e12 ? numericTimestamp * 1000 : numericTimestamp;
       if (timestampMs > 946684800000 && timestampMs <= Date.now() + 86400000) return timestampMs;
-    }
-  }
-
-  // 2. Strip tags, look for relative time text
-  const textOnly = surroundingHtml
-    .replace(/<[^>]+>/g, ' ')
-    .replace(/\s+/g, ' ')
-    .trim();
-
-  const timePatterns = [
-    /(?:about\s+)?(\d+)\s*(?:seconds?|secs?|s)\s*(?:ago)?/i,
-    /(?:about\s+)?(\d+)\s*(?:minutes?|mins?|m)\s*(?:ago)?/i,
-    /(?:about\s+)?(\d+)\s*(?:hours?|hrs?|h)\s*(?:ago)?/i,
-    /(?:about\s+)?(\d+)\s*(?:days?|d)\s*(?:ago)?/i,
-    /(?:about\s+)?(\d+)\s*(?:weeks?|wks?|w)\s*(?:ago)?/i,
-    /(?:about\s+)?(\d+)\s*(?:months?|mos?)\s*(?:ago)?/i,
-    /\byesterday\b/i,
-    /\bjust now\b/i,
-    /\btoday\b/i,
-  ];
-
-  for (const pattern of timePatterns) {
-    const match = textOnly.match(pattern);
-    if (match) {
-      const ts = parseRelativeTime(match[0]);
-      if (ts) return ts;
-    }
-  }
-
-  // Some sources display a calendar date (e.g. "October 4, 2026") instead
-  // of a relative age. Extract just the date token so unrelated chapter
-  // numbers elsewhere in the row cannot confuse Date.parse.
-  const absoluteDatePatterns = [
-    /\b(?:Jan(?:uary)?|Feb(?:ruary)?|Mar(?:ch)?|Apr(?:il)?|May|Jun(?:e)?|Jul(?:y)?|Aug(?:ust)?|Sep(?:tember)?|Oct(?:ober)?|Nov(?:ember)?|Dec(?:ember)?)\s+\d{1,2}(?:st|nd|rd|th)?[,]?\s+\d{4}(?:\s+\d{1,2}:\d{2}(?:\s*[AP]M)?)?/i,
-    /\b\d{4}-\d{2}-\d{2}(?:[T ]\d{2}:\d{2}(?::\d{2}(?:\.\d+)?)?(?:Z|[+-]\d{2}:?\d{2})?)?\b/i,
-    /\b\d{1,2}[/-]\d{1,2}[/-]\d{4}\b/,
-  ];
-  for (const pattern of absoluteDatePatterns) {
-    const match = textOnly.match(pattern);
-    if (match) {
-      const ts = parseRelativeTime(match[0]);
-      if (ts) return ts;
     }
   }
 
