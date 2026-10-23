@@ -127,24 +127,12 @@ function extractTimeFromContext(surroundingHtml: string): number | null {
     .replace(/\s+/g, ' ')
     .trim();
 
-  const timePatterns = [
-    /(?:about\s+)?(\d+)\s*(?:seconds?|secs?|s)\s*(?:ago)?/i,
-    /(?:about\s+)?(\d+)\s*(?:minutes?|mins?|m)\s*(?:ago)?/i,
-    /(?:about\s+)?(\d+)\s*(?:hours?|hrs?|h)\s*(?:ago)?/i,
-    /(?:about\s+)?(\d+)\s*(?:days?|d)\s*(?:ago)?/i,
-    /(?:about\s+)?(\d+)\s*(?:weeks?|wks?|w)\s*(?:ago)?/i,
-    /(?:about\s+)?(\d+)\s*(?:months?|mos?)\s*(?:ago)?/i,
-    /\byesterday\b/i,
-    /\bjust now\b/i,
-    /\btoday\b/i,
-  ];
-
-  const visibleTimeCandidates: number[] = [];
+  const visibleTimeCandidates: { index: number; timestamp: number }[] = [];
   const relativeTimePattern =
     /(?:about\s+)?\d+(?:\.\d+)?\s*(?:seconds?|secs?|s|minutes?|mins?|m|hours?|hrs?|h|days?|d|weeks?|wks?|w|months?|mos?|mo|years?|yrs?|y)(?:\s*ago)?|\b(?:yesterday|just now|today)\b/gi;
   for (const match of textOnly.matchAll(relativeTimePattern)) {
     const ts = parseRelativeTime(match[0]);
-    if (ts) visibleTimeCandidates.push(ts);
+    if (ts) visibleTimeCandidates.push({ index: match.index, timestamp: ts });
   }
 
   // Extract a calendar date token so chapter numbers and other text in the
@@ -158,15 +146,18 @@ function extractTimeFromContext(surroundingHtml: string): number | null {
   for (const pattern of absoluteDatePatterns) {
     for (const match of textOnly.matchAll(new RegExp(pattern.source, `${pattern.flags}g`))) {
       const ts = parseRelativeTime(match[0]);
-      if (ts) visibleTimeCandidates.push(ts);
+      if (ts) visibleTimeCandidates.push({ index: match.index, timestamp: ts });
     }
   }
 
-  // A chapter row can contain multiple representations of its date (for
-  // example, a stale hidden label and the current visible relative age).
-  // Use the newest timestamp found in that row instead of whichever label
-  // happens to appear first in the HTML.
-  if (visibleTimeCandidates.length > 0) return Math.max(...visibleTimeCandidates);
+  // Chapter rows commonly render the title/details on the left and upload age
+  // on the right. If markup contains multiple age labels, the rightmost label
+  // in the row is the one users see beside the chapter.
+  if (visibleTimeCandidates.length > 0) {
+    return visibleTimeCandidates.reduce((rightmost, candidate) =>
+      candidate.index > rightmost.index ? candidate : rightmost,
+    ).timestamp;
+  }
 
   // Prefer explicit machine-readable dates. Other attributes such as
   // aria-label="Chapter 24" may appear before the actual <time> element.
