@@ -4,7 +4,7 @@ import { Dialog, DialogContent } from '@/components/ui/dialog';
 
 const categories = [
   { label: 'General Issue', Icon: TriangleAlert },
-  { label: 'Coins/Payment Issue', Icon: CreditCard },
+  // { label: 'Coins/Payment Issue', Icon: CreditCard },
   { label: 'Website Bug', Icon: Bug },
   { label: 'Something Not Working', Icon: Wrench },
 ];

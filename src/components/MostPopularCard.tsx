@@ -13,13 +13,19 @@ type MostPopularCardProps = {
   rank: number;
 };
 
+function getGenreTone(title: string) {
+  const tones = ['blue', 'rose', 'orange'] as const;
+  const hash = Array.from(title).reduce((value, character) => (value * 31 + character.charCodeAt(0)) | 0, 0);
+  return tones[Math.abs(hash) % tones.length];
+}
+
 export function MostPopularCard({
   item,
   imageSrc,
   rank,
 }: MostPopularCardProps) {
   return (
-    <Link className="rank-card" href={item.href}>
+    <Link className="rank-card" href={item.href} data-genre-tone={getGenreTone(item.title)}>
       <span className="rank-cover">
         <img src={imageSrc} alt={item.title} loading="lazy" />
       </span>

@@ -1,5 +1,5 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState, type PointerEvent as ReactPointerEvent, type SyntheticEvent } from 'react';
-import { ArrowLeft, ArrowRight, ArrowUpRight, ChevronDown, ChevronLeft, ChevronRight, Clock3, Flame, RefreshCw } from 'lucide-react';
+import { ArrowLeft, ArrowRight, ArrowUp, ArrowUpRight, ChevronDown, ChevronLeft, ChevronRight, Clock3, Flame, RefreshCw } from 'lucide-react';
 import { Route, Switch, Router as WouterRouter, useLocation } from 'wouter';
 import SiteSearch from './components/SiteSearch';
 import SiteFooter from './components/SiteFooter';
@@ -536,7 +536,7 @@ function HomePage() {
                     </span>
                     <div className="issue-banner-text">
                       <h2 className="issue-banner-title">Need Help or Found an Issue?</h2>
-                      <p className="issue-banner-sub">Report bugs, payment issues, or other problems • Get rewards</p>
+                      <p className="issue-banner-sub">Report bugs, or other problems</p>
                     </div>
                   </div>
                   <button type="button" onClick={() => setReportModalOpen(true)} className="social-action-btn report-btn">
@@ -762,6 +762,53 @@ function ScrollToTop() {
   return null;
 }
 
+function ScrollUpActivityButton() {
+  const [location] = useLocation();
+  const [visible, setVisible] = useState(false);
+
+  useEffect(() => {
+    const enabled = location === '/' || location === '/series' || location.startsWith('/series/');
+    if (!enabled) {
+      setVisible(false);
+      return;
+    }
+
+    let previousScrollY = window.scrollY;
+    const handleScroll = () => {
+      const currentScrollY = window.scrollY;
+      const delta = currentScrollY - previousScrollY;
+      previousScrollY = currentScrollY;
+
+      if (currentScrollY <= 100) {
+        setVisible(false);
+      } else if (delta < -1) {
+        setVisible(true);
+      }
+    };
+
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    return () => {
+      window.removeEventListener('scroll', handleScroll);
+    };
+  }, [location]);
+
+  const enabled = location === '/' || location === '/series' || location.startsWith('/series/');
+  if (!enabled) return null;
+
+  return (
+    <button
+      type="button"
+      className={`scroll-up-activity${visible ? ' is-visible' : ''}`}
+      aria-label="Scroll to top"
+      aria-hidden={!visible}
+      tabIndex={visible ? 0 : -1}
+      onClick={() => window.scrollTo({ top: 0, left: 0, behavior: 'smooth' })}
+    >
+      <ArrowUp size={21} aria-hidden="true" />
+    </button>
+  );
+}
+
 function NotFoundPage() {
   const { dark, toggleTheme } = useThemeMode();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -793,6 +840,7 @@ function App() {
   return (
     <WouterRouter base={import.meta.env.BASE_URL.replace(/\/$/, '')}>
       <ScrollToTop />
+      <ScrollUpActivityButton />
       <NavigationProgress />
       <Switch>
         <Route path="/" component={HomePage} />

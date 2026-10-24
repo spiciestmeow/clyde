@@ -8,8 +8,6 @@ import {
   CalendarPlus,
   Check,
   ChevronDown,
-  ChevronLeft,
-  ChevronRight,
   CircleDot,
   Clock3,
   Filter,
@@ -29,6 +27,13 @@ import { toSiteSearchItems, toTrendingSiteSearchItems } from '../data/seriesSear
 import { seriesAvailability, seriesGenres, seriesStatuses, seriesTypes } from '../data/seriesFilterOptions';
 import { useThemeMode } from '../hooks/useThemeMode';
 import { useSeriesCatalog } from '../hooks/useSeriesCatalog';
+import {
+  DEFAULT_SERIES_FILTER_VISIBILITY,
+  getCachedSiteSettings,
+  getSiteSettings,
+  SITE_SETTINGS_UPDATED_EVENT,
+  type SiteSettings,
+} from '../lib/siteSettings';
 import { LatestReleaseCard, seriesToRelease } from '../components/LatestReleaseCard';
 import assets from '../../clone-data/asset-references.json';
 import '../series-detail.css';
@@ -155,6 +160,9 @@ export default function SeriesBrowsePage() {
   const [createdBefore, setCreatedBefore] = useState('');
   const [genreSearch, setGenreSearch] = useState('');
   const [genreModes, setGenreModes] = useState<Record<string, GenreMode>>({});
+  const [seriesFilterVisibility, setSeriesFilterVisibility] = useState(
+    () => getCachedSiteSettings()?.seriesFilters ?? DEFAULT_SERIES_FILTER_VISIBILITY,
+  );
   const [filterSectionsOpen, setFilterSectionsOpen] = useState<Record<FilterSection, boolean>>({
     genres: true,
     status: true,
@@ -171,14 +179,13 @@ export default function SeriesBrowsePage() {
   const [filtersOpen, setFiltersOpen] = useState(false);
   const discord = assetList.find((item) => item.alt === 'Discord Image Link')?.src ?? '';
   const activeSortLabel = sortOptions.find((option) => option.value === sort)?.label ?? 'Latest Chapters';
-  const activeFilterCount = Object.keys(genreModes).length +
-    (status !== 'All' ? 1 : 0) +
-    (availability !== 'Any' ? 1 : 0) +
-    selectedTypes.length +
-    Number(minChapters !== '') +
-    Number(maxChapters !== '') +
-    Number(createdAfter !== '') +
-    Number(createdBefore !== '');
+  const hasVisibleSeriesFilters = Object.values(seriesFilterVisibility).some(Boolean);
+  const activeFilterCount = (seriesFilterVisibility.genres ? Object.keys(genreModes).length : 0) +
+    (seriesFilterVisibility.status && status !== 'All' ? 1 : 0) +
+    (seriesFilterVisibility.availability && availability !== 'Any' ? 1 : 0) +
+    (seriesFilterVisibility.type ? selectedTypes.length : 0) +
+    (seriesFilterVisibility.chapterCount ? Number(minChapters !== '') + Number(maxChapters !== '') : 0) +
+    (seriesFilterVisibility.releaseDate ? Number(createdAfter !== '') + Number(createdBefore !== '') : 0);
   const updateSearchUrl = (value: string) => {
     const params = new URLSearchParams(routeSearch);
     if (value.trim()) params.set('search', value);
@@ -192,6 +199,29 @@ export default function SeriesBrowsePage() {
     setQuery((current) => current === nextQuery ? current : nextQuery);
     setPage(1);
   }, [routeSearch]);
+
+  useEffect(() => {
+    let active = true;
+    const cachedSettings = getCachedSiteSettings();
+    if (cachedSettings) setSeriesFilterVisibility(cachedSettings.seriesFilters);
+    const handleSettingsUpdate = (event: Event) => {
+      const updated = (event as CustomEvent<SiteSettings>).detail;
+      if (updated?.seriesFilters) {
+        setSeriesFilterVisibility(updated.seriesFilters);
+        setPage(1);
+      }
+    };
+    window.addEventListener(SITE_SETTINGS_UPDATED_EVENT, handleSettingsUpdate);
+    void getSiteSettings().then((settings) => {
+      if (active) setSeriesFilterVisibility(settings.seriesFilters);
+    }).catch(() => {
+      // Keep the cached/default filter visibility if settings cannot be loaded.
+    });
+    return () => {
+      active = false;
+      window.removeEventListener(SITE_SETTINGS_UPDATED_EVENT, handleSettingsUpdate);
+    };
+  }, []);
 
   useEffect(() => {
     const title = 'Browse Series | Clydee';
@@ -289,13 +319,15 @@ export default function SeriesBrowsePage() {
       // The captured catalog has chapter-lock data but no price flags, so this is the closest available proxy.
       const hasOnlyUnlockedCapturedChapters = item.chapters.length > 0 && !hasLockedChapter;
       return (!term || `${item.title} ${item.category} ${itemGenres.join(' ')}`.toLocaleLowerCase().includes(term)) &&
-        (includedGenres.length === 0 || includedGenres.some((genre) => itemGenres.includes(genre))) &&
-        excludedGenres.every((genre) => !itemGenres.includes(genre)) &&
-        (status === 'All' || item.status === status) &&
-        (selectedTypes.length === 0 || selectedTypes.includes(item.category) || selectedTypes.includes(item.facts.type ?? '')) &&
-        matchesChapterRange &&
-        matchesDateRange &&
-        (availability === 'Any' ||
+        (!seriesFilterVisibility.genres || (
+          (includedGenres.length === 0 || includedGenres.some((genre) => itemGenres.includes(genre))) &&
+          excludedGenres.every((genre) => !itemGenres.includes(genre))
+        )) &&
+        (!seriesFilterVisibility.status || status === 'All' || item.status === status) &&
+        (!seriesFilterVisibility.type || selectedTypes.length === 0 || selectedTypes.includes(item.category) || selectedTypes.includes(item.facts.type ?? '')) &&
+        (!seriesFilterVisibility.chapterCount || matchesChapterRange) &&
+        (!seriesFilterVisibility.releaseDate || matchesDateRange) &&
+        (!seriesFilterVisibility.availability || availability === 'Any' ||
           (availability === 'On Sale' && hasLockedChapter) ||
           (availability === 'Full Price' && hasOnlyUnlockedCapturedChapters));
     });
@@ -323,7 +355,7 @@ export default function SeriesBrowsePage() {
       return sortDirection === 'desc' ? result : -result;
     });
     return matches;
-  }, [catalogItems, catalogSourceRanks, query, status, availability, selectedTypes, genreModes, minChapters, maxChapters, createdAfter, createdBefore, sort, sortDirection]);
+  }, [catalogItems, catalogSourceRanks, query, status, availability, selectedTypes, genreModes, minChapters, maxChapters, createdAfter, createdBefore, sort, sortDirection, seriesFilterVisibility]);
   const pageCount = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
   const currentPage = Math.min(page, pageCount);
   const visibleItems = filtered.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
@@ -522,7 +554,8 @@ export default function SeriesBrowsePage() {
               <h2>Filters</h2>
               {activeFilterCount > 0 && <button className="catalog-clear-filters" type="button" onClick={clearSeriesFilters} data-testid="button-clear-series-filters">Clear all</button>}
             </div>
-            <section className="catalog-filter-group">
+            {!hasVisibleSeriesFilters && <p className="catalog-filter-empty">Filters are currently disabled.</p>}
+            {seriesFilterVisibility.genres && <section className="catalog-filter-group">
               <button className="catalog-filter-section-toggle" type="button" aria-expanded={filterSectionsOpen.genres} aria-controls="series-filter-genres" onClick={() => toggleFilterSection('genres')}>
                 <span><Tag size={14} aria-hidden="true" />Genres</span>
                 <ChevronDown className={filterSectionsOpen.genres ? 'is-expanded' : ''} size={14} aria-hidden="true" />
@@ -552,8 +585,8 @@ export default function SeriesBrowsePage() {
                   {visibleGenres.length === 0 && <p className="catalog-filter-empty">No genres match your search.</p>}
                 </div>
               </div>}
-            </section>
-            <section className="catalog-filter-group">
+            </section>}
+            {seriesFilterVisibility.status && <section className="catalog-filter-group">
               <button className="catalog-filter-section-toggle" type="button" aria-expanded={filterSectionsOpen.status} aria-controls="series-filter-status" onClick={() => toggleFilterSection('status')}>
                 <span><CircleDot size={14} aria-hidden="true" />Status</span>
                 <ChevronDown className={filterSectionsOpen.status ? 'is-expanded' : ''} size={14} aria-hidden="true" />
@@ -569,8 +602,8 @@ export default function SeriesBrowsePage() {
                   data-testid={`button-status-${option.toLowerCase().replaceAll(' ', '-')}`}
                 >{option}</button>)}
               </div>}
-            </section>
-            <section className="catalog-filter-group">
+            </section>}
+            {seriesFilterVisibility.availability && <section className="catalog-filter-group">
               <button className="catalog-filter-section-toggle" type="button" aria-expanded={filterSectionsOpen.availability} aria-controls="series-filter-availability" onClick={() => toggleFilterSection('availability')}>
                 <span><Percent size={14} aria-hidden="true" />Availability</span>
                 <ChevronDown className={filterSectionsOpen.availability ? 'is-expanded' : ''} size={14} aria-hidden="true" />
@@ -585,8 +618,8 @@ export default function SeriesBrowsePage() {
                   data-testid={`button-availability-${option.toLowerCase().replaceAll(' ', '-')}`}
                 >{option === 'On Sale' ? <span className="catalog-chip-sale"><Percent size={10} aria-hidden="true" />On Sale</span> : option}</button>)}
               </div>}
-            </section>
-            <section className="catalog-filter-group">
+            </section>}
+            {seriesFilterVisibility.type && <section className="catalog-filter-group">
               <button className="catalog-filter-section-toggle" type="button" aria-expanded={filterSectionsOpen.type} aria-controls="series-filter-type" onClick={() => toggleFilterSection('type')}>
                 <span><BookOpen size={14} aria-hidden="true" />Type</span>
                 <ChevronDown className={filterSectionsOpen.type ? 'is-expanded' : ''} size={14} aria-hidden="true" />
@@ -601,8 +634,8 @@ export default function SeriesBrowsePage() {
                   data-testid={`button-type-${option.toLowerCase()}`}
                 >{option}</button>)}
               </div>}
-            </section>
-            <section className="catalog-filter-group">
+            </section>}
+            {seriesFilterVisibility.chapterCount && <section className="catalog-filter-group">
               <button className="catalog-filter-section-toggle" type="button" aria-expanded={filterSectionsOpen.chapterCount} aria-controls="series-filter-chapter-count" onClick={() => toggleFilterSection('chapterCount')}>
                 <span><BookOpen size={14} aria-hidden="true" />Chapter Count</span>
                 <ChevronDown className={filterSectionsOpen.chapterCount ? 'is-expanded' : ''} size={14} aria-hidden="true" />
@@ -620,8 +653,8 @@ export default function SeriesBrowsePage() {
                 </div>
                 {(minChapters !== '' || maxChapters !== '') && <p className="catalog-filter-help catalog-filter-data-note">Uses the latest chapter number captured for each series.</p>}
               </div>}
-            </section>
-            <section className="catalog-filter-group">
+            </section>}
+            {seriesFilterVisibility.releaseDate && <section className="catalog-filter-group">
               <button className="catalog-filter-section-toggle" type="button" aria-expanded={filterSectionsOpen.releaseDate} aria-controls="series-filter-release-date" onClick={() => toggleFilterSection('releaseDate')}>
                 <span><CalendarPlus size={14} aria-hidden="true" />Release Date</span>
                 <ChevronDown className={filterSectionsOpen.releaseDate ? 'is-expanded' : ''} size={14} aria-hidden="true" />
@@ -639,7 +672,7 @@ export default function SeriesBrowsePage() {
                 </div>
                 {(createdAfter !== '' || createdBefore !== '') && <p className="catalog-filter-help catalog-filter-data-note">Series without a captured date are excluded.</p>}
               </div>}
-            </section>
+            </section>}
           </div>
           <div className="catalog-filter-apply"><button type="button" onClick={() => setFiltersOpen(false)}>Show {filtered.length} {filtered.length === 1 ? 'result' : 'results'}</button></div>
           </aside>
@@ -660,14 +693,15 @@ export default function SeriesBrowsePage() {
           </div>}
         </div>
         {filtered.length > PAGE_SIZE && <nav className="catalog-pagination" aria-label="Series pages">
-          <button type="button" aria-label="Previous page" disabled={currentPage === 1} onClick={() => { setPage(currentPage - 1); document.querySelector('.catalog-results')?.scrollIntoView({ behavior: 'smooth', block: 'start' }); }} data-testid="button-series-page-previous"><ChevronLeft size={16} /></button>
+          <button type="button" aria-label="First page" disabled={currentPage === 1} onClick={() => { setPage(1); document.querySelector('.catalog-results')?.scrollIntoView({ behavior: 'smooth', block: 'start' }); }} data-testid="button-series-page-first">«</button>
+          <button type="button" aria-label="Previous page" disabled={currentPage === 1} onClick={() => { setPage(currentPage - 1); document.querySelector('.catalog-results')?.scrollIntoView({ behavior: 'smooth', block: 'start' }); }} data-testid="button-series-page-previous">‹</button>
           {pages.map((item, index) => typeof item === 'string'
             ? <span className="catalog-ellipsis" key={`dots-${index}`}>…</span>
             : <button type="button" key={item} className={currentPage === item ? 'is-current' : ''} aria-current={currentPage === item ? 'page' : undefined} onClick={() => { setPage(item); document.querySelector('.catalog-results')?.scrollIntoView({ behavior: 'smooth', block: 'start' }); }} data-testid={`button-series-page-${item}`}>{item}</button>)}
-          <button type="button" aria-label="Next page" disabled={currentPage === pageCount} onClick={() => { setPage(currentPage + 1); document.querySelector('.catalog-results')?.scrollIntoView({ behavior: 'smooth', block: 'start' }); }} data-testid="button-series-page-next"><ChevronRight size={16} /></button>
-          <span className="catalog-page-status">Page {currentPage} of {pageCount}</span>
+          <button type="button" aria-label="Next page" disabled={currentPage === pageCount} onClick={() => { setPage(currentPage + 1); document.querySelector('.catalog-results')?.scrollIntoView({ behavior: 'smooth', block: 'start' }); }} data-testid="button-series-page-next">›</button>
+          <button type="button" aria-label="Last page" disabled={currentPage === pageCount} onClick={() => { setPage(pageCount); document.querySelector('.catalog-results')?.scrollIntoView({ behavior: 'smooth', block: 'start' }); }} data-testid="button-series-page-last">»</button>
+          <span className="catalog-page-status">Page <b>{currentPage}</b> of <b>{pageCount}</b></span>
         </nav>}
-        <p className="catalog-snapshot-note">Showing {filtered.length} captured series from the current library snapshot.</p>
       </section>
       </>}
     </main>

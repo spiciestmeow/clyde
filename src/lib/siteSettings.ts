@@ -41,6 +41,15 @@ export type SeriesPageVisibility = {
   footer: boolean;
 };
 
+export type SeriesFilterVisibility = {
+  genres: boolean;
+  status: boolean;
+  availability: boolean;
+  type: boolean;
+  chapterCount: boolean;
+  releaseDate: boolean;
+};
+
 export type HeroSlide = {
   id: string;
   title: string;
@@ -74,6 +83,7 @@ export type SiteSettings = {
   header: HeaderVisibility;
   homepage: HomepageVisibility;
   seriesPage: SeriesPageVisibility;
+  seriesFilters: SeriesFilterVisibility;
   heroSlides: HeroSlide[];
   newSeriesOrder: string[];
 };
@@ -119,10 +129,20 @@ export const DEFAULT_SERIES_PAGE_VISIBILITY: SeriesPageVisibility = {
   footer: true,
 };
 
+export const DEFAULT_SERIES_FILTER_VISIBILITY: SeriesFilterVisibility = {
+  genres: true,
+  status: true,
+  availability: true,
+  type: true,
+  chapterCount: true,
+  releaseDate: true,
+};
+
 export const DEFAULT_SITE_SETTINGS: SiteSettings = {
   header: DEFAULT_HEADER_VISIBILITY,
   homepage: DEFAULT_HOMEPAGE_VISIBILITY,
   seriesPage: DEFAULT_SERIES_PAGE_VISIBILITY,
+  seriesFilters: DEFAULT_SERIES_FILTER_VISIBILITY,
   heroSlides: DEFAULT_HERO_SLIDES,
   newSeriesOrder: [],
 };
@@ -171,6 +191,7 @@ function parseSiteSettings(value: unknown): SiteSettings | null {
   const header = parseBooleanSettings(stored, DEFAULT_HEADER_VISIBILITY);
   const homepage = parseBooleanSettings(stored.homepage_sections, DEFAULT_HOMEPAGE_VISIBILITY);
   const seriesPage = parseBooleanSettings(stored.series_page_sections, DEFAULT_SERIES_PAGE_VISIBILITY);
+  const seriesFilters = parseBooleanSettings(stored.series_filter_sections, DEFAULT_SERIES_FILTER_VISIBILITY);
   const heroSlides = stored.hero_slides !== undefined
     ? parseHeroSlides(stored.hero_slides)
     : [...DEFAULT_HERO_SLIDES];
@@ -178,7 +199,7 @@ function parseSiteSettings(value: unknown): SiteSettings | null {
     ? stored.new_series_order.filter((id): id is string => typeof id === 'string' && id.trim().length > 0)
     : [];
 
-  return { header, homepage, seriesPage, heroSlides, newSeriesOrder };
+  return { header, homepage, seriesPage, seriesFilters, heroSlides, newSeriesOrder };
 }
 
 export const SITE_SETTINGS_CACHE_KEY = 'vortex-site-settings';
@@ -198,12 +219,13 @@ export function getCachedSiteSettings(): SiteSettings | null {
     const header = parseBooleanSettings(cached.header, DEFAULT_HEADER_VISIBILITY);
     const homepage = parseBooleanSettings(cached.homepage, DEFAULT_HOMEPAGE_VISIBILITY);
     const seriesPage = parseBooleanSettings(cached.seriesPage, DEFAULT_SERIES_PAGE_VISIBILITY);
+    const seriesFilters = parseBooleanSettings(cached.seriesFilters, DEFAULT_SERIES_FILTER_VISIBILITY);
     const heroSlides = cached.heroSlides ? parseHeroSlides(cached.heroSlides) : [...DEFAULT_HERO_SLIDES];
     const newSeriesOrder = Array.isArray(cached.newSeriesOrder)
       ? cached.newSeriesOrder.filter((id): id is string => typeof id === 'string' && id.trim().length > 0)
       : [];
 
-    return { header, homepage, seriesPage, heroSlides, newSeriesOrder };
+    return { header, homepage, seriesPage, seriesFilters, heroSlides, newSeriesOrder };
   } catch {
     return null;
   }
@@ -233,6 +255,7 @@ export async function getSiteSettings(): Promise<SiteSettings> {
       header: { ...DEFAULT_HEADER_VISIBILITY },
       homepage: { ...DEFAULT_HOMEPAGE_VISIBILITY },
       seriesPage: { ...DEFAULT_SERIES_PAGE_VISIBILITY },
+      seriesFilters: { ...DEFAULT_SERIES_FILTER_VISIBILITY },
       heroSlides: [...DEFAULT_HERO_SLIDES],
       newSeriesOrder: [],
     };
@@ -262,6 +285,7 @@ export async function saveSiteSettings(settings: SiteSettings): Promise<SiteSett
         ...settings.header,
         homepage_sections: settings.homepage,
         series_page_sections: settings.seriesPage,
+        series_filter_sections: settings.seriesFilters,
         hero_slides: settings.heroSlides,
         new_series_order: settings.newSeriesOrder,
       },

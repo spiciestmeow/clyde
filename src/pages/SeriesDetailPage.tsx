@@ -35,6 +35,16 @@ type ReactionKey = 'like' | 'love' | 'happy' | 'wow' | 'sad' | 'angry';
 type ReactionCounts = Record<ReactionKey, number>;
 type RailPosition = { left: number; top: number; width: number; maxHeight: number };
 type FixedRailPositions = { left: RailPosition; right: RailPosition };
+
+function getDisplayedChapterCount(item: SeriesRecord): number {
+  const latestChapter = getWinningChapterSource(item.sources, item.facts?.latest_source_url || undefined)?.latestChapterNumber
+    || item.chapters[0]?.title
+    || item.facts?.latest_chapter_number
+    || item.facts?.last_chapter_number;
+  const parsedChapter = Number.parseFloat(String(latestChapter || '').replace(/^ch(?:apter)?\.?\s*/i, ''));
+  return Number.isFinite(parsedChapter) ? parsedChapter : item.chapters.length;
+}
+
 const assetList = assets as { src: string; alt: string }[];
 const reactionKeys: ReactionKey[] = ['like', 'love', 'happy', 'wow', 'sad', 'angry'];
 const emptyReactionCounts: ReactionCounts = {
@@ -222,7 +232,7 @@ export default function SeriesDetailPage() {
     (item) => item.slug.toLocaleLowerCase() === slug.toLocaleLowerCase(),
   );
   const detail = series;
-  const alternateTitleText = detail?.alternateTitles?.join(' · ') ?? '';
+  const alternateTitleText = detail?.alternateTitles?.join(' / ') ?? '';
   const searchItems = useMemo(() => toSiteSearchItems(catalogQuery.items), [catalogQuery.items]);
   const trendingSearchItems = useMemo(() => toTrendingSiteSearchItems(catalogQuery.items), [catalogQuery.items]);
   const [bookmarks, setBookmarks] = useState<string[]>([]);
@@ -468,7 +478,7 @@ export default function SeriesDetailPage() {
         href: item.href,
         cover: item.cover,
         rating: item.rating,
-        chapterCount: item.chapters.length,
+        chapterCount: getDisplayedChapterCount(item),
       }));
   }, [catalogQuery.items, slug]);
 

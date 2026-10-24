@@ -45,6 +45,7 @@ import {
   saveSiteSettings,
   type HeaderVisibility,
   type HomepageVisibility,
+  type SeriesFilterVisibility,
   type SeriesPageVisibility,
   type SiteSettings,
 } from '../lib/siteSettings';
@@ -140,6 +141,15 @@ const seriesPageVisibilityOptions: { key: keyof SeriesPageVisibility; label: str
   { key: 'discussion', label: 'Discussion', description: 'Series discussion prompt and comments area.', group: 'Community and discovery' },
   { key: 'similarSeries', label: 'Similar series', description: 'Recommended series list beside the page content.', group: 'Community and discovery' },
   { key: 'footer', label: 'Series page footer', description: 'Brand information and policy links below the series page.', group: 'Community and discovery' },
+];
+
+const seriesFilterVisibilityOptions: { key: keyof SeriesFilterVisibility; label: string; description: string }[] = [
+  { key: 'genres', label: 'Genres', description: 'Show the genre include and exclude filters.' },
+  { key: 'status', label: 'Status', description: 'Show the series status filter.' },
+  { key: 'availability', label: 'Availability', description: 'Show the availability filter.' },
+  { key: 'type', label: 'Type', description: 'Show the manga, manhwa, and other type filters.' },
+  { key: 'chapterCount', label: 'Chapter Count', description: 'Show minimum and maximum chapter filters.' },
+  { key: 'releaseDate', label: 'Release Date', description: 'Show the created after and before date filters.' },
 ];
 
 export default function AdminPage() {
@@ -365,7 +375,7 @@ function ComixDashboard({
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const [profileMenuOpen, setProfileMenuOpen] = useState(false);
   const profileMenuRef = useRef<HTMLDivElement>(null);
-  const [settingsSubTab, setSettingsSubTab] = useState<'homepage' | 'header' | 'series'>('homepage');
+  const [settingsSubTab, setSettingsSubTab] = useState<'homepage' | 'header' | 'series' | 'filters'>('homepage');
   const [topSearch, setTopSearch] = useState('');
 
   // Series catalog stats
@@ -408,7 +418,7 @@ function ComixDashboard({
   }, []);
 
   const handleToggle = async (
-    category: 'homepage' | 'header' | 'seriesPage',
+    category: 'homepage' | 'header' | 'seriesPage' | 'seriesFilters',
     key: string,
   ) => {
     if (!settings || savingSettings) return;
@@ -840,6 +850,13 @@ function ComixDashboard({
                   >
                     Series Page Features
                   </button>
+                  <button
+                    type="button"
+                    className={`comix-sub-tab ${settingsSubTab === 'filters' ? 'is-active' : ''}`}
+                    onClick={() => setSettingsSubTab('filters')}
+                  >
+                    Series Filters
+                  </button>
                 </div>
 
                 {settings && settingsSubTab === 'homepage' && (
@@ -929,6 +946,31 @@ function ComixDashboard({
                         </div>
                       );
                     })}
+                  </div>
+                )}
+
+                {settings && settingsSubTab === 'filters' && (
+                  <div>
+                    <div className="comix-setting-group">
+                      <div className="comix-group-title">Series page filters</div>
+                      {seriesFilterVisibilityOptions.map((opt) => (
+                        <div key={opt.key} className="comix-setting-item">
+                          <div className="comix-setting-info">
+                            <strong>{opt.label}</strong>
+                            <span>{opt.description}</span>
+                          </div>
+                          <button
+                            type="button"
+                            className={`comix-switch ${settings.seriesFilters[opt.key] ? 'is-active' : ''}`}
+                            onClick={() => handleToggle('seriesFilters', opt.key)}
+                            aria-label={`Toggle ${opt.label} filter`}
+                            aria-pressed={settings.seriesFilters[opt.key]}
+                          >
+                            <span className="comix-switch-knob" />
+                          </button>
+                        </div>
+                      ))}
+                    </div>
                   </div>
                 )}
 
