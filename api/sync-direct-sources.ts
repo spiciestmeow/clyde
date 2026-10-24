@@ -118,7 +118,7 @@ function parseRelativeTime(text: string): number | null {
  */
 function extractTimeFromContext(
   surroundingHtml: string,
-  timestampPreference: 'rightmost' | 'newest' | 'oldest' = 'newest',
+  timestampPreference: 'rightmost' | 'newest' | 'oldest' | 'calendar' = 'newest',
 ): number | null {
   // Prefer the date shown to readers in this chapter row. Some pages retain
   // stale `datetime` attributes after updating the visible relative age.
@@ -152,6 +152,33 @@ function extractTimeFromContext(
       const ts = parseRelativeTime(match[0]);
       if (ts) visibleCalendarDateCandidates.push({ index: match.index, timestamp: ts });
     }
+  }
+
+  // Qi Manga exposes month/day labels like "May 29" alongside relative-time
+  // metadata that can reflect when its page data was refreshed. This branch is
+  // selected only for Qi Manga; all other sources retain the normal selection
+  // logic below.
+  if (timestampPreference === 'calendar' && visibleCalendarDateCandidates.length > 0) {
+    const chapterLabel = textOnly.match(/\b(?:chapter|episode)\s*#?\s*\d+(?:\.\d+)?/i);
+    if (!chapterLabel) {
+      return Math.max(...visibleCalendarDateCandidates.map((candidate) => candidate.timestamp));
+    }
+
+    const labelStart = chapterLabel.index ?? 0;
+    const labelEnd = labelStart + chapterLabel[0].length;
+    return visibleCalendarDateCandidates.reduce((nearest, candidate) => {
+      const distance = candidate.index > labelEnd
+        ? candidate.index - labelEnd
+        : candidate.index < labelStart
+          ? labelStart - candidate.index
+          : 0;
+      const nearestDistance = nearest.index > labelEnd
+        ? nearest.index - labelEnd
+        : nearest.index < labelStart
+          ? labelStart - nearest.index
+          : 0;
+      return distance < nearestDistance ? candidate : nearest;
+    }).timestamp;
   }
 
   // Some sources (such as Asura) render the upload age at the right side of
@@ -244,7 +271,7 @@ function extractChapterRowContext(
   matchStart: number,
   matchEnd: number,
   chapterNumber?: number,
-  timestampPreference: 'rightmost' | 'newest' | 'oldest' = 'newest',
+  timestampPreference: 'rightmost' | 'newest' | 'oldest' | 'calendar' = 'newest',
 ): string | null {
   const searchStart = Math.max(0, matchStart - 2500);
   const prefix = html.slice(searchStart, matchStart);
@@ -337,7 +364,7 @@ function matchChapterNumberInLabel(html: string): RegExpMatchArray | null {
 function extractGenzToonsChapters(
   html: string,
   pageUrl: URL,
-  timestampPreference: 'rightmost' | 'newest' | 'oldest',
+  timestampPreference: 'rightmost' | 'newest' | 'oldest' | 'calendar',
 ): DetectedChapterItem[] {
   type GenzChapterLink = {
     href: string;
@@ -438,7 +465,7 @@ function extractMistScanChapters(
   html: string,
   pageUrl: URL,
   seriesSlug: string,
-  timestampPreference: 'rightmost' | 'newest' | 'oldest',
+  timestampPreference: 'rightmost' | 'newest' | 'oldest' | 'calendar',
 ): DetectedChapterItem[] {
   const normalizedSeriesSlug = normalizeSeriesPathSegment(seriesSlug);
   if (!normalizedSeriesSlug) return [];
@@ -538,12 +565,14 @@ export function extractChaptersFromHtml(
 
   const seriesPath = parsedUrl.pathname.replace(/\/+$/, '');
   const seriesSlug = seriesPath.split('/').filter(Boolean).pop() || '';
-  const timestampPreference: 'rightmost' | 'newest' | 'oldest' =
+  const timestampPreference: 'rightmost' | 'newest' | 'oldest' | 'calendar' =
     /(^|\.)nyxscans\.com$/i.test(parsedUrl.hostname)
       ? 'oldest'
       : /(^|\.)asurascans\.com$/i.test(parsedUrl.hostname)
         ? 'rightmost'
-        : 'newest';
+        : /(^|\.)qimanga\.com$/i.test(parsedUrl.hostname)
+          ? 'calendar'
+          : 'newest';
 
   const foundChapters = new Map<number, DetectedChapterItem>();
 
