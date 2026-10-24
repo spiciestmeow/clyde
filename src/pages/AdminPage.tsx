@@ -437,6 +437,25 @@ function ComixDashboard({
     }
   };
 
+  const saveNewSeriesOrder = async (nextOrder: string[]) => {
+    if (!settings || savingSettings) return;
+    const previousSettings = settings;
+    const nextSettings: SiteSettings = { ...settings, newSeriesOrder: nextOrder };
+    setSettings(nextSettings);
+    setSavingSettings(true);
+    setSaveMessage('Saving...');
+    try {
+      const saved = await saveSiteSettings(nextSettings);
+      setSettings(saved);
+      setSaveMessage('Saved');
+    } catch {
+      setSettings(previousSettings);
+      setSaveMessage('Error saving');
+    } finally {
+      setSavingSettings(false);
+    }
+  };
+
   const handleSignOut = async () => {
     if (supabase) {
       await supabase.auth.signOut();
@@ -770,7 +789,15 @@ function ComixDashboard({
           {/* Right Main Content */}
           <main className="comix-main-panel">
             {/* 1. UPLOADS / SERIES CATALOG (Default) */}
-            {activeTab === 'uploads' && <SeriesCatalogManager globalSearch={topSearch} />}
+            {activeTab === 'uploads' && (
+              <SeriesCatalogManager
+                globalSearch={topSearch}
+                newSeriesOrder={settings?.newSeriesOrder ?? []}
+                onSaveNewSeriesOrder={saveNewSeriesOrder}
+                isSavingNewSeriesOrder={savingSettings || !settings}
+                newSeriesOrderSaveMessage={saveMessage}
+              />
+            )}
 
             {/* 2. HERO SLIDES MANAGER */}
             {activeTab === 'hero-slides' && (
@@ -904,6 +931,7 @@ function ComixDashboard({
                     })}
                   </div>
                 )}
+
               </div>
             )}
 

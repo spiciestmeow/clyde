@@ -3,6 +3,8 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import {
   AlertCircle,
   AlertTriangle,
+  ArrowDown,
+  ArrowUp,
   ArrowUpRight,
   BookOpen,
   Check,
@@ -10,6 +12,7 @@ import {
   Edit2,
   ExternalLink,
   FileText,
+  GripVertical,
   Image as ImageIcon,
   List,
   LoaderCircle,
@@ -167,7 +170,19 @@ function slugify(value: string) {
     .replace(/^-+|-+$/g, '');
 }
 
-export default function SeriesCatalogManager({ globalSearch = '' }: { globalSearch?: string }) {
+export default function SeriesCatalogManager({
+  globalSearch = '',
+  newSeriesOrder = [],
+  onSaveNewSeriesOrder,
+  isSavingNewSeriesOrder = false,
+  newSeriesOrderSaveMessage = 'Saved',
+}: {
+  globalSearch?: string;
+  newSeriesOrder?: string[];
+  onSaveNewSeriesOrder?: (order: string[]) => Promise<void>;
+  isSavingNewSeriesOrder?: boolean;
+  newSeriesOrderSaveMessage?: string;
+}) {
   const queryClient = useQueryClient();
   const catalogQuery = useSeriesCatalog();
   const catalogItems = catalogQuery.items;
@@ -178,7 +193,9 @@ export default function SeriesCatalogManager({ globalSearch = '' }: { globalSear
   // Modal state: Image 2 "Upload chapter" dialog
   const [isModalOpen, setIsModalOpen] = useState(false);
   // Main tabs: 'titles' or 'chapters'
-  const [mainTab, setMainTab] = useState<'titles' | 'chapters'>('titles');
+  const [mainTab, setMainTab] = useState<'titles' | 'chapters' | 'new-order'>('titles');
+  const [draggedNewSeriesId, setDraggedNewSeriesId] = useState<number | null>(null);
+  const [dragOverNewSeriesId, setDragOverNewSeriesId] = useState<number | null>(null);
 
   // List filters
   const [listSearch, setListSearch] = useState('');
@@ -500,6 +517,32 @@ export default function SeriesCatalogManager({ globalSearch = '' }: { globalSear
     });
     return filtered;
   }, [catalogItems, globalSearch, listSearch, typeFilter, statusFilter, sortOrder]);
+
+  const newTaggedSeries = useMemo(() => catalogItems
+    .filter((item) => item.isNew || item.facts?.is_new === 'true')
+    .sort((left, right) => {
+      const leftIndex = newSeriesOrder.indexOf(String(left.id));
+      const rightIndex = newSeriesOrder.indexOf(String(right.id));
+      if (leftIndex !== -1 || rightIndex !== -1) {
+        if (leftIndex === -1) return -1;
+        if (rightIndex === -1) return 1;
+        if (leftIndex !== rightIndex) return leftIndex - rightIndex;
+      }
+      const leftCreated = left.createdAt ? new Date(left.createdAt).getTime() : (left.id || 0);
+      const rightCreated = right.createdAt ? new Date(right.createdAt).getTime() : (right.id || 0);
+      return rightCreated - leftCreated;
+    }), [catalogItems, newSeriesOrder]);
+
+  const moveNewSeries = (sourceId: number, targetId: number) => {
+    if (sourceId === targetId || isSavingNewSeriesOrder || !onSaveNewSeriesOrder) return;
+    const orderedIds = newTaggedSeries.map((item) => item.id);
+    const sourceIndex = orderedIds.indexOf(sourceId);
+    const targetIndex = orderedIds.indexOf(targetId);
+    if (sourceIndex === -1 || targetIndex === -1) return;
+    orderedIds.splice(sourceIndex, 1);
+    orderedIds.splice(targetIndex, 0, sourceId);
+    void onSaveNewSeriesOrder(orderedIds.map(String));
+  };
 
   // Modal search matching
   const modalMatches = useMemo(() => {
@@ -1866,10 +1909,17 @@ export default function SeriesCatalogManager({ globalSearch = '' }: { globalSear
         >
           Sync Logs
         </button>
+        <button
+          type="button"
+          className={`uploads-tab ${mainTab === 'new-order' ? 'is-active' : ''}`}
+          onClick={() => setMainTab('new-order')}
+        >
+          New Series Order <span className="comix-order-count">{newTaggedSeries.length}</span>
+        </button>
       </div>
 
       {/* Filter and Search Bar */}
-      <div className="uploads-filter-bar">
+      {mainTab === 'titles' && <div className="uploads-filter-bar">
         <div className="search-input-box">
           <Search size={16} className="search-icon" />
           <input
@@ -1924,7 +1974,7 @@ export default function SeriesCatalogManager({ globalSearch = '' }: { globalSear
           </select>
           <ChevronDown className="select-arrow" size={14} />
         </div>
-      </div>
+      </div>}
 
       {/* Main Content Area: Empty State or Grid */}
       {mainTab === 'titles' ? (
@@ -2043,9 +2093,76 @@ export default function SeriesCatalogManager({ globalSearch = '' }: { globalSear
             ))}
           </div>
         )
-      ) : (
+      ) : mainTab === 'chapters' ? (
         /* Sync Logs Tab */
         <SyncActivityLogs />
+      ) : (
+        <section className="comix-new-series-order" aria-labelledby="new-series-order-heading">
+          <div className="comix-setting-group-title">
+            <h4 id="new-series-order-heading">Series tagged New</h4>
+            <p>Drag a series to change its position in the homepage New releases tab. Changes save automatically.</p>
+            {(newSeriesOrderSaveMessage === 'Saving...' || newSeriesOrderSaveMessage === 'Error saving') && (
+              <span className={`comix-new-series-save-status ${newSeriesOrderSaveMessage === 'Error saving' ? 'is-error' : ''}`} role="status">
+                {newSeriesOrderSaveMessage}
+              </span>
+            )}
+          </div>
+          {newTaggedSeries.length === 0 ? (
+            <div className="comix-new-series-empty">No series are currently tagged New.</div>
+          ) : (
+            <div className="comix-new-series-list" role="list" aria-label="Series tagged New, ordered for homepage display">
+              {newTaggedSeries.map((series, index) => (
+                <div
+                  key={series.id}
+                  className={`comix-new-series-row ${draggedNewSeriesId === series.id ? 'is-dragging' : ''} ${dragOverNewSeriesId === series.id ? 'is-drop-target' : ''}`}
+                  role="listitem"
+                  draggable={!isSavingNewSeriesOrder && Boolean(onSaveNewSeriesOrder)}
+                  onDragStart={(event) => {
+                    setDraggedNewSeriesId(series.id);
+                    event.dataTransfer.effectAllowed = 'move';
+                    event.dataTransfer.setData('text/plain', String(series.id));
+                  }}
+                  onDragOver={(event) => {
+                    event.preventDefault();
+                    event.dataTransfer.dropEffect = 'move';
+                    setDragOverNewSeriesId(series.id);
+                  }}
+                  onDrop={(event) => {
+                    event.preventDefault();
+                    const sourceId = Number(event.dataTransfer.getData('text/plain')) || draggedNewSeriesId;
+                    if (sourceId !== null) moveNewSeries(sourceId, series.id);
+                    setDraggedNewSeriesId(null);
+                    setDragOverNewSeriesId(null);
+                  }}
+                  onDragEnd={() => {
+                    setDraggedNewSeriesId(null);
+                    setDragOverNewSeriesId(null);
+                  }}
+                >
+                  <GripVertical className="comix-new-series-grip" size={18} aria-hidden="true" />
+                  <span className="comix-new-series-position">{index + 1}</span>
+                  <img src={series.cover} alt="" loading="lazy" />
+                  <span className="comix-new-series-title">{series.title}</span>
+                  <span className="comix-new-series-tag">New</span>
+                  <div className="comix-new-series-controls" aria-label={`Move ${series.title}`}>
+                    <button
+                      type="button"
+                      aria-label={`Move ${series.title} up`}
+                      disabled={isSavingNewSeriesOrder || index === 0}
+                      onClick={() => moveNewSeries(series.id, newTaggedSeries[index - 1].id)}
+                    ><ArrowUp size={14} /></button>
+                    <button
+                      type="button"
+                      aria-label={`Move ${series.title} down`}
+                      disabled={isSavingNewSeriesOrder || index === newTaggedSeries.length - 1}
+                      onClick={() => moveNewSeries(series.id, newTaggedSeries[index + 1].id)}
+                    ><ArrowDown size={14} /></button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </section>
       )}
 
       {/* ========================================== */}

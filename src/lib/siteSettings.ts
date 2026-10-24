@@ -75,6 +75,7 @@ export type SiteSettings = {
   homepage: HomepageVisibility;
   seriesPage: SeriesPageVisibility;
   heroSlides: HeroSlide[];
+  newSeriesOrder: string[];
 };
 
 export const DEFAULT_HEADER_VISIBILITY: HeaderVisibility = {
@@ -123,6 +124,7 @@ export const DEFAULT_SITE_SETTINGS: SiteSettings = {
   homepage: DEFAULT_HOMEPAGE_VISIBILITY,
   seriesPage: DEFAULT_SERIES_PAGE_VISIBILITY,
   heroSlides: DEFAULT_HERO_SLIDES,
+  newSeriesOrder: [],
 };
 
 function parseBooleanSettings<T extends Record<string, boolean>>(
@@ -172,8 +174,11 @@ function parseSiteSettings(value: unknown): SiteSettings | null {
   const heroSlides = stored.hero_slides !== undefined
     ? parseHeroSlides(stored.hero_slides)
     : [...DEFAULT_HERO_SLIDES];
+  const newSeriesOrder = Array.isArray(stored.new_series_order)
+    ? stored.new_series_order.filter((id): id is string => typeof id === 'string' && id.trim().length > 0)
+    : [];
 
-  return { header, homepage, seriesPage, heroSlides };
+  return { header, homepage, seriesPage, heroSlides, newSeriesOrder };
 }
 
 export const SITE_SETTINGS_CACHE_KEY = 'vortex-site-settings';
@@ -194,8 +199,11 @@ export function getCachedSiteSettings(): SiteSettings | null {
     const homepage = parseBooleanSettings(cached.homepage, DEFAULT_HOMEPAGE_VISIBILITY);
     const seriesPage = parseBooleanSettings(cached.seriesPage, DEFAULT_SERIES_PAGE_VISIBILITY);
     const heroSlides = cached.heroSlides ? parseHeroSlides(cached.heroSlides) : [...DEFAULT_HERO_SLIDES];
+    const newSeriesOrder = Array.isArray(cached.newSeriesOrder)
+      ? cached.newSeriesOrder.filter((id): id is string => typeof id === 'string' && id.trim().length > 0)
+      : [];
 
-    return { header, homepage, seriesPage, heroSlides };
+    return { header, homepage, seriesPage, heroSlides, newSeriesOrder };
   } catch {
     return null;
   }
@@ -226,6 +234,7 @@ export async function getSiteSettings(): Promise<SiteSettings> {
       homepage: { ...DEFAULT_HOMEPAGE_VISIBILITY },
       seriesPage: { ...DEFAULT_SERIES_PAGE_VISIBILITY },
       heroSlides: [...DEFAULT_HERO_SLIDES],
+      newSeriesOrder: [],
     };
   }
   const { data, error } = await supabase
@@ -254,6 +263,7 @@ export async function saveSiteSettings(settings: SiteSettings): Promise<SiteSett
         homepage_sections: settings.homepage,
         series_page_sections: settings.seriesPage,
         hero_slides: settings.heroSlides,
+        new_series_order: settings.newSeriesOrder,
       },
       updated_at: new Date().toISOString(),
     })

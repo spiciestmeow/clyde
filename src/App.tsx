@@ -350,14 +350,31 @@ function HomePage() {
       return false;
     });
 
-    // When viewing New tab: newly added/uploaded series MUST be at the very first (newest uploaded -> oldest uploaded)
+    // Honor the admin's explicit order for series tagged New; use upload recency for anything not manually ordered.
     return filtered.sort((left, right) => {
+      const configuredOrder = siteSettings.newSeriesOrder;
+      if (configuredOrder.length > 0) {
+        const leftTagged = Boolean(left.isNew || left.facts?.is_new === 'true');
+        const rightTagged = Boolean(right.isNew || right.facts?.is_new === 'true');
+        if (leftTagged !== rightTagged) return leftTagged ? -1 : 1;
+
+        if (leftTagged && rightTagged) {
+          const leftRank = configuredOrder.indexOf(String(left.id));
+          const rightRank = configuredOrder.indexOf(String(right.id));
+          if (leftRank !== rightRank) {
+            if (leftRank === -1) return -1;
+            if (rightRank === -1) return 1;
+            return leftRank - rightRank;
+          }
+        }
+      }
+
       const rightCreated = getSeriesCreatedTimestamp(right);
       const leftCreated = getSeriesCreatedTimestamp(left);
       if (rightCreated !== leftCreated) return rightCreated - leftCreated;
       return (right.id || 0) - (left.id || 0);
     });
-  }, [filter, latestReleases, seriesItems]);
+  }, [filter, latestReleases, seriesItems, siteSettings.newSeriesOrder]);
   const releasePageCount = Math.max(1, Math.ceil(visibleReleases.length / RELEASES_PER_PAGE));
   const currentReleasePage = Math.min(releasePage, releasePageCount);
   const pagedReleases = visibleReleases.slice(

@@ -44,7 +44,7 @@ export default function CreditsPage() {
 
           <section className="credits-section">
             <h2>Comics info</h2>
-            <p>MangaDex, MangaUpdates, MyAnimeList, AniList.</p>
+            <p>MangaDex and MangaUpdates.</p>
           </section>
 
           <section className="credits-section">

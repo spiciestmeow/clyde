@@ -515,6 +515,7 @@
 
 .comix-tab-pill-row {
   display: flex;
+  flex-wrap: wrap;
   gap: 8px;
   padding: 16px 24px;
   border-bottom: 1px solid var(--cx-border);
@@ -542,6 +543,155 @@
   background-color: var(--cx-teal);
   border-color: var(--cx-teal);
   color: var(--cx-teal-text);
+}
+
+.comix-order-count {
+  display: inline-flex;
+  min-width: 18px;
+  height: 18px;
+  align-items: center;
+  justify-content: center;
+  margin-left: 5px;
+  padding: 0 5px;
+  border-radius: 999px;
+  background: color-mix(in srgb, currentColor 14%, transparent);
+  font-size: 10px;
+  line-height: 1;
+}
+
+.comix-new-series-order {
+  padding: 20px 24px 24px;
+}
+
+.comix-setting-group-title {
+  margin-bottom: 14px;
+}
+
+.comix-setting-group-title h4 {
+  margin: 0 0 5px;
+  color: var(--cx-text);
+  font-size: 14px;
+}
+
+.comix-setting-group-title p {
+  margin: 0;
+  color: var(--cx-text-muted);
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.comix-new-series-list {
+  display: grid;
+  gap: 8px;
+}
+
+.comix-new-series-row {
+  display: flex;
+  min-height: 62px;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 10px;
+  border: 1px solid var(--cx-border);
+  border-radius: 8px;
+  background: var(--cx-surface);
+  transition: border-color 0.15s ease, background-color 0.15s ease, opacity 0.15s ease;
+}
+
+.comix-new-series-row[draggable='true'] {
+  cursor: grab;
+}
+
+.comix-new-series-row[draggable='true']:active {
+  cursor: grabbing;
+}
+
+.comix-new-series-row.is-dragging {
+  opacity: 0.45;
+}
+
+.comix-new-series-row.is-drop-target {
+  border-color: var(--cx-teal);
+  background: var(--cx-active-item);
+}
+
+.comix-new-series-grip {
+  flex: 0 0 auto;
+  color: var(--cx-text-subtle);
+}
+
+.comix-new-series-position {
+  flex: 0 0 24px;
+  color: var(--cx-text-subtle);
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+  text-align: center;
+}
+
+.comix-new-series-row > img {
+  width: 34px;
+  height: 46px;
+  flex: 0 0 auto;
+  border-radius: 4px;
+  object-fit: cover;
+  background: var(--cx-surface-hover);
+}
+
+.comix-new-series-title {
+  min-width: 0;
+  flex: 1 1 auto;
+  overflow: hidden;
+  color: var(--cx-text);
+  font-size: 13px;
+  font-weight: 600;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.comix-new-series-tag {
+  flex: 0 0 auto;
+  padding: 3px 7px;
+  border-radius: 5px;
+  background: var(--cx-teal);
+  color: var(--cx-teal-text);
+  font-size: 10px;
+  font-weight: 700;
+}
+
+.comix-new-series-controls {
+  display: flex;
+  flex: 0 0 auto;
+  gap: 4px;
+}
+
+.comix-new-series-controls button {
+  display: grid;
+  width: 28px;
+  height: 28px;
+  place-items: center;
+  border: 1px solid var(--cx-border);
+  border-radius: 5px;
+  background: var(--cx-surface-hover);
+  color: var(--cx-text-muted);
+  cursor: pointer;
+}
+
+.comix-new-series-controls button:hover:not(:disabled) {
+  border-color: var(--cx-teal);
+  color: var(--cx-text);
+}
+
+.comix-new-series-controls button:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.comix-new-series-empty {
+  padding: 24px;
+  border: 1px dashed var(--cx-border-light);
+  border-radius: 8px;
+  color: var(--cx-text-muted);
+  font-size: 13px;
+  text-align: center;
 }
 
 .comix-setting-group {
@@ -603,6 +753,10 @@
 
 .comix-admin-wrapper.theme-light .comix-switch {
   background-color: #cbd5e1;
+}
+
+.comix-admin-wrapper.theme-light .comix-switch.is-active {
+  background-color: var(--cx-teal);
 }
 
 .comix-switch.is-active {
@@ -934,6 +1088,15 @@
   .comix-login-back { top: 20px; left: 20px; }
   .comix-login-content { width: min(100%, 402px); padding: 88px 22px 32px; }
   .comix-login-brand-mark .comix-logo-image { width: 48px; height: 48px; }
+}
+
+@media (max-width: 600px) {
+  .comix-new-series-order { padding: 16px; }
+  .comix-new-series-row { gap: 7px; padding: 7px; }
+  .comix-new-series-position { flex-basis: 18px; }
+  .comix-new-series-row > img { width: 30px; height: 42px; }
+  .comix-new-series-tag { display: none; }
+  .comix-new-series-controls button { width: 25px; height: 25px; }
 }
 
 @media (max-width: 420px) {
