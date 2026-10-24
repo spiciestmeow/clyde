@@ -1,6 +1,6 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState, type SyntheticEvent } from 'react';
 import { Link, useLocation, useParams } from 'wouter';
-import { Activity, ArrowLeft, ArrowUpRight, BookOpen, Bookmark, CalendarDays, Check, ChevronDown, ChevronRight, Clock3, Flag, Heart, Info, List, Maximize2, MessageSquare, MessageSquareText, PenLine, Rows3, Search, Share2, Square, Star, TriangleAlert, Type, X, ZoomIn } from 'lucide-react';
+import { Activity, ArrowLeft, ArrowUpRight, BookOpen, Bookmark, CalendarDays, Check, ChevronDown, ChevronRight, Clock3, Eye, Flag, Heart, Info, List, Maximize2, MessageSquare, MessageSquareText, PenLine, Rows3, Search, Share2, Square, Star, TriangleAlert, Type, X, ZoomIn } from 'lucide-react';
 import { useQueryClient } from '@tanstack/react-query';
 import {
   cacheSeriesCatalog,
@@ -262,6 +262,7 @@ export default function SeriesDetailPage() {
     () => getCachedSiteSettings()?.seriesPage ?? DEFAULT_SERIES_PAGE_VISIBILITY,
   );
   const [sourceReactions, setSourceReactions] = useState<string[]>([]);
+  const [visitedSources, setVisitedSources] = useState<string[]>([]);
   const [shareModalOpen, setShareModalOpen] = useState(false);
   const [mobileNav, setMobileNav] = useState(false);
   const { dark, toggleTheme } = useThemeMode();
@@ -343,6 +344,7 @@ export default function SeriesDetailPage() {
   useEffect(() => {
     setBookmarks(readSet('vortex-series-bookmarks'));
     setSourceReactions(readSet(`vortex-source-reactions:${slug}`));
+    setVisitedSources(readSet(`vortex-visited-sources:${slug}`));
     setActiveTab('sources');
     setSynopsisExpanded(false);
     setAlternateTitlesExpanded(false);
@@ -565,6 +567,12 @@ export default function SeriesDetailPage() {
       })
       .catch((error: unknown) => console.warn('Could not save shared reaction:', error))
       .finally(() => setReactionBusy(false));
+  };
+  const markSourceVisited = (sourceUrl: string) => {
+    if (visitedSources.includes(sourceUrl)) return;
+    const next = [...visitedSources, sourceUrl];
+    setVisitedSources(next);
+    try { localStorage.setItem(`vortex-visited-sources:${slug}`, JSON.stringify(next)); } catch { /* keep visited state for this session */ }
   };
   const toggleSourceReaction = (sourceUrl: string) => {
     if (sourceReactionBusy.includes(sourceUrl)) return;
@@ -818,8 +826,16 @@ export default function SeriesDetailPage() {
                   ? formatRelativeTime(sourceReleaseTimestamp)
                   : '';
 
+                const isVisited = visitedSources.includes(source.url);
                 return (
-                  <div className={`series-source-row${isTopSource ? ' is-priority' : ''}`} key={`${source.name}-${source.url}`}>
+                  <div
+                    className={`series-source-row${isTopSource ? ' is-priority' : ''}${isVisited ? ' is-visited' : ''}`}
+                    key={`${source.name}-${source.url}`}
+                    onClickCapture={(event) => {
+                      if ((event.target as HTMLElement).closest('.series-source-reaction')) return;
+                      markSourceVisited(source.url);
+                    }}
+                  >
                     <a className="series-source-main" href={targetUrl} target="_blank" rel="noopener noreferrer" data-testid={`link-source-${index}`}>
                       <span className="series-source-logo">
                         {logoUrl ? (
@@ -848,9 +864,9 @@ export default function SeriesDetailPage() {
                         <span className="series-source-heading">
                           <strong className="series-source-name">{source.name}</strong>
                           {isTopSource && <span className="series-source-priority">Most chapters</span>}
+                          {isVisited && <span className="series-source-visited" title="You’ve visited this source" aria-label="Visited"><Eye size={13} aria-hidden="true" /></span>}
                         </span>
                         <span className="series-source-meta">
-                          <span className="series-source-status">Available to read</span>
                           {source.latestChapterNumber && <span className="series-source-chapter"><BookOpen size={11} aria-hidden="true" />Chapter {source.latestChapterNumber}</span>}
                           {sourceReleaseTime ? (
                             <span className="series-source-time" title={`Chapter ${source.latestChapterNumber || ''} release time`}><Clock3 size={12} aria-hidden="true" />{sourceReleaseTime}</span>
