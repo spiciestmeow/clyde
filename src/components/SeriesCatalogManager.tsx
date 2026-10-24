@@ -1894,7 +1894,7 @@ export default function SeriesCatalogManager({
       </div>
 
       {/* Navigation Sub-tabs */}
-      <div className="uploads-nav-tabs">
+      <div className={`uploads-nav-tabs ${mainTab === 'new-order' ? 'has-new-order' : ''}`}>
         <button
           type="button"
           className={`uploads-tab ${mainTab === 'titles' ? 'is-active' : ''}`}

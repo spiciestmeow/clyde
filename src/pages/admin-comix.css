@@ -560,6 +560,8 @@
 }
 
 .comix-new-series-order {
+  width: 100%;
+  min-width: 0;
   padding: 20px 24px 24px;
 }
 
@@ -582,11 +584,15 @@
 
 .comix-new-series-list {
   display: grid;
+  min-width: 0;
+  grid-template-columns: minmax(0, 1fr);
   gap: 8px;
 }
 
 .comix-new-series-row {
   display: flex;
+  width: 100%;
+  min-width: 0;
   min-height: 62px;
   align-items: center;
   gap: 12px;
@@ -638,7 +644,7 @@
 
 .comix-new-series-title {
   min-width: 0;
-  flex: 1 1 auto;
+  flex: 1 1 0;
   overflow: hidden;
   color: var(--cx-text);
   font-size: 13px;
@@ -1091,12 +1097,24 @@
 }
 
 @media (max-width: 600px) {
-  .comix-new-series-order { padding: 16px; }
-  .comix-new-series-row { gap: 7px; padding: 7px; }
-  .comix-new-series-position { flex-basis: 18px; }
-  .comix-new-series-row > img { width: 30px; height: 42px; }
+  .comix-admin-wrapper .uploads-nav-tabs {
+    flex-wrap: nowrap;
+    gap: 16px;
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+  .comix-admin-wrapper .uploads-nav-tabs::-webkit-scrollbar { display: none; }
+  .comix-admin-wrapper .uploads-tab { flex: 0 0 auto; font-size: 14px; }
+  .comix-admin-wrapper .uploads-nav-tabs.has-new-order { margin-bottom: 8px; }
+  .comix-new-series-order { padding: 4px 0 16px; }
+  .comix-new-series-row { gap: 6px; padding: 7px 6px; }
+  .comix-new-series-grip { width: 15px; }
+  .comix-new-series-position { flex-basis: 16px; font-size: 11px; }
+  .comix-new-series-row > img { width: 28px; height: 40px; }
+  .comix-new-series-title { font-size: 12px; }
   .comix-new-series-tag { display: none; }
-  .comix-new-series-controls button { width: 25px; height: 25px; }
+  .comix-new-series-controls { gap: 2px; }
+  .comix-new-series-controls button { width: 24px; height: 24px; }
 }
 
 @media (max-width: 420px) {
