@@ -1244,7 +1244,8 @@ export default function SeriesCatalogManager() {
                 ))}
               </div>
               <button type="button" className="alt-title-add-button" onClick={addAltTitle}>
-                + Add alternative title
+                <Plus size={18} aria-hidden="true" />
+                <span>Add alternative title</span>
               </button>
               <p className="hint-text">Other names this title is known by (romanizations, English title, etc.).</p>
             </div>
@@ -1296,6 +1297,7 @@ export default function SeriesCatalogManager() {
                 />
                 <button type="button" className="credits-add-button" onClick={addAuthor} disabled={!newAuthor.trim()} aria-label="Add author" title="Add author">
                   <Plus size={18} />
+                  <span>Add author</span>
                 </button>
               </div>
             </div>
@@ -1328,6 +1330,7 @@ export default function SeriesCatalogManager() {
                 />
                 <button type="button" className="credits-add-button" onClick={addArtist} disabled={!newArtist.trim()} aria-label="Add artist" title="Add artist">
                   <Plus size={18} />
+                  <span>Add artist</span>
                 </button>
               </div>
             </div>
@@ -1360,6 +1363,7 @@ export default function SeriesCatalogManager() {
                 />
                 <button type="button" className="credits-add-button" onClick={addPublisher} disabled={!newPublisher.trim()} aria-label="Add publisher" title="Add publisher">
                   <Plus size={18} />
+                  <span>Add publisher</span>
                 </button>
               </div>
             </div>

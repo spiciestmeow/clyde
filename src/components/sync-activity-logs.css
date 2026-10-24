@@ -249,3 +249,84 @@
   padding: 1px 0;
   word-break: break-all;
 }
+
+/* Keep the sync history readable when the admin switches to light mode. */
+.comix-admin-wrapper.theme-light .sync-logs-panel {
+  background: #fff;
+  border-color: #e2e8f0;
+  color: #0f172a;
+}
+
+.comix-admin-wrapper.theme-light .sync-logs-header {
+  border-bottom-color: #e2e8f0;
+}
+
+.comix-admin-wrapper.theme-light .sync-logs-title,
+.comix-admin-wrapper.theme-light .sync-log-time,
+.comix-admin-wrapper.theme-light .sync-log-item-title {
+  color: #0f172a;
+}
+
+.comix-admin-wrapper.theme-light .sync-logs-subtitle,
+.comix-admin-wrapper.theme-light .sync-log-summary-text,
+.comix-admin-wrapper.theme-light .sync-log-item-source {
+  color: #64748b;
+}
+
+.comix-admin-wrapper.theme-light .sync-logs-refresh-btn {
+  color: #475569;
+  background: #f8fafc;
+  border-color: #cbd5e1;
+}
+
+.comix-admin-wrapper.theme-light .sync-logs-refresh-btn:hover:not(:disabled) {
+  color: #0f172a;
+  background: #f1f5f9;
+}
+
+.comix-admin-wrapper.theme-light .sync-log-card {
+  background: #f8fafc;
+  border-color: #e2e8f0;
+}
+
+.comix-admin-wrapper.theme-light .sync-log-card:hover {
+  border-color: #cbd5e1;
+}
+
+.comix-admin-wrapper.theme-light .sync-log-card.has-updates {
+  background: linear-gradient(180deg, #f0fdf4 0%, #f8fafc 100%);
+  border-color: #a7f3d0;
+}
+
+.comix-admin-wrapper.theme-light .sync-log-status-dot {
+  background: #e2e8f0;
+  color: #64748b;
+}
+
+.comix-admin-wrapper.theme-light .sync-log-details-area {
+  background: #fff;
+  border-top-color: #e2e8f0;
+}
+
+.comix-admin-wrapper.theme-light .sync-log-box-label {
+  color: #475569;
+}
+
+.comix-admin-wrapper.theme-light .sync-log-update-item {
+  background: #ecfdf5;
+  border-color: #a7f3d0;
+}
+
+.comix-admin-wrapper.theme-light .sync-log-console-box {
+  background: #f8fafc;
+  border-color: #cbd5e1;
+}
+
+.comix-admin-wrapper.theme-light .sync-log-console-lines {
+  color: #334155;
+}
+
+.comix-admin-wrapper.theme-light .sync-log-date,
+.comix-admin-wrapper.theme-light .sync-log-chevron {
+  color: #64748b;
+}

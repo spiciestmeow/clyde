@@ -1345,6 +1345,28 @@ body:has(.comix-admin-wrapper.theme-dark) .title-actions-menu-item::after {
 @media (max-width: 640px) {
   .credits-add-button {
     display: inline-flex;
+    flex: 0 0 auto;
+    gap: 6px;
+    min-height: 40px;
+    padding: 0 12px;
+    color: var(--up-text-muted);
+    background: transparent;
+    border: 1px dashed var(--up-border-light);
+    border-radius: 6px;
+    font-size: 13px;
+    white-space: nowrap;
+  }
+  .credits-add-button:hover:not(:disabled) {
+    color: var(--up-teal);
+    background: color-mix(in srgb, var(--up-teal) 7%, transparent);
+    border-color: var(--up-teal);
+  }
+  .credits-add-button:disabled {
+    color: var(--up-text-muted);
+    opacity: 0.5;
+  }
+  .credits-add-button span {
+    display: inline;
   }
   .modal-sync-dialog {
     width: 100% !important;

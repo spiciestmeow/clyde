@@ -18,6 +18,37 @@ export interface SyncLogEntry {
   logs?: string[];
 }
 
+const SERIES_TITLE_COLORS = [
+  '#79c8ff',
+  '#f5a6ff',
+  '#7ee0b2',
+  '#ffc978',
+  '#ff9292',
+  '#a9a2ff',
+  '#d3e879',
+  '#ffad7a',
+];
+
+function renderSyncLogLine(line: string) {
+  const match = line.match(/^\[([^\]]+)\](.*)$/);
+  if (!match) return line;
+
+  // Hash the title so each series gets a lively color that stays consistent
+  // across refreshes and sync runs.
+  const title = match[1];
+  const colorIndex = Array.from(title).reduce(
+    (hash, character) => ((hash * 31) + character.codePointAt(0)!) >>> 0,
+    0,
+  ) % SERIES_TITLE_COLORS.length;
+
+  return (
+    <>
+      <span style={{ color: SERIES_TITLE_COLORS[colorIndex], fontWeight: 700 }}>[{title}]</span>
+      {match[2]}
+    </>
+  );
+}
+
 export function SyncActivityLogs() {
   const [logs, setLogs] = useState<SyncLogEntry[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -171,7 +202,7 @@ export function SyncActivityLogs() {
                         <div className="sync-log-console-lines">
                           {log.logs.map((line: string, idx: number) => (
                             <div key={idx} className="sync-log-console-line">
-                              {line}
+                              {renderSyncLogLine(line)}
                             </div>
                           ))}
                         </div>
