@@ -118,7 +118,7 @@ function parseRelativeTime(text: string): number | null {
  */
 function extractTimeFromContext(
   surroundingHtml: string,
-  timestampPreference: 'rightmost' | 'newest' | 'oldest' | 'calendar' = 'newest',
+  timestampPreference: 'rightmost' | 'newest' | 'oldest' | 'calendar' | 'relative' = 'newest',
 ): number | null {
   // Prefer the date shown to readers in this chapter row. Some pages retain
   // stale `datetime` attributes after updating the visible relative age.
@@ -151,6 +151,62 @@ function extractTimeFromContext(
     for (const match of textOnly.matchAll(new RegExp(pattern.source, `${pattern.flags}g`))) {
       const ts = parseRelativeTime(match[0]);
       if (ts) visibleCalendarDateCandidates.push({ index: match.index, timestamp: ts });
+    }
+  }
+
+  // GenzToons shows a fresh relative age (for example, "7 hours ago") on
+  // newly posted chapter cards, while the same context may include older
+  // calendar dates. Use that relative age for GenzToons when available.
+  if (timestampPreference === 'relative' && visibleTimeCandidates.length > 0) {
+    const chapterLabel = textOnly.match(/\b(?:chapter|episode)\s*#?\s*\d+(?:\.\d+)?/i);
+    if (!chapterLabel) return Math.max(...visibleTimeCandidates.map((candidate) => candidate.timestamp));
+
+    const labelStart = chapterLabel.index ?? 0;
+    const labelEnd = labelStart + chapterLabel[0].length;
+    return visibleTimeCandidates.reduce((nearest, candidate) => {
+      const distance = candidate.index > labelEnd
+        ? candidate.index - labelEnd
+        : candidate.index < labelStart
+          ? labelStart - candidate.index
+          : 0;
+      const nearestDistance = nearest.index > labelEnd
+        ? nearest.index - labelEnd
+        : nearest.index < labelStart
+          ? labelStart - nearest.index
+          : 0;
+      return distance < nearestDistance ? candidate : nearest;
+    }).timestamp;
+  }
+
+  // Some GenzToons pages expose the exact post time in machine-readable
+  // attributes, while their visible text is a calendar date. Check those
+  // source-row attributes before the generic calendar-date fallback below.
+  if (timestampPreference === 'relative') {
+    // The redesigned GenzToons chapter cards can keep the relative age in a
+    // tooltip/accessibility attribute while showing a calendar date visibly.
+    // Prefer that reader-facing relative age over the older calendar label.
+    const descriptiveTimeMatches = surroundingHtml.matchAll(/\b(?:title|aria-label|data-original-title|data-bs-title)=["']([^"']+)["']/gi);
+    for (const match of descriptiveTimeMatches) {
+      const timestamp = parseRelativeTime(match[1]);
+      if (timestamp) return timestamp;
+    }
+
+    const dataTimeMatches = surroundingHtml.matchAll(/\b(data-[\w-]*(?:time|date|ago|publish|created|tooltip)[\w-]*)=["']([^"']+)["']/gi);
+    for (const match of dataTimeMatches) {
+      const value = match[2].trim();
+      const timestamp = parseRelativeTime(value);
+      if (timestamp) return timestamp;
+
+      const numericTimestamp = Number(value);
+      if (Number.isFinite(numericTimestamp)) {
+        const timestampMs = numericTimestamp < 1e12 ? numericTimestamp * 1000 : numericTimestamp;
+        if (timestampMs > 946684800000 && timestampMs <= Date.now() + 86400000) return timestampMs;
+      }
+    }
+
+    for (const match of surroundingHtml.matchAll(/\bdatetime=["']([^"']+)["']/gi)) {
+      const timestamp = parseRelativeTime(match[1]);
+      if (timestamp) return timestamp;
     }
   }
 
@@ -271,7 +327,7 @@ function extractChapterRowContext(
   matchStart: number,
   matchEnd: number,
   chapterNumber?: number,
-  timestampPreference: 'rightmost' | 'newest' | 'oldest' | 'calendar' = 'newest',
+  timestampPreference: 'rightmost' | 'newest' | 'oldest' | 'calendar' | 'relative' = 'newest',
 ): string | null {
   const searchStart = Math.max(0, matchStart - 2500);
   const prefix = html.slice(searchStart, matchStart);
@@ -343,6 +399,10 @@ function isSameSiteHost(candidate: URL, page: URL): boolean {
   return normalizeHost(candidate.hostname) === normalizeHost(page.hostname);
 }
 
+function isGenzToonsHost(hostname: string): boolean {
+  return /(^|\.)genztoons\.(?:com|net|org)$/i.test(hostname);
+}
+
 function matchChapterNumberInUrl(value: string): RegExpMatchArray | null {
   // Some sites use opaque IDs after `/chapter/` (for example, `/chapter/64f1...`).
   // Require a separator/end after the number so an ID prefix is never treated
@@ -364,7 +424,7 @@ function matchChapterNumberInLabel(html: string): RegExpMatchArray | null {
 function extractGenzToonsChapters(
   html: string,
   pageUrl: URL,
-  timestampPreference: 'rightmost' | 'newest' | 'oldest' | 'calendar',
+  timestampPreference: 'rightmost' | 'newest' | 'oldest' | 'calendar' | 'relative',
 ): DetectedChapterItem[] {
   type GenzChapterLink = {
     href: string;
@@ -413,7 +473,28 @@ function extractGenzToonsChapters(
     const number = Number.parseFloat(chapterLabel[1]);
     if (!Number.isFinite(number) || number < 0 || number >= 5000) continue;
 
-    let timestamp = extractTimeFromContext(`${attributes} ${innerHtml}`, timestampPreference);
+    // GenzToons puts the posting age in the chapter anchor itself (for
+    // example, "Chapter 11 New 8 hours ago"). Read that text directly, just
+    // like the site's own chapter list, before looking at surrounding markup
+    // that can contain the series' older calendar dates.
+    const anchorText = innerHtml
+      .replace(/<script\b[^>]*>[\s\S]*?<\/script>/gi, ' ')
+      .replace(/<style\b[^>]*>[\s\S]*?<\/style>/gi, ' ')
+      .replace(/<[^>]+>/g, ' ')
+      .replace(/&nbsp;|&#160;/gi, ' ')
+      .replace(/&amp;/gi, '&')
+      .replace(/\s+/g, ' ')
+      .trim();
+    const postedText = anchorText
+      .replace(/\bchapter\s+\d+(?:\.\d+)?/i, '')
+      .replace(/\bNew\b/i, '')
+      .trim();
+    let timestamp = parseRelativeTime(postedText);
+    if (!timestamp) {
+      const datetimeMatch = innerHtml.match(/\bdatetime=["']([^"']+)["']/i);
+      if (datetimeMatch) timestamp = parseRelativeTime(datetimeMatch[1]);
+    }
+    if (!timestamp) timestamp = extractTimeFromContext(`${attributes} ${innerHtml}`, timestampPreference);
     if (!timestamp) {
       const rowContext = extractChapterRowContext(
         html,
@@ -465,7 +546,7 @@ function extractMistScanChapters(
   html: string,
   pageUrl: URL,
   seriesSlug: string,
-  timestampPreference: 'rightmost' | 'newest' | 'oldest' | 'calendar',
+  timestampPreference: 'rightmost' | 'newest' | 'oldest' | 'calendar' | 'relative',
 ): DetectedChapterItem[] {
   const normalizedSeriesSlug = normalizeSeriesPathSegment(seriesSlug);
   if (!normalizedSeriesSlug) return [];
@@ -565,8 +646,10 @@ export function extractChaptersFromHtml(
 
   const seriesPath = parsedUrl.pathname.replace(/\/+$/, '');
   const seriesSlug = seriesPath.split('/').filter(Boolean).pop() || '';
-  const timestampPreference: 'rightmost' | 'newest' | 'oldest' | 'calendar' =
-    /(^|\.)nyxscans\.com$/i.test(parsedUrl.hostname)
+  const timestampPreference: 'rightmost' | 'newest' | 'oldest' | 'calendar' | 'relative' =
+    isGenzToonsHost(parsedUrl.hostname)
+      ? 'relative'
+      : /(^|\.)nyxscans\.com$/i.test(parsedUrl.hostname)
       ? 'oldest'
       : /(^|\.)asurascans\.com$/i.test(parsedUrl.hostname)
         ? 'rightmost'
@@ -576,8 +659,9 @@ export function extractChaptersFromHtml(
 
   const foundChapters = new Map<number, DetectedChapterItem>();
 
-  if (/(^|\.)genztoons\.org$/i.test(parsedUrl.hostname)) {
-    return extractGenzToonsChapters(cleanHtml, parsedUrl, timestampPreference);
+  if (isGenzToonsHost(parsedUrl.hostname)) {
+    const genzToonsChapters = extractGenzToonsChapters(cleanHtml, parsedUrl, timestampPreference);
+    if (genzToonsChapters.length > 0) return genzToonsChapters;
   }
 
   if (/(^|\.)mistscans\.org$/i.test(parsedUrl.hostname)) {
