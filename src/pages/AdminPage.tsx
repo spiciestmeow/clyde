@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState, type FormEvent } from 'react';
+import { useEffect, useMemo, useRef, useState, type FormEvent } from 'react';
 import type { Session } from '@supabase/supabase-js';
 import {
   ArrowLeft,
@@ -14,6 +14,7 @@ import {
   EyeOff,
   FileText,
   FolderKanban,
+  Globe,
   History,
   LayoutDashboard,
   LayoutTemplate,
@@ -362,6 +363,8 @@ function ComixDashboard({
 }) {
   const [activeTab, setActiveTab] = useState<SidebarTab>('uploads');
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
+  const [profileMenuOpen, setProfileMenuOpen] = useState(false);
+  const profileMenuRef = useRef<HTMLDivElement>(null);
   const [settingsSubTab, setSettingsSubTab] = useState<'homepage' | 'header' | 'series'>('homepage');
   const [topSearch, setTopSearch] = useState('');
 
@@ -376,6 +379,22 @@ function ComixDashboard({
   const [settings, setSettings] = useState<SiteSettings | null>(null);
   const [savingSettings, setSavingSettings] = useState(false);
   const [saveMessage, setSaveMessage] = useState('Saved');
+
+  useEffect(() => {
+    if (!profileMenuOpen) return;
+    const handlePointerDown = (event: PointerEvent) => {
+      if (!profileMenuRef.current?.contains(event.target as Node)) setProfileMenuOpen(false);
+    };
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') setProfileMenuOpen(false);
+    };
+    document.addEventListener('pointerdown', handlePointerDown);
+    document.addEventListener('keydown', handleKeyDown);
+    return () => {
+      document.removeEventListener('pointerdown', handlePointerDown);
+      document.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [profileMenuOpen]);
 
 
   useEffect(() => {
@@ -443,7 +462,10 @@ function ComixDashboard({
               className="comix-search-input"
               placeholder="Search any title..."
               value={topSearch}
-              onChange={(e) => setTopSearch(e.target.value)}
+              onChange={(e) => {
+                setTopSearch(e.target.value);
+                if (e.target.value.trim()) setActiveTab('uploads');
+              }}
             />
             <a href="/series" className="comix-browse-pill">
               Browse
@@ -469,8 +491,58 @@ function ComixDashboard({
           <button type="button" className="comix-icon-btn" onClick={() => setActiveTab('notifications')} title="Notifications">
             <Bell size={18} />
           </button>
-          <div className="comix-user-circle" title={session.user.email || 'Admin user'}>
-            {userInitial}
+          <div className="comix-profile-menu-wrap" ref={profileMenuRef}>
+            <button
+              type="button"
+              className="comix-user-circle"
+              title={session.user.email || 'Admin user'}
+              aria-label="Open profile shortcuts"
+              aria-haspopup="menu"
+              aria-expanded={profileMenuOpen}
+              onClick={() => setProfileMenuOpen((open) => !open)}
+            >
+              {userInitial}
+            </button>
+            {profileMenuOpen && (
+              <div className="comix-profile-menu" role="menu" aria-label="Profile shortcuts">
+                <div className="comix-profile-menu-heading">
+                  <div className="comix-profile-menu-avatar">{userInitial}</div>
+                  <div className="comix-profile-menu-identity">
+                    <strong>{displayName}</strong>
+                    {session.user.email && <span>{session.user.email}</span>}
+                  </div>
+                </div>
+                <div className="comix-profile-menu-links">
+                  <button type="button" role="menuitem" onClick={() => { setActiveTab('edit-profile'); setProfileMenuOpen(false); }}>
+                    <UserCheck size={15} /> My Profile
+                  </button>
+                  <a href="/" role="menuitem" onClick={() => setProfileMenuOpen(false)}>
+                    <Globe size={15} /> Public Site
+                  </a>
+                  <button type="button" role="menuitem" onClick={() => { setActiveTab('followed-titles'); setProfileMenuOpen(false); }}>
+                    <Bookmark size={15} /> Followed Titles
+                  </button>
+                  <button type="button" role="menuitem" onClick={() => { setActiveTab('read-history'); setProfileMenuOpen(false); }}>
+                    <History size={15} /> Read History
+                  </button>
+                  <button type="button" role="menuitem" onClick={() => { setActiveTab('collections'); setProfileMenuOpen(false); }}>
+                    <FolderKanban size={15} /> Collections
+                  </button>
+                  <button type="button" role="menuitem" onClick={() => { setActiveTab('notifications'); setProfileMenuOpen(false); }}>
+                    <Bell size={15} /> Notifications
+                  </button>
+                  <button type="button" role="menuitem" onClick={() => { setActiveTab('settings'); setProfileMenuOpen(false); }}>
+                    <Settings size={15} /> Settings
+                  </button>
+                  <button type="button" role="menuitem" onClick={() => { setActiveTab('uploads'); setProfileMenuOpen(false); }}>
+                    <Upload size={15} /> Uploaded Chapters
+                  </button>
+                </div>
+                <button type="button" className="comix-profile-menu-signout" role="menuitem" onClick={handleSignOut}>
+                  <LogOut size={15} /> Sign out
+                </button>
+              </div>
+            )}
           </div>
         </div>
       </header>
@@ -698,7 +770,7 @@ function ComixDashboard({
           {/* Right Main Content */}
           <main className="comix-main-panel">
             {/* 1. UPLOADS / SERIES CATALOG (Default) */}
-            {activeTab === 'uploads' && <SeriesCatalogManager />}
+            {activeTab === 'uploads' && <SeriesCatalogManager globalSearch={topSearch} />}
 
             {/* 2. HERO SLIDES MANAGER */}
             {activeTab === 'hero-slides' && (

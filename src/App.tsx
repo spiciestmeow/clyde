@@ -778,6 +778,7 @@ function App() {
       <ScrollToTop />
       <NavigationProgress />
       <Switch>
+        <Route path="/" component={HomePage} />
         <Route path={ADMIN_ROUTE} component={AdminPage} />
         <Route path="/credits" component={CreditsPage} />
         <Route path="/dmca-policy" component={CreditsPage} />

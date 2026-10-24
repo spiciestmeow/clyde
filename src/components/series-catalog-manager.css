@@ -32,7 +32,6 @@
   box-sizing: border-box;
 }
 
-.theme-light .uploads-theme-container,
 .comix-admin-wrapper.theme-light .uploads-theme-container {
   --up-bg: #f8fafc;
   --up-card-bg: #ffffff;

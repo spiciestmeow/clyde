@@ -167,7 +167,7 @@ function slugify(value: string) {
     .replace(/^-+|-+$/g, '');
 }
 
-export default function SeriesCatalogManager() {
+export default function SeriesCatalogManager({ globalSearch = '' }: { globalSearch?: string }) {
   const queryClient = useQueryClient();
   const catalogQuery = useSeriesCatalog();
   const catalogItems = catalogQuery.items;
@@ -482,8 +482,9 @@ export default function SeriesCatalogManager() {
         if (filterNorm === 'releasing' && itemStatus !== 'releasing' && itemStatus !== 'ongoing') return false;
         if (filterNorm !== 'releasing' && itemStatus !== filterNorm) return false;
       }
-      if (listSearch.trim()) {
-        const term = listSearch.trim().toLowerCase();
+      const searchTerm = (globalSearch.trim() || listSearch.trim()).toLowerCase();
+      if (searchTerm) {
+        const term = searchTerm;
         const matchTitle = item.title.toLowerCase().includes(term);
         const matchSlug = item.slug.toLowerCase().includes(term);
         const matchAlt = item.alternateTitles?.some((alt) => alt.toLowerCase().includes(term));
@@ -498,7 +499,7 @@ export default function SeriesCatalogManager() {
       return sortOrder === 'newest' ? bTime - aTime : aTime - bTime;
     });
     return filtered;
-  }, [catalogItems, listSearch, typeFilter, statusFilter, sortOrder]);
+  }, [catalogItems, globalSearch, listSearch, typeFilter, statusFilter, sortOrder]);
 
   // Modal search matching
   const modalMatches = useMemo(() => {
