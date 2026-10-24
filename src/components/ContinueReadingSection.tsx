@@ -1,14 +1,23 @@
-import { CloudUpload, Clock3, History } from 'lucide-react';
+import { Clock3, History, Play } from 'lucide-react';
 
 export type ContinueReadingItem = {
   title: string;
   href: string;
   coverSrc: string;
-  chapter: number;
-  progressPercent: number;
-  lastRead: string;
-  chaptersLeft: number;
+  chapter: string;
+  viewedAt: number;
 };
+
+function formatViewedTime(timestamp: number): string {
+  const elapsedMinutes = Math.max(0, Math.floor((Date.now() - timestamp) / 60_000));
+  if (elapsedMinutes < 1) return 'just now';
+  if (elapsedMinutes < 60) return `${elapsedMinutes}m ago`;
+  const elapsedHours = Math.floor(elapsedMinutes / 60);
+  if (elapsedHours < 24) return `${elapsedHours}h ago`;
+  const elapsedDays = Math.floor(elapsedHours / 24);
+  if (elapsedDays < 7) return `${elapsedDays}d ago`;
+  return new Date(timestamp).toLocaleDateString();
+}
 
 type ContinueReadingSectionProps = {
   items: ContinueReadingItem[];
@@ -26,26 +35,10 @@ export function ContinueReadingSection({
       <header className="continue-section__heading">
         <History className="continue-section__heading-icon" aria-hidden="true" />
         <div>
-          <h2 id="continue-reading-title">Continue Reading</h2>
-          <p>Pick up where you left off</p>
+          <h2 id="continue-reading-title">Recently Viewed</h2>
+          <p>Pick up with the latest synced chapter</p>
         </div>
       </header>
-
-      <div className="continue-sync-banner">
-        <span className="continue-sync-banner__icon" aria-hidden="true">
-          <CloudUpload />
-        </span>
-        <div className="continue-sync-banner__copy">
-          <strong>Sync Your Reading History</strong>
-          <span>
-            Login to sync your reading progress across all devices and never lose
-            your place!
-          </span>
-        </div>
-        <a className="continue-sync-banner__action" href="/login">
-          Login Now
-        </a>
-      </div>
 
       <div className="continue-grid">
         {items.map((item) => (
@@ -53,24 +46,24 @@ export function ContinueReadingSection({
             className="continue-card"
             href={item.href}
             key={item.title}
-            aria-label={`Continue reading ${item.title}, chapter ${item.chapter}`}
+            aria-label={`Recently viewed ${item.title}, latest synced chapter ${item.chapter}`}
           >
-            <span className="continue-card__cover">
-              <img src={item.coverSrc} alt={`Cover of ${item.title}`} loading="lazy" />
-              <span className="continue-card__cover-progress">
-                <span>Chapter {item.chapter}</span>
-                <span>{item.progressPercent}%</span>
+            <span className="continue-card__cover-shell">
+              <span className="continue-card__cover">
+                <img src={item.coverSrc} alt={`Cover of ${item.title}`} loading="lazy" />
+                <span className="continue-card__hover-action" aria-hidden="true">
+                  <span><Play fill="currentColor" /></span>
+                </span>
+                <span className="continue-card__cover-progress">
+                  <span>{item.chapter}</span>
+                </span>
               </span>
             </span>
             <span className="continue-card__title">{item.title}</span>
             <span className="continue-card__activity">
               <span className="continue-card__last-read">
                 <Clock3 aria-hidden="true" />
-                {item.lastRead}
-              </span>
-              <span className="continue-card__remaining">
-                <i aria-hidden="true" />
-                {item.chaptersLeft} left
+                Viewed {formatViewedTime(item.viewedAt)}
               </span>
             </span>
           </a>

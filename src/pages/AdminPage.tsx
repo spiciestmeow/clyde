@@ -39,6 +39,7 @@ import {
 } from 'lucide-react';
 import SeriesCatalogManager from '../components/SeriesCatalogManager';
 import HeroSlidesManager from '../components/HeroSlidesManager';
+import AdminGuideModal from '../components/AdminGuideModal';
 import {
   DEFAULT_SITE_SETTINGS,
   getSiteSettings,
@@ -107,7 +108,7 @@ const homepageVisibilityOptions: { key: keyof HomepageVisibility; label: string;
   { key: 'socialPromos', label: 'Social promotions', description: 'Share prompt and Discord invitation cards.', group: 'Promotions' },
   { key: 'issueBanner', label: 'Issue report banner', description: 'Help and issue-report callout below the homepage banner.', group: 'Promotions' },
   { key: 'popularToday', label: 'Popular Today', description: 'Popular-series cover carousel.', group: 'Discovery' },
-  { key: 'continueReading', label: 'Continue Reading', description: 'Continue-reading cards and bookmarks shortcut.', group: 'Discovery' },
+  { key: 'continueReading', label: 'Recently Viewed', description: 'Show series you recently opened on the homepage.', group: 'Discovery' },
   { key: 'latestReleases', label: 'Latest Releases', description: 'Recent series and chapter updates.', group: 'Discovery' },
   { key: 'collections', label: 'Collections', description: 'Curated series collections.', group: 'Discovery' },
   { key: 'mostPopular', label: 'Most Popular', description: 'Ranked popular series list.', group: 'Discovery' },
@@ -1072,6 +1073,7 @@ function ComixDashboard({
           </main>
         </div>
       </div>
+      <AdminGuideModal userId={session.user.id} catalogItems={catalogItems} />
     </div>
   );
 }

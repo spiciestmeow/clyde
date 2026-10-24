@@ -19,6 +19,13 @@ import CreditsPage from './pages/CreditsPage';
 import { toSiteSearchItems, toTrendingSiteSearchItems } from './data/seriesSearchCatalog';
 import { useThemeMode } from './hooks/useThemeMode';
 import { useSeriesCatalog } from './hooks/useSeriesCatalog';
+import { getWinningChapterSource } from './lib/sourcePriority';
+import {
+  readRecentlyViewedSeries,
+  RECENTLY_VIEWED_SERIES_KEY,
+  RECENTLY_VIEWED_SERIES_UPDATED_EVENT,
+  type RecentlyViewedSeries,
+} from './lib/recentlyViewedSeries';
 import {
   DEFAULT_SERIES_COVER,
   getSeriesReleaseTimestamp,
@@ -44,8 +51,6 @@ const MAX_MOST_POPULAR_SERIES = 9;
 const MAX_POPULAR_SERIES = 20;
 const ADMIN_ROUTE = '/panel/7dbf9a4c2e81d603b5a7f0c9e4d2186a';
 const collections = manifest.slice(82, 87);
-type ContinueReadingSeed = Omit<ContinueReadingItem, 'coverSrc' | 'href'>;
-const continueReadingSeeds: ContinueReadingSeed[] = [];
 type PaginationItem = number | 'ellipsis';
 function getPaginationItems(pageCount: number, currentPage: number): PaginationItem[] {
   if (pageCount <= 7) {
@@ -271,18 +276,25 @@ function HomePage() {
       left.title.localeCompare(right.title)
     );
   }), [seriesItems]);
+  const [recentlyViewedSeries, setRecentlyViewedSeries] = useState<RecentlyViewedSeries[]>(() => readRecentlyViewedSeries());
   const continueReadingItems = useMemo<ContinueReadingItem[]>(() => {
-    const byTitle = new Map(seriesItems.map((item) => [item.title.toLocaleLowerCase(), item]));
-    return continueReadingSeeds.flatMap((seed) => {
-      const series = byTitle.get(seed.title.toLocaleLowerCase());
+    const bySlug = new Map(seriesItems.map((item) => [item.slug.toLocaleLowerCase(), item]));
+    return recentlyViewedSeries.flatMap((recent) => {
+      const series = bySlug.get(recent.slug.toLocaleLowerCase());
       if (!series) return [];
+      const winningSource = getWinningChapterSource(series.sources, series.facts?.latest_source_url || undefined);
+      const latestChapter = winningSource?.latestChapterNumber
+        ? `Chapter ${winningSource.latestChapterNumber.replace(/^ch(?:apter)?\.?\s*/i, '')}`
+        : series.chapters[0]?.title || (series.facts?.latest_chapter_number ? `Chapter ${series.facts.latest_chapter_number}` : 'Latest chapter unavailable');
       return [{
-        ...seed,
+        title: series.title,
         href: series.href,
         coverSrc: assetUrl(series.cover, 300),
+        chapter: latestChapter,
+        viewedAt: recent.viewedAt,
       }];
-    });
-  }, [seriesItems]);
+    }).slice(0, 6);
+  }, [recentlyViewedSeries, seriesItems]);
   const { dark, toggleTheme } = useThemeMode();
   const [mobileMenu, setMobileMenu] = useState(false);
   const [siteSettings, setSiteSettings] = useState<SiteSettings>(() =>
@@ -323,6 +335,18 @@ function HomePage() {
     return () => {
       active = false;
       window.removeEventListener(SITE_SETTINGS_UPDATED_EVENT, handleUpdate);
+    };
+  }, []);
+  useEffect(() => {
+    const syncRecentSeries = () => setRecentlyViewedSeries(readRecentlyViewedSeries());
+    const handleStorage = (event: StorageEvent) => {
+      if (event.key === RECENTLY_VIEWED_SERIES_KEY || event.key === null) syncRecentSeries();
+    };
+    window.addEventListener(RECENTLY_VIEWED_SERIES_UPDATED_EVENT, syncRecentSeries);
+    window.addEventListener('storage', handleStorage);
+    return () => {
+      window.removeEventListener(RECENTLY_VIEWED_SERIES_UPDATED_EVENT, syncRecentSeries);
+      window.removeEventListener('storage', handleStorage);
     };
   }, []);
 

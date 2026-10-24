@@ -19,6 +19,7 @@ import wowReactionIcon from '../assets/reactions/wow.webp';
 import SiteFooter from '../components/SiteFooter';
 import SiteHeader from '../components/SiteHeader';
 import SiteSearch from '../components/SiteSearch';
+import SeriesNotFound from '../components/SeriesNotFound';
 import { SeriesReportIssue } from '../components/SeriesReportIssue';
 import { Shareable } from '../components/Shareable';
 import { toSiteSearchItems, toTrendingSiteSearchItems } from '../data/seriesSearchCatalog';
@@ -27,12 +28,21 @@ import { useSeriesCatalog } from '../hooks/useSeriesCatalog';
 import { DEFAULT_SERIES_PAGE_VISIBILITY, getCachedSiteSettings, getSiteSettings } from '../lib/siteSettings';
 import { formatScanlatorSeriesUrl } from '../lib/scanlatorLinks';
 import { getWinningChapterSource } from '../lib/sourcePriority';
+import { recordRecentlyViewedSeries } from '../lib/recentlyViewedSeries';
+import {
+  loadSeriesReactionState,
+  loadSeriesSourceReactionState,
+  toggleSeriesReaction,
+  toggleSeriesSourceReaction,
+  type SeriesReactionCounts,
+  type SeriesReactionKey,
+} from '../lib/seriesReactions';
 import '../series-detail.css';
 import '../series-data-status.css';
 
 type Recommendation = { title: string; href: string; cover: string; rating: string | null; chapterCount: number };
-type ReactionKey = 'like' | 'love' | 'happy' | 'wow' | 'sad' | 'angry';
-type ReactionCounts = Record<ReactionKey, number>;
+type ReactionKey = SeriesReactionKey;
+type ReactionCounts = SeriesReactionCounts;
 type RailPosition = { left: number; top: number; width: number; maxHeight: number };
 type FixedRailPositions = { left: RailPosition; right: RailPosition };
 
@@ -245,6 +255,9 @@ export default function SeriesDetailPage() {
     }
   });
   const [reactionCounts, setReactionCounts] = useState<ReactionCounts>(() => readReactionCounts(slug));
+  const [sourceReactionCounts, setSourceReactionCounts] = useState<Record<string, number>>({});
+  const [reactionBusy, setReactionBusy] = useState(false);
+  const [sourceReactionBusy, setSourceReactionBusy] = useState<string[]>([]);
   const [seriesPageVisibility, setSeriesPageVisibility] = useState(
     () => getCachedSiteSettings()?.seriesPage ?? DEFAULT_SERIES_PAGE_VISIBILITY,
   );
@@ -292,6 +305,40 @@ export default function SeriesDetailPage() {
       active = false;
     };
   }, []);
+
+  useEffect(() => {
+    if (!series) return;
+    recordRecentlyViewedSeries(series.slug);
+  }, [series?.slug]);
+
+  useEffect(() => {
+    if (!series) return;
+    let active = true;
+    setReactionBusy(true);
+    setSourceReactionBusy(series.sources.map((source) => source.url));
+    void Promise.all([
+      loadSeriesReactionState(series.slug),
+      loadSeriesSourceReactionState(series.slug),
+    ]).then(([reactionState, sourceState]) => {
+      if (!active) return;
+      if (reactionState) {
+        setReactionCounts(reactionState.counts);
+        setReaction(reactionState.selected);
+      }
+      if (sourceState) {
+        setSourceReactionCounts(sourceState.counts);
+        setSourceReactions(sourceState.selected);
+      }
+    }).catch((error: unknown) => {
+      console.warn('Could not load shared anonymous reactions:', error);
+    }).finally(() => {
+      if (active) {
+        setReactionBusy(false);
+        setSourceReactionBusy([]);
+      }
+    });
+    return () => { active = false; };
+  }, [series?.slug]);
 
   useEffect(() => {
     setBookmarks(readSet('vortex-series-bookmarks'));
@@ -490,6 +537,7 @@ export default function SeriesDetailPage() {
   };
   const share = () => setShareModalOpen(true);
   const chooseReaction = (key: ReactionKey) => {
+    if (reactionBusy) return;
     const next = reaction === key ? null : key;
     const nextCounts = { ...reactionCounts };
     if (reaction) nextCounts[reaction] = Math.max(0, nextCounts[reaction] - 1);
@@ -503,15 +551,48 @@ export default function SeriesDetailPage() {
       if (next) localStorage.setItem(`vortex-reaction:${slug}`, next);
       else localStorage.removeItem(`vortex-reaction:${slug}`);
     } catch { /* local reaction remains available for this session */ }
+    setReactionBusy(true);
+    void toggleSeriesReaction(slug, key)
+      .then((state) => {
+        if (!state) return;
+        setReactionCounts(state.counts);
+        setReaction(state.selected);
+        try {
+          localStorage.setItem(`vortex-reaction-counts:${slug}`, JSON.stringify(state.counts));
+          if (state.selected) localStorage.setItem(`vortex-reaction:${slug}`, state.selected);
+          else localStorage.removeItem(`vortex-reaction:${slug}`);
+        } catch { /* shared counts remain saved by Supabase */ }
+      })
+      .catch((error: unknown) => console.warn('Could not save shared reaction:', error))
+      .finally(() => setReactionBusy(false));
   };
   const toggleSourceReaction = (sourceUrl: string) => {
+    if (sourceReactionBusy.includes(sourceUrl)) return;
     const next = sourceReactions.includes(sourceUrl)
       ? sourceReactions.filter((url) => url !== sourceUrl)
       : [...sourceReactions, sourceUrl];
     setSourceReactions(next);
+    setSourceReactionCounts((current) => ({
+      ...current,
+      [sourceUrl]: Math.max(
+        0,
+        (current[sourceUrl] ?? (sourceReactions.includes(sourceUrl) ? 1 : 0)) +
+          (sourceReactions.includes(sourceUrl) ? -1 : 1),
+      ),
+    }));
     try {
       localStorage.setItem(`vortex-source-reactions:${slug}`, JSON.stringify(next));
     } catch { /* source reaction remains available for this session */ }
+    setSourceReactionBusy((current) => [...current, sourceUrl]);
+    void toggleSeriesSourceReaction(slug, sourceUrl)
+      .then((state) => {
+        if (!state) return;
+        setSourceReactionCounts(state.counts);
+        setSourceReactions(state.selected);
+        try { localStorage.setItem(`vortex-source-reactions:${slug}`, JSON.stringify(state.selected)); } catch { /* shared counts remain saved by Supabase */ }
+      })
+      .catch((error: unknown) => console.warn('Could not save shared source reaction:', error))
+      .finally(() => setSourceReactionBusy((current) => current.filter((url) => url !== sourceUrl)));
   };
   const siteHeader = (
     <SiteHeader
@@ -551,8 +632,19 @@ export default function SeriesDetailPage() {
     const failedToLoad = seriesQuery.isError;
     return <div className={`vortex-page series-page ${dark ? 'theme-dark' : 'theme-light'}`}>
       {siteHeader}
-      <main className="series-not-found"><div className="series-not-found__mark"><Search size={23} /></div><p className="series-eyebrow">CLYDEE / SERIES</p><h1>{failedToLoad ? 'Series unavailable' : 'Series not found'}</h1><p>{failedToLoad ? 'The series could not be loaded from the catalog. Please try again.' : 'We couldn’t match this address to a series in the library.'}</p>{failedToLoad && <button type="button" className="series-action series-action--primary" onClick={() => void seriesQuery.refetch()}>Try again</button>}<Link href="/" className="series-action series-action--bookmark"><ArrowLeft size={16} /> Back to library</Link></main>
-      {seriesPageVisibility.reportIssue && <ReportCallout seriesSlug={slug} seriesTitle={slug} />}
+      {failedToLoad ? (
+        <main className="series-not-found">
+          <div className="series-not-found__mark"><Search size={23} /></div>
+          <p className="series-eyebrow">CLYDEE / SERIES</p>
+          <h1>Series unavailable</h1>
+          <p>The series could not be loaded from the catalog. Please try again.</p>
+          <button type="button" className="series-action series-action--primary" onClick={() => void seriesQuery.refetch()}>Try again</button>
+          <Link href="/" className="series-action series-action--bookmark"><ArrowLeft size={16} /> Back to library</Link>
+        </main>
+      ) : (
+        <SeriesNotFound slug={slug} />
+      )}
+      {failedToLoad && seriesPageVisibility.reportIssue && <ReportCallout seriesSlug={slug} seriesTitle={slug} />}
       {seriesPageVisibility.footer && siteFooter}
     </div>;
   }
@@ -773,12 +865,13 @@ export default function SeriesDetailPage() {
                       className={`series-source-reaction${sourceReactions.includes(source.url) ? ' is-selected' : ''}`}
                       aria-label={`${sourceReactions.includes(source.url) ? 'Remove reaction from' : 'React to'} ${source.name}`}
                       aria-pressed={sourceReactions.includes(source.url)}
-                      title="Your reaction is saved on this device"
+                      title="React anonymously; counts are shared with everyone"
+                      disabled={sourceReactionBusy.includes(source.url)}
                       onClick={() => toggleSourceReaction(source.url)}
                       data-testid={`button-source-reaction-${index}`}
                     >
                       <Heart size={16} fill={sourceReactions.includes(source.url) ? 'currentColor' : 'none'} aria-hidden="true" />
-                      <span>{sourceReactions.includes(source.url) ? 1 : 0}</span>
+                      <span>{sourceReactionCounts[source.url] ?? (sourceReactions.includes(source.url) ? 1 : 0)}</span>
                     </button>
                   </div>
                 );
@@ -818,13 +911,13 @@ export default function SeriesDetailPage() {
           {seriesPageVisibility.reactions && <section className="series-reactions">
             <div className="series-reaction-list">{reactions.map((item) => {
               const selected = reaction === item.key;
-              return <button key={item.key} onClick={() => chooseReaction(item.key)} className={`series-reaction ${selected ? 'is-selected' : ''}`} aria-pressed={selected} aria-label={`${item.label}${selected ? ' (You)' : ''}: ${item.count ?? 0}`} data-testid={`button-reaction-${item.key}`}>
+              return <button key={item.key} onClick={() => chooseReaction(item.key)} className={`series-reaction ${selected ? 'is-selected' : ''}`} aria-pressed={selected} aria-label={`${item.label}${selected ? ' (You)' : ''}: ${item.count ?? 0}`} disabled={reactionBusy} data-testid={`button-reaction-${item.key}`}>
                 <span className={`series-reaction-icon reaction-${item.key}`}><img src={item.icon} alt="" aria-hidden="true" draggable={false} /></span>
                 <strong>{item.count ?? 0}</strong>
                 <small>{item.label}{selected ? ' (You)' : ''}</small>
               </button>;
             })}</div>
-            <p className="series-local-reaction-note" role="note">Starting totals mirror the reference snapshot; your reaction changes are saved only on this device.</p>
+            <p className="series-local-reaction-note" role="note">No account needed. Your reactions are saved anonymously and counts are shared.</p>
           </section>}
           {seriesPageVisibility.discussion && <section className="series-discussion" aria-label="Discussion">
             <div className="series-discussion-head"><h2><MessageSquare size={14} /> Discussion</h2><span>3</span></div>
