@@ -79,6 +79,9 @@ button { cursor: pointer; }
 a { text-decoration: none; color: inherit; }
 img { display: block; max-width: 100%; }
 .vortex-page { min-height: 100dvh; overflow: hidden; background: var(--page); color: var(--text); transition: background .2s, color .2s; }
+.not-found-page { min-height: calc(100dvh - 60px); display: grid; align-content: center; justify-items: center; padding: 24px; text-align: center; }
+.not-found-page h1 { margin: 0 0 8px; color: var(--text); font-size: 24px; line-height: 1.25; font-weight: 700; }
+.not-found-page p { margin: 0; color: var(--muted); font-size: 14px; }
 .theme-light { --page: hsl(30 30% 98%); --panel: #fff; --panel-soft: hsl(28 25% 93%); --line: hsl(26 18% 87%); --text: hsl(24 15% 9%); --muted: hsl(24 7% 40%); --faint: #8a837c; color-scheme: light; }
 .topbar { height: 60px; position: sticky; z-index: 30; top: 0; background: rgba(8,8,10,.97); border-bottom: 1px solid #242428; }
 .theme-light .topbar { background: var(--page); border-color: var(--line); }

@@ -42,6 +42,7 @@ const manifest = assets as Asset[];
 const RELEASES_PER_PAGE = 36;
 const MAX_MOST_POPULAR_SERIES = 9;
 const MAX_POPULAR_SERIES = 20;
+const ADMIN_ROUTE = '/panel/7dbf9a4c2e81d603b5a7f0c9e4d2186a';
 const collections = manifest.slice(82, 87);
 type ContinueReadingSeed = Omit<ContinueReadingItem, 'coverSrc' | 'href'>;
 const continueReadingSeeds: ContinueReadingSeed[] = [];
@@ -744,18 +745,45 @@ function ScrollToTop() {
   return null;
 }
 
+function NotFoundPage() {
+  const { dark, toggleTheme } = useThemeMode();
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const catalogQuery = useSeriesCatalog();
+  const searchItems = useMemo(() => toSiteSearchItems(catalogQuery.items), [catalogQuery.items]);
+  const trendingSearchItems = useMemo(() => toTrendingSiteSearchItems(catalogQuery.items), [catalogQuery.items]);
+
+  return (
+    <div className={`vortex-page ${dark ? 'theme-dark' : 'theme-light'}`}>
+      <SiteHeader
+        activeSection="home"
+        logoSrc="/clydee-logo.png"
+        discordSrc={assetUrl(manifest[5].src, 64)}
+        mobileMenuOpen={mobileMenuOpen}
+        onToggleMobileMenu={() => setMobileMenuOpen((open) => !open)}
+        dark={dark}
+        onToggleTheme={toggleTheme}
+        search={<SiteSearch items={searchItems} trendingItems={trendingSearchItems} />}
+      />
+      <main className="not-found-page" aria-labelledby="not-found-title">
+        <h1 id="not-found-title">Page Not Found</h1>
+        <p>The page you are looking for does not exist.</p>
+      </main>
+    </div>
+  );
+}
+
 function App() {
   return (
     <WouterRouter base={import.meta.env.BASE_URL.replace(/\/$/, '')}>
       <ScrollToTop />
       <NavigationProgress />
       <Switch>
-        <Route path="/admin" component={AdminPage} />
+        <Route path={ADMIN_ROUTE} component={AdminPage} />
         <Route path="/credits" component={CreditsPage} />
         <Route path="/dmca-policy" component={CreditsPage} />
         <Route path="/series" component={SeriesBrowsePage} />
         <Route path="/series/:slug" component={SeriesDetailPage} />
-        <Route component={HomePage} />
+        <Route component={NotFoundPage} />
       </Switch>
     </WouterRouter>
   );
