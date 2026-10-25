@@ -249,30 +249,58 @@ function cacheSiteSettings(settings: SiteSettings): void {
   window.dispatchEvent(new CustomEvent(SITE_SETTINGS_UPDATED_EVENT, { detail: settings }));
 }
 
-export async function getSiteSettings(): Promise<SiteSettings> {
-  if (!supabase) {
-    return getCachedSiteSettings() ?? {
-      header: { ...DEFAULT_HEADER_VISIBILITY },
-      homepage: { ...DEFAULT_HOMEPAGE_VISIBILITY },
-      seriesPage: { ...DEFAULT_SERIES_PAGE_VISIBILITY },
-      seriesFilters: { ...DEFAULT_SERIES_FILTER_VISIBILITY },
-      heroSlides: [...DEFAULT_HERO_SLIDES],
-      newSeriesOrder: [],
-    };
+let inFlightSettingsPromise: Promise<SiteSettings> | null = null;
+let lastSettingsFetchedAt = 0;
+let inMemorySettings: SiteSettings | null = null;
+const SETTINGS_CACHE_TTL_MS = 5 * 60 * 1000; // 5 minutes cache to prevent redundant Supabase queries
+
+export async function getSiteSettings(forceRefresh = false): Promise<SiteSettings> {
+  const now = Date.now();
+  if (!forceRefresh && inMemorySettings && (now - lastSettingsFetchedAt < SETTINGS_CACHE_TTL_MS)) {
+    return inMemorySettings;
   }
-  const { data, error } = await supabase
-    .from('site_settings')
-    .select('header_visibility')
-    .eq('id', 'global')
-    .maybeSingle();
 
-  if (error) throw error;
-  if (!data) throw new Error('The site settings row is missing. Run the Supabase setup SQL.');
+  if (!forceRefresh && inFlightSettingsPromise) {
+    return inFlightSettingsPromise;
+  }
 
-  const settings = parseSiteSettings(data.header_visibility);
-  if (!settings) throw new Error('The saved header settings are invalid.');
-  cacheSiteSettings(settings);
-  return settings;
+  inFlightSettingsPromise = (async () => {
+    try {
+      if (!supabase) {
+        const cached = getCachedSiteSettings() ?? {
+          header: { ...DEFAULT_HEADER_VISIBILITY },
+          homepage: { ...DEFAULT_HOMEPAGE_VISIBILITY },
+          seriesPage: { ...DEFAULT_SERIES_PAGE_VISIBILITY },
+          seriesFilters: { ...DEFAULT_SERIES_FILTER_VISIBILITY },
+          heroSlides: [...DEFAULT_HERO_SLIDES],
+          newSeriesOrder: [],
+        };
+        inMemorySettings = cached;
+        lastSettingsFetchedAt = Date.now();
+        return cached;
+      }
+
+      const { data, error } = await supabase
+        .from('site_settings')
+        .select('header_visibility')
+        .eq('id', 'global')
+        .maybeSingle();
+
+      if (error) throw error;
+      if (!data) throw new Error('The site settings row is missing. Run the Supabase setup SQL.');
+
+      const settings = parseSiteSettings(data.header_visibility);
+      if (!settings) throw new Error('The saved header settings are invalid.');
+      inMemorySettings = settings;
+      lastSettingsFetchedAt = Date.now();
+      cacheSiteSettings(settings);
+      return settings;
+    } finally {
+      inFlightSettingsPromise = null;
+    }
+  })();
+
+  return inFlightSettingsPromise;
 }
 
 export async function saveSiteSettings(settings: SiteSettings): Promise<SiteSettings> {
@@ -298,6 +326,8 @@ export async function saveSiteSettings(settings: SiteSettings): Promise<SiteSett
   if (error) throw error;
   const savedSettings = parseSiteSettings(data.header_visibility);
   if (!savedSettings) throw new Error('Supabase returned invalid header settings.');
+  inMemorySettings = savedSettings;
+  lastSettingsFetchedAt = Date.now();
   cacheSiteSettings(savedSettings);
   return savedSettings;
 }

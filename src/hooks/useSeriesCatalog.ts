@@ -11,8 +11,9 @@ export function useSeriesCatalog() {
     queryKey: SERIES_CATALOG_QUERY_KEY,
     queryFn: getSeriesCatalog,
     placeholderData: () => getCachedSeriesCatalog() ?? undefined,
-    staleTime: 10_000,
-    refetchOnWindowFocus: true,
+    staleTime: 5 * 60 * 1000, // 5 minutes cache to avoid excessive egress
+    gcTime: 30 * 60 * 1000, // keep in memory for 30 minutes
+    refetchOnWindowFocus: false, // do not re-download whole catalog on every window focus
   });
 
   return {

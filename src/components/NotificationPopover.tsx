@@ -74,6 +74,9 @@ export default function NotificationPopover() {
   const rootRef = useRef<HTMLDivElement>(null);
   const listIsLoading = isLoading || refreshing;
 
+  const lastLoadedAtRef = useRef<number>(0);
+  const knownCoversRef = useRef<Map<number, string>>(new Map());
+
   const loadNotifications = useCallback(async (showInitialLoading = false) => {
     if (showInitialLoading) setIsLoading(true);
     try {
@@ -82,53 +85,61 @@ export default function NotificationPopover() {
         .from('notifications')
         .select('id, category, series_id, series_title, series_slug, series_cover, message, created_at')
         .order('created_at', { ascending: false })
-        .limit(100);
+        .limit(50);
       if (error) {
         console.error('Could not load notifications:', error.message);
         return;
       }
 
+      lastLoadedAtRef.current = Date.now();
       const notifications = (data ?? []) as NotificationRow[];
       const missingCoverIds = [...new Set(
         notifications
-          .filter((item) => !item.series_cover?.trim())
+          .filter((item) => !item.series_cover?.trim() && !knownCoversRef.current.has(item.series_id))
           .map((item) => item.series_id),
       )];
 
-      // Notifications keep a cover snapshot, but older rows (or a notification
-      // created before its cover was saved) may have an empty snapshot. Resolve
-      // those from the current catalog so the notification still shows artwork.
+      // Notifications keep a cover snapshot, but older rows may have an empty snapshot.
+      // Resolve those once and cache in memory to prevent repeated DB queries.
       if (missingCoverIds.length > 0) {
         const { data: series } = await supabase
           .from('series')
           .select('id, cover')
           .in('id', missingCoverIds);
-        const coversBySeriesId = new Map(
-          (series ?? []).map((item) => [item.id as number, item.cover as string]),
-        );
-        setItems(notifications.map((item) => ({
-          ...item,
-          series_cover: item.series_cover?.trim() || coversBySeriesId.get(item.series_id) || '',
-        })));
-        return;
+        (series ?? []).forEach((item) => {
+          if (item.cover) knownCoversRef.current.set(item.id, item.cover);
+        });
       }
 
-      setItems(notifications);
+      setItems(notifications.map((item) => ({
+        ...item,
+        series_cover: item.series_cover?.trim() || knownCoversRef.current.get(item.series_id) || '',
+      })));
     } finally {
       if (showInitialLoading) setIsLoading(false);
     }
   }, []);
 
+  // Initial load once on mount, with a gentle 5-minute background check only when tab is visible
   useEffect(() => {
     void loadNotifications(true);
-    const intervalId = window.setInterval(() => void loadNotifications(), 15_000);
-    const handleFocus = () => void loadNotifications();
-    window.addEventListener('focus', handleFocus);
+
+    const intervalId = window.setInterval(() => {
+      if (typeof document !== 'undefined' && document.hidden) return;
+      void loadNotifications(false);
+    }, 5 * 60 * 1000); // 5 minutes (reduced from aggressive 15s polling to save egress/logs)
+
     return () => {
       window.clearInterval(intervalId);
-      window.removeEventListener('focus', handleFocus);
     };
   }, [loadNotifications]);
+
+  // Refresh when user actively opens the notification popover if older than 60 seconds
+  useEffect(() => {
+    if (open && Date.now() - lastLoadedAtRef.current > 60_000) {
+      void loadNotifications(false);
+    }
+  }, [open, loadNotifications]);
 
   const visibleItems = useMemo(
     () => items.filter((item) => !hiddenIds.has(item.id) && (filter === 'All' || item.category === filter)),
