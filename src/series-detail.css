@@ -243,6 +243,8 @@
 .series-social-card button svg { width: 12px; height: 12px; }
 .series-social-card button:hover,.series-discord:hover { filter: brightness(1.06); }
 .series-discord { background: #5456f4; }
+.series-facebook { background: #1877F2 !important; }
+.series-facebook svg { width: 12px; height: 12px; fill: currentColor; }
 .series-discord img { width: 12px; height: 12px; object-fit: contain; }
 @container (max-width: 520px) {
   .series-social-card { min-height: 44px; gap: 8px; padding: 5px 8px; }

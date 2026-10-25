@@ -105,7 +105,7 @@ const mobileSidebarItems = [
 
 const homepageVisibilityOptions: { key: keyof HomepageVisibility; label: string; description: string; group: string }[] = [
   { key: 'featuredSeries', label: 'Featured series', description: 'Featured-series carousel at the top of the homepage.', group: 'Featured content' },
-  { key: 'socialPromos', label: 'Social promotions', description: 'Share prompt and Discord invitation cards.', group: 'Promotions' },
+  { key: 'socialPromos', label: 'Social promotions', description: 'Share prompt and Facebook invitation cards.', group: 'Promotions' },
   { key: 'issueBanner', label: 'Issue report banner', description: 'Help and issue-report callout below the homepage banner.', group: 'Promotions' },
   { key: 'popularToday', label: 'Popular Today', description: 'Popular-series cover carousel.', group: 'Discovery' },
   { key: 'continueReading', label: 'Recently Viewed', description: 'Show series you recently opened on the homepage.', group: 'Discovery' },
@@ -137,7 +137,7 @@ const seriesPageVisibilityOptions: { key: keyof SeriesPageVisibility; label: str
   { key: 'synopsis', label: 'Synopsis', description: 'Series summary and genres.', group: 'Information tabs' },
   { key: 'reviews', label: 'Reviews', description: 'Reviews tab and its content.', group: 'Information tabs' },
   { key: 'shareCard', label: 'Share card', description: 'Share this series with other readers.', group: 'Community and discovery' },
-  { key: 'discordCard', label: 'Discord card', description: 'Invite readers to the Clydee Discord.', group: 'Community and discovery' },
+  { key: 'discordCard', label: 'Socials card', description: 'Invite readers to join our Facebook socials.', group: 'Community and discovery' },
   { key: 'reactions', label: 'Reactions', description: 'Like, Love, Laugh, Wow, Sad, and Angry reactions.', group: 'Community and discovery' },
   { key: 'discussion', label: 'Discussion', description: 'Series discussion prompt and comments area.', group: 'Community and discovery' },
   { key: 'similarSeries', label: 'Similar series', description: 'Recommended series list beside the page content.', group: 'Community and discovery' },
@@ -376,7 +376,7 @@ function ComixDashboard({
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const [profileMenuOpen, setProfileMenuOpen] = useState(false);
   const profileMenuRef = useRef<HTMLDivElement>(null);
-  const [settingsSubTab, setSettingsSubTab] = useState<'homepage' | 'header' | 'series' | 'filters'>('homepage');
+  const [settingsSubTab, setSettingsSubTab] = useState<'homepage' | 'header' | 'series' | 'filters' | 'socials'>('homepage');
   const [topSearch, setTopSearch] = useState('');
 
   // Series catalog stats
@@ -390,6 +390,7 @@ function ComixDashboard({
   const [settings, setSettings] = useState<SiteSettings | null>(null);
   const [savingSettings, setSavingSettings] = useState(false);
   const [saveMessage, setSaveMessage] = useState('Saved');
+  const [facebookUrlInput, setFacebookUrlInput] = useState('https://facebook.com');
 
   useEffect(() => {
     if (!profileMenuOpen) return;
@@ -411,12 +412,37 @@ function ComixDashboard({
   useEffect(() => {
     let active = true;
     void getSiteSettings().then((s) => {
-      if (active) setSettings(s);
+      if (active) {
+        setSettings(s);
+        if (s?.facebookUrl) setFacebookUrlInput(s.facebookUrl);
+      }
     });
     return () => {
       active = false;
     };
   }, []);
+
+  const saveFacebookUrl = async () => {
+    if (!settings || savingSettings) return;
+    const cleanUrl = facebookUrlInput.trim() || 'https://facebook.com';
+    const nextSettings: SiteSettings = {
+      ...settings,
+      facebookUrl: cleanUrl,
+    };
+    setSettings(nextSettings);
+    setSavingSettings(true);
+    setSaveMessage('Saving...');
+    try {
+      const saved = await saveSiteSettings(nextSettings);
+      setSettings(saved);
+      if (saved?.facebookUrl) setFacebookUrlInput(saved.facebookUrl);
+      setSaveMessage('Saved');
+    } catch {
+      setSaveMessage('Error saving');
+    } finally {
+      setSavingSettings(false);
+    }
+  };
 
   const handleToggle = async (
     category: 'homepage' | 'header' | 'seriesPage' | 'seriesFilters',
@@ -858,6 +884,13 @@ function ComixDashboard({
                   >
                     Series Filters
                   </button>
+                  <button
+                    type="button"
+                    className={`comix-sub-tab ${settingsSubTab === 'socials' ? 'is-active' : ''}`}
+                    onClick={() => setSettingsSubTab('socials')}
+                  >
+                    Social Links
+                  </button>
                 </div>
 
                 {settings && settingsSubTab === 'homepage' && (
@@ -971,6 +1004,66 @@ function ComixDashboard({
                           </button>
                         </div>
                       ))}
+                    </div>
+                  </div>
+                )}
+
+                {settings && settingsSubTab === 'socials' && (
+                  <div>
+                    <div className="comix-setting-group">
+                      <div className="comix-group-title">Social Links</div>
+                      <div className="comix-setting-item" style={{ flexDirection: 'column', alignItems: 'flex-start', gap: '12px' }}>
+                        <div className="comix-setting-info" style={{ width: '100%' }}>
+                          <strong>Facebook Page URL</strong>
+                          <span>The destination URL for the &quot;Join Our Socials&quot; Facebook button on the homepage and series page.</span>
+                        </div>
+                        <div style={{ display: 'flex', gap: '8px', width: '100%', maxWidth: '560px' }}>
+                          <input
+                            type="url"
+                            className="comix-search-input"
+                            style={{
+                              flex: 1,
+                              height: '40px',
+                              padding: '0 14px',
+                              borderRadius: '6px',
+                              border: '1px solid var(--cx-border)',
+                              background: 'var(--cx-input-bg)',
+                              color: 'var(--cx-text)',
+                              outline: 'none',
+                              fontSize: '13px',
+                            }}
+                            placeholder="https://facebook.com/yourpage"
+                            value={facebookUrlInput}
+                            onChange={(e) => setFacebookUrlInput(e.target.value)}
+                            onKeyDown={(e) => {
+                              if (e.key === 'Enter') {
+                                e.preventDefault();
+                                void saveFacebookUrl();
+                              }
+                            }}
+                          />
+                          <button
+                            type="button"
+                            style={{
+                              height: '40px',
+                              padding: '0 18px',
+                              borderRadius: '6px',
+                              background: '#1877F2',
+                              color: '#ffffff',
+                              border: 'none',
+                              fontWeight: 600,
+                              fontSize: '13px',
+                              cursor: 'pointer',
+                              whiteSpace: 'nowrap',
+                              transition: 'opacity 0.15s ease',
+                            }}
+                            onClick={saveFacebookUrl}
+                            disabled={savingSettings}
+                          >
+                            {savingSettings ? 'Saving...' : 'Save Link'}
+                          </button>
+                        </div>
+                      </div>
                     </div>
                   </div>
                 )}

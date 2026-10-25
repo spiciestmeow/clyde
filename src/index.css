@@ -503,12 +503,14 @@ main { padding-bottom: 38px; }
   background: #1d4ed8;
 }
 
-.social-action-btn.discord-btn {
-  background: #5865F2;
+.social-action-btn.discord-btn,
+.social-action-btn.facebook-btn {
+  background: #1877F2;
 }
 
-.social-action-btn.discord-btn:hover {
-  background: #4752c4;
+.social-action-btn.discord-btn:hover,
+.social-action-btn.facebook-btn:hover {
+  background: #0d65d9;
 }
 
 .social-action-btn.report-btn {

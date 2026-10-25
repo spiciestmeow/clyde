@@ -86,6 +86,7 @@ export type SiteSettings = {
   seriesFilters: SeriesFilterVisibility;
   heroSlides: HeroSlide[];
   newSeriesOrder: string[];
+  facebookUrl?: string;
 };
 
 export const DEFAULT_HEADER_VISIBILITY: HeaderVisibility = {
@@ -145,6 +146,7 @@ export const DEFAULT_SITE_SETTINGS: SiteSettings = {
   seriesFilters: DEFAULT_SERIES_FILTER_VISIBILITY,
   heroSlides: DEFAULT_HERO_SLIDES,
   newSeriesOrder: [],
+  facebookUrl: 'https://facebook.com',
 };
 
 function parseBooleanSettings<T extends Record<string, boolean>>(
@@ -198,8 +200,13 @@ function parseSiteSettings(value: unknown): SiteSettings | null {
   const newSeriesOrder = Array.isArray(stored.new_series_order)
     ? stored.new_series_order.filter((id): id is string => typeof id === 'string' && id.trim().length > 0)
     : [];
+  const facebookUrl = typeof stored.facebook_url === 'string' && stored.facebook_url.trim()
+    ? stored.facebook_url.trim()
+    : typeof stored.facebookUrl === 'string' && stored.facebookUrl.trim()
+    ? stored.facebookUrl.trim()
+    : 'https://facebook.com';
 
-  return { header, homepage, seriesPage, seriesFilters, heroSlides, newSeriesOrder };
+  return { header, homepage, seriesPage, seriesFilters, heroSlides, newSeriesOrder, facebookUrl };
 }
 
 export const SITE_SETTINGS_CACHE_KEY = 'vortex-site-settings';
@@ -224,8 +231,11 @@ export function getCachedSiteSettings(): SiteSettings | null {
     const newSeriesOrder = Array.isArray(cached.newSeriesOrder)
       ? cached.newSeriesOrder.filter((id): id is string => typeof id === 'string' && id.trim().length > 0)
       : [];
+    const facebookUrl = typeof cached.facebookUrl === 'string' && cached.facebookUrl.trim()
+      ? cached.facebookUrl.trim()
+      : 'https://facebook.com';
 
-    return { header, homepage, seriesPage, seriesFilters, heroSlides, newSeriesOrder };
+    return { header, homepage, seriesPage, seriesFilters, heroSlides, newSeriesOrder, facebookUrl };
   } catch {
     return null;
   }
@@ -316,6 +326,7 @@ export async function saveSiteSettings(settings: SiteSettings): Promise<SiteSett
         series_filter_sections: settings.seriesFilters,
         hero_slides: settings.heroSlides,
         new_series_order: settings.newSeriesOrder,
+        facebook_url: settings.facebookUrl || 'https://facebook.com',
       },
       updated_at: new Date().toISOString(),
     })

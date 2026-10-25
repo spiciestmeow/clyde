@@ -25,7 +25,7 @@ import { Shareable } from '../components/Shareable';
 import { toSiteSearchItems, toTrendingSiteSearchItems } from '../data/seriesSearchCatalog';
 import { useThemeMode } from '../hooks/useThemeMode';
 import { useSeriesCatalog } from '../hooks/useSeriesCatalog';
-import { DEFAULT_SERIES_PAGE_VISIBILITY, getCachedSiteSettings, getSiteSettings } from '../lib/siteSettings';
+import { DEFAULT_SERIES_PAGE_VISIBILITY, SITE_SETTINGS_UPDATED_EVENT, getCachedSiteSettings, getSiteSettings } from '../lib/siteSettings';
 import { formatScanlatorSeriesUrl } from '../lib/scanlatorLinks';
 import { getWinningChapterSource } from '../lib/sourcePriority';
 import { recordRecentlyViewedSeries } from '../lib/recentlyViewedSeries';
@@ -258,6 +258,7 @@ export default function SeriesDetailPage() {
   const [sourceReactionCounts, setSourceReactionCounts] = useState<Record<string, number>>({});
   const [reactionBusy, setReactionBusy] = useState(false);
   const [sourceReactionBusy, setSourceReactionBusy] = useState<string[]>([]);
+  const [siteSettings, setSiteSettings] = useState(() => getCachedSiteSettings());
   const [seriesPageVisibility, setSeriesPageVisibility] = useState(
     () => getCachedSiteSettings()?.seriesPage ?? DEFAULT_SERIES_PAGE_VISIBILITY,
   );
@@ -296,14 +297,23 @@ export default function SeriesDetailPage() {
     let active = true;
     void getSiteSettings()
       .then((settings) => {
-        if (active) setSeriesPageVisibility(settings.seriesPage);
+        if (active) { setSeriesPageVisibility(settings.seriesPage); setSiteSettings(settings); }
       })
       .catch(() => {
         // Keep the last cached or default visibility when the settings service is unavailable.
       });
 
+    const handleUpdate = (e: any) => {
+      if (active && e.detail) {
+        setSeriesPageVisibility(e.detail.seriesPage);
+        setSiteSettings(e.detail);
+      }
+    };
+    window.addEventListener(SITE_SETTINGS_UPDATED_EVENT, handleUpdate);
+
     return () => {
       active = false;
+      window.removeEventListener(SITE_SETTINGS_UPDATED_EVENT, handleUpdate);
     };
   }, []);
 
@@ -919,9 +929,11 @@ export default function SeriesDetailPage() {
             </div>}
             {seriesPageVisibility.discordCard && <div className="series-social-card series-social-card--join">
               <div className="series-social-copy"><div><span>Join Our Socials</span></div></div>
-              <a className="series-discord" href="https://discord.gg/2PuMt62fRN" target="_blank" rel="noreferrer" title="Discord">
-                <img src={imageUrl(assetList.find((asset) => asset.alt === 'Discord Image Link')?.src || '', 32)} alt="" />
-                Discord
+              <a className="series-discord series-facebook" href={siteSettings?.facebookUrl || 'https://facebook.com'} target="_blank" rel="noreferrer" title="Facebook">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                  <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z" />
+                </svg>
+                Facebook
               </a>
             </div>}
           </div>}
