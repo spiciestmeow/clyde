@@ -237,7 +237,7 @@
 }
 
 .sync-log-console-lines {
-  max-height: 180px;
+  max-height: 320px;
   overflow-y: auto;
   font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
   font-size: 11px;

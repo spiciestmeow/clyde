@@ -362,13 +362,7 @@ export default async function handler(
       const currentHeader = (currentSettings?.header_visibility as any) || {};
       const existingLogs = Array.isArray(currentHeader.sync_logs) ? currentHeader.sync_logs : [];
 
-      // Keep logs compact to prevent inflating site_settings and exhausting egress/bandwidth
-      const relevantLogs = logs
-        .filter((l) => l.includes('Updated:') || l.includes('Error') || l.includes('Failed') || l.includes('Direct source URLs are configured'))
-        .slice(0, 8);
-
-      const fallbackLogs = relevantLogs.length > 0 ? relevantLogs : logs.slice(0, 3);
-
+      // Persist full execution logs so all checked series are visible in Execution Details
       const newLogEntry = {
         id: String(Date.now()),
         timestamp: new Date().toISOString(),
@@ -381,7 +375,7 @@ export default async function handler(
           source: u.source,
           time: u.releaseTime,
         })),
-        logs: fallbackLogs,
+        logs,
       };
 
       // Keep only the 5 most recent logs to avoid database bloat
