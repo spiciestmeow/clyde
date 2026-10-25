@@ -99,6 +99,7 @@ export default async function handler(
         let latestDirectSourceUrl = '';
         let refreshedSources = Array.isArray(item.sources) ? item.sources : [];
         let hasSourceStatsChange = false;
+        let highestRatingStr: string | null = item.rating || null;
         const itemSources = Array.isArray(item.sources)
           ? item.sources.filter((source: any) => typeof source?.url === 'string' && source.url.trim())
           : [];
@@ -149,7 +150,7 @@ export default async function handler(
             .map((s: any) => parseFloat(s?.rating))
             .filter((r: number) => !Number.isNaN(r) && r > 0);
           const topRating = detectedRatings.length ? Math.max(...detectedRatings) : null;
-          const highestRatingStr = topRating !== null ? (topRating % 1 === 0 ? topRating.toFixed(1) : String(topRating)) : (item.rating || null);
+          highestRatingStr = topRating !== null ? (topRating % 1 === 0 ? topRating.toFixed(1) : String(topRating)) : (item.rating || null);
         } else {
           const altTitles = Array.isArray(item.alternate_titles) ? item.alternate_titles : [];
           const syncResult = await fetchScanlationSources(item.title, altTitles);
