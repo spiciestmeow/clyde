@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState, type ChangeEvent, type FormEvent } from 'react';
+import { useEffect, useMemo, useRef, useState, type ChangeEvent, type FormEvent, type KeyboardEvent as ReactKeyboardEvent } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import {
   AlertCircle,
@@ -171,6 +171,178 @@ function slugify(value: string) {
     .toLocaleLowerCase()
     .replace(/[^a-z0-9]+/g, '-')
     .replace(/^-+|-+$/g, '');
+}
+
+interface CreditsAutocompleteFieldProps {
+  label: string;
+  items: string[];
+  onRemoveItem: (index: number) => void;
+  onAddItem: (value: string) => void;
+  placeholder: string;
+  existingSuggestions: string[];
+  buttonText: string;
+  inputValue: string;
+  onInputChange: (value: string) => void;
+}
+
+function CreditsAutocompleteField({
+  label,
+  items,
+  onRemoveItem,
+  onAddItem,
+  placeholder,
+  existingSuggestions,
+  buttonText,
+  inputValue,
+  onInputChange,
+}: CreditsAutocompleteFieldProps) {
+  const [isOpen, setIsOpen] = useState(false);
+  const [highlightedIndex, setHighlightedIndex] = useState(-1);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const listRef = useRef<HTMLDivElement>(null);
+
+  const cleanQuery = inputValue.trim().toLowerCase();
+
+  const filteredSuggestions = useMemo(() => {
+    if (!cleanQuery) return [];
+    return existingSuggestions
+      .filter((name) => name.toLowerCase().includes(cleanQuery) && !items.includes(name))
+      .slice(0, 30);
+  }, [cleanQuery, existingSuggestions, items]);
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (containerRef.current && !containerRef.current.contains(event.target as Node)) {
+        setIsOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  const handleSelect = (val: string) => {
+    const trimmed = val.trim();
+    if (trimmed) {
+      onAddItem(trimmed);
+      onInputChange('');
+      setIsOpen(false);
+      setHighlightedIndex(-1);
+    }
+  };
+
+  const handleKeyDown = (e: ReactKeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'ArrowDown') {
+      if (filteredSuggestions.length > 0) {
+        e.preventDefault();
+        setIsOpen(true);
+        setHighlightedIndex((prev) => (prev + 1) % filteredSuggestions.length);
+      }
+    } else if (e.key === 'ArrowUp') {
+      if (filteredSuggestions.length > 0) {
+        e.preventDefault();
+        setIsOpen(true);
+        setHighlightedIndex((prev) => (prev <= 0 ? filteredSuggestions.length - 1 : prev - 1));
+      }
+    } else if (e.key === 'Enter') {
+      e.preventDefault();
+      if (isOpen && highlightedIndex >= 0 && filteredSuggestions[highlightedIndex]) {
+        handleSelect(filteredSuggestions[highlightedIndex]);
+      } else if (inputValue.trim()) {
+        handleSelect(inputValue);
+      }
+    } else if (e.key === 'Escape') {
+      setIsOpen(false);
+      setHighlightedIndex(-1);
+    }
+  };
+
+  useEffect(() => {
+    if (highlightedIndex >= 0 && listRef.current) {
+      const optionElements = listRef.current.querySelectorAll('.credits-autocomplete-item');
+      const target = optionElements[highlightedIndex] as HTMLElement | undefined;
+      if (target) {
+        target.scrollIntoView({ block: 'nearest' });
+      }
+    }
+  }, [highlightedIndex]);
+
+  return (
+    <div className="field-group credits-autocomplete-group" ref={containerRef}>
+      <label className="field-label">{label}</label>
+      {items.length > 0 && (
+        <div className="alt-titles-list">
+          {items.map((item, i) => (
+            <span key={i} className="alt-title-chip">
+              {item}
+              <button
+                type="button"
+                onClick={() => onRemoveItem(i)}
+                aria-label={`Remove ${item}`}
+                title={`Remove ${item}`}
+              >
+                <X size={12} />
+              </button>
+            </span>
+          ))}
+        </div>
+      )}
+      <div className="input-with-button-row credits-input-row credits-input-autocomplete-wrap">
+        <input
+          type="text"
+          className="text-input"
+          placeholder={placeholder}
+          value={inputValue}
+          onChange={(e) => {
+            onInputChange(e.target.value);
+            setIsOpen(true);
+            setHighlightedIndex(0);
+          }}
+          onFocus={() => {
+            if (inputValue.trim()) {
+              setIsOpen(true);
+            }
+          }}
+          onKeyDown={handleKeyDown}
+          autoComplete="off"
+        />
+        <button
+          type="button"
+          className="credits-add-button"
+          onClick={() => handleSelect(inputValue)}
+          disabled={!inputValue.trim()}
+          aria-label={buttonText}
+          title={buttonText}
+        >
+          <Plus size={18} />
+          <span>{buttonText}</span>
+        </button>
+
+        {isOpen && filteredSuggestions.length > 0 && (
+          <div className="credits-autocomplete-dropdown" ref={listRef} role="listbox">
+            {filteredSuggestions.map((suggestion, idx) => {
+              const isSelected = idx === highlightedIndex;
+              return (
+                <button
+                  key={suggestion}
+                  type="button"
+                  role="option"
+                  aria-selected={isSelected}
+                  className={`credits-autocomplete-item${isSelected ? ' is-highlighted' : ''}`}
+                  onMouseEnter={() => setHighlightedIndex(idx)}
+                  onMouseDown={(e) => {
+                    e.preventDefault();
+                    handleSelect(suggestion);
+                  }}
+                >
+                  {suggestion}
+                </button>
+              );
+            })}
+          </div>
+        )}
+      </div>
+    </div>
+  );
 }
 
 export default function SeriesCatalogManager({
@@ -759,28 +931,85 @@ export default function SeriesCatalogManager({
     }));
   };
 
-  const addAuthor = () => {
-    const val = newAuthor.trim();
+  const allExistingAuthors = useMemo(() => {
+    const set = new Set<string>();
+    for (const item of catalogItems) {
+      if (item.author) {
+        item.author.split(',').forEach((s) => {
+          const clean = s.trim();
+          if (clean) set.add(clean);
+        });
+      }
+      if (item.facts?.author) {
+        item.facts.author.split(',').forEach((s) => {
+          const clean = s.trim();
+          if (clean) set.add(clean);
+        });
+      }
+    }
+    return Array.from(set).sort((a, b) => a.localeCompare(b, undefined, { sensitivity: 'base' }));
+  }, [catalogItems]);
+
+  const allExistingArtists = useMemo(() => {
+    const set = new Set<string>();
+    for (const item of catalogItems) {
+      if (item.artist) {
+        item.artist.split(',').forEach((s) => {
+          const clean = s.trim();
+          if (clean) set.add(clean);
+        });
+      }
+      if (item.facts?.artist) {
+        item.facts.artist.split(',').forEach((s) => {
+          const clean = s.trim();
+          if (clean) set.add(clean);
+        });
+      }
+    }
+    return Array.from(set).sort((a, b) => a.localeCompare(b, undefined, { sensitivity: 'base' }));
+  }, [catalogItems]);
+
+  const allExistingPublishers = useMemo(() => {
+    const set = new Set<string>();
+    for (const item of catalogItems) {
+      if (Array.isArray(item.publishers)) {
+        item.publishers.forEach((p) => {
+          const clean = p.trim();
+          if (clean) set.add(clean);
+        });
+      }
+      if (item.facts?.publisher) {
+        item.facts.publisher.split(',').forEach((p) => {
+          const clean = p.trim();
+          if (clean) set.add(clean);
+        });
+      }
+    }
+    return Array.from(set).sort((a, b) => a.localeCompare(b, undefined, { sensitivity: 'base' }));
+  }, [catalogItems]);
+
+  const addAuthor = (valueToAdd?: string) => {
+    const val = (valueToAdd !== undefined ? valueToAdd : newAuthor).trim();
     if (val && !draft.authors.includes(val)) {
       setDraft((curr) => ({ ...curr, authors: [...curr.authors, val] }));
-      setNewAuthor('');
     }
+    setNewAuthor('');
   };
 
-  const addArtist = () => {
-    const val = newArtist.trim();
+  const addArtist = (valueToAdd?: string) => {
+    const val = (valueToAdd !== undefined ? valueToAdd : newArtist).trim();
     if (val && !draft.artists.includes(val)) {
       setDraft((curr) => ({ ...curr, artists: [...curr.artists, val] }));
-      setNewArtist('');
     }
+    setNewArtist('');
   };
 
-  const addPublisher = () => {
-    const val = newPublisher.trim();
+  const addPublisher = (valueToAdd?: string) => {
+    const val = (valueToAdd !== undefined ? valueToAdd : newPublisher).trim();
     if (val && !draft.publishers.includes(val)) {
       setDraft((curr) => ({ ...curr, publishers: [...curr.publishers, val] }));
-      setNewPublisher('');
     }
+    setNewPublisher('');
   };
 
   const addTag = () => {
@@ -1341,104 +1570,41 @@ export default function SeriesCatalogManager({
             <h2 className="section-title">Credits</h2>
             <p className="section-description">Who made this title? Press Enter to add multiple.</p>
 
-            <div className="field-group">
-              <label className="field-label">Authors</label>
-              <div className="alt-titles-list">
-                {draft.authors.map((author, i) => (
-                  <span key={i} className="alt-title-chip">
-                    {author}
-                    <button type="button" onClick={() => setDraft((c) => ({ ...c, authors: c.authors.filter((_, idx) => idx !== i) }))}>
-                      <X size={12} />
-                    </button>
-                  </span>
-                ))}
-              </div>
-              <div className="input-with-button-row credits-input-row">
-                <input
-                  type="text"
-                  className="text-input"
-                  placeholder="Add author..."
-                  value={newAuthor}
-                  onChange={(e) => setNewAuthor(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter') {
-                      e.preventDefault();
-                      addAuthor();
-                    }
-                  }}
-                />
-                <button type="button" className="credits-add-button" onClick={addAuthor} disabled={!newAuthor.trim()} aria-label="Add author" title="Add author">
-                  <Plus size={18} />
-                  <span>Add author</span>
-                </button>
-              </div>
-            </div>
+            <CreditsAutocompleteField
+              label="Authors"
+              items={draft.authors}
+              onRemoveItem={(i) => setDraft((c) => ({ ...c, authors: c.authors.filter((_, idx) => idx !== i) }))}
+              onAddItem={addAuthor}
+              placeholder="Add author..."
+              existingSuggestions={allExistingAuthors}
+              buttonText="Add author"
+              inputValue={newAuthor}
+              onInputChange={setNewAuthor}
+            />
 
-            <div className="field-group">
-              <label className="field-label">Artists</label>
-              <div className="alt-titles-list">
-                {draft.artists.map((artist, i) => (
-                  <span key={i} className="alt-title-chip">
-                    {artist}
-                    <button type="button" onClick={() => setDraft((c) => ({ ...c, artists: c.artists.filter((_, idx) => idx !== i) }))}>
-                      <X size={12} />
-                    </button>
-                  </span>
-                ))}
-              </div>
-              <div className="input-with-button-row credits-input-row">
-                <input
-                  type="text"
-                  className="text-input"
-                  placeholder="Add artist..."
-                  value={newArtist}
-                  onChange={(e) => setNewArtist(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter') {
-                      e.preventDefault();
-                      addArtist();
-                    }
-                  }}
-                />
-                <button type="button" className="credits-add-button" onClick={addArtist} disabled={!newArtist.trim()} aria-label="Add artist" title="Add artist">
-                  <Plus size={18} />
-                  <span>Add artist</span>
-                </button>
-              </div>
-            </div>
+            <CreditsAutocompleteField
+              label="Artists"
+              items={draft.artists}
+              onRemoveItem={(i) => setDraft((c) => ({ ...c, artists: c.artists.filter((_, idx) => idx !== i) }))}
+              onAddItem={addArtist}
+              placeholder="Add artist..."
+              existingSuggestions={allExistingArtists}
+              buttonText="Add artist"
+              inputValue={newArtist}
+              onInputChange={setNewArtist}
+            />
 
-            <div className="field-group">
-              <label className="field-label">Publishers</label>
-              <div className="alt-titles-list">
-                {draft.publishers.map((pub, i) => (
-                  <span key={i} className="alt-title-chip">
-                    {pub}
-                    <button type="button" onClick={() => setDraft((c) => ({ ...c, publishers: c.publishers.filter((_, idx) => idx !== i) }))}>
-                      <X size={12} />
-                    </button>
-                  </span>
-                ))}
-              </div>
-              <div className="input-with-button-row credits-input-row">
-                <input
-                  type="text"
-                  className="text-input"
-                  placeholder="Add publisher..."
-                  value={newPublisher}
-                  onChange={(e) => setNewPublisher(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter') {
-                      e.preventDefault();
-                      addPublisher();
-                    }
-                  }}
-                />
-                <button type="button" className="credits-add-button" onClick={addPublisher} disabled={!newPublisher.trim()} aria-label="Add publisher" title="Add publisher">
-                  <Plus size={18} />
-                  <span>Add publisher</span>
-                </button>
-              </div>
-            </div>
+            <CreditsAutocompleteField
+              label="Publishers"
+              items={draft.publishers}
+              onRemoveItem={(i) => setDraft((c) => ({ ...c, publishers: c.publishers.filter((_, idx) => idx !== i) }))}
+              onAddItem={addPublisher}
+              placeholder="Add publisher..."
+              existingSuggestions={allExistingPublishers}
+              buttonText="Add publisher"
+              inputValue={newPublisher}
+              onInputChange={setNewPublisher}
+            />
           </section>
 
           {/* Section 4: Classification */}

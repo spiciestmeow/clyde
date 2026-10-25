@@ -1259,6 +1259,61 @@ body:has(.comix-admin-wrapper.theme-dark) .title-actions-menu-item::after {
   background: var(--up-teal-hover);
 }
 
+/* Credits Autocomplete Dropdown */
+.credits-input-autocomplete-wrap {
+  position: relative;
+}
+
+.credits-autocomplete-dropdown {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  right: 0;
+  background-color: var(--up-card-bg, #161c22);
+  border: 1px solid var(--up-border, #28333f);
+  border-radius: 6px;
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.5), 0 8px 10px -6px rgba(0, 0, 0, 0.4);
+  max-height: 220px;
+  overflow-y: auto;
+  z-index: 100;
+  padding: 4px;
+}
+
+.credits-autocomplete-item {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  padding: 8px 12px;
+  border: none;
+  background: transparent;
+  border-radius: 4px;
+  color: var(--up-text, #e6edf3);
+  font-size: 13px;
+  font-family: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition: background-color 0.15s ease, color 0.15s ease;
+}
+
+.credits-autocomplete-item:hover,
+.credits-autocomplete-item.is-highlighted {
+  color: var(--up-teal, #2dd4bf);
+  background-color: var(--up-menu-hover, #242d38);
+}
+
+.credits-autocomplete-dropdown::-webkit-scrollbar {
+  width: 6px;
+}
+
+.credits-autocomplete-dropdown::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.credits-autocomplete-dropdown::-webkit-scrollbar-thumb {
+  background: var(--up-border-light, #374656);
+  border-radius: 3px;
+}
+
 .credits-add-button:disabled {
   opacity: 0.5;
   cursor: not-allowed;
