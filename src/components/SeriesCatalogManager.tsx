@@ -681,9 +681,18 @@ export default function SeriesCatalogManager({
         formats: data.formats.length ? Array.from(new Set([...current.formats, ...data.formats])) : current.formats,
         tags: data.tags.length ? Array.from(new Set([...current.tags, ...data.tags])) : current.tags,
         cover: data.coverUrl || current.cover,
+        rating: data.rating || current.rating,
         trackers: data.trackerUrl && !current.trackers.some((t) => t.url.includes(data.id))
-          ? [...current.trackers, { name: 'MangaDex', url: data.trackerUrl, logo: '', isSample: false }]
+          ? [...current.trackers, { name: data.trackerUrl.includes('mangabaka') ? 'MangaBaka' : 'MangaDex', url: data.trackerUrl, logo: '', isSample: false, rating: data.rating }]
           : current.trackers,
+        sources: data.sources?.length
+          ? [
+              ...current.sources,
+              ...data.sources
+                .filter((s) => !current.sources.some((cs) => cs.url.trim().toLowerCase() === s.url.trim().toLowerCase()))
+                .map((s) => ({ name: s.name, url: s.url, logo: '', isSample: false, rating: s.rating })),
+            ]
+          : current.sources,
       }));
 
       setImportSuccess(`Imported "${data.title}" successfully.`);

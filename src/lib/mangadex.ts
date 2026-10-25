@@ -17,6 +17,8 @@ export type MangaDexImportData = {
   tags: string[];
   coverUrl?: string;
   trackerUrl: string;
+  rating?: string;
+  sources?: { name: string; url: string; rating?: string }[];
 };
 
 const GENRES_LIST = [
@@ -55,6 +57,59 @@ export function extractMangaDexId(rawInput: string): string {
 }
 
 export async function fetchMangaDexDetails(rawInput: string): Promise<MangaDexImportData> {
+  const trimmed = rawInput.trim();
+  if (!trimmed) {
+    throw new Error('Please enter a MangaDex or MangaBaka link.');
+  }
+
+  // Try unified backend import endpoint first (handles MangaDex & MangaBaka server-side)
+  try {
+    const apiRes = await fetch('/api/import-series', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ url: trimmed }),
+    });
+
+    if (apiRes.ok) {
+      const json = await apiRes.json();
+      if (json.success && json.data) {
+        const d = json.data;
+        return {
+          id: d.id,
+          title: d.title,
+          alternateTitles: d.alternateTitles || [],
+          description: d.description || '',
+          authors: d.authors || [],
+          artists: d.artists || [],
+          publishers: d.publishers || [],
+          type: d.type || 'Manga',
+          contentRating: d.contentRating || 'Safe',
+          status: d.status || 'Releasing',
+          year: d.year || '',
+          originalLanguage: d.originalLanguage || 'Japanese',
+          demographics: d.demographics || [],
+          genres: d.genres || [],
+          formats: d.formats || [],
+          tags: d.tags || [],
+          coverUrl: d.coverUrl,
+          trackerUrl: d.trackerUrl || trimmed,
+          rating: d.rating,
+          sources: d.sources,
+        };
+      }
+    } else {
+      const errJson = await apiRes.json().catch(() => null);
+      if (errJson?.error) {
+        throw new Error(errJson.error);
+      }
+    }
+  } catch (err: any) {
+    // If the error was an explicit rejection from the endpoint, rethrow it
+    if (err?.message && !err.message.includes('fetch failed')) {
+      throw err;
+    }
+  }
+
   const id = extractMangaDexId(rawInput);
 
   let response: Response | null = null;

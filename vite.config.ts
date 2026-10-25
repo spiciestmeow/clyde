@@ -127,6 +127,43 @@ function syncSourcesDevPlugin() {
           }
           return;
         }
+        if (req.url && req.url.startsWith('/api/import-series')) {
+          try {
+            let body = '';
+            req.on('data', (chunk: any) => { body += chunk; });
+            req.on('end', async () => {
+              try {
+                let parsed: any = {};
+                if (body) {
+                  try { parsed = JSON.parse(body); } catch {}
+                }
+                const url = new URL(req.url, 'http://localhost');
+                const reqParam = parsed.url || url.searchParams.get('url') || '';
+                const { default: handler } = await import('./api/import-series.ts');
+                const mockReq = { method: req.method, url: req.url, body: { url: reqParam } };
+                const mockRes = {
+                  setHeader: res.setHeader.bind(res),
+                  status(code: number) { res.statusCode = code; return mockRes; },
+                  json(payload: any) {
+                    res.setHeader('Content-Type', 'application/json');
+                    res.end(JSON.stringify(payload));
+                  },
+                };
+                await handler(mockReq as any, mockRes as any);
+              } catch (err: any) {
+                res.statusCode = 500;
+                res.setHeader('Content-Type', 'application/json');
+                res.end(JSON.stringify({ success: false, error: err?.message || 'Import failed' }));
+              }
+            });
+          } catch (err: any) {
+            res.statusCode = 500;
+            res.setHeader('Content-Type', 'application/json');
+            res.end(JSON.stringify({ success: false, error: err?.message || 'Import failed' }));
+          }
+          return;
+        }
+
         next();
       });
     },
