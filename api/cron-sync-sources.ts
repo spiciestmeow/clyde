@@ -140,9 +140,16 @@ export default async function handler(
               // Keep the winning source aligned with the canonical timestamp
               // used for the series-level release date.
               latestChapterAt: isWinningSource ? winningReleaseAt : scanResult.latestChapterAt,
+              rating: scanResult.rating || source.rating,
             };
           });
           hasSourceStatsChange = JSON.stringify(refreshedSources) !== JSON.stringify(item.sources || []);
+
+          const detectedRatings = refreshedSources
+            .map((s: any) => parseFloat(s?.rating))
+            .filter((r: number) => !Number.isNaN(r) && r > 0);
+          const topRating = detectedRatings.length ? Math.max(...detectedRatings) : null;
+          const highestRatingStr = topRating !== null ? (topRating % 1 === 0 ? topRating.toFixed(1) : String(topRating)) : (item.rating || null);
         } else {
           const altTitles = Array.isArray(item.alternate_titles) ? item.alternate_titles : [];
           const syncResult = await fetchScanlationSources(item.title, altTitles);
@@ -217,6 +224,7 @@ export default async function handler(
               chapters: nextChapters,
               sources: refreshedSources,
               facts: nextFacts,
+              rating: highestRatingStr,
               updated_at: new Date().toISOString(),
             })
             .eq('id', item.id);
@@ -244,6 +252,7 @@ export default async function handler(
               .from('series')
               .update({
                 ...(hasSourceStatsChange ? { sources: refreshedSources } : {}),
+                rating: highestRatingStr,
                 facts: {
                   ...(item.facts || {}),
                   ...(latestDirectSourceUrl ? {
@@ -284,6 +293,7 @@ export default async function handler(
               .from('series')
               .update({
                 ...(hasSourceStatsChange ? { sources: refreshedSources } : {}),
+                rating: highestRatingStr,
                 facts: {
                   ...(item.facts || {}),
                   ...(latestDirectSourceUrl ? {

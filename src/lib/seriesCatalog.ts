@@ -17,6 +17,7 @@ export type SeriesLink = {
   isSample?: boolean;
   latestChapterNumber?: string;
   latestChapterAt?: string;
+  rating?: string;
 };
 
 export type SeriesRecord = {
@@ -59,6 +60,7 @@ export type CreateSeriesRequest = {
   title: string;
   cover?: string;
   category?: string;
+  rating?: string;
   status?: string;
   isNew?: boolean;
   synopsis?: string;
@@ -133,6 +135,37 @@ function requireSupabase() {
   return supabase;
 }
 
+export function getHighestSeriesRating(
+  explicitRating?: string | number | null,
+  sources?: SeriesLink[] | null,
+  trackers?: SeriesLink[] | null,
+): string | null {
+  const ratings: number[] = [];
+  if (explicitRating !== null && explicitRating !== undefined && String(explicitRating).trim()) {
+    const num = parseFloat(String(explicitRating));
+    if (!Number.isNaN(num) && num > 0) ratings.push(num);
+  }
+  if (Array.isArray(sources)) {
+    for (const s of sources) {
+      if (s?.rating) {
+        const num = parseFloat(String(s.rating));
+        if (!Number.isNaN(num) && num > 0) ratings.push(num);
+      }
+    }
+  }
+  if (Array.isArray(trackers)) {
+    for (const t of trackers) {
+      if (t?.rating) {
+        const num = parseFloat(String(t.rating));
+        if (!Number.isNaN(num) && num > 0) ratings.push(num);
+      }
+    }
+  }
+  if (ratings.length === 0) return null;
+  const max = Math.max(...ratings);
+  return max % 1 === 0 ? max.toFixed(1) : String(max);
+}
+
 function toSeriesRecord(value: unknown): SeriesRecord {
   const row = value as SeriesDatabaseRow;
   return {
@@ -142,7 +175,7 @@ function toSeriesRecord(value: unknown): SeriesRecord {
     href: row.href,
     cover: row.cover ?? '',
     category: row.category ?? 'Manhwa',
-    rating: row.rating,
+    rating: getHighestSeriesRating(row.rating, row.sources, row.trackers),
     status: row.status ?? 'Ongoing',
     pinned: row.pinned ?? false,
     isNew: row.facts?.is_new !== undefined ? String(row.facts.is_new).toLowerCase() === 'true' : false,
@@ -384,7 +417,7 @@ export async function createSeriesRecord(input: CreateSeriesRequest): Promise<Se
       href: `/series/${slug}`,
       cover: input.cover?.trim() || '',
       category,
-      rating: null,
+      rating: getHighestSeriesRating(input.rating, input.sources, input.trackers),
       status,
       pinned: false,
       chapters: input.chapters ?? [],
@@ -441,6 +474,9 @@ export async function updateSeriesRecord(input: UpdateSeriesRequest): Promise<Se
   if (input.tags !== undefined) updateData.tags = input.tags;
   if (input.trackers !== undefined) updateData.trackers = input.trackers;
   if (input.sources !== undefined) updateData.sources = input.sources;
+  if (input.rating !== undefined || input.sources !== undefined || input.trackers !== undefined) {
+    updateData.rating = getHighestSeriesRating(input.rating, input.sources, input.trackers);
+  }
   if (input.chapters !== undefined) updateData.chapters = input.chapters;
 
   if (input.isNew !== undefined || input.facts !== undefined) {

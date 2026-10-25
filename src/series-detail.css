@@ -203,6 +203,8 @@
 .series-source-priority { flex: 0 0 auto; padding: 2px 6px; border-radius: 10px; background: #fff0e6; color: #c8540c; font-size: clamp(7px, .4vw, 8px); font-weight: 700; white-space: nowrap; }
 .series-source-meta { min-width: 0; display: flex; flex-wrap: wrap; align-items: center; gap: 7px; }
 .series-source-visited { display: inline-flex; align-items: center; color: #10b966; }
+.series-source-rating { display: inline-flex; align-items: center; gap: 3px; color: #f59e0b; font-size: clamp(7px, .44vw, 9px); font-weight: 700; white-space: nowrap; }
+.series-source-rating svg { width: 11px; height: 11px; flex: 0 0 auto; color: #f59e0b; }
 .series-source-chapter { display: inline-flex; align-items: center; gap: 4px; color: var(--series-ink); font-size: clamp(7px, .44vw, 9px); font-weight: 650; white-space: nowrap; }
 .series-source-chapter svg { width: 11px; height: 11px; flex: 0 0 auto; color: #dd6b18; }
 .series-source-time { display: inline-flex; align-items: center; gap: 4px; color: var(--series-muted); font-size: clamp(7px, .44vw, 9px); white-space: nowrap; }

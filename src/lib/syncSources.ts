@@ -74,7 +74,9 @@ export type DirectSourceResult = {
     url: string;
     latestChapterNumber: string;
     latestChapterAt?: string;
+    rating?: string;
   }[];
+  highestRating?: string;
   sourceIssues: {
     name: string;
     url: string;

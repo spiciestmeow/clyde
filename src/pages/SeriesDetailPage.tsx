@@ -867,6 +867,7 @@ export default function SeriesDetailPage() {
                           {isVisited && <span className="series-source-visited" title="You’ve visited this source" aria-label="Visited"><Eye size={13} aria-hidden="true" /></span>}
                         </span>
                         <span className="series-source-meta">
+                          {source.rating && <span className="series-source-rating" title={`Source rating: ${source.rating}`}><Star size={11} fill="currentColor" />{source.rating}</span>}
                           {source.latestChapterNumber && <span className="series-source-chapter"><BookOpen size={11} aria-hidden="true" />Chapter {source.latestChapterNumber}</span>}
                           {sourceReleaseTime ? (
                             <span className="series-source-time" title={`Chapter ${source.latestChapterNumber || ''} release time`}><Clock3 size={12} aria-hidden="true" />{sourceReleaseTime}</span>

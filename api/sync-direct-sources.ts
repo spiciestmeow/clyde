@@ -35,7 +35,9 @@ export interface DirectSourceScrapeResult {
     url: string;
     latestChapterNumber: string;
     latestChapterAt?: string;
+    rating?: string;
   }[];
+  highestRating?: string;
   sourceIssues: {
     name: string;
     url: string;
@@ -874,6 +876,54 @@ export function extractChaptersFromHtml(
   return Array.from(foundChapters.values()).sort((a, b) => b.number - a.number);
 }
 
+export function extractRatingFromHtml(html: string, _url?: string): number | null {
+  if (!html) return null;
+
+  // 1. Asura / Next.js / Nuxt serialized hydration JSON
+  const asuraMatch = html.match(/(?:&quot;|"|\\")rating(?:&quot;|"|\\")\s*:\s*(?:\[\s*\d+\s*,\s*|"?)([0-9](?:\.[0-9]{1,2})?)/i);
+  if (asuraMatch) {
+    const val = parseFloat(asuraMatch[1]);
+    if (val >= 1 && val <= 10) return val;
+  }
+
+  // 2. Schema.org / Microdata ratingValue
+  const microdataMatch = html.match(/itemprop=["']ratingValue["'][^>]*content=["']([0-9.]+)/i) ||
+                         html.match(/itemprop=["']ratingValue["'][^>]*>([0-9.]+)/i);
+  if (microdataMatch) {
+    const val = parseFloat(microdataMatch[1]);
+    if (val >= 1 && val <= 10) return val;
+    if (val > 10 && val <= 100) return parseFloat((val / 10).toFixed(1));
+  }
+
+  // 3. JSON-LD: "ratingValue"
+  const jsonLdMatch = html.match(/"ratingValue"\s*:\s*"?([0-9.]+)"?/i);
+  if (jsonLdMatch) {
+    const val = parseFloat(jsonLdMatch[1]);
+    if (val >= 1 && val <= 10) return val;
+    if (val > 10 && val <= 100) return parseFloat((val / 10).toFixed(1));
+  }
+
+  // 4. Common scanlator themes (Madara / MangaStream / Kirei)
+  const classMatches = [
+    /class=["'][^"']*(?:post-total-rating|rating-prc|score|rating-num|ratingValue)[^"']*["'][^>]*>[\s\S]*?([0-9]\.[0-9]{1,2})/i,
+    /<span[^>]*class=["'][^"']*(?:score|rating|num|grade)[^"']*["'][^>]*>([0-9]\.[0-9]{1,2})<\/span>/i,
+    /<div[^>]*class=["'][^"']*(?:score|rating|num|grade)[^"']*["'][^>]*>([0-9]\.[0-9]{1,2})<\/div>/i,
+    /(?:Rating|Score)\s*:?\s*<[^>]+>\s*([0-9]\.[0-9]{1,2})/i,
+    /(?:Rating|Score)\s*:?\s*([0-9]\.[0-9]{1,2})\s*\/\s*10/i,
+    /(?:Rating|Score)\s*:?\s*([0-9]\.[0-9]{1,2})\s*(?:out of 10|stars)?/i,
+  ];
+
+  for (const regex of classMatches) {
+    const m = html.match(regex);
+    if (m) {
+      const val = parseFloat(m[1]);
+      if (val >= 1 && val <= 10) return val;
+    }
+  }
+
+  return null;
+}
+
 export async function scrapeDirectSources(
   sources: { name: string; url: string }[],
   title?: string,
@@ -943,11 +993,14 @@ export async function scrapeDirectSources(
       }
       anySourceWorked = true;
 
+      const detectedRating = extractRatingFromHtml(html, res.url || src.url);
+
       sourceResults.push({
         name: sourceName,
         url: src.url,
         latestChapterNumber: String(chapters[0].number),
         ...(chapters[0].releasedAt ? { latestChapterAt: chapters[0].releasedAt } : {}),
+        ...(detectedRating ? { rating: String(detectedRating) } : {}),
       });
 
       for (const ch of chapters) {
@@ -1019,6 +1072,13 @@ export async function scrapeDirectSources(
     const latestReleaseAt = highestEntry?.releasedAt;
     const latestReleaseName = highestEntry?.sourceName;
 
+    const detectedRatings = orderedSourceResults
+      .map((s) => parseFloat(s.rating || ''))
+      .filter((r) => !Number.isNaN(r) && r > 0);
+    const highestRating = detectedRatings.length
+      ? String(Math.max(...detectedRatings))
+      : undefined;
+
     return {
       success: true,
       sourceName: bestSourceName,
@@ -1027,6 +1087,7 @@ export async function scrapeDirectSources(
       latestReleaseAt,
       latestReleaseName,
       sourceResults: orderedSourceResults,
+      highestRating,
       sourceIssues,
       detectedChapters: sorted,
       message: `Successfully detected ${sorted.length} chapter(s). Latest is Chapter ${overallHighest}${latestReleaseName ? ` (most recently reported by ${latestReleaseName})` : ''}.`,

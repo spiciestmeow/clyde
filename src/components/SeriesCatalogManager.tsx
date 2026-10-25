@@ -58,6 +58,7 @@ type LinkDraft = {
   isSample: boolean;
   latestChapterNumber?: string;
   latestChapterAt?: string;
+  rating?: string;
 };
 
 type FormDraft = {
@@ -82,6 +83,7 @@ type FormDraft = {
   sources: LinkDraft[];
   chapters?: SeriesRecord['chapters'];
   facts?: Record<string, string | null>;
+  rating?: string;
 };
 
 const ALL_GENRES = [
@@ -140,6 +142,7 @@ const initialFormDraft = (): FormDraft => ({
   sources: [],
   chapters: [],
   facts: {},
+  rating: '',
 });
 
 const TITLE_EDITOR_SESSION_KEY = 'comix-admin-title-editor-v1';
@@ -408,6 +411,7 @@ export default function SeriesCatalogManager({
             // Replace stale release dates as well as chapter counts. An
             // unavailable date should stay unknown, not retain a prior sync time.
             latestChapterAt: scanResult.latestChapterAt,
+            rating: scanResult.rating || source.rating,
           };
         });
         const nextFacts = {
@@ -822,6 +826,7 @@ export default function SeriesCatalogManager({
         tags: draft.tags,
         trackers: draft.trackers.filter((t) => t.name && t.url),
         sources: draft.sources.filter((s) => s.name && s.url),
+        rating: draft.rating || undefined,
         chapters: draft.chapters,
         facts: { ...(draft.facts || {}), type: draft.category || 'Manga' },
       };
@@ -849,6 +854,7 @@ export default function SeriesCatalogManager({
         tags: draft.tags.length ? draft.tags : undefined,
         trackers: draft.trackers.filter((t) => t.name && t.url),
         sources: draft.sources.filter((s) => s.name && s.url),
+        rating: draft.rating || undefined,
         chapters: draft.chapters,
         facts: { ...(draft.facts || {}), type: draft.category || 'Manga' },
       };
@@ -1793,6 +1799,21 @@ export default function SeriesCatalogManager({
                     }));
                   }}
                 />
+                <input
+                  type="text"
+                  className="text-input"
+                  style={{ width: '90px', flex: '0 0 auto' }}
+                  placeholder="⭐ 9.5"
+                  title="Source rating (e.g. 9.5)"
+                  value={source.rating || ''}
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    setDraft((c) => ({
+                      ...c,
+                      sources: c.sources.map((s, i) => (i === idx ? { ...s, rating: val } : s)),
+                    }));
+                  }}
+                />
                 <button
                   type="button"
                   className="btn-icon-danger"
@@ -2051,9 +2072,10 @@ export default function SeriesCatalogManager({
                             formats: series.formats || [],
                             tags: series.tags || [],
                             trackers: series.trackers ? series.trackers.map((t) => ({ ...t, logo: t.logo || '', isSample: !!t.isSample })) : [],
-                            sources: series.sources ? series.sources.map((s) => ({ ...s, logo: s.logo || '', isSample: !!s.isSample })) : [],
+                            sources: series.sources ? series.sources.map((s) => ({ ...s, logo: s.logo || '', isSample: !!s.isSample, rating: s.rating || '' })) : [],
                             chapters: series.chapters || [],
                             facts: series.facts || {},
+                            rating: series.rating || '',
                           });
                           setImportUrl('');
                           setImportError(null);
