@@ -59,10 +59,10 @@ export function extractMangaDexId(rawInput: string): string {
 export async function fetchMangaDexDetails(rawInput: string): Promise<MangaDexImportData> {
   const trimmed = rawInput.trim();
   if (!trimmed) {
-    throw new Error('Please enter a MangaDex or MangaBaka link.');
+    throw new Error('Please enter a MangaDex, MangaBaka, or MangaUpdates link.');
   }
 
-  // Try unified backend import endpoint first (handles MangaDex & MangaBaka server-side)
+  // Try unified backend import endpoint first (handles MangaDex, MangaBaka & MangaUpdates server-side)
   try {
     const apiRes = await fetch('/api/import-series', {
       method: 'POST',
@@ -108,6 +108,13 @@ export async function fetchMangaDexDetails(rawInput: string): Promise<MangaDexIm
     if (err?.message && !err.message.includes('fetch failed')) {
       throw err;
     }
+  }
+
+  if (trimmed.includes('mangabaka.')) {
+    throw new Error('Could not connect to MangaBaka import service. Please try again.');
+  }
+  if (trimmed.includes('mangaupdates.')) {
+    throw new Error('Could not connect to MangaUpdates import service. Please try again.');
   }
 
   const id = extractMangaDexId(rawInput);

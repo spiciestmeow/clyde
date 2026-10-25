@@ -402,6 +402,231 @@ async function importFromMangaBaka(urlOrId: string): Promise<ImportedSeriesData>
   };
 }
 
+// 3. MangaUpdates Import Handler
+async function importFromMangaUpdates(urlOrId: string): Promise<ImportedSeriesData> {
+  const trimmed = urlOrId.trim();
+  let numericId: string | null = null;
+  let slug = '';
+
+  // Format 1: series.html?id=123456
+  const queryMatch = trimmed.match(/series\.html\?id=(\d+)/i);
+  if (queryMatch) {
+    numericId = queryMatch[1];
+  }
+
+  // Format 2: /series/([a-z0-9]+)(?:/([^/?#]+))?
+  const pathMatch = trimmed.match(/mangaupdates\.com\/series\/([a-z0-9]+)(?:\/([^/?#]+))?/i);
+  if (pathMatch) {
+    const rawCode = pathMatch[1];
+    slug = pathMatch[2] || '';
+    if (/^\d+$/.test(rawCode)) {
+      numericId = rawCode;
+    } else {
+      try {
+        const parsed = parseInt(rawCode, 36);
+        if (!Number.isNaN(parsed) && parsed > 0) {
+          numericId = String(parsed);
+        }
+      } catch {}
+    }
+  }
+
+  // Format 3: Bare numeric or alphanumeric ID
+  if (!numericId && !slug && /^[a-z0-9]+$/i.test(trimmed)) {
+    if (/^\d+$/.test(trimmed)) {
+      numericId = trimmed;
+    } else {
+      const parsed = parseInt(trimmed, 36);
+      if (!Number.isNaN(parsed) && parsed > 0) {
+        numericId = String(parsed);
+      }
+    }
+  }
+
+  let detail: any = null;
+
+  // Try direct ID fetch first
+  if (numericId) {
+    try {
+      const res = await fetch(`https://api.mangaupdates.com/v1/series/${numericId}`, {
+        headers: {
+          'User-Agent': 'VortexScans/1.0 (contact@vortexscans.org)',
+          Accept: 'application/json',
+        },
+      });
+      if (res.ok) {
+        detail = await res.json();
+      }
+    } catch {}
+  }
+
+  // Fallback: If ID lookup failed or 404'd, search by slug / title
+  if (!detail && slug) {
+    try {
+      const searchTitle = slug.replace(/[-_]+/g, ' ').trim();
+      const searchRes = await fetch('https://api.mangaupdates.com/v1/series/search', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'User-Agent': 'VortexScans/1.0 (contact@vortexscans.org)',
+        },
+        body: JSON.stringify({ search: searchTitle, stype: 'title' }),
+      });
+      if (searchRes.ok) {
+        const searchData = await searchRes.json();
+        const firstHit = searchData.results?.[0]?.record;
+        if (firstHit?.series_id) {
+          const detailRes = await fetch(`https://api.mangaupdates.com/v1/series/${firstHit.series_id}`, {
+            headers: {
+              'User-Agent': 'VortexScans/1.0 (contact@vortexscans.org)',
+              Accept: 'application/json',
+            },
+          });
+          if (detailRes.ok) {
+            detail = await detailRes.json();
+          }
+        }
+      }
+    } catch {}
+  }
+
+  if (!detail) {
+    throw new Error('Unable to find series on MangaUpdates. Please verify the URL or ID.');
+  }
+
+  const title = (detail.title || '').trim();
+  const alternateTitles: string[] = [];
+  if (Array.isArray(detail.associated)) {
+    for (const a of detail.associated) {
+      const alt = a.title?.trim();
+      if (alt && !alternateTitles.includes(alt) && alt !== title) {
+        alternateTitles.push(alt);
+      }
+    }
+  }
+
+  const description = (detail.description || '').trim();
+
+  const authors: string[] = [];
+  const artists: string[] = [];
+  if (Array.isArray(detail.authors)) {
+    for (const a of detail.authors) {
+      const name = (a.name || '').trim();
+      if (!name) continue;
+      if (a.type === 'Artist') {
+        if (!artists.includes(name)) artists.push(name);
+      } else {
+        if (!authors.includes(name)) authors.push(name);
+      }
+    }
+  }
+
+  const publishers: string[] = [];
+  if (Array.isArray(detail.publishers)) {
+    for (const p of detail.publishers) {
+      const pub = (p.publisher_name || '').trim();
+      if (pub && !publishers.includes(pub)) publishers.push(pub);
+    }
+  }
+
+  let type = detail.type || 'Manga';
+  if (type === 'Webtoon') type = 'Manhwa';
+
+  // Content rating derivation
+  let contentRating = 'Safe';
+  const allGenreCatNames = [
+    ...(detail.genres?.map((g: any) => g.genre) || []),
+    ...(detail.categories?.map((c: any) => c.category) || []),
+  ].map((s: string) => String(s).toLowerCase());
+
+  if (allGenreCatNames.some((c: string) => c.includes('hentai') || c.includes('pornographic'))) {
+    contentRating = 'Pornographic';
+  } else if (allGenreCatNames.some((c: string) => c.includes('adult') || c.includes('mature') || c.includes('smut'))) {
+    contentRating = 'Erotica';
+  } else if (allGenreCatNames.some((c: string) => c.includes('ecchi') || c.includes('suggestive'))) {
+    contentRating = 'Suggestive';
+  }
+
+  // Status mapping
+  const rawStatus = (detail.status || '').toLowerCase();
+  let status = 'Releasing';
+  if (rawStatus.includes('complete')) status = 'Completed';
+  else if (rawStatus.includes('hiatus')) status = 'Hiatus';
+  else if (rawStatus.includes('cancel')) status = 'Cancelled';
+
+  const year = detail.year ? String(detail.year).trim() : '';
+
+  let originalLanguage = 'Japanese';
+  if (type === 'Manhwa') originalLanguage = 'Korean';
+  else if (type === 'Manhua') originalLanguage = 'Chinese';
+  else if (type === 'Comic') originalLanguage = 'English';
+
+  const demographics: string[] = [];
+  const rawDemos = ['Shounen', 'Shoujo', 'Seinen', 'Josei'];
+  for (const g of detail.genres || []) {
+    const match = rawDemos.find((d) => d.toLowerCase() === g.genre?.toLowerCase());
+    if (match && !demographics.includes(match)) demographics.push(match);
+  }
+
+  const genres: string[] = [];
+  for (const g of detail.genres || []) {
+    const match = GENRES_LIST.find((gl) => gl.toLowerCase() === g.genre?.toLowerCase());
+    if (match && !genres.includes(match)) genres.push(match);
+  }
+
+  const tags: string[] = [];
+  for (const c of detail.categories || []) {
+    const cat = (c.category || '').trim();
+    if (cat && !tags.includes(cat) && !genres.includes(cat) && !demographics.includes(cat)) {
+      tags.push(cat);
+    }
+  }
+
+  const coverUrl = detail.image?.url?.original || detail.image?.url?.thumb || undefined;
+
+  let rating: string | undefined;
+  if (typeof detail.bayesian_rating === 'number' && detail.bayesian_rating > 0) {
+    rating = detail.bayesian_rating.toFixed(1);
+  }
+
+  const trackerUrl = detail.url || (numericId ? `https://www.mangaupdates.com/series/${Number(numericId).toString(36)}` : trimmed);
+
+  const sources: { name: string; url: string }[] = [];
+  const linkRegex = /\[([^\]]+)\]\((https?:\/\/[^\s\)]+)\)/g;
+  let match: RegExpExecArray | null;
+  while ((match = linkRegex.exec(detail.description || '')) !== null) {
+    const name = match[1].trim();
+    const url = match[2].trim();
+    if (!url.includes('mangaupdates.com') && !sources.some((s) => s.url === url)) {
+      sources.push({ name, url });
+    }
+  }
+
+  return {
+    id: String(detail.series_id || numericId || ''),
+    source: 'mangaupdates',
+    title,
+    alternateTitles,
+    description,
+    authors,
+    artists,
+    publishers,
+    type,
+    contentRating,
+    status,
+    year,
+    originalLanguage,
+    demographics,
+    genres,
+    formats: [],
+    tags: tags.slice(0, 20),
+    coverUrl,
+    rating,
+    trackerUrl,
+    sources,
+  };
+}
+
 export default async function handler(
   request: ApiRequest,
   response: ApiResponse,
@@ -429,7 +654,7 @@ export default async function handler(
     }
 
     if (!inputUrl.trim()) {
-      response.status(400).json({ error: 'Please provide a MangaDex or MangaBaka URL.' });
+      response.status(400).json({ error: 'Please provide a MangaDex, MangaBaka, or MangaUpdates URL.' });
       return;
     }
 
@@ -438,6 +663,8 @@ export default async function handler(
 
     if (trimmed.includes('mangabaka.')) {
       result = await importFromMangaBaka(trimmed);
+    } else if (trimmed.includes('mangaupdates.')) {
+      result = await importFromMangaUpdates(trimmed);
     } else {
       result = await importFromMangaDex(trimmed);
     }

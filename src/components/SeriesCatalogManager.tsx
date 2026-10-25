@@ -683,7 +683,20 @@ export default function SeriesCatalogManager({
         cover: data.coverUrl || current.cover,
         rating: data.rating || current.rating,
         trackers: data.trackerUrl && !current.trackers.some((t) => t.url.includes(data.id))
-          ? [...current.trackers, { name: data.trackerUrl.includes('mangabaka') ? 'MangaBaka' : 'MangaDex', url: data.trackerUrl, logo: '', isSample: false, rating: data.rating }]
+          ? [
+              ...current.trackers,
+              {
+                name: data.trackerUrl.includes('mangabaka')
+                  ? 'MangaBaka'
+                  : data.trackerUrl.includes('mangaupdates')
+                  ? 'MangaUpdates'
+                  : 'MangaDex',
+                url: data.trackerUrl,
+                logo: '',
+                isSample: false,
+                rating: data.rating,
+              },
+            ]
           : current.trackers,
         sources: data.sources?.length
           ? [
@@ -1157,14 +1170,14 @@ export default function SeriesCatalogManager({
           <section className="form-card-section">
             <h2 className="section-title">Import from source</h2>
             <p className="section-description">
-              Paste a MangaDex link to auto-fill title, cover, and details. You can also upload your own cover.
+              Paste a MangaDex, MangaBaka, or MangaUpdates link to auto-fill title, cover, and details. You can also upload your own cover.
             </p>
 
             <div className="import-row">
               <input
                 type="text"
                 className="import-input"
-                placeholder="Paste MangaDex or MangaBaka URL"
+                placeholder="Paste MangaDex, MangaBaka, or MangaUpdates URL"
                 value={importUrl}
                 onChange={(e) => {
                   setImportUrl(e.target.value);
