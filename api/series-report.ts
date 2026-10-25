@@ -21,10 +21,15 @@ const SUPABASE_SERVER_KEY =
   process.env.SUPABASE_SERVICE_ROLE_KEY;
 
 const ISSUE_TYPES = new Set([
+  // Series-specific
   'Wrong chapter',
   'Poor image quality',
   'Inappropriate content',
   'Copyright issue',
+  // Homepage / general
+  'General Issue',
+  'Website Bug',
+  'Something Not Working',
   'Other',
 ]);
 
@@ -73,16 +78,25 @@ export default async function handler(request: ApiRequest, response: ApiResponse
 
   const seriesSlug = readString(body.seriesSlug, 200);
   const seriesTitle = readString(body.seriesTitle, 240);
-  const issueType = readString(body.issueType, 40);
+  const issueType = readString(body.issueType, 60);
+  const title = typeof body.title === 'string' ? body.title.trim() : '';
   const details = typeof body.details === 'string' ? body.details.trim() : '';
+  const source = body.source === 'homepage' ? 'homepage' : 'series';
 
   if (
-    !seriesSlug ||
-    !seriesTitle ||
     !issueType ||
     !ISSUE_TYPES.has(issueType) ||
-    details.length > 200
+    details.length > 5000 ||
+    title.length > 120
   ) {
+    response.status(400).json({
+      error: 'Please provide a valid issue type and details.',
+    });
+    return;
+  }
+
+  // Series reports require seriesSlug + seriesTitle
+  if (source === 'series' && (!seriesSlug || !seriesTitle)) {
     response.status(400).json({
       error: 'Please provide a valid series, issue type, and details (up to 200 characters).',
     });
@@ -116,10 +130,12 @@ export default async function handler(request: ApiRequest, response: ApiResponse
     }
 
     const { error: insertError } = await supabase.from('series_issue_reports').insert({
-      series_slug: seriesSlug,
-      series_title: seriesTitle,
+      ...(seriesSlug ? { series_slug: seriesSlug } : {}),
+      ...(seriesTitle ? { series_title: seriesTitle } : {}),
       issue_type: issueType,
+      ...(title ? { title } : {}),
       details,
+      source,
       requester_hash: requesterHash,
     });
 
