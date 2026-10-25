@@ -163,6 +163,12 @@ function readSet(key: string): string[] {
   }
 }
 
+function formatFavoriteCount(count: number): string {
+  if (count >= 1_000_000) return `${(count / 1_000_000).toFixed(1).replace(/\.0$/, '')}M`;
+  if (count >= 1_000) return `${(count / 1_000).toFixed(1).replace(/\.0$/, '')}K`;
+  return String(count);
+}
+
 function formatRelativeTime(timestamp: number): string {
   const diffMs = Date.now() - timestamp;
   const diffMin = Math.floor(diffMs / 60000);
@@ -245,7 +251,10 @@ export default function SeriesDetailPage() {
   const alternateTitleText = detail?.alternateTitles?.join(' / ') ?? '';
   const searchItems = useMemo(() => toSiteSearchItems(catalogQuery.items), [catalogQuery.items]);
   const trendingSearchItems = useMemo(() => toTrendingSiteSearchItems(catalogQuery.items), [catalogQuery.items]);
-  const [bookmarks, setBookmarks] = useState<string[]>([]);
+  const [bookmarks, setBookmarks] = useState<string[]>(() => readSet('vortex-series-bookmarks'));
+  const [favoriteCount, setFavoriteCount] = useState<number>(() => {
+    return parseInt(String(series?.favorites || '0').replace(/[^\d]/g, ''), 10) || 0;
+  });
   const [reaction, setReaction] = useState<ReactionKey | null>(() => {
     try {
       const savedReaction = localStorage.getItem(`vortex-reaction:${slug}`);
@@ -523,7 +532,14 @@ export default function SeriesDetailPage() {
     return () => window.clearInterval(id);
   }, []);
 
-  const bookmarked = !!series && bookmarks.includes(series.href);
+  const bookmarked = Boolean(series && (bookmarks.includes(series.slug) || bookmarks.includes(series.href)));
+
+  useEffect(() => {
+    if (series?.favorites !== undefined && series?.favorites !== null) {
+      setFavoriteCount(parseInt(String(series.favorites).replace(/[^\d]/g, ''), 10) || 0);
+    }
+  }, [series?.favorites]);
+
   const related = useMemo(() => {
     return catalogQuery.items
       .filter((item) => item.slug !== slug)
@@ -541,11 +557,43 @@ export default function SeriesDetailPage() {
       }));
   }, [catalogQuery.items, slug]);
 
-  const toggleBookmark = () => {
+  const toggleBookmark = async () => {
     if (!series) return;
-    const next = bookmarked ? bookmarks.filter((href) => href !== series.href) : [...bookmarks, series.href];
+    const nextBookmarked = !bookmarked;
+    const next = nextBookmarked
+      ? Array.from(new Set([...bookmarks, series.slug, series.href]))
+      : bookmarks.filter((id) => id !== series.slug && id !== series.href);
+
     setBookmarks(next);
-    try { localStorage.setItem('vortex-series-bookmarks', JSON.stringify(next)); } catch { /* storage may be unavailable */ }
+    try {
+      localStorage.setItem('vortex-series-bookmarks', JSON.stringify(next));
+    } catch {
+      /* storage may be unavailable */
+    }
+
+    // Optimistically update favorite count
+    setFavoriteCount((prev) => Math.max(0, prev + (nextBookmarked ? 1 : -1)));
+
+    // Sync to backend so everyone sees the updated favorite count
+    try {
+      const response = await fetch('/api/series-favorite', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          seriesSlug: series.slug,
+          action: nextBookmarked ? 'bookmark' : 'unbookmark',
+        }),
+      });
+      if (response.ok) {
+        const data = await response.json();
+        if (typeof data.favorites === 'number') {
+          setFavoriteCount(data.favorites);
+        }
+        void queryClient.invalidateQueries({ queryKey: ['series-catalog'] });
+      }
+    } catch (err) {
+      console.warn('Could not sync favorite count:', err);
+    }
   };
   const share = () => setShareModalOpen(true);
   const chooseReaction = (key: ReactionKey) => {
@@ -771,7 +819,7 @@ export default function SeriesDetailPage() {
           {seriesPageVisibility.reportIssue && <ReportCallout seriesSlug={slug} seriesTitle={title} />}
           {seriesPageVisibility.ratingStats && <div className="series-quick-stats">
             <div><Star size={15} fill="currentColor" /><strong>{detail?.rating ?? series.rating ?? '—'}</strong><small>Ratings</small></div>
-            <div><Bookmark size={15} fill="currentColor" /><strong>{detail?.favorites ?? '—'}</strong><small>Favorites</small></div>
+            <div><Bookmark size={15} fill="currentColor" /><strong>{formatFavoriteCount(favoriteCount)}</strong><small>Favorites</small></div>
           </div>}
           {seriesPageVisibility.seriesFacts && <section className="series-facts-panel" aria-label="Series information">
             <div className="series-facts-grid">{facts.map(([label, value]) => {

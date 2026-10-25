@@ -130,6 +130,7 @@
 .series-left-actions .series-action > span { white-space: nowrap; }
 .series-left-actions .series-action--primary { background: var(--series-red); color: white; }
 .series-left-actions .series-action--bookmark { background: var(--series-blue); color: white; }
+.series-left-actions .series-action--bookmark.is-saved { background: #16a34a; }
 .series-left-actions .series-action:disabled { opacity: .56; cursor: not-allowed; }
 .series-report { min-height: 0; display: flex; margin: clamp(6px, .52vw, 10px) 0 0; padding: 0; border: 0; border-radius: 3px; background: transparent; }
 .series-report-icon,.series-report-copy { display: none; }

@@ -64,11 +64,64 @@ function seriesReportDevMiddleware() {
   };
 }
 
+function seriesFavoriteDevMiddleware() {
+  return async (request: any, response: any, next: any) => {
+    const pathname = request.url ? new URL(request.url, 'http://localhost').pathname : '';
+    if (pathname !== '/api/series-favorite') {
+      next();
+      return;
+    }
+
+    let rawBody = '';
+    request.on('data', (chunk: Buffer) => {
+      rawBody += chunk.toString();
+    });
+    request.on('end', async () => {
+      if (response.writableEnded) return;
+
+      let body: unknown = {};
+      try {
+        body = rawBody ? JSON.parse(rawBody) : {};
+      } catch {
+        response.statusCode = 400;
+        response.setHeader('Content-Type', 'application/json');
+        response.end(JSON.stringify({ error: 'Invalid JSON request body.' }));
+        return;
+      }
+
+      const apiResponse = {
+        setHeader: response.setHeader.bind(response),
+        status(code: number) {
+          response.statusCode = code;
+          return apiResponse;
+        },
+        json(payload: unknown) {
+          response.setHeader('Content-Type', 'application/json');
+          response.end(JSON.stringify(payload));
+        },
+      };
+
+      try {
+        const { default: handler } = await import('./api/series-favorite.ts');
+        await handler({ method: request.method, headers: request.headers, body } as any, apiResponse as any);
+      } catch (error) {
+        console.error('Series favorite dev API failed:', error);
+        if (!response.writableEnded) {
+          response.statusCode = 500;
+          response.setHeader('Content-Type', 'application/json');
+          response.end(JSON.stringify({ error: 'Favorites are temporarily unavailable.' }));
+        }
+      }
+    });
+  };
+}
+
 function syncSourcesDevPlugin() {
   return {
     name: 'sync-sources-dev-server',
     configureServer(server: any) {
       server.middlewares.use(seriesReportDevMiddleware());
+      server.middlewares.use(seriesFavoriteDevMiddleware());
       server.middlewares.use(async (req: any, res: any, next: any) => {
         if (req.url && req.url.startsWith('/api/sync-direct-sources')) {
           try {
