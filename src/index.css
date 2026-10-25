@@ -1922,3 +1922,73 @@ main { padding-bottom: 38px; }
     --series-type-padding: 3px 7px;
   }
 }
+
+/* ===============================================================
+   Card Shimmer Effect for Initial Catalog Loading
+   =============================================================== */
+.card-shimmer {
+  position: relative;
+  overflow: hidden;
+  background: #19191e;
+}
+
+.card-shimmer::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  transform: translateX(-100%);
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(255, 255, 255, 0.08) 50%,
+    transparent 100%
+  );
+  animation: card-shimmer-sweep 1.5s infinite ease-in-out;
+}
+
+.theme-light .card-shimmer {
+  background: #ece8e3;
+}
+
+.theme-light .card-shimmer::after {
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(255, 255, 255, 0.65) 50%,
+    transparent 100%
+  );
+}
+
+@keyframes card-shimmer-sweep {
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .card-shimmer::after {
+    animation: none;
+  }
+}
+
+.popular-card--skeleton {
+  pointer-events: none;
+  user-select: none;
+}
+
+.popular-skeleton-title {
+  height: 18px;
+  width: 75%;
+  margin: 0 auto 6px;
+  border-radius: 6px;
+}
+
+.release-card--skeleton {
+  pointer-events: none;
+  user-select: none;
+}
+
+.rank-card--skeleton {
+  pointer-events: none;
+  user-select: none;
+}

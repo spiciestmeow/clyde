@@ -12,6 +12,11 @@ import HeroSlider from './components/HeroSlider';
 import { PopularNowCard, type PopularNowCardItem } from './components/PopularNowCard';
 import { MostPopularCard, type MostPopularCardItem } from './components/MostPopularCard';
 import { LatestReleaseCard } from './components/LatestReleaseCard';
+import {
+  PopularTodaySkeleton,
+  LatestReleasesSkeleton,
+  MostPopularSkeleton,
+} from './components/HomeSectionSkeletons';
 import { ContinueReadingSection, type ContinueReadingItem } from './components/ContinueReadingSection';
 import AdminPage from './pages/AdminPage';
 import SeriesDetailPage from './pages/SeriesDetailPage';
@@ -595,13 +600,17 @@ function HomePage() {
                 suppressRailClickUntilRef.current = 0;
               }
             }}
-          >{popularCards.map((card) => (
-            <PopularNowCard
-              key={card.href || card.title}
-              item={card}
-              imageSrc={assetUrl(card.src, 400)}
-            />
-          ))}</div><button className="rail-arrow left" onClick={() => railRef.current?.scrollBy({ left: -500, behavior: 'smooth' })} aria-label="Previous popular"><ArrowLeft /></button><button className="rail-arrow right" onClick={() => railRef.current?.scrollBy({ left: 500, behavior: 'smooth' })} aria-label="Next popular"><ArrowRight /></button></div>
+          >{catalogQuery.isLoading && seriesItems.length === 0 ? (
+            <PopularTodaySkeleton />
+          ) : (
+            popularCards.map((card) => (
+              <PopularNowCard
+                key={card.href || card.title}
+                item={card}
+                imageSrc={assetUrl(card.src, 400)}
+              />
+            ))
+          )}</div><button className="rail-arrow left" onClick={() => railRef.current?.scrollBy({ left: -500, behavior: 'smooth' })} aria-label="Previous popular"><ArrowLeft /></button><button className="rail-arrow right" onClick={() => railRef.current?.scrollBy({ left: 500, behavior: 'smooth' })} aria-label="Next popular"><ArrowRight /></button></div>
         </section>}
 
         {homepageVisibility.continueReading && continueReadingItems.length > 0 && (
@@ -610,14 +619,20 @@ function HomePage() {
 
         {homepageVisibility.latestReleases && <section className="latest-section content-width">
           <div className="latest-heading"><div className="section-title"><h2>Latest Releases</h2></div><div className="latest-tabs"><button className={filter === 'Latest' ? 'on' : ''} onClick={() => { setFilter('Latest'); setReleasePage(1); }}><RefreshCw size={15} />Latest</button><button className={filter === 'New' ? 'on' : ''} onClick={() => { setFilter('New'); setReleasePage(1); }}><Clock3 size={15} />New</button></div><a className="view-all" href="/latest-updates" aria-label="View All Latest Updates"><ArrowUpRight /></a></div>
-          <div className="release-grid">{pagedReleases.map((release) => (
-            <LatestReleaseCard
-              key={release.slug}
-              release={release}
-              imageSrc={assetUrl(release.cover, 300)}
-              variant="series"
-            />
-          ))}</div>
+          <div className="release-grid">
+            {catalogQuery.isLoading && seriesItems.length === 0 ? (
+              <LatestReleasesSkeleton />
+            ) : (
+              pagedReleases.map((release) => (
+                <LatestReleaseCard
+                  key={release.slug}
+                  release={release}
+                  imageSrc={assetUrl(release.cover, 300)}
+                  variant="series"
+                />
+              ))
+            )}
+          </div>
           {!catalogQuery.isLoading && !catalogQuery.isError && visibleReleases.length === 0 && <div className="series-data-status" role="status"><p>No series match this release filter yet.</p></div>}
           {visibleReleases.length > 0 && <div className="release-pagination-wrap">
             <nav className="release-pagination" aria-label={`${filter} release pages`}>
@@ -751,14 +766,18 @@ function HomePage() {
               </div>
             </div>
             <div className="popular-rank-grid">
-              {mostPopularItems.map((item, i) => (
-                <MostPopularCard
-                  key={item.title}
-                  item={item}
-                  imageSrc={assetUrl(item.src, 128)}
-                  rank={i + 1}
-                />
-              ))}
+              {catalogQuery.isLoading && seriesItems.length === 0 ? (
+                <MostPopularSkeleton />
+              ) : (
+                mostPopularItems.map((item, i) => (
+                  <MostPopularCard
+                    key={item.title}
+                    item={item}
+                    imageSrc={assetUrl(item.src, 128)}
+                    rank={i + 1}
+                  />
+                ))
+              )}
             </div>
           </section>
         )}
