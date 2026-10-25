@@ -74,7 +74,7 @@ export function SeriesReportIssue({ open, onOpenChange, seriesSlug, seriesTitle 
         </div>
 
         <form onSubmit={handleSubmit} className="flex min-h-0 flex-col">
-          <div className="min-h-0 flex-1 overflow-y-auto px-5 py-4 sm:px-6 sm:py-5">
+          <div className="min-h-0 flex-1 overflow-y-auto px-5 py-4 sm:px-6 sm:py-5 sm:[scrollbar-width:none] sm:[&::-webkit-scrollbar]:hidden">
             <fieldset>
               <legend className="mb-2.5 text-[10px] font-bold uppercase tracking-[.08em] text-[#817a74] sm:text-xs">What’s the issue?</legend>
               <div className="grid gap-2">
