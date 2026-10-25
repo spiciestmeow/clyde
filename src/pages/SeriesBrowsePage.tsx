@@ -318,13 +318,29 @@ export default function SeriesBrowsePage() {
       );
       // The captured catalog has chapter-lock data but no price flags, so this is the closest available proxy.
       const hasOnlyUnlockedCapturedChapters = item.chapters.length > 0 && !hasLockedChapter;
+
+      const itemStatusNorm = (item.status || '').trim().toLowerCase();
+      const filterStatusNorm = status.trim().toLowerCase();
+      const matchesStatus =
+        !seriesFilterVisibility.status ||
+        status === 'All' ||
+        itemStatusNorm === filterStatusNorm ||
+        ((filterStatusNorm === 'ongoing' || filterStatusNorm === 'releasing') &&
+          (itemStatusNorm === 'ongoing' || itemStatusNorm === 'releasing'));
+
+      const itemType = (item.category || item.facts?.type || 'Manhwa').trim().toLowerCase();
+      const matchesType =
+        !seriesFilterVisibility.type ||
+        selectedTypes.length === 0 ||
+        selectedTypes.some((t) => t.trim().toLowerCase() === itemType);
+
       return (!term || `${item.title} ${item.category} ${itemGenres.join(' ')}`.toLocaleLowerCase().includes(term)) &&
         (!seriesFilterVisibility.genres || (
           (includedGenres.length === 0 || includedGenres.some((genre) => itemGenres.includes(genre))) &&
           excludedGenres.every((genre) => !itemGenres.includes(genre))
         )) &&
-        (!seriesFilterVisibility.status || status === 'All' || item.status === status) &&
-        (!seriesFilterVisibility.type || selectedTypes.length === 0 || selectedTypes.includes(item.category) || selectedTypes.includes(item.facts.type ?? '')) &&
+        matchesStatus &&
+        matchesType &&
         (!seriesFilterVisibility.chapterCount || matchesChapterRange) &&
         (!seriesFilterVisibility.releaseDate || matchesDateRange) &&
         (!seriesFilterVisibility.availability || availability === 'Any' ||

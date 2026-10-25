@@ -823,7 +823,7 @@ export default function SeriesCatalogManager({
         trackers: draft.trackers.filter((t) => t.name && t.url),
         sources: draft.sources.filter((s) => s.name && s.url),
         chapters: draft.chapters,
-        facts: draft.facts,
+        facts: { ...(draft.facts || {}), type: draft.category || 'Manga' },
       };
       updateSeriesMutation.mutate(updatePayload);
     } else {
@@ -850,7 +850,7 @@ export default function SeriesCatalogManager({
         trackers: draft.trackers.filter((t) => t.name && t.url),
         sources: draft.sources.filter((s) => s.name && s.url),
         chapters: draft.chapters,
-        facts: draft.facts,
+        facts: { ...(draft.facts || {}), type: draft.category || 'Manga' },
       };
       createSeriesMutation.mutate(payload);
     }
