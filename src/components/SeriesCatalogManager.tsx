@@ -495,7 +495,7 @@ export default function SeriesCatalogManager({
   const filteredTitles = useMemo(() => {
     const filtered = catalogItems.filter((item) => {
       if (typeFilter !== 'All types') {
-        if ((item.category || '').toLowerCase() !== typeFilter.toLowerCase()) return false;
+        const itemType = (item.category || item.facts?.type || '').toLowerCase(); if (!itemType || itemType !== typeFilter.toLowerCase()) return false;
       }
       if (statusFilter !== 'All statuses') {
         const itemStatus = (item.status || '').toLowerCase();

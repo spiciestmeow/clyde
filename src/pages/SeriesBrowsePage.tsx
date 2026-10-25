@@ -35,6 +35,7 @@ import {
   type SiteSettings,
 } from '../lib/siteSettings';
 import { LatestReleaseCard, seriesToRelease } from '../components/LatestReleaseCard';
+import { BrowsePageSkeleton } from '../components/HomeSectionSkeletons';
 import assets from '../../clone-data/asset-references.json';
 import '../series-detail.css';
 import '../series-data-status.css';
@@ -441,7 +442,7 @@ export default function SeriesBrowsePage() {
         <h1><span aria-hidden="true" className="catalog-title-mark"><i /><i /><i /></span> Series</h1>
         <p>Explore a vast array of distinctive and exclusive works on our platform</p>
       </header>
-      {catalogQuery.isLoading && <div className="series-data-status" role="status"><p>Loading series from the catalog…</p></div>}
+      {catalogQuery.isLoading && catalogItems.length === 0 && <BrowsePageSkeleton />}
       {catalogQuery.isError && <div className="series-data-status" role="alert"><p>The series catalog could not be loaded. Please try again.</p><button type="button" onClick={() => void catalogQuery.refetch()}>Try again</button></div>}
       {!catalogQuery.isLoading && !catalogQuery.isError && <>
       <div className="catalog-search">

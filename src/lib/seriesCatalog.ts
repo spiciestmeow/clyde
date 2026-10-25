@@ -174,7 +174,7 @@ function toSeriesRecord(value: unknown): SeriesRecord {
     title: row.title,
     href: row.href,
     cover: row.cover ?? '',
-    category: row.category ?? 'Manhwa',
+    category: row.category || (row.facts?.type as string | null | undefined) || 'Manhwa',
     rating: getHighestSeriesRating(row.rating, row.sources, row.trackers),
     status: row.status ?? 'Ongoing',
     pinned: row.pinned ?? false,

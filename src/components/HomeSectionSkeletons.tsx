@@ -3,6 +3,30 @@
  * Replaces intrusive "Loading the series catalog…" banners with clean animated placeholders.
  */
 
+export function BrowsePageSkeleton({ count = 18 }: { count?: number }) {
+  return (
+    <div className="catalog-grid" aria-hidden="true">
+      {Array.from({ length: count }, (_, i) => (
+        <article
+          className="release-card release-card--series release-card--skeleton"
+          key={`browse-skel-${i}`}
+          aria-hidden="true"
+        >
+          <div className="release-cover card-shimmer" style={{ borderRadius: '8px' }} />
+          <div className="release-info" style={{ display: 'flex', flexDirection: 'column', gap: '7px', flex: 1, minWidth: 0, padding: '6px 0' }}>
+            <div className="card-shimmer" style={{ height: '14px', width: '85%', borderRadius: '5px' }} />
+            <div className="card-shimmer" style={{ height: '11px', width: '50%', borderRadius: '4px' }} />
+            <div className="release-boxes" style={{ marginTop: 'auto', display: 'flex', flexDirection: 'column', gap: '5px' }}>
+              <div className="card-shimmer" style={{ height: '28px', borderRadius: '6px' }} />
+              <div className="card-shimmer" style={{ height: '28px', borderRadius: '6px' }} />
+            </div>
+          </div>
+        </article>
+      ))}
+    </div>
+  );
+}
+
 export function PopularTodaySkeleton({ count = 8 }: { count?: number }) {
   return (
     <>
