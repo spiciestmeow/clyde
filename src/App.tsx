@@ -7,6 +7,7 @@ import SiteHeader from './components/SiteHeader';
 import { Shareable } from './components/Shareable';
 import { ReportIssue } from './components/ReportIssue';
 import NavigationProgress from './components/NavigationProgress';
+import { Toaster } from './components/ui/toaster';
 import HeroSlider from './components/HeroSlider';
 import { PopularNowCard, type PopularNowCardItem } from './components/PopularNowCard';
 import { MostPopularCard, type MostPopularCardItem } from './components/MostPopularCard';
@@ -474,7 +475,7 @@ function HomePage() {
           />
         }
       />
-      {catalogQuery.isLoading && seriesItems.length === 0 && <div className="series-data-status" role="status"><p>Loading the series catalog…</p></div>}
+      {/* Loading banner intentionally hidden — sections load progressively */}
       {catalogQuery.isError && <div className="series-data-status" role="alert"><p>The series catalog could not be loaded. Please try again.</p><button type="button" onClick={() => void catalogQuery.refetch()}>Try again</button></div>}
       <main>
         {homepageVisibility.featuredSeries && slides.length > 0 && (
@@ -866,6 +867,7 @@ function App() {
       <ScrollToTop />
       <ScrollUpActivityButton />
       <NavigationProgress />
+      <Toaster />
       <Switch>
         <Route path="/" component={HomePage} />
         <Route path={ADMIN_ROUTE} component={AdminPage} />

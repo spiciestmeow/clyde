@@ -27,7 +27,7 @@ export function Toaster() {
           </Toast>
         );
       })}
-      <ToastViewport />
+      <ToastViewport className="notification-read-toast-viewport" />
     </ToastProvider>
   );
 }

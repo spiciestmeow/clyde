@@ -1,5 +1,41 @@
-import { useEffect, useRef, useState, type TouchEvent } from 'react';
+import { useEffect, useRef, useState, type ImgHTMLAttributes, type TouchEvent } from 'react';
 import type { HeroSlide } from '../lib/siteSettings';
+
+interface HeroSlideImageProps extends ImgHTMLAttributes<HTMLImageElement> {
+  src: string;
+  srcSet?: string;
+  visible: boolean;
+}
+
+function HeroSlideImage({ src, srcSet, visible, ...imageProps }: HeroSlideImageProps) {
+  const imageRef = useRef<HTMLImageElement>(null);
+  const sourceKey = `${src}\u0000${srcSet || ''}`;
+  const [loadedSource, setLoadedSource] = useState<string | null>(null);
+  const isLoaded = loadedSource === sourceKey;
+
+  useEffect(() => {
+    const image = imageRef.current;
+    if (image?.complete && image.naturalWidth > 0) {
+      setLoadedSource(sourceKey);
+    }
+  }, [sourceKey]);
+
+  return (
+    <>
+      {visible && !isLoaded && (
+        <span className="hero-image-shimmer" aria-hidden="true" />
+      )}
+      <img
+        {...imageProps}
+        ref={imageRef}
+        src={src}
+        srcSet={srcSet}
+        onLoad={() => setLoadedSource(sourceKey)}
+        onError={() => setLoadedSource(sourceKey)}
+      />
+    </>
+  );
+}
 
 interface HeroSliderProps {
   slides: HeroSlide[];
@@ -99,12 +135,13 @@ export default function HeroSlider({ slides }: HeroSliderProps) {
                     }
                   }}
                 >
-                  <img
+                  <HeroSlideImage
                     src={slide.src}
                     srcSet={slide.srcset || undefined}
                     alt={slide.title || ''}
                     loading={index === currentIndex ? 'eager' : 'lazy'}
                     decoding="async"
+                    visible={positionClass !== 'is-hidden'}
                   />
                 </a>
               </div>

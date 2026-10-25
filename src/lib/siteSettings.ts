@@ -108,7 +108,7 @@ export const DEFAULT_HOMEPAGE_VISIBILITY: HomepageVisibility = {
   popularToday: true,
   continueReading: true,
   latestReleases: true,
-  collections: true,
+  collections: false,
   communityActivity: false,
   mostPopular: true,
   footer: true,

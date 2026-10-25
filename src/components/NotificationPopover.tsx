@@ -3,12 +3,16 @@ import {
   Bell,
   BookOpen,
   CheckCheck,
+  CircleCheck,
   Grid2X2,
   RefreshCw,
   Layers3,
   Trash2,
 } from 'lucide-react';
+import { useLocation } from 'wouter';
 import { supabase } from '../lib/supabase';
+import { toast } from '../hooks/use-toast';
+import NotificationLoadingSkeleton from './NotificationLoadingSkeleton';
 import './notification-popover.css';
 
 type NotificationCategory = 'Chapters' | 'Series';
@@ -17,6 +21,7 @@ type Filter = 'All' | NotificationCategory;
 type NotificationRow = {
   id: string;
   category: NotificationCategory;
+  series_id: number;
   series_title: string;
   series_slug: string;
   series_cover: string | null;
@@ -58,30 +63,64 @@ const filters: { label: Filter; Icon: typeof Grid2X2 }[] = [
 ];
 
 export default function NotificationPopover() {
+  const [, setLocation] = useLocation();
   const [open, setOpen] = useState(false);
   const [filter, setFilter] = useState<Filter>('All');
   const [items, setItems] = useState<NotificationRow[]>([]);
   const [readIds, setReadIds] = useState<Set<string>>(() => getStoredIds(READ_IDS_KEY));
   const [hiddenIds, setHiddenIds] = useState<Set<string>>(() => getStoredIds(HIDDEN_IDS_KEY));
+  const [isLoading, setIsLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const rootRef = useRef<HTMLDivElement>(null);
+  const listIsLoading = isLoading || refreshing;
 
-  const loadNotifications = useCallback(async () => {
-    if (!supabase) return;
-    const { data, error } = await supabase
-      .from('notifications')
-      .select('id, category, series_title, series_slug, series_cover, message, created_at')
-      .order('created_at', { ascending: false })
-      .limit(100);
-    if (error) {
-      console.error('Could not load notifications:', error.message);
-      return;
+  const loadNotifications = useCallback(async (showInitialLoading = false) => {
+    if (showInitialLoading) setIsLoading(true);
+    try {
+      if (!supabase) return;
+      const { data, error } = await supabase
+        .from('notifications')
+        .select('id, category, series_id, series_title, series_slug, series_cover, message, created_at')
+        .order('created_at', { ascending: false })
+        .limit(100);
+      if (error) {
+        console.error('Could not load notifications:', error.message);
+        return;
+      }
+
+      const notifications = (data ?? []) as NotificationRow[];
+      const missingCoverIds = [...new Set(
+        notifications
+          .filter((item) => !item.series_cover?.trim())
+          .map((item) => item.series_id),
+      )];
+
+      // Notifications keep a cover snapshot, but older rows (or a notification
+      // created before its cover was saved) may have an empty snapshot. Resolve
+      // those from the current catalog so the notification still shows artwork.
+      if (missingCoverIds.length > 0) {
+        const { data: series } = await supabase
+          .from('series')
+          .select('id, cover')
+          .in('id', missingCoverIds);
+        const coversBySeriesId = new Map(
+          (series ?? []).map((item) => [item.id as number, item.cover as string]),
+        );
+        setItems(notifications.map((item) => ({
+          ...item,
+          series_cover: item.series_cover?.trim() || coversBySeriesId.get(item.series_id) || '',
+        })));
+        return;
+      }
+
+      setItems(notifications);
+    } finally {
+      if (showInitialLoading) setIsLoading(false);
     }
-    setItems((data ?? []) as NotificationRow[]);
   }, []);
 
   useEffect(() => {
-    void loadNotifications();
+    void loadNotifications(true);
     const intervalId = window.setInterval(() => void loadNotifications(), 15_000);
     const handleFocus = () => void loadNotifications();
     window.addEventListener('focus', handleFocus);
@@ -108,6 +147,25 @@ export default function NotificationPopover() {
     return next;
   });
 
+  const openNotification = (item: NotificationRow) => {
+    const wasUnread = !readIds.has(item.id);
+    if (wasUnread) markRead(item.id);
+    setOpen(false);
+    if (wasUnread) {
+      toast({
+        title: 'Marked as read' as string,
+        description: (
+          <span className="notification-read-toast__content">
+            <CircleCheck aria-hidden="true" className="notification-read-toast__icon" size={18} />
+            <span>Marked as read</span>
+          </span>
+        ),
+        className: 'notification-read-toast',
+      });
+    }
+    if (item.series_slug) setLocation(`/series/${encodeURIComponent(item.series_slug)}`);
+  };
+
   const markAllRead = () => setReadIds((current) => {
     const next = new Set(current);
     items.filter((item) => !hiddenIds.has(item.id)).forEach((item) => next.add(item.id));
@@ -123,8 +181,20 @@ export default function NotificationPopover() {
   });
 
   const refresh = async () => {
+    if (refreshing) return;
+    const startedAt = Date.now();
     setRefreshing(true);
-    try { await loadNotifications(); } finally { setRefreshing(false); }
+    try {
+      await loadNotifications(true);
+    } finally {
+      // Keep the skeleton visible long enough to read, even when the request
+      // returns from cache almost immediately.
+      const remaining = 450 - (Date.now() - startedAt);
+      if (remaining > 0) {
+        await new Promise<void>((resolve) => window.setTimeout(resolve, remaining));
+      }
+      setRefreshing(false);
+    }
   };
 
   const renderItems = (group: NotificationRow[]) => group.map((item) => {
@@ -134,7 +204,7 @@ export default function NotificationPopover() {
         type="button"
         className={`notification-item${unread ? ' is-unread' : ''}`}
         key={item.id}
-        onClick={() => markRead(item.id)}
+        onClick={() => openNotification(item)}
       >
         <span className={`notification-item__thumbnail category-${item.category.toLowerCase()}`} aria-hidden="true">
           {item.series_cover ? <img src={item.series_cover} alt="" /> : (
@@ -142,9 +212,9 @@ export default function NotificationPopover() {
               {item.category === 'Chapters' ? <BookOpen size={19} /> : <Grid2X2 size={19} />}
             </span>
           )}
-          {unread && <span className="notification-item__type-badge">
+          <span className="notification-item__type-badge">
             {item.category === 'Chapters' ? <BookOpen size={12} /> : <Layers3 size={12} />}
-          </span>}
+          </span>
         </span>
         <span className="notification-item__copy">
           <span className="notification-item__text"><strong>{item.series_title}</strong> {item.message}</span>
@@ -223,13 +293,23 @@ export default function NotificationPopover() {
             ))}
           </nav>
 
-          <div className="notification-list" aria-live="polite">
-            {todayItems.length > 0 && <div className="notification-list__section">Today</div>}
-            {renderItems(todayItems)}
-            {earlierItems.length > 0 && <div className="notification-list__section">Earlier</div>}
-            {renderItems(earlierItems)}
-            {!visibleItems.length && (
-              <p className="notification-empty">You’re all caught up.</p>
+          <div className="notification-list" aria-live="polite" aria-busy={listIsLoading}>
+            {listIsLoading ? <NotificationLoadingSkeleton /> : (
+              <>
+                {todayItems.length > 0 && <div className="notification-list__section">Today</div>}
+                {renderItems(todayItems)}
+                {earlierItems.length > 0 && <div className="notification-list__section">Earlier</div>}
+                {renderItems(earlierItems)}
+                {!visibleItems.length && (
+                  <div className="notification-empty">
+                    <span className="notification-empty__icon" aria-hidden="true">
+                      <Bell size={20} />
+                    </span>
+                    <span className="notification-empty__title">You’re all caught up</span>
+                    <span className="notification-empty__subtitle">No new notifications</span>
+                  </div>
+                )}
+              </>
             )}
           </div>
 
