@@ -1,7 +1,6 @@
 import { useEffect, useState } from 'react';
 import type { ReactNode } from 'react';
 import {
-  Bell,
   Bookmark,
   ChevronDown,
   ChevronRight,
@@ -18,6 +17,7 @@ import {
 } from 'lucide-react';
 import { Link } from 'wouter';
 import HeroSpider from './HeroSpider';
+import NotificationPopover from './NotificationPopover';
 import {
   DEFAULT_HEADER_VISIBILITY,
   getCachedSiteSettings,
@@ -179,14 +179,7 @@ export default function SiteHeader({
             )}
 
             {headerVisibility.notifications && (
-              <Link
-                className="icon-pill"
-                href="/notifications"
-                aria-label="Notifications"
-                onClick={closeMenu}
-              >
-                <Bell size={18} />
-              </Link>
+              <NotificationPopover />
             )}
 
             {headerVisibility.theme && (
