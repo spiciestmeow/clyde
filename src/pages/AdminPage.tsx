@@ -276,20 +276,32 @@ function ComixLoginScreen({
     if (!supabase) return;
     setBusy(true);
     setFormError('');
+    try {
+      const response = await fetch('/api/admin/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: email.trim(), password }),
+      });
+      const result = await response.json().catch(() => ({}));
+      if (!response.ok || !result.session?.access_token || !result.session?.refresh_token) {
+        setFormError(result.error || 'Sign in failed. Check your admin email and password.');
+        return;
+      }
 
-    const { data, error } = await supabase.auth.signInWithPassword({
-      email: email.trim(),
-      password,
-    });
-
-    if (error || !data.session) {
-      setFormError('Sign in failed. Check your admin email and password.');
+      const { data, error } = await supabase.auth.setSession({
+        access_token: result.session.access_token,
+        refresh_token: result.session.refresh_token,
+      });
+      if (error || !data.session) {
+        setFormError('Sign in failed. Please try again.');
+        return;
+      }
+      onSignedIn(data.session);
+    } catch {
+      setFormError('Could not reach the sign-in service. Please try again.');
+    } finally {
       setBusy(false);
-      return;
     }
-
-    onSignedIn(data.session);
-    setBusy(false);
   };
 
   return (

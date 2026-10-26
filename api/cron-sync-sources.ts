@@ -81,7 +81,7 @@ export default async function handler(
     // 1. Fetch all series from catalog
     const { data: seriesList, error: fetchError } = await supabase
       .from('series')
-      .select('id, slug, title, chapters, facts, sources, alternate_titles')
+      .select('id, slug, title, chapters, facts, sources, alternate_titles, rating')
       .order('id', { ascending: true });
 
     if (fetchError || !seriesList) {
@@ -95,7 +95,7 @@ export default async function handler(
       title: string;
       previousChapter: string;
       newChapter: string;
-      releaseTime: string;
+      releaseTime: string | null;
       source: string;
     }[] = [];
 
@@ -254,7 +254,7 @@ export default async function handler(
               title: item.title,
               previousChapter: String(currentNum ?? 0),
               newChapter: String(detectedChNum),
-              releaseTime: releaseIso,
+              releaseTime: releaseIso ?? null,
               source: detectionSource,
             });
             logs.push(`[${item.title}] Updated: Ch.${currentNum ?? 'none'} -> Ch.${detectedChNum} (via ${detectionSource})`);

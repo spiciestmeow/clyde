@@ -19,7 +19,7 @@ npm run dev
 
 The frontend build does not need a separate API server. The Vercel API functions do need the runtime environment variables shown in `.env.example`; in particular, set `CRON_SECRET` and a server-only `SUPABASE_SERVICE_ROLE_KEY` (never prefix the service-role key with `VITE_`). Configure your scheduled caller to send `Authorization: Bearer <CRON_SECRET>`. The admin dashboard's manual sync uses a verified Supabase session and the `ADMIN_EMAIL` account.
 
-After deploying the code, run the updated `supabase/series-catalog.sql` and `supabase/series-bookmarks.sql` in the Supabase SQL editor. The first restricts catalog writes to the configured admin email (update the email in the SQL policy if needed); the second installs the atomic bookmark function and its rate-limit table. These database changes are required for the corresponding protections and bookmark API to work.
+After deploying the code, run `supabase/series-catalog.sql`, `supabase/series-bookmarks.sql`, and `supabase/admin-login-rate-limit.sql` in the Supabase SQL editor. The catalog script restricts catalog writes to the admin email (update the email in the SQL policy if needed); the bookmark script installs the atomic bookmark function and its rate-limit table; the login script installs the shared sign-in attempt counter. These database changes are required for the corresponding protections and APIs to work.
 
 ## Build checks
 
