@@ -54,17 +54,17 @@ drop policy if exists "Admin can add series" on public.series;
 create policy "Admin can add series"
   on public.series for insert
   to authenticated
-  with check (true);
+  with check (lower((select auth.jwt() ->> 'email')) = lower('clydhex@gmail.com'));
 
 drop policy if exists "Admin can update series" on public.series;
 create policy "Admin can update series"
   on public.series for update
   to authenticated
-  using (true)
-  with check (true);
+  using (lower((select auth.jwt() ->> 'email')) = lower('clydhex@gmail.com'))
+  with check (lower((select auth.jwt() ->> 'email')) = lower('clydhex@gmail.com'));
 
 drop policy if exists "Admin can delete series" on public.series;
 create policy "Admin can delete series"
   on public.series for delete
   to authenticated
-  using (true);
+  using (lower((select auth.jwt() ->> 'email')) = lower('clydhex@gmail.com'));

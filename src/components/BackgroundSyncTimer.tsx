@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Clock, RefreshCw, Zap, CheckCircle2 } from 'lucide-react';
+import { supabase } from '../lib/supabase';
 import './background-sync-timer.css';
 
 interface BackgroundSyncTimerProps {
@@ -91,7 +92,14 @@ export function BackgroundSyncTimer({ onManualTriggerSuccess }: BackgroundSyncTi
     setIsTriggeringNow(true);
     setTriggerStatus(null);
     try {
-      const res = await fetch('/api/cron-sync-sources');
+      const sessionResult = supabase ? await supabase.auth.getSession() : null;
+      const accessToken = sessionResult?.data.session?.access_token;
+      if (!accessToken) {
+        throw new Error('Admin sign-in required to run a manual sync.');
+      }
+      const res = await fetch('/api/cron-sync-sources', {
+        headers: { Authorization: `Bearer ${accessToken}` },
+      });
       const data = await res.json().catch(() => ({}));
       if (res.ok && data.success) {
         const msg = `Checked ${data.totalSeriesChecked || 0} series (${data.seriesUpdatedCount || 0} updated).`;

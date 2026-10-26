@@ -1,4 +1,5 @@
 import type { IncomingMessage, ServerResponse } from 'node:http';
+import { createHmac } from 'node:crypto';
 import { createClient } from '@supabase/supabase-js';
 
 interface ApiRequest extends IncomingMessage {
@@ -17,9 +18,6 @@ const SUPABASE_URL =
 const SUPABASE_SERVER_KEY =
   process.env.SUPABASE_SECRET_KEY ||
   process.env.SUPABASE_SERVICE_ROLE_KEY;
-
-// In-memory set to prevent rapid concurrent tap spam on serverless instances
-const activeVisitorBookmarks = new Set<string>();
 
 export default async function handler(request: ApiRequest, response: ApiResponse): Promise<void> {
   response.setHeader('Cache-Control', 'no-store, max-age=0');
@@ -50,106 +48,48 @@ export default async function handler(request: ApiRequest, response: ApiResponse
     response.status(400).json({ error: 'Missing series slug.' });
     return;
   }
+  if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(visitorId)) {
+    response.status(400).json({ error: 'A valid visitor ID is required.' });
+    return;
+  }
 
   try {
     const supabase = createClient(SUPABASE_URL, SUPABASE_SERVER_KEY, {
       auth: { persistSession: false },
     });
 
-    // 1. Fetch current series
-    const { data: currentSeries, error: fetchError } = await supabase
-      .from('series')
-      .select('id, favorites')
-      .eq('slug', seriesSlug)
-      .maybeSingle();
-
-    if (fetchError) throw fetchError;
-    if (!currentSeries) {
-      response.status(404).json({ error: 'Series not found.' });
+    const realIp = request.headers['x-real-ip'];
+    const forwardedFor = request.headers['x-forwarded-for'];
+    const rawIp = (Array.isArray(realIp) ? realIp[0] : realIp) ||
+      (!process.env.VERCEL ? (Array.isArray(forwardedFor) ? forwardedFor[0] : forwardedFor)?.split(',')[0]?.trim() : '') || '';
+    if (process.env.VERCEL && !rawIp) {
+      response.status(503).json({ error: 'Bookmark rate limiting is unavailable.' });
       return;
     }
+    const rateLimitSecret = process.env.BOOKMARK_RATE_LIMIT_SECRET || process.env.SESSION_SECRET || SUPABASE_SERVER_KEY;
+    const requesterHash = rawIp && rateLimitSecret
+      ? createHmac('sha256', rateLimitSecret).update(rawIp).digest('hex')
+      : null;
 
-    const currentCount = parseInt(String(currentSeries.favorites || '0').replace(/[^\d]/g, ''), 10) || 0;
-
-    // 2. Check if this anonymous visitor already voted
-    let hasVotedInDb: boolean | null = null;
-    if (visitorId) {
-      try {
-        const { data: vote, error: voteError } = await supabase
-          .from('series_bookmark_votes')
-          .select('visitor_id')
-          .eq('series_slug', seriesSlug)
-          .eq('visitor_id', visitorId)
-          .maybeSingle();
-
-        if (!voteError) {
-          hasVotedInDb = Boolean(vote);
-        }
-      } catch {
-        // Table may not exist yet
+    const { data: favorites, error } = await supabase.rpc('toggle_series_bookmark', {
+      p_series_slug: seriesSlug,
+      p_visitor_id: visitorId,
+      p_action: action,
+      p_requester_hash: requesterHash,
+    });
+    if (error) {
+      if (error.message.includes('rate limit')) {
+        response.status(429).json({ error: 'Too many bookmark changes. Please try again later.' });
+        return;
       }
-    }
-
-    const memoryKey = `${seriesSlug}:${visitorId}`;
-    const alreadyBookmarked = hasVotedInDb !== null
-      ? hasVotedInDb
-      : (visitorId ? activeVisitorBookmarks.has(memoryKey) : false);
-
-    // If visitor already bookmarked and action is bookmark, no-op (prevent multiple increments)
-    if (action === 'bookmark' && alreadyBookmarked) {
-      response.status(200).json({ ok: true, favorites: currentCount });
-      return;
-    }
-
-    // If visitor did not bookmark and action is unbookmark, no-op (prevent negative decrements)
-    if (action === 'unbookmark' && hasVotedInDb === false) {
-      response.status(200).json({ ok: true, favorites: currentCount });
-      return;
-    }
-
-    const newCount = action === 'bookmark' ? currentCount + 1 : Math.max(0, currentCount - 1);
-
-    // Update memory cache
-    if (visitorId) {
-      if (action === 'bookmark') {
-        activeVisitorBookmarks.add(memoryKey);
-      } else {
-        activeVisitorBookmarks.delete(memoryKey);
+      if (error.message.includes('Unknown series')) {
+        response.status(404).json({ error: 'Series not found.' });
+        return;
       }
+      throw error;
     }
 
-    // Update DB vote record if table exists
-    if (visitorId && hasVotedInDb !== null) {
-      try {
-        if (action === 'bookmark') {
-          await supabase.from('series_bookmark_votes').upsert({
-            series_slug: seriesSlug,
-            visitor_id: visitorId,
-          });
-        } else {
-          await supabase
-            .from('series_bookmark_votes')
-            .delete()
-            .eq('series_slug', seriesSlug)
-            .eq('visitor_id', visitorId);
-        }
-      } catch (voteErr) {
-        console.warn('Could not persist bookmark vote record:', voteErr);
-      }
-    }
-
-    // 3. Update series table
-    const { error: updateError } = await supabase
-      .from('series')
-      .update({
-        favorites: String(newCount),
-        updated_at: new Date().toISOString(),
-      })
-      .eq('id', currentSeries.id);
-
-    if (updateError) throw updateError;
-
-    response.status(200).json({ ok: true, favorites: newCount });
+    response.status(200).json({ ok: true, favorites: Number(favorites) });
   } catch (error) {
     console.error('Failed to update series favorite:', error);
     response.status(500).json({ error: 'Failed to update favorite count.' });

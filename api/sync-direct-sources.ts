@@ -1,4 +1,5 @@
 import type { IncomingMessage, ServerResponse } from 'node:http';
+import { fetchPublicPage } from './_lib/public-fetch.js';
 
 interface ApiRequest extends IncomingMessage {
   query?: Record<string, string>;
@@ -980,28 +981,13 @@ export async function scrapeDirectSources(
         continue;
       }
 
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 4000);
-
-      let res: Response;
-      try {
-        res = await fetch(src.url, {
-          signal: controller.signal,
-          headers: {
-            'User-Agent':
-              'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36',
-            Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
-          },
-        });
-      } finally {
-        clearTimeout(timeoutId);
-      }
+      const res = await fetchPublicPage(src.url);
 
       if (!res.ok) {
         sourceIssues.push({ name: sourceName, url: src.url, reason: `Site returned HTTP ${res.status}.` });
         continue;
       }
-      const html = await res.text();
+      const html = res.text;
 
       // Parse relative chapter URLs against the final URL after redirects.
       // Some scan sites switch between www and apex hosts or canonicalize
@@ -1176,6 +1162,14 @@ export default async function handler(
       response.status(400).json({
         success: false,
         message: 'No sources provided to scan.',
+      });
+      return;
+    }
+
+    if (sources.length > 10 || sources.some((source) => typeof source?.url !== 'string' || source.url.length > 2048)) {
+      response.status(400).json({
+        success: false,
+        message: 'Provide at most 10 source URLs, each no longer than 2048 characters.',
       });
       return;
     }

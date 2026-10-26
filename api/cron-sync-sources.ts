@@ -27,6 +27,8 @@ const SUPABASE_KEY =
   process.env.VITE_SUPABASE_ANON_KEY ||
   'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImlheG5xZ2pjZ2xoc2RuaWthenhjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTIzNDU3MTAsImV4cCI6MjEwNzkyMTcxMH0.vkRAjHvs5v8NG9BiCV_pH1eRQhEXLfhfePUETlL_w40';
 
+const ADMIN_EMAIL = (process.env.ADMIN_EMAIL || 'clydhex@gmail.com').trim().toLowerCase();
+
 export default async function handler(
   request: ApiRequest,
   response: ApiResponse,
@@ -40,17 +42,30 @@ export default async function handler(
     return;
   }
 
-  // Verify CRON_SECRET if configured in Vercel project
+  // Cron callers must prove the configured secret; dashboard callers must
+  // present a Supabase session belonging to the configured admin account.
   const cronSecret = process.env.CRON_SECRET;
-  if (cronSecret) {
-    const authHeader = request.headers.authorization;
-    if (authHeader !== `Bearer ${cronSecret}`) {
-      // Also allow test query param for manual testing ?secret=...
-      const url = new URL(request.url || '', 'http://localhost');
-      if (url.searchParams.get('secret') !== cronSecret) {
-        response.status(401).json({ error: 'Unauthorized: Invalid CRON_SECRET' });
+  const authHeader = request.headers.authorization;
+  const bearerToken = typeof authHeader === 'string' && authHeader.startsWith('Bearer ')
+    ? authHeader.slice(7)
+    : '';
+  const isAuthorizedCron = Boolean(cronSecret && bearerToken && bearerToken === cronSecret);
+
+  if (!isAuthorizedCron) {
+    if (!bearerToken || !ADMIN_EMAIL) {
+      response.status(cronSecret ? 401 : 503).json({ error: cronSecret ? 'Unauthorized.' : 'CRON_SECRET is not configured.' });
+      return;
+    }
+    try {
+      const authClient = createClient(SUPABASE_URL, SUPABASE_KEY, { auth: { persistSession: false } });
+      const { data, error } = await authClient.auth.getUser(bearerToken);
+      if (error || data.user?.email?.trim().toLowerCase() !== ADMIN_EMAIL) {
+        response.status(401).json({ error: 'Admin sign-in required.' });
         return;
       }
+    } catch {
+      response.status(401).json({ error: 'Admin sign-in required.' });
+      return;
     }
   }
 
