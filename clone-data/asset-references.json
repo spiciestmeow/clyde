@@ -738,51 +738,6 @@
     "class": "object-cover w-full h-full transition-transform duration-300 hover:scale-105"
   },
   {
-    "src": "https://storage.vortexscans.org/upload/2026/03/16/4c12bdb0-3f9d-443c-9b24-d7a3958c6d2f.webp",
-    "srcset": "",
-    "alt": "Character from the For beginners collection",
-    "width": "640",
-    "height": "640",
-    "loading": "lazy",
-    "class": "h-full w-full select-none object-cover transition-transform duration-300 group-hover:scale-105"
-  },
-  {
-    "src": "https://storage.vortexscans.org/upload/2026/03/16/68f62090-5f9e-4f28-bcbf-7a216057c8ab.webp",
-    "srcset": "",
-    "alt": "Character from the Top Picks collection",
-    "width": "640",
-    "height": "640",
-    "loading": "lazy",
-    "class": "h-full w-full select-none object-cover transition-transform duration-300 group-hover:scale-105"
-  },
-  {
-    "src": "https://storage.vortexscans.org/upload/2026/03/16/0ed81945-433a-4426-aa3f-4305e29836ae.webp",
-    "srcset": "",
-    "alt": "Character from the Fantasy Worlds collection",
-    "width": "640",
-    "height": "640",
-    "loading": "lazy",
-    "class": "h-full w-full select-none object-cover transition-transform duration-300 group-hover:scale-105"
-  },
-  {
-    "src": "https://storage.vortexscans.org/upload/2026/03/16/0c21c43b-a660-4285-b81f-9a8c7df48a80.webp",
-    "srcset": "",
-    "alt": "Character from the Marathon Reads collection",
-    "width": "640",
-    "height": "640",
-    "loading": "lazy",
-    "class": "h-full w-full select-none object-cover transition-transform duration-300 group-hover:scale-105"
-  },
-  {
-    "src": "https://storage.vortexscans.org/upload/2026/03/16/abb50df4-c462-4d4b-94e0-5c254ad2696e.webp",
-    "srcset": "",
-    "alt": "Character from the Completed Series collection",
-    "width": "640",
-    "height": "640",
-    "loading": "lazy",
-    "class": "h-full w-full select-none object-cover transition-transform duration-300 group-hover:scale-105"
-  },
-  {
     "src": "https://storage.vortexscans.org/upload/2026/01/16/7b9c7a67-aa8d-4804-b710-83c00cf41dec.webp",
     "srcset": "",
     "alt": "Naledi Nkonyeni",

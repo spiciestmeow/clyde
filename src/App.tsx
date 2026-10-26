@@ -56,7 +56,6 @@ const RELEASES_PER_PAGE = 36;
 const MAX_MOST_POPULAR_SERIES = 9;
 const MAX_POPULAR_SERIES = 20;
 const ADMIN_ROUTE = '/panel/7dbf9a4c2e81d603b5a7f0c9e4d2186a';
-const collections = manifest.slice(82, 87);
 type PaginationItem = number | 'ellipsis';
 function getPaginationItems(pageCount: number, currentPage: number): PaginationItem[] {
   if (pageCount <= 7) {
@@ -685,22 +684,16 @@ function HomePage() {
             </nav>
           </div>}
         </section>}
-        {homepageVisibility.collections && <section className="collection-section content-width"><div className="section-heading"><SectionTitle>Collections</SectionTitle><a className="round-more" href="/collections" aria-label="More collections"><ArrowUpRight size={18} /></a></div><div className="collection-grid">{collections.map((item, i) => {
-          const names = ['For beginners','Top Picks','Fantasy Worlds','Marathon Reads','Completed Series'];
-          const slug = ['for-beginners','top-picks','fantasy-worlds','marathon-reads','completed-series'][i];
-          return <a className="collection-card" href={`/collections/${slug}`} key={slug}><img src={assetUrl(item.src, 400)} alt={item.alt} loading="lazy" /><span>{names[i]}</span></a>;
-        })}</div></section>}
-
         {homepageVisibility.communityActivity && <section id="community" className="community-grid content-width">
           <div className="comments-panel"><div className="section-heading"><SectionTitle>Latest Comments</SectionTitle><a className="round-more" href="/community" aria-label="View all"><ArrowUpRight size={16} /></a></div>
             <div className="comment-list">
-              <a className="comment" href="/series/the-legend-of-the-northern-blade/chapter-56#comment-70118"><img src={assetUrl(manifest[87].src, 96)} alt="Naledi Nkonyeni" loading="lazy" /><div><b>Naledi Nkonyeni <time>2m</time></b><p>Look it's the bastard whose sister got turned into sprinkles.</p><small>The Legend of the Northern Blade — Chapter 56</small></div></a>
+              <a className="comment" href="/series/the-legend-of-the-northern-blade/chapter-56#comment-70118"><img src={assetUrl(manifest[82].src, 96)} alt="Naledi Nkonyeni" loading="lazy" /><div><b>Naledi Nkonyeni <time>2m</time></b><p>Look it's the bastard whose sister got turned into sprinkles.</p><small>The Legend of the Northern Blade — Chapter 56</small></div></a>
               <a className="comment" href="/series/the-black-haired-u.s.-army-general#comment-70117"><span className="initial-avatar">R</span><div><b>˚ . ೀreign ་༘࿐⋆｡˚ <time>10m</time></b><p>love how it intertwines real figures let down by the early romance i feel like it shouldve been implemented a little…</p><small>Black-Haired US Army General</small></div></a>
               <a className="comment" href="/series/lumberjack/chapter-1#comment-70116"><span className="initial-avatar">R</span><div><b>˚ . ೀreign ་༘࿐⋆｡˚ <time>10m</time></b><p>so much potential sitting right here, this is like discovering hand jumper when it had 5 chapters</p><small>Lumberjack — Chapter 1</small></div></a>
-              <a className="comment" href="/series/the-sword-saint-reincarnated-into-a-noble-mage-family/chapter-14#comment-70115"><img src={assetUrl(manifest[90].src, 96)} alt="Pure Rage" loading="lazy" /><div><b>Pure Rage <time>11m</time></b><p>Nah the swamp people thing is funny asf bc the age to enroll is 12 years old meaning they’ve been there for 10 to 15…</p><small>The Sword Saint Reincarnated into a Noble Mage Family — Chapter 14</small></div></a>
+              <a className="comment" href="/series/the-sword-saint-reincarnated-into-a-noble-mage-family/chapter-14#comment-70115"><img src={assetUrl(manifest[85].src, 96)} alt="Pure Rage" loading="lazy" /><div><b>Pure Rage <time>11m</time></b><p>Nah the swamp people thing is funny asf bc the age to enroll is 12 years old meaning they’ve been there for 10 to 15…</p><small>The Sword Saint Reincarnated into a Noble Mage Family — Chapter 14</small></div></a>
             </div>
           </div>
-          <aside className="members-panel"><div className="panel-heading"><h2>Top Members</h2><a href="/leaderboard" aria-label="View all"><ArrowUpRight size={15} /></a></div><a className="top-member" href="/profile/subwaysurf1_18smn"><img src={assetUrl(manifest[91].src, 96)} alt="Subwaysurf1" loading="lazy" /><span><b>Subwaysurf1</b><small>Level 19</small></span><strong>#1</strong></a><ol className="member-list"><li><span>2</span><img src={assetUrl(manifest[92].src, 64)} alt="Nitely" loading="lazy" />Nitely <b>#2</b></li><li><span>3</span><img src={assetUrl(manifest[93].src, 64)} alt="MR_VILLIAN" loading="lazy" />MR_VILLIAN <b>#3</b></li><li><span>4</span><img src={assetUrl(manifest[94].src, 64)} alt="Shin" loading="lazy" />Shin <b>#4</b></li><li><span>5</span><img src={assetUrl(manifest[95].src, 64)} alt="Lyr A" loading="lazy" />Lyr A <b>#5</b></li></ol></aside>
+          <aside className="members-panel"><div className="panel-heading"><h2>Top Members</h2><a href="/leaderboard" aria-label="View all"><ArrowUpRight size={15} /></a></div><a className="top-member" href="/profile/subwaysurf1_18smn"><img src={assetUrl(manifest[86].src, 96)} alt="Subwaysurf1" loading="lazy" /><span><b>Subwaysurf1</b><small>Level 19</small></span><strong>#1</strong></a><ol className="member-list"><li><span>2</span><img src={assetUrl(manifest[87].src, 64)} alt="Nitely" loading="lazy" />Nitely <b>#2</b></li><li><span>3</span><img src={assetUrl(manifest[88].src, 64)} alt="MR_VILLIAN" loading="lazy" />MR_VILLIAN <b>#3</b></li><li><span>4</span><img src={assetUrl(manifest[89].src, 64)} alt="Shin" loading="lazy" />Shin <b>#4</b></li><li><span>5</span><img src={assetUrl(manifest[90].src, 64)} alt="Lyr A" loading="lazy" />Lyr A <b>#5</b></li></ol></aside>
         </section>}
         {homepageVisibility.mostPopular && (
           <section className="most-popular content-width">

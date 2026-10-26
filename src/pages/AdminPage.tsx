@@ -110,7 +110,6 @@ const homepageVisibilityOptions: { key: keyof HomepageVisibility; label: string;
   { key: 'popularToday', label: 'Popular Today', description: 'Popular-series cover carousel.', group: 'Discovery' },
   { key: 'continueReading', label: 'Recently Viewed', description: 'Show series you recently opened on the homepage.', group: 'Discovery' },
   { key: 'latestReleases', label: 'Latest Releases', description: 'Recent series and chapter updates.', group: 'Discovery' },
-  { key: 'collections', label: 'Collections', description: 'Curated series collections.', group: 'Discovery' },
   { key: 'mostPopular', label: 'Most Popular', description: 'Ranked popular series list.', group: 'Discovery' },
   { key: 'communityActivity', label: 'Community activity', description: 'Latest comments and top members panels.', group: 'Community' },
   { key: 'footer', label: 'Site footer', description: 'Brand information and policy links at the bottom of the page.', group: 'Site information' },
@@ -433,6 +432,16 @@ function ComixDashboard({
   const totalChapters = useMemo(() => {
     return catalogItems.reduce((acc, s) => acc + (s.chapters?.length || 0), 0);
   }, [catalogItems]);
+  const totalGroups = useMemo(() => {
+    const names = new Set<string>();
+    catalogItems.forEach((series) => {
+      (series.sources || []).forEach((source) => {
+        const name = source.name?.trim().toLocaleLowerCase();
+        if (name) names.add(name);
+      });
+    });
+    return names.size;
+  }, [catalogItems]);
 
   // Site settings state
   const [settings, setSettings] = useState<SiteSettings | null>(null);
@@ -668,7 +677,7 @@ function ComixDashboard({
               <span className="comix-stat-label">Titles</span>
             </div>
             <div className="comix-stat-col">
-              <span className="comix-stat-number">1</span>
+              <span className="comix-stat-number">{totalGroups}</span>
               <span className="comix-stat-label">Groups</span>
             </div>
             <div className="comix-stat-col">
@@ -678,10 +687,6 @@ function ComixDashboard({
             <div className="comix-stat-col">
               <span className="comix-stat-number">0</span>
               <span className="comix-stat-label">Comments</span>
-            </div>
-            <div className="comix-stat-col">
-              <span className="comix-stat-number">5</span>
-              <span className="comix-stat-label">Collections</span>
             </div>
             <div className="comix-stat-col">
               <span className="comix-stat-number">0</span>
