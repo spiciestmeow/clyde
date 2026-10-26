@@ -30,6 +30,7 @@ import { formatScanlatorSeriesUrl } from '../lib/scanlatorLinks';
 import { getWinningChapterSource } from '../lib/sourcePriority';
 import { recordRecentlyViewedSeries } from '../lib/recentlyViewedSeries';
 import {
+  getAnonymousVisitorId,
   loadSeriesReactionState,
   loadSeriesSourceReactionState,
   toggleSeriesReaction,
@@ -267,6 +268,7 @@ export default function SeriesDetailPage() {
   const [sourceReactionCounts, setSourceReactionCounts] = useState<Record<string, number>>({});
   const [reactionBusy, setReactionBusy] = useState(false);
   const [sourceReactionBusy, setSourceReactionBusy] = useState<string[]>([]);
+  const [bookmarkBusy, setBookmarkBusy] = useState(false);
   const [siteSettings, setSiteSettings] = useState(() => getCachedSiteSettings());
   const [seriesPageVisibility, setSeriesPageVisibility] = useState(
     () => getCachedSiteSettings()?.seriesPage ?? DEFAULT_SERIES_PAGE_VISIBILITY,
@@ -558,7 +560,9 @@ export default function SeriesDetailPage() {
   }, [catalogQuery.items, slug]);
 
   const toggleBookmark = async () => {
-    if (!series) return;
+    if (!series || bookmarkBusy) return;
+    setBookmarkBusy(true);
+
     const nextBookmarked = !bookmarked;
     const next = nextBookmarked
       ? Array.from(new Set([...bookmarks, series.slug, series.href]))
@@ -582,6 +586,7 @@ export default function SeriesDetailPage() {
         body: JSON.stringify({
           seriesSlug: series.slug,
           action: nextBookmarked ? 'bookmark' : 'unbookmark',
+          visitorId: getAnonymousVisitorId(),
         }),
       });
       if (response.ok) {
@@ -593,6 +598,8 @@ export default function SeriesDetailPage() {
       }
     } catch (err) {
       console.warn('Could not sync favorite count:', err);
+    } finally {
+      setBookmarkBusy(false);
     }
   };
   const share = () => setShareModalOpen(true);
@@ -814,7 +821,7 @@ export default function SeriesDetailPage() {
           </div>}
           <div className="series-left-actions">
             {newestChapter && readChapterHref ? <a href={readChapterHref} className="series-action series-action--primary" target={firstSource ? '_blank' : undefined} rel={firstSource ? 'noopener noreferrer' : undefined}><span>Read {newestChapter.title}</span></a> : <button className="series-action series-action--primary" disabled title="No chapter link is available yet">Reading unavailable</button>}
-            <button className={`series-action series-action--bookmark${bookmarked ? ' is-saved' : ''}`} onClick={toggleBookmark} aria-pressed={bookmarked} data-testid="button-bookmark-series">{bookmarked ? <Check size={15} /> : <Bookmark size={15} />}{bookmarked ? 'Bookmarked' : 'Bookmark'}</button>
+            <button className={`series-action series-action--bookmark${bookmarked ? ' is-saved' : ''}`} onClick={toggleBookmark} aria-pressed={bookmarked} disabled={bookmarkBusy} data-testid="button-bookmark-series">{bookmarked ? <Check size={15} /> : <Bookmark size={15} />}{bookmarked ? 'Bookmarked' : 'Bookmark'}</button>
           </div>
           {seriesPageVisibility.reportIssue && <ReportCallout seriesSlug={slug} seriesTitle={title} />}
           {seriesPageVisibility.ratingStats && <div className="series-quick-stats">
