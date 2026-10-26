@@ -440,14 +440,15 @@
 /* Compact confirmation toast shown when an unread notification is first opened. */
 .notification-read-toast-viewport {
   position: fixed !important;
-  top: 16px !important;
+  top: 72px !important;
   right: auto !important;
   bottom: auto !important;
   left: 50% !important;
   z-index: 200 !important;
   display: flex !important;
-  width: min(356px, calc(100vw - 24px)) !important;
-  max-width: none !important;
+  width: fit-content !important;
+  min-width: 220px !important;
+  max-width: calc(100vw - 24px) !important;
   max-height: none !important;
   padding: 0 !important;
   transform: translateX(-50%);
@@ -459,11 +460,12 @@
 .notification-read-toast {
   position: relative;
   display: flex;
-  width: 100%;
+  width: fit-content;
+  min-width: 220px;
   min-height: 46px;
   align-items: center;
   justify-content: center;
-  padding: 0 20px;
+  padding: 0 18px;
   border: 1px solid #eee8e3;
   border-radius: 9999px;
   background: #fff;
@@ -473,13 +475,13 @@
 }
 
 .notification-read-toast > .grid {
-  width: 100%;
+  width: auto;
 }
 
 .notification-read-toast .notification-read-toast__content {
-  position: relative;
   display: flex;
-  width: 100%;
+  width: auto;
+  gap: 10px;
   min-height: 44px;
   align-items: center;
   justify-content: center;
@@ -494,8 +496,7 @@
 }
 
 .notification-read-toast__icon {
-  position: absolute;
-  left: 0;
+  flex: 0 0 auto;
   color: #10b981;
   stroke-width: 2.5;
 }

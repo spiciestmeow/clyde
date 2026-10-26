@@ -77,6 +77,18 @@ export default function NotificationPopover() {
   const lastLoadedAtRef = useRef<number>(0);
   const knownCoversRef = useRef<Map<number, string>>(new Map());
 
+  // Keep the badge and unread styling in sync if the header is recreated during
+  // client-side navigation, or if another tab marks notifications as read.
+  useEffect(() => {
+    const refreshReadState = () => setReadIds(getStoredIds(READ_IDS_KEY));
+    window.addEventListener('vortex-notification-read-change', refreshReadState);
+    window.addEventListener('storage', refreshReadState);
+    return () => {
+      window.removeEventListener('vortex-notification-read-change', refreshReadState);
+      window.removeEventListener('storage', refreshReadState);
+    };
+  }, []);
+
   const loadNotifications = useCallback(async (showInitialLoading = false) => {
     if (showInitialLoading) setIsLoading(true);
     try {
@@ -151,12 +163,17 @@ export default function NotificationPopover() {
   const earlierItems = visibleItems.filter((item) => Date.parse(item.created_at) < todayStart.getTime());
   const unreadCount = items.filter((item) => !hiddenIds.has(item.id) && !readIds.has(item.id)).length;
 
-  const markRead = (id: string) => setReadIds((current) => {
-    const next = new Set(current);
-    next.add(id);
+  const saveReadIds = (next: Set<string>) => {
     storeIds(READ_IDS_KEY, next);
-    return next;
-  });
+    setReadIds(next);
+    window.dispatchEvent(new Event('vortex-notification-read-change'));
+  };
+
+  const markRead = (id: string) => {
+    const next = new Set(readIds);
+    next.add(id);
+    saveReadIds(next);
+  };
 
   const openNotification = (item: NotificationRow) => {
     const wasUnread = !readIds.has(item.id);
@@ -164,7 +181,6 @@ export default function NotificationPopover() {
     setOpen(false);
     if (wasUnread) {
       toast({
-        title: 'Marked as read' as string,
         description: (
           <span className="notification-read-toast__content">
             <CircleCheck aria-hidden="true" className="notification-read-toast__icon" size={18} />
@@ -177,12 +193,11 @@ export default function NotificationPopover() {
     if (item.series_slug) setLocation(`/series/${encodeURIComponent(item.series_slug)}`);
   };
 
-  const markAllRead = () => setReadIds((current) => {
-    const next = new Set(current);
+  const markAllRead = () => {
+    const next = new Set(readIds);
     items.filter((item) => !hiddenIds.has(item.id)).forEach((item) => next.add(item.id));
-    storeIds(READ_IDS_KEY, next);
-    return next;
-  });
+    saveReadIds(next);
+  };
 
   const clearNotifications = () => setHiddenIds((current) => {
     const next = new Set(current);
