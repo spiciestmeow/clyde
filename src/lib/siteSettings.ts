@@ -10,7 +10,7 @@ export type HeaderVisibility = {
   notifications: boolean;
   theme: boolean;
   account: boolean;
-  discord: boolean;
+  facebook: boolean;
 };
 
 export type HomepageVisibility = {
@@ -99,7 +99,7 @@ export const DEFAULT_HEADER_VISIBILITY: HeaderVisibility = {
   notifications: true,
   theme: true,
   account: true,
-  discord: true,
+  facebook: true,
 };
 
 export const DEFAULT_HOMEPAGE_VISIBILITY: HomepageVisibility = {
@@ -170,6 +170,17 @@ function parseBooleanSettings<T extends Record<string, boolean>>(
   return result;
 }
 
+function parseHeaderVisibility(value: unknown): HeaderVisibility {
+  const header = parseBooleanSettings(value, DEFAULT_HEADER_VISIBILITY);
+  if (header.facebook === DEFAULT_HEADER_VISIBILITY.facebook && value && typeof value === 'object' && !Array.isArray(value)) {
+    const stored = value as Record<string, unknown>;
+    if (typeof stored.facebook !== 'boolean' && typeof stored.discord === 'boolean') {
+      header.facebook = stored.discord;
+    }
+  }
+  return header;
+}
+
 export function parseHeroSlides(value: unknown): HeroSlide[] {
   if (!Array.isArray(value)) return [...DEFAULT_HERO_SLIDES];
   const slides = value
@@ -190,7 +201,7 @@ function parseSiteSettings(value: unknown): SiteSettings | null {
   if (!value || typeof value !== 'object' || Array.isArray(value)) return null;
 
   const stored = value as Record<string, unknown>;
-  const header = parseBooleanSettings(stored, DEFAULT_HEADER_VISIBILITY);
+  const header = parseHeaderVisibility(stored);
   const homepage = parseBooleanSettings(stored.homepage_sections, DEFAULT_HOMEPAGE_VISIBILITY);
   const seriesPage = parseBooleanSettings(stored.series_page_sections, DEFAULT_SERIES_PAGE_VISIBILITY);
   const seriesFilters = parseBooleanSettings(stored.series_filter_sections, DEFAULT_SERIES_FILTER_VISIBILITY);
@@ -223,7 +234,7 @@ export function getCachedSiteSettings(): SiteSettings | null {
     if (!value || typeof value !== 'object' || Array.isArray(value)) return null;
 
     const cached = value as Record<string, unknown>;
-    const header = parseBooleanSettings(cached.header, DEFAULT_HEADER_VISIBILITY);
+    const header = parseHeaderVisibility(cached.header);
     const homepage = parseBooleanSettings(cached.homepage, DEFAULT_HOMEPAGE_VISIBILITY);
     const seriesPage = parseBooleanSettings(cached.seriesPage, DEFAULT_SERIES_PAGE_VISIBILITY);
     const seriesFilters = parseBooleanSettings(cached.seriesFilters, DEFAULT_SERIES_FILTER_VISIBILITY);

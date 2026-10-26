@@ -125,7 +125,7 @@ const headerVisibilityOptions: { key: keyof HeaderVisibility; label: string; des
   { key: 'notifications', label: 'Notifications', description: 'Updates and activity notifications.', group: 'Reader tools' },
   { key: 'theme', label: 'Theme control', description: 'Light and dark appearance control.', group: 'Reader tools' },
   { key: 'account', label: 'Account', description: 'Sign in and account access.', group: 'Reader tools' },
-  { key: 'discord', label: 'Discord', description: 'Direct link to the Clydee Discord.', group: 'Community' },
+  { key: 'facebook', label: 'Facebook', description: 'Facebook icon in the site header. Uses the Join Our Socials URL.', group: 'Community' },
 ];
 
 const seriesPageVisibilityOptions: { key: keyof SeriesPageVisibility; label: string; description: string; group: string }[] = [

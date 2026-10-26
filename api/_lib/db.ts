@@ -10,7 +10,7 @@ export const DEFAULT_HEADER_VISIBILITY = {
   notifications: true,
   theme: true,
   account: true,
-  discord: true,
+  facebook: true,
 } as const;
 
 export type HeaderVisibility = typeof DEFAULT_HEADER_VISIBILITY;
@@ -42,10 +42,13 @@ export function parseHeaderVisibility(value: unknown): HeaderVisibility | null {
 
   const record = value as Record<string, unknown>;
   const keys = Object.keys(DEFAULT_HEADER_VISIBILITY) as (keyof HeaderVisibility)[];
-  if (Object.keys(record).length !== keys.length) return null;
-  if (keys.some((key) => typeof record[key] !== 'boolean')) return null;
+  const legacyKeys = keys.map((key) => key === 'facebook' ? 'discord' : key);
+  const isLegacyShape = typeof record.facebook !== 'boolean' && typeof record.discord === 'boolean';
+  const inputKeys = isLegacyShape ? legacyKeys : keys;
+  if (Object.keys(record).length !== inputKeys.length) return null;
+  if (inputKeys.some((key) => typeof record[key] !== 'boolean')) return null;
 
-  return Object.fromEntries(keys.map((key) => [key, record[key]])) as HeaderVisibility;
+  return Object.fromEntries(keys.map((key, index) => [key, record[inputKeys[index]]])) as HeaderVisibility;
 }
 
 export async function getSiteSettings(): Promise<SiteSettings> {

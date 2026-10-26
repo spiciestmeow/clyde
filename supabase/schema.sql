@@ -13,7 +13,7 @@ create table if not exists public.site_settings (
     "notifications": true,
     "theme": true,
     "account": true,
-    "discord": true
+    "facebook": true
   }'::jsonb,
   updated_at timestamptz not null default now()
 );
