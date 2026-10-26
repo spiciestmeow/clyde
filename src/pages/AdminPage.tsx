@@ -24,6 +24,7 @@ import {
   Menu,
   MessageSquare,
   Moon,
+  Palette,
   Radio,
   RefreshCw,
   Rss,
@@ -45,6 +46,7 @@ import {
   getSiteSettings,
   saveSiteSettings,
   type HeaderVisibility,
+  type AccentTheme,
   type HomepageVisibility,
   type SeriesFilterVisibility,
   type SeriesPageVisibility,
@@ -423,7 +425,7 @@ function ComixDashboard({
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const [profileMenuOpen, setProfileMenuOpen] = useState(false);
   const profileMenuRef = useRef<HTMLDivElement>(null);
-  const [settingsSubTab, setSettingsSubTab] = useState<'homepage' | 'header' | 'series' | 'filters' | 'socials'>('homepage');
+  const [settingsSubTab, setSettingsSubTab] = useState<'homepage' | 'header' | 'series' | 'filters' | 'socials' | 'theme'>('homepage');
   const [topSearch, setTopSearch] = useState('');
 
   // Series catalog stats
@@ -501,6 +503,25 @@ function ComixDashboard({
     }
   };
 
+  const saveAccentTheme = async (accentTheme: AccentTheme) => {
+    if (!settings || savingSettings || settings.accentTheme === accentTheme) return;
+    const previousSettings = settings;
+    const nextSettings: SiteSettings = { ...settings, accentTheme };
+    setSettings(nextSettings);
+    setSavingSettings(true);
+    setSaveMessage('Saving...');
+    try {
+      const saved = await saveSiteSettings(nextSettings);
+      setSettings(saved);
+      setSaveMessage('Saved');
+    } catch {
+      setSettings(previousSettings);
+      setSaveMessage('Error saving');
+    } finally {
+      setSavingSettings(false);
+    }
+  };
+
   const handleToggle = async (
     category: 'homepage' | 'header' | 'seriesPage' | 'seriesFilters',
     key: string,
@@ -559,7 +580,7 @@ function ComixDashboard({
 
   // User display name from email or metadata
   const userInitial = (session.user.email?.[0] || 'S').toUpperCase();
-  const displayName = session.user.user_metadata?.full_name || 'Spain Crew';
+  const displayName = session.user.user_metadata?.full_name || 'Caysterize';
 
   return (
     <div className={`comix-admin-wrapper theme-${theme}`}>
@@ -944,6 +965,13 @@ function ComixDashboard({
                   >
                     Social Links
                   </button>
+                  <button
+                    type="button"
+                    className={`comix-sub-tab ${settingsSubTab === 'theme' ? 'is-active' : ''}`}
+                    onClick={() => setSettingsSubTab('theme')}
+                  >
+                    Theme
+                  </button>
                 </div>
 
                 {settings && settingsSubTab === 'homepage' && (
@@ -1116,6 +1144,43 @@ function ComixDashboard({
                             {savingSettings ? 'Saving...' : 'Save Link'}
                           </button>
                         </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {settings && settingsSubTab === 'theme' && (
+                  <div className="comix-setting-group">
+                    <div className="comix-group-title">Site accent theme</div>
+                    <p className="comix-theme-description">Choose the accent color used across the public site. The current orange palette is saved as Halloween.</p>
+                    <div className="comix-theme-options">
+                      <button
+                        type="button"
+                        className={`comix-theme-option is-default ${settings.accentTheme === 'default' ? 'is-selected' : ''}`}
+                        onClick={() => void saveAccentTheme('default')}
+                        disabled={savingSettings}
+                        aria-pressed={settings.accentTheme === 'default'}
+                      >
+                        <span className="comix-theme-swatch" aria-hidden="true" />
+                        <span className="comix-theme-option-copy"><strong>Default</strong><small>Red accents</small></span>
+                        {settings.accentTheme === 'default' && <Check size={17} />}
+                      </button>
+                      <button
+                        type="button"
+                        className={`comix-theme-option is-halloween ${settings.accentTheme === 'halloween' ? 'is-selected' : ''}`}
+                        onClick={() => void saveAccentTheme('halloween')}
+                        disabled={savingSettings}
+                        aria-pressed={settings.accentTheme === 'halloween'}
+                      >
+                        <span className="comix-theme-swatch" aria-hidden="true" />
+                        <span className="comix-theme-option-copy"><strong>Halloween</strong><small>Orange accents</small></span>
+                        {settings.accentTheme === 'halloween' && <Check size={17} />}
+                      </button>
+                    </div>
+                    <div className="comix-setting-item">
+                      <div className="comix-setting-info">
+                        <strong><Palette size={15} /> Active theme</strong>
+                        <span>{settings.accentTheme === 'halloween' ? 'Halloween · orange accent palette' : 'Default · red accent palette'}</span>
                       </div>
                     </div>
                   </div>

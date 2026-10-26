@@ -58,6 +58,8 @@ export type HeroSlide = {
   href: string;
 };
 
+export type AccentTheme = 'halloween' | 'default';
+
 export const DEFAULT_HERO_SLIDES: HeroSlide[] = [
   {
     id: 'hero-1',
@@ -87,6 +89,7 @@ export type SiteSettings = {
   heroSlides: HeroSlide[];
   newSeriesOrder: string[];
   facebookUrl?: string;
+  accentTheme: AccentTheme;
 };
 
 export const DEFAULT_HEADER_VISIBILITY: HeaderVisibility = {
@@ -147,7 +150,18 @@ export const DEFAULT_SITE_SETTINGS: SiteSettings = {
   heroSlides: DEFAULT_HERO_SLIDES,
   newSeriesOrder: [],
   facebookUrl: 'https://facebook.com',
+  accentTheme: 'halloween',
 };
+
+function parseAccentTheme(value: unknown): AccentTheme {
+  return value === 'default' ? 'default' : 'halloween';
+}
+
+function applyAccentTheme(theme: AccentTheme): void {
+  if (typeof document !== 'undefined') {
+    document.documentElement.dataset.accentTheme = theme;
+  }
+}
 
 function parseBooleanSettings<T extends Record<string, boolean>>(
   value: unknown,
@@ -217,7 +231,7 @@ function parseSiteSettings(value: unknown): SiteSettings | null {
     ? stored.facebookUrl.trim()
     : 'https://facebook.com';
 
-  return { header, homepage, seriesPage, seriesFilters, heroSlides, newSeriesOrder, facebookUrl };
+  return { header, homepage, seriesPage, seriesFilters, heroSlides, newSeriesOrder, facebookUrl, accentTheme: parseAccentTheme(stored.accent_theme) };
 }
 
 export const SITE_SETTINGS_CACHE_KEY = 'vortex-site-settings';
@@ -246,7 +260,9 @@ export function getCachedSiteSettings(): SiteSettings | null {
       ? cached.facebookUrl.trim()
       : 'https://facebook.com';
 
-    return { header, homepage, seriesPage, seriesFilters, heroSlides, newSeriesOrder, facebookUrl };
+    const settings = { header, homepage, seriesPage, seriesFilters, heroSlides, newSeriesOrder, facebookUrl, accentTheme: parseAccentTheme(cached.accentTheme) };
+    applyAccentTheme(settings.accentTheme);
+    return settings;
   } catch {
     return null;
   }
@@ -254,6 +270,8 @@ export function getCachedSiteSettings(): SiteSettings | null {
 
 function cacheSiteSettings(settings: SiteSettings): void {
   if (typeof window === 'undefined') return;
+
+  applyAccentTheme(settings.accentTheme);
 
   try {
     const safeSettings: SiteSettings = {
@@ -295,6 +313,7 @@ export async function getSiteSettings(forceRefresh = false): Promise<SiteSetting
           seriesFilters: { ...DEFAULT_SERIES_FILTER_VISIBILITY },
           heroSlides: [...DEFAULT_HERO_SLIDES],
           newSeriesOrder: [],
+          accentTheme: 'halloween',
         };
         inMemorySettings = cached;
         lastSettingsFetchedAt = Date.now();
@@ -338,6 +357,7 @@ export async function saveSiteSettings(settings: SiteSettings): Promise<SiteSett
         hero_slides: settings.heroSlides,
         new_series_order: settings.newSeriesOrder,
         facebook_url: settings.facebookUrl || 'https://facebook.com',
+        accent_theme: settings.accentTheme,
       },
       updated_at: new Date().toISOString(),
     })

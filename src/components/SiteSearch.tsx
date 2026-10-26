@@ -116,7 +116,7 @@ export default function SiteSearch({
               aria-label="Search series"
             >
               <div className="site-search-dialog__top">
-                <label className="site-search-dialog__input">
+                <div className="site-search-dialog__input">
                   <Search size={14} aria-hidden="true" />
                   <input
                     ref={searchInputRef}
@@ -127,18 +127,18 @@ export default function SiteSearch({
                     aria-label="Search series"
                     autoComplete="off"
                   />
-                </label>
-                {query && (
-                  <button
-                    className="site-search-dialog__clear"
-                    type="button"
-                    onClick={() => setQuery('')}
-                    aria-label="Clear search query"
-                    data-testid="button-clear-dialog-search"
-                  >
-                    <X size={12} aria-hidden="true" />
-                  </button>
-                )}
+                  {query && (
+                    <button
+                      className="site-search-dialog__clear"
+                      type="button"
+                      onClick={() => setQuery('')}
+                      aria-label="Clear search query"
+                      data-testid="button-clear-dialog-search"
+                    >
+                      <X size={12} aria-hidden="true" />
+                    </button>
+                  )}
+                </div>
                 <button
                   className="site-search-dialog__close"
                   type="button"

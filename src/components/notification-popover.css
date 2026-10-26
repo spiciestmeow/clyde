@@ -133,14 +133,14 @@
 }
 
 .notification-filters button:hover {
-  border-color: rgba(234, 88, 12, .4);
-  color: #f97316;
+  border-color: rgba(var(--accent-rgb), .4);
+  color: var(--accent);
 }
 
 .notification-filters button.is-active {
-  border-color: color-mix(in srgb, #ea580c 18%, var(--line, #3a3a40));
-  background: color-mix(in srgb, #ea580c 10%, transparent);
-  color: #f97316;
+  border-color: color-mix(in srgb, var(--accent) 18%, var(--line, #3a3a40));
+  background: color-mix(in srgb, var(--accent) 10%, transparent);
+  color: var(--accent);
 }
 
 .notification-list {
@@ -279,8 +279,8 @@
 }
 
 .notification-item:hover { background: rgba(255, 255, 255, .045); }
-.notification-item.is-unread { background: color-mix(in srgb, #ea580c 5%, transparent); }
-.notification-item.is-unread:hover { background: color-mix(in srgb, #ea580c 9%, transparent); }
+.notification-item.is-unread { background: color-mix(in srgb, var(--accent) 5%, transparent); }
+.notification-item.is-unread:hover { background: color-mix(in srgb, var(--accent) 9%, transparent); }
 
 .notification-item__thumbnail {
   position: relative;
@@ -353,7 +353,7 @@
 .notification-item__text strong { color: var(--text, #f5f3f0); font-weight: 750; }
 .notification-item:not(.is-unread) .notification-item__text strong { color: var(--muted, #b8b2ad); }
 .notification-item__age { color: var(--faint, #89837f); font-size: 12px; font-weight: 650; }
-.notification-item.is-unread .notification-item__age { color: #f97316; }
+.notification-item.is-unread .notification-item__age { color: var(--accent); }
 
 .notification-item__unread-dot {
   width: 12px;
@@ -405,14 +405,14 @@
   border: 0;
   border-top: 1px solid var(--line, #343439);
   background: transparent;
-  color: #f97316;
+  color: var(--accent);
   font: inherit;
   font-size: 14px;
   font-weight: 750;
   cursor: pointer;
 }
 
-.notification-panel__footer:hover { background: rgba(234, 88, 12, .07); }
+.notification-panel__footer:hover { background: rgba(var(--accent-rgb), .07); }
 
 .theme-light .notification-count { border-color: var(--page); }
 .theme-light .notification-panel {
@@ -422,13 +422,13 @@
   box-shadow: none;
 }
 .theme-light .notification-panel__actions button:hover { background: rgba(0, 0, 0, .055); color: #29231f; }
-.theme-light .notification-filters button:hover { background: rgba(234, 88, 12, .045); }
+.theme-light .notification-filters button:hover { background: rgba(var(--accent-rgb), .045); }
 .theme-light .notification-item:hover { background: rgba(94, 63, 40, .035); }
-.theme-light .notification-item.is-unread { background: rgba(234, 88, 12, .035); }
-.theme-light .notification-item.is-unread:hover { background: rgba(234, 88, 12, .07); }
+.theme-light .notification-item.is-unread { background: rgba(var(--accent-rgb), .035); }
+.theme-light .notification-item.is-unread:hover { background: rgba(var(--accent-rgb), .07); }
 .theme-light .notification-item__thumbnail { border-color: #eee5de; background: #f5f1ed; }
 .theme-light .notification-item__type-badge { border-color: #fbf9f7; }
-.theme-light .notification-panel__footer:hover { background: rgba(234, 88, 12, .045); }
+.theme-light .notification-panel__footer:hover { background: rgba(var(--accent-rgb), .045); }
 
 @keyframes notification-panel-enter {
   from { opacity: 0; transform: translateY(-5px) scale(.99); }

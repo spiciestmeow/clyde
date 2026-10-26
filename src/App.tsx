@@ -874,6 +874,17 @@ function NotFoundPage() {
 }
 
 function App() {
+  useEffect(() => {
+    const cachedSettings = getCachedSiteSettings();
+    const handleSettingsUpdate = (event: Event) => {
+      const settings = (event as CustomEvent<SiteSettings>).detail;
+      if (settings?.accentTheme) document.documentElement.dataset.accentTheme = settings.accentTheme;
+    };
+    window.addEventListener(SITE_SETTINGS_UPDATED_EVENT, handleSettingsUpdate);
+    if (!cachedSettings) void getSiteSettings().catch(() => undefined);
+    return () => window.removeEventListener(SITE_SETTINGS_UPDATED_EVENT, handleSettingsUpdate);
+  }, []);
+
   return (
     <WouterRouter base={import.meta.env.BASE_URL.replace(/\/$/, '')}>
       <ScrollToTop />
