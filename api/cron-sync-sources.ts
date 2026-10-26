@@ -104,6 +104,13 @@ export default async function handler(
           ? item.sources.filter((source: any) => typeof source?.url === 'string' && source.url.trim())
           : [];
 
+        // Current chapter number — computed early so it can be referenced inside source-refresh logic below
+        const currentChStr =
+          item.facts?.latest_chapter_number ||
+          (item.chapters?.[0]?.title ? String(item.chapters[0].title).replace(/^[^\d.]*/, '') : '');
+        const parsedCurrentNum = currentChStr ? parseFloat(currentChStr) : Number.NaN;
+        const currentNum = Number.isFinite(parsedCurrentNum) ? parsedCurrentNum : null;
+
         // Configured links are series-specific, so use them as the source of
         // truth. MangaUpdates is only a fallback when no direct URLs are saved.
         if (itemSources.length > 0) {
@@ -171,13 +178,6 @@ export default async function handler(
           logs.push(`[${item.title}] No release data found on ${detectionSource || 'available sources'}`);
           return;
         }
-
-        // Current chapter number
-        const currentChStr =
-          item.facts?.latest_chapter_number ||
-          (item.chapters?.[0]?.title ? String(item.chapters[0].title).replace(/^[^\d.]*/, '') : '');
-        const parsedCurrentNum = currentChStr ? parseFloat(currentChStr) : Number.NaN;
-        const currentNum = Number.isFinite(parsedCurrentNum) ? parsedCurrentNum : null;
 
         // Only advance the catalog automatically. Lower direct-source results
         // are reported as mismatches for review rather than rolling data back.
