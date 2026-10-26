@@ -288,6 +288,22 @@ function ComixLoginScreen({
     setBusy(true);
     setFormError('');
     try {
+      // Vite's local dev server does not serve Vercel API routes. Keep local
+      // admin sign-in working through Supabase Auth; deployed sign-in uses the
+      // server endpoint so failed attempts are rate-limited.
+      if (import.meta.env.DEV) {
+        const { data, error } = await supabase.auth.signInWithPassword({
+          email: email.trim(),
+          password,
+        });
+        if (error || !data.session) {
+          setFormError('Sign in failed. Check your admin email and password.');
+          return;
+        }
+        onSignedIn(data.session);
+        return;
+      }
+
       const response = await fetch('/api/admin/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
