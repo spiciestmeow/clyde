@@ -360,7 +360,12 @@ export async function getSeriesCatalog(): Promise<SeriesCatalogResponse> {
   const client = requireSupabase();
   const { data, error } = await client
     .from('series')
-    .select('*')
+    .select(
+      'id, slug, title, href, cover, category, rating, status, pinned, chapters, ' +
+      'alternate_titles, synopsis, author, artist, publishers, content_rating, year, ' +
+      'original_language, demographics, genres, formats, tags, trackers, sources, ' +
+      'facts, favorites, views, review_count, page_number, page_order, created_at, updated_at',
+    )
     .order('page_number', { ascending: true })
     .order('page_order', { ascending: true })
     .order('title', { ascending: true });

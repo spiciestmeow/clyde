@@ -365,7 +365,18 @@ export default async function handler(
       const currentHeader = (currentSettings?.header_visibility as any) || {};
       const existingLogs = Array.isArray(currentHeader.sync_logs) ? currentHeader.sync_logs : [];
 
-      // Persist full execution logs so all checked series are visible in Execution Details
+      // Store only notable log lines (updates, errors, mismatches) to keep site_settings small.
+      // The full logs are still returned in the HTTP response for debugging.
+      const compactLogs = logs
+        .filter((l) =>
+          l.includes('Updated:') ||
+          l.includes('Error') ||
+          l.includes('Failed') ||
+          l.includes('Mismatch') ||
+          l.includes('refreshed')
+        )
+        .slice(0, 20);
+
       const newLogEntry = {
         id: String(Date.now()),
         timestamp: new Date().toISOString(),
@@ -378,10 +389,10 @@ export default async function handler(
           source: u.source,
           time: u.releaseTime,
         })),
-        logs,
+        logs: compactLogs,
       };
 
-      // Keep only the 5 most recent logs to avoid database bloat
+      // Keep only the 5 most recent runs to avoid database bloat
       const nextLogs = [newLogEntry, ...existingLogs].slice(0, 5);
 
       await supabase
