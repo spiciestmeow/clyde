@@ -270,6 +270,17 @@ function ComixLoginScreen({
   const [password, setPassword] = useState('');
   const [busy, setBusy] = useState(false);
   const [formError, setFormError] = useState('');
+  const [lockoutSeconds, setLockoutSeconds] = useState(0);
+
+  useEffect(() => {
+    if (lockoutSeconds <= 0) return;
+    const timer = window.setTimeout(() => {
+      setLockoutSeconds((seconds) => Math.max(0, seconds - 1));
+    }, 1000);
+    return () => window.clearTimeout(timer);
+  }, [lockoutSeconds]);
+
+  const lockoutTime = `${String(Math.floor(lockoutSeconds / 60)).padStart(2, '0')}:${String(lockoutSeconds % 60).padStart(2, '0')}`;
 
   const submit = async (e: FormEvent) => {
     e.preventDefault();
@@ -283,8 +294,11 @@ function ComixLoginScreen({
         body: JSON.stringify({ email: email.trim(), password }),
       });
       const result = await response.json().catch(() => ({}));
+      if (typeof result.retryAfterSeconds === 'number' && result.retryAfterSeconds > 0) {
+        setLockoutSeconds(Math.ceil(result.retryAfterSeconds));
+      }
       if (!response.ok || !result.session?.access_token || !result.session?.refresh_token) {
-        setFormError(result.error || 'Sign in failed. Check your admin email and password.');
+        setFormError(result.retryAfterSeconds ? '' : result.error || 'Sign in failed. Check your admin email and password.');
         return;
       }
 
@@ -296,6 +310,7 @@ function ComixLoginScreen({
         setFormError('Sign in failed. Please try again.');
         return;
       }
+      setLockoutSeconds(0);
       onSignedIn(data.session);
     } catch {
       setFormError('Could not reach the sign-in service. Please try again.');
@@ -323,6 +338,11 @@ function ComixLoginScreen({
             </button>
           </div>
           {formError && <div className="comix-login-error" role="alert">{formError}</div>}
+          {lockoutSeconds > 0 && (
+            <div className="comix-login-error" role="status" aria-live="polite">
+              Too many incorrect attempts. Try again in <strong>{lockoutTime}</strong>.
+            </div>
+          )}
 
           <form onSubmit={submit}>
             <div className="comix-login-field">
@@ -351,9 +371,9 @@ function ComixLoginScreen({
               />
             </div>
 
-            <button type="submit" className="btn-teal comix-login-btn" disabled={busy || !email || !password}>
+            <button type="submit" className="btn-teal comix-login-btn" disabled={busy || lockoutSeconds > 0 || !email || !password}>
               {busy ? <LoaderCircle className="spin-icon" size={16} /> : <ShieldCheck size={16} />}
-              {busy ? 'Signing in...' : 'Log in'}
+              {busy ? 'Signing in...' : lockoutSeconds > 0 ? `Locked · ${lockoutTime}` : 'Log in'}
             </button>
           </form>
         </div>

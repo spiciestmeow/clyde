@@ -10,7 +10,6 @@ const SUPABASE_URL = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL;
 const SUPABASE_ANON_KEY = process.env.SUPABASE_ANON_KEY || process.env.VITE_SUPABASE_ANON_KEY;
 const SUPABASE_SERVER_KEY = process.env.SUPABASE_SECRET_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY;
 const ADMIN_EMAIL = (process.env.ADMIN_EMAIL || 'clydhex@gmail.com').trim().toLowerCase();
-const LOGIN_MAX_ATTEMPTS = 5;
 const LOGIN_WINDOW_SECONDS = 15 * 60;
 
 export default async function handler(
@@ -52,7 +51,7 @@ export default async function handler(
   const rateLimitSecret = process.env.ADMIN_LOGIN_RATE_LIMIT_SECRET || SUPABASE_SERVER_KEY;
   const requesterHash = createHmac('sha256', rateLimitSecret).update(requesterIp).digest('hex');
   const serverClient = createClient(SUPABASE_URL, SUPABASE_SERVER_KEY, { auth: { persistSession: false } });
-  const { data: attemptCount, error: limitError } = await serverClient.rpc('consume_admin_login_attempt', {
+  const { data: lockoutSeconds, error: limitError } = await serverClient.rpc('get_admin_login_lockout_seconds', {
     p_requester_hash: requesterHash,
   });
   if (limitError) {
@@ -60,15 +59,34 @@ export default async function handler(
     response.status(503).json({ error: 'Admin sign-in is temporarily unavailable.' });
     return;
   }
-  if (Number(attemptCount) > LOGIN_MAX_ATTEMPTS) {
-    response.setHeader('Retry-After', String(LOGIN_WINDOW_SECONDS));
-    response.status(429).json({ error: 'Too many sign-in attempts. Try again in 15 minutes.' });
+  if (Number(lockoutSeconds) > 0) {
+    response.setHeader('Retry-After', String(lockoutSeconds));
+    response.status(429).json({
+      error: 'Too many sign-in attempts. Please wait for the countdown to finish.',
+      retryAfterSeconds: Number(lockoutSeconds),
+    });
     return;
   }
 
   const authClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, { auth: { persistSession: false } });
   const { data, error } = await authClient.auth.signInWithPassword({ email, password });
   if (error || !data.session || data.user.email?.trim().toLowerCase() !== ADMIN_EMAIL) {
+    const { data: retryAfterSeconds, error: recordError } = await serverClient.rpc('record_admin_login_failure', {
+      p_requester_hash: requesterHash,
+    });
+    if (recordError) {
+      console.error('Could not record failed admin sign-in:', recordError.message);
+      response.status(503).json({ error: 'Admin sign-in is temporarily unavailable.' });
+      return;
+    }
+    if (Number(retryAfterSeconds) > 0) {
+      response.setHeader('Retry-After', String(retryAfterSeconds));
+      response.status(429).json({
+        error: 'Too many sign-in attempts. Please wait for the countdown to finish.',
+        retryAfterSeconds: Number(retryAfterSeconds),
+      });
+      return;
+    }
     response.status(401).json({ error: 'Sign in failed. Check your admin email and password.' });
     return;
   }
