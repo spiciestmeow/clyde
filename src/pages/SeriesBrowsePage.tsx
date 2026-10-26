@@ -569,7 +569,10 @@ export default function SeriesBrowsePage() {
           <div className="catalog-filter-panel">
             <div className="catalog-filter-heading">
               <h2>Filters</h2>
-              {activeFilterCount > 0 && <button className="catalog-clear-filters" type="button" onClick={clearSeriesFilters} data-testid="button-clear-series-filters">Clear all</button>}
+              <div className="catalog-filter-heading-actions">
+                {activeFilterCount > 0 && <button className="catalog-clear-filters" type="button" onClick={clearSeriesFilters} data-testid="button-clear-series-filters">Clear all</button>}
+                <button className="catalog-filter-close" type="button" onClick={() => setFiltersOpen(false)} aria-label="Close filters"><X size={18} /></button>
+              </div>
             </div>
             {!hasVisibleSeriesFilters && <p className="catalog-filter-empty">Filters are currently disabled.</p>}
             {seriesFilterVisibility.genres && <section className="catalog-filter-group">
