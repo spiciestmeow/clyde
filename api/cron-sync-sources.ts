@@ -130,17 +130,18 @@ export default async function handler(
             const scanResult = sourceResultsByUrl.get(typeof source?.url === 'string' ? source.url.trim() : '');
             if (!scanResult) return source;
             const isWinningSource = typeof source?.url === 'string' && source.url.trim() === latestDirectSourceUrl.trim();
-            const winningReleaseAt = detectedTimestamp
-              ? new Date(detectedTimestamp).toISOString()
-              : scanResult.latestChapterAt;
+            const currentSourceAtMs = source?.latestChapterAt ? Date.parse(source.latestChapterAt) : NaN;
+            const newReleaseAtMs = detectedTimestamp || (scanResult.latestChapterAt ? Date.parse(scanResult.latestChapterAt) : NaN);
+            // When already up-to-date, do not push an existing chapter's release time forward into the future
+            const canonicalReleaseAt = !Number.isNaN(currentSourceAtMs) && !Number.isNaN(newReleaseAtMs) && currentNum !== null && detectedChNum === currentNum && newReleaseAtMs > currentSourceAtMs
+              ? source.latestChapterAt
+              : (detectedTimestamp ? new Date(detectedTimestamp).toISOString() : scanResult.latestChapterAt);
+
             return {
               ...source,
               latestChapterNumber: scanResult.latestChapterNumber,
-              // A successful scrape with no date means the date is unknown;
-              // never keep an old timestamp that may reflect the sync time.
               // Keep the winning source aligned with the canonical timestamp
-              // used for the series-level release date.
-              latestChapterAt: isWinningSource ? winningReleaseAt : scanResult.latestChapterAt,
+              latestChapterAt: isWinningSource ? canonicalReleaseAt : (scanResult.latestChapterAt || source?.latestChapterAt),
               rating: scanResult.rating || source.rating,
             };
           });
@@ -275,12 +276,14 @@ export default async function handler(
           // A series can already have the correct chapter number while its
           // saved release time or winning source is stale. The direct scraper
           // chooses the canonical (earliest reported) posting time for that
-          // chapter, so accept a different timestamp in either direction.
+          // chapter. We only update if the current release time was missing/invalid
+          // or the detected timestamp is earlier. Never push an existing chapter's
+          // release time forward into the future.
           const currentUpdateValue = item.facts?.last_chapter_added_at || item.facts?.lastUpdate;
           const currentUpdateMs = currentUpdateValue ? Date.parse(String(currentUpdateValue)) : NaN;
           const hasDifferentReleaseTime = Boolean(
             detectedTimestamp &&
-            (Number.isNaN(currentUpdateMs) || detectedTimestamp !== currentUpdateMs),
+            (Number.isNaN(currentUpdateMs) || detectedTimestamp < currentUpdateMs),
           );
           const hasNewTopSource = Boolean(
             latestDirectSourceUrl &&

@@ -79,7 +79,7 @@ function parseRelativeTime(text: string): number | null {
   const s = text.trim().toLowerCase();
 
   const relRegex =
-    /(?:about\s+)?(\d+(?:\.\d+)?)\s*(s|sec(?:ond)?s?|m|min(?:ute)?s?|h|hr|hrs|hour|hours|d|day|days|w|wk|wks|week|weeks|mo|mos|month|months|y|yr|yrs|year|years)\b(?:\s*ago)?/i;
+    /(?:about\s+)?(\d+(?:\.\d+)?)\s*(seconds?|secs?|s\s*ago|minutes?|mins?|hours?|hrs?|days?|weeks?|wks?|months?|mos?|years?|yrs?|[mhdwymo]\b)(?:\s*ago)?/i;
   const m = s.match(relRegex);
   if (m) {
     const val = parseFloat(m[1]);
@@ -135,7 +135,7 @@ function extractTimeFromContext(
   const visibleTimeCandidates: { index: number; timestamp: number }[] = [];
   const visibleCalendarDateCandidates: { index: number; timestamp: number }[] = [];
   const relativeTimePattern =
-    /(?:about\s+)?\d+(?:\.\d+)?\s*(?:seconds?|secs?|s|minutes?|mins?|m|hours?|hrs?|h|days?|d|weeks?|wks?|w|months?|mos?|mo|years?|yrs?|y)(?:\s*ago)?|\b(?:yesterday|just now|today)\b/gi;
+    /(?:about\s+)?\d+(?:\.\d+)?\s*(?:seconds?|secs?|s\s*ago|minutes?|mins?|hours?|hrs?|days?|weeks?|wks?|months?|mos?|years?|yrs?|[mhdwymo]\b)(?:\s*ago)?|\b(?:yesterday|just now|today)\b/gi;
   for (const match of textOnly.matchAll(relativeTimePattern)) {
     const ts = parseRelativeTime(match[0]);
     if (ts) visibleTimeCandidates.push({ index: match.index, timestamp: ts });
@@ -624,6 +624,23 @@ function extractMistScanChapters(
   return Array.from(chapters.values()).sort((a, b) => b.number - a.number);
 }
 
+export function extractPageLastUpdate(html: string): number | null {
+  if (!html) return null;
+  const patterns = [
+    /\b(?:last\s*update|latest\s*update|updated)\b[\s\S]{0,120}?(?:about\s+)?(\d+(?:\.\d+)?\s*(?:seconds?|secs?|s\s*ago|minutes?|mins?|hours?|hrs?|days?|weeks?|wks?|months?|mos?|years?|yrs?|[mhdwymo]\b)(?:\s*ago)?|\b(?:yesterday|just now|today)\b)/i,
+    /\b(?:last\s*update|latest\s*update|updated)\b[\s\S]{0,120}?((?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)[a-z]*\s+\d{1,2}(?:st|nd|rd|th)?[,]?\s*(?:\d{4})?)/i,
+    /\b(?:last\s*update|latest\s*update|updated)\b[\s\S]{0,120}?(\d{4}-\d{2}-\d{2})/i,
+  ];
+  for (const pat of patterns) {
+    const m = html.match(pat);
+    if (m && m[1]) {
+      const ts = parseRelativeTime(m[1]);
+      if (ts) return ts;
+    }
+  }
+  return null;
+}
+
 export function extractChaptersFromHtml(
   html: string,
   pageUrl: string,
@@ -873,7 +890,14 @@ export function extractChaptersFromHtml(
     });
   }
 
-  return Array.from(foundChapters.values()).sort((a, b) => b.number - a.number);
+  const chapterList = Array.from(foundChapters.values()).sort((a, b) => b.number - a.number);
+  if (chapterList.length > 0 && !chapterList[0].releasedAt) {
+    const pageLastUpdate = extractPageLastUpdate(cleanHtml);
+    if (pageLastUpdate) {
+      chapterList[0].releasedAt = new Date(pageLastUpdate).toISOString();
+    }
+  }
+  return chapterList;
 }
 
 export function extractRatingFromHtml(html: string, _url?: string): number | null {
@@ -990,6 +1014,12 @@ export async function scrapeDirectSources(
           reason: 'Page loaded, but no supported chapter links were found. The page may render chapters with JavaScript or use a layout the scraper does not recognize.',
         });
         continue;
+      }
+      if (chapters.length > 0 && !chapters[0].releasedAt) {
+        const pageLastUpdate = extractPageLastUpdate(html);
+        if (pageLastUpdate) {
+          chapters[0].releasedAt = new Date(pageLastUpdate).toISOString();
+        }
       }
       anySourceWorked = true;
 
