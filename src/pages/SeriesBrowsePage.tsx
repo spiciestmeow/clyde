@@ -101,6 +101,7 @@ function normalizeSeriesDate(value?: string | null) {
 }
 
 function imageUrl(source: string, width = 400) {
+  if (!source?.trim()) return DEFAULT_SERIES_COVER;
   if (source.startsWith('https://i0.wp.com/')) {
     const url = new URL(source);
     url.searchParams.set('w', String(width));
@@ -117,17 +118,30 @@ function imageUrl(source: string, width = 400) {
 function recoverImage(event: SyntheticEvent<HTMLDivElement>) {
   const image = event.target as HTMLImageElement;
   if (image.tagName !== 'IMG') return;
+  const isCover = image.closest('.release-cover');
   if (image.dataset.fallbackAttempted) {
-    image.hidden = true;
+    if (isCover && image.dataset.fallbackAttempted !== 'placeholder') {
+      image.dataset.fallbackAttempted = 'placeholder';
+      image.src = DEFAULT_SERIES_COVER;
+    } else {
+      image.hidden = true;
+    }
     return;
   }
   const failed = image.currentSrc || image.src;
-  image.dataset.fallbackAttempted = 'true';
   if (failed.startsWith('https://i0.wp.com/')) {
+    image.dataset.fallbackAttempted = 'direct';
     image.src = `https://${failed.slice('https://i0.wp.com/'.length).split('?')[0]}`;
   } else if (failed.startsWith('https://storage.vortexscans.org/')) {
+    image.dataset.fallbackAttempted = 'direct';
     image.src = `https://i0.wp.com/${failed.slice('https://'.length).split('?')[0]}?w=400&quality=85&strip=all&ssl=1`;
-  } else image.hidden = true;
+  } else if (isCover) {
+    image.dataset.fallbackAttempted = 'placeholder';
+    image.src = DEFAULT_SERIES_COVER;
+  } else {
+    image.dataset.fallbackAttempted = 'failed';
+    image.hidden = true;
+  }
 }
 
 function pageNumbers(pageCount: number, current: number) {

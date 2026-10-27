@@ -1,11 +1,12 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState, type SyntheticEvent } from 'react';
 import { Link, useLocation, useParams } from 'wouter';
-import { Activity, ArrowLeft, ArrowUpRight, BookOpen, Bookmark, CalendarDays, Check, ChevronDown, ChevronRight, Clock3, Eye, Flag, Heart, Info, List, Maximize2, MessageSquare, MessageSquareText, PenLine, Rows3, Search, Share2, Square, Star, TriangleAlert, Type, X, ZoomIn } from 'lucide-react';
+import { Activity, ArrowLeft, ArrowUpRight, Bell, BookOpen, Bookmark, CalendarDays, Check, ChevronDown, ChevronRight, Clock3, Eye, Flag, Heart, List, Maximize2, MessageSquare, MessageSquareText, PenLine, Rows3, Search, Share2, Square, Star, TriangleAlert, Type, X, ZoomIn } from 'lucide-react';
 import { useQueryClient } from '@tanstack/react-query';
 import {
   cacheSeriesCatalog,
   incrementSeriesViews,
   SERIES_CATALOG_QUERY_KEY,
+  DEFAULT_SERIES_COVER,
   type SeriesCatalogResponse,
   type SeriesRecord,
 } from '../lib/seriesCatalog';
@@ -130,9 +131,15 @@ function imageUrl(source: string, width = 400) {
 function recoverSeriesImage(event: SyntheticEvent<HTMLDivElement>) {
   const image = event.target as HTMLImageElement;
   if (image.tagName !== 'IMG') return;
+  const coverFrame = image.closest('.series-cover-frame');
   if (image.dataset.fallbackAttempted) {
+    if (coverFrame && image.dataset.fallbackAttempted !== 'placeholder') {
+      image.dataset.fallbackAttempted = 'placeholder';
+      image.src = DEFAULT_SERIES_COVER;
+      return;
+    }
     image.hidden = true;
-    image.closest('.series-cover-frame')?.classList.add('is-image-failed');
+    coverFrame?.classList.add('is-image-failed');
     if (image.parentElement?.classList.contains('brand')) {
       image.parentElement.classList.add('brand-fallback');
     }
@@ -143,7 +150,6 @@ function recoverSeriesImage(event: SyntheticEvent<HTMLDivElement>) {
   }
 
   const failedUrl = image.currentSrc || image.src;
-  image.dataset.fallbackAttempted = 'true';
   image.removeAttribute('srcset');
   let fallback = '';
   if (failedUrl.startsWith('https://i0.wp.com/')) {
@@ -152,8 +158,16 @@ function recoverSeriesImage(event: SyntheticEvent<HTMLDivElement>) {
     const path = failedUrl.slice('https://'.length).split('?')[0];
     fallback = `https://i0.wp.com/${path}?w=400&quality=85&strip=all&ssl=1`;
   }
-  if (fallback) image.src = fallback;
-  else image.hidden = true;
+  if (fallback) {
+    image.dataset.fallbackAttempted = 'direct';
+    image.src = fallback;
+  } else if (coverFrame) {
+    image.dataset.fallbackAttempted = 'placeholder';
+    image.src = DEFAULT_SERIES_COVER;
+  } else {
+    image.dataset.fallbackAttempted = 'failed';
+    image.hidden = true;
+  }
 }
 
 function readSet(key: string): string[] {
@@ -270,6 +284,7 @@ export default function SeriesDetailPage() {
   const [reactionBusy, setReactionBusy] = useState(false);
   const [sourceReactionBusy, setSourceReactionBusy] = useState<string[]>([]);
   const [bookmarkBusy, setBookmarkBusy] = useState(false);
+  const [bookmarkNoticeDismissed, setBookmarkNoticeDismissed] = useState(false);
   const [siteSettings, setSiteSettings] = useState(() => getCachedSiteSettings());
   const [seriesPageVisibility, setSeriesPageVisibility] = useState(
     () => getCachedSiteSettings()?.seriesPage ?? DEFAULT_SERIES_PAGE_VISIBILITY,
@@ -291,6 +306,10 @@ export default function SeriesDetailPage() {
   const seriesLayoutRef = useRef<HTMLDivElement>(null);
   const [fixedRailPositions, setFixedRailPositions] = useState<FixedRailPositions | null>(null);
   const lastIncrementedSeriesIdRef = useRef<number | null>(null);
+
+  useEffect(() => {
+    setBookmarkNoticeDismissed(false);
+  }, [slug]);
 
   useLayoutEffect(() => {
     const element = alternateTitlesRef.current;
@@ -820,12 +839,17 @@ export default function SeriesDetailPage() {
               <span className="series-cover-view-label"><ZoomIn size={13} /> View</span>
             </span>
           </button> : <div className="series-cover-frame is-pending">
-            <div className="series-cover-pending"><Info size={23} /><strong>Cover pending</strong><span>Artwork will appear here when uploaded.</span></div>
+            <img src={DEFAULT_SERIES_COVER} alt={`No cover available for ${title}`} />
           </div>}
           <div className="series-left-actions">
             {newestChapter && readChapterHref ? <a href={readChapterHref} className="series-action series-action--primary" target={firstSource ? '_blank' : undefined} rel={firstSource ? 'noopener noreferrer' : undefined}><span>Read {newestChapter.title}</span></a> : <button className="series-action series-action--primary" disabled title="No chapter link is available yet">Reading unavailable</button>}
             <button className={`series-action series-action--bookmark${bookmarked ? ' is-saved' : ''}`} onClick={toggleBookmark} aria-pressed={bookmarked} disabled={bookmarkBusy} data-testid="button-bookmark-series">{bookmarked ? <Check size={15} /> : <Bookmark size={15} />}{bookmarked ? 'Bookmarked' : 'Bookmark'}</button>
           </div>
+          {!bookmarked && !bookmarkNoticeDismissed && <div className="series-bookmark-notice" role="status">
+            <Bell size={16} aria-hidden="true" />
+            <span>Bookmark this series and we'll ping you when new chapters drop!</span>
+            <button type="button" aria-label="Dismiss bookmark reminder" onClick={() => setBookmarkNoticeDismissed(true)}><X size={15} /></button>
+          </div>}
           {seriesPageVisibility.reportIssue && <ReportCallout seriesSlug={slug} seriesTitle={title} />}
           {seriesPageVisibility.ratingStats && <div className="series-quick-stats">
             <div><Star size={15} fill="currentColor" /><strong>{detail?.rating ?? series.rating ?? '—'}</strong><small>Ratings</small></div>
