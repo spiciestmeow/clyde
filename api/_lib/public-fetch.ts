@@ -72,7 +72,15 @@ function requestOnce(url: URL, address: string, family: number): Promise<Incomin
         'User-Agent': 'Mozilla/5.0 (compatible; VortexScans/1.0)',
         Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
       },
-      lookup: (_hostname, _options, callback) => callback(null, address, family),
+      lookup: (_hostname, optionsOrCallback, maybeCallback) => {
+        const callback = typeof optionsOrCallback === 'function' ? optionsOrCallback : maybeCallback;
+        const options = typeof optionsOrCallback === 'object' && optionsOrCallback !== null ? optionsOrCallback : undefined;
+        if (options && 'all' in options && options.all) {
+          (callback as any)(null, [{ address, family }]);
+        } else {
+          (callback as any)(null, address, family);
+        }
+      },
     }, resolve);
     req.setTimeout(REQUEST_TIMEOUT_MS, () => req.destroy(new Error('Source request timed out.')));
     req.on('error', reject);
