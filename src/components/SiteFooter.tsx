@@ -1,4 +1,5 @@
 import { Link } from 'wouter';
+import { getCachedSiteSettings } from '../lib/siteSettings';
 
 type SiteFooterProps = {
   logoSrc: string;
@@ -13,6 +14,8 @@ export default function SiteFooter({
   className = 'footer',
   id,
 }: SiteFooterProps) {
+  const facebookUrl = getCachedSiteSettings()?.facebookUrl || 'https://facebook.com';
+
   return (
     <footer className={className} id={id}>
       <div className="footer-inner">
@@ -32,9 +35,8 @@ export default function SiteFooter({
         </div>
         <div className="footer-tagline"><p>{tagline}</p></div>
         <ul className="footer-links">
-          <li><a href="/privacy-policy">Privacy Policy</a></li>
           <li><a href="/credits">Credits</a></li>
-          <li><a href="https://discord.gg/2PuMt62fRN">Discord</a></li>
+          <li><a href={facebookUrl} target="_blank" rel="noopener noreferrer">Facebook</a></li>
         </ul>
         <hr />
         <div className="footer-copyright">
