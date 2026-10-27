@@ -36,6 +36,7 @@ export function ConfirmationDialog({
         className="confirmation-dialog__content"
         overlayClassName="confirmation-dialog__overlay"
         closeClassName="confirmation-dialog__close"
+        disableAnimation
         aria-describedby="confirmation-dialog-description"
       >
         <DialogHeader className="confirmation-dialog__header">

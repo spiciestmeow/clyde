@@ -2,6 +2,8 @@
   z-index: 1000 !important;
   background: rgb(15 23 42 / 52%) !important;
   backdrop-filter: blur(3px);
+  animation: none !important;
+  transition: none !important;
 }
 
 .confirmation-dialog__content {
@@ -17,6 +19,8 @@
   background: #161c22 !important;
   color: #e6edf3 !important;
   box-shadow: 0 24px 60px rgb(0 0 0 / 30%) !important;
+  animation: none !important;
+  transition: none !important;
 }
 
 .confirmation-dialog__close {

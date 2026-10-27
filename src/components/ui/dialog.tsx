@@ -29,18 +29,23 @@ DialogOverlay.displayName = DialogPrimitive.Overlay.displayName;
 type DialogContentProps = React.ComponentPropsWithoutRef<typeof DialogPrimitive.Content> & {
   overlayClassName?: string;
   closeClassName?: string;
+  disableAnimation?: boolean;
 };
 
 const DialogContent = React.forwardRef<
   React.ElementRef<typeof DialogPrimitive.Content>,
   DialogContentProps
->(({ className, children, overlayClassName, closeClassName, ...props }, ref) => (
+>(({ className, children, overlayClassName, closeClassName, disableAnimation = false, ...props }, ref) => (
   <DialogPortal>
-    <DialogOverlay className={overlayClassName} />
+    <DialogOverlay className={cn(
+      disableAnimation && 'data-[state=open]:animate-none data-[state=closed]:animate-none transition-none',
+      overlayClassName,
+    )} />
     <DialogPrimitive.Content
       ref={ref}
       className={cn(
         'fixed left-[50%] top-[50%] z-50 grid w-full max-w-lg max-h-[85vh] translate-x-[-50%] translate-y-[-50%] gap-4 overflow-y-auto border bg-background p-6 shadow-lg duration-200 data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:zoom-in-95 data-[state=open]:slide-in-from-left-1/2 data-[state=open]:slide-in-from-top-[48%] sm:rounded-lg',
+        disableAnimation && 'data-[state=open]:animate-none data-[state=closed]:animate-none transition-none duration-0',
         className,
       )}
       {...props}
