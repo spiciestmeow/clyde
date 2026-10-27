@@ -38,7 +38,9 @@
 .series-wash {
   position: fixed;
   z-index: 0;
-  inset: 0;
+  inset: 0 0 auto;
+  height: 100vh;
+  height: 100lvh;
   overflow: hidden;
   pointer-events: none;
   filter: saturate(.82);
@@ -381,6 +383,7 @@
 
 @media (max-width: 700px) {
   .series-main { width: min(560px,calc(100% - 20px)); padding-top: 9px; }
+  .series-cover-view-overlay { display: none; }
   .series-layout { grid-template-columns: minmax(0,1fr); gap: 12px; }
   .series-layout--without-sidebar { grid-template-columns: minmax(0,1fr); }
   .series-left-rail { display: grid; grid-template-columns: 105px minmax(0,1fr); align-items: start; gap: 5px 10px; }
@@ -452,8 +455,7 @@
 }
 
 @media (hover: none) {
-  .series-cover-view-overlay { opacity: 1; }
-  .series-cover-expand { display: none; }
+  .series-cover-view-overlay { display: none; }
 }
 
 @media (min-width: 901px) and (max-width: 1199px) {
