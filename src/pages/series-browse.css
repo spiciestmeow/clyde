@@ -222,7 +222,7 @@ html.series-document-scrollbar::-webkit-scrollbar-button, body.series-document-s
   .catalog-filter-drawer {
     position: fixed;
     z-index: 71;
-    top: max(76px, 12dvh);
+    top: auto;
     right: 0;
     bottom: 0;
     left: 0;
@@ -235,14 +235,13 @@ html.series-document-scrollbar::-webkit-scrollbar-button, body.series-document-s
     min-width: 0;
     min-height: 0;
     box-sizing: border-box;
-    height: auto;
-    max-height: none;
+    height: min(56dvh, calc(100dvh - 76px));
+    max-height: min(56dvh, calc(100dvh - 76px));
     margin: 0;
     padding: 0;
     overflow: hidden;
     border: 1px solid var(--catalog-line);
-    border-bottom: 0;
-    border-radius: 22px 22px 0 0;
+    border-radius: 22px;
     background: var(--catalog-panel);
     box-shadow: 0 -12px 36px rgba(0, 0, 0, .18);
     transform: translateY(100%);
@@ -254,8 +253,8 @@ html.series-document-scrollbar::-webkit-scrollbar-button, body.series-document-s
     transform: translateY(0);
     visibility: visible;
     pointer-events: auto;
-    height: auto;
-    max-height: none;
+    height: min(56dvh, calc(100dvh - 76px));
+    max-height: min(56dvh, calc(100dvh - 76px));
     margin-top: 0;
   }
   .catalog-filter-sheet-handle {
@@ -293,7 +292,7 @@ html.series-document-scrollbar::-webkit-scrollbar-button, body.series-document-s
   .catalog-filter-panel::-webkit-scrollbar { width: 6px; height: 6px; background: var(--catalog-scrollbar-track); }
   .catalog-filter-panel::-webkit-scrollbar-track { border-radius: 10px; background: var(--catalog-scrollbar-track); }
   .catalog-filter-panel::-webkit-scrollbar-thumb { min-height: 40px; border: 0; border-radius: 10px; background: var(--scrollbar-thumb); }
-  .catalog-genre-options { max-height: none; overflow: visible; padding-right: 0; }
+  .catalog-genre-options { max-height: 260px; overflow-y: auto; padding-right: 4px; }
   .catalog-filter-panel::-webkit-scrollbar-button,
   .catalog-genre-options::-webkit-scrollbar-button,
   .catalog-filter-panel::-webkit-scrollbar-button:single-button,
@@ -378,7 +377,7 @@ html.series-document-scrollbar::-webkit-scrollbar-button, body.series-document-s
   .catalog-genre-search { height: 36px; }
   .catalog-genre-search input { font-size: 14px; }
   .catalog-filter-help { margin-bottom: 8px; font-size: 11px; }
-  .catalog-genre-options { max-height: none; overflow: visible; padding-right: 0; }
+  .catalog-genre-options { max-height: 260px; overflow-y: auto; padding-right: 4px; }
   .catalog-genre-option { min-height: 34px; gap: 9px; padding: 4px 7px; font-size: 14px; }
   .catalog-genre-check { width: 18px; height: 18px; }
   .catalog-filter-chips { gap: 6px; }
