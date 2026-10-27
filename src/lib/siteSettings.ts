@@ -17,6 +17,7 @@ export type HomepageVisibility = {
   featuredSeries: boolean;
   socialPromos: boolean;
   issueBanner: boolean;
+  announcement: boolean;
   popularToday: boolean;
   continueReading: boolean;
   latestReleases: boolean;
@@ -58,6 +59,13 @@ export type HeroSlide = {
   href: string;
 };
 
+export type AnnouncementSettings = {
+  title: string;
+  content: string;
+  tags: string[];
+  publishedAt: string;
+};
+
 export type AccentTheme = 'halloween' | 'default';
 
 export const DEFAULT_HERO_SLIDES: HeroSlide[] = [
@@ -90,6 +98,14 @@ export type SiteSettings = {
   newSeriesOrder: string[];
   facebookUrl?: string;
   accentTheme: AccentTheme;
+  announcement: AnnouncementSettings;
+};
+
+export const DEFAULT_ANNOUNCEMENT: AnnouncementSettings = {
+  title: 'Welcome to Clydee Early Access',
+  content: 'We’re actively building and improving the site, so you may occasionally encounter bugs, unfinished features, or unexpected behavior. Thank you for your patience as we make the reading experience better. If something isn’t working as expected, please let us know using Report Issue.',
+  tags: ['Early access update'],
+  publishedAt: '2026-10-27T00:00:00.000Z',
 };
 
 export const DEFAULT_HEADER_VISIBILITY: HeaderVisibility = {
@@ -109,6 +125,7 @@ export const DEFAULT_HOMEPAGE_VISIBILITY: HomepageVisibility = {
   featuredSeries: true,
   socialPromos: true,
   issueBanner: true,
+  announcement: true,
   popularToday: true,
   continueReading: true,
   latestReleases: true,
@@ -151,6 +168,7 @@ export const DEFAULT_SITE_SETTINGS: SiteSettings = {
   newSeriesOrder: [],
   facebookUrl: 'https://facebook.com',
   accentTheme: 'halloween',
+  announcement: DEFAULT_ANNOUNCEMENT,
 };
 
 function parseAccentTheme(value: unknown): AccentTheme {
@@ -230,8 +248,21 @@ function parseSiteSettings(value: unknown): SiteSettings | null {
     : typeof stored.facebookUrl === 'string' && stored.facebookUrl.trim()
     ? stored.facebookUrl.trim()
     : 'https://facebook.com';
+  const storedAnnouncement = stored.announcement && typeof stored.announcement === 'object' && !Array.isArray(stored.announcement)
+    ? stored.announcement as Record<string, unknown>
+    : {};
+  const announcement: AnnouncementSettings = {
+    title: typeof storedAnnouncement.title === 'string' ? storedAnnouncement.title : DEFAULT_ANNOUNCEMENT.title,
+    content: typeof storedAnnouncement.content === 'string' ? storedAnnouncement.content : DEFAULT_ANNOUNCEMENT.content,
+    tags: Array.isArray(storedAnnouncement.tags)
+      ? storedAnnouncement.tags.filter((tag): tag is string => typeof tag === 'string').map((tag) => tag.trim()).filter(Boolean).slice(0, 5)
+      : [...DEFAULT_ANNOUNCEMENT.tags],
+    publishedAt: typeof storedAnnouncement.publishedAt === 'string' && !Number.isNaN(Date.parse(storedAnnouncement.publishedAt))
+      ? storedAnnouncement.publishedAt
+      : DEFAULT_ANNOUNCEMENT.publishedAt,
+  };
 
-  return { header, homepage, seriesPage, seriesFilters, heroSlides, newSeriesOrder, facebookUrl, accentTheme: parseAccentTheme(stored.accent_theme) };
+  return { header, homepage, seriesPage, seriesFilters, heroSlides, newSeriesOrder, facebookUrl, accentTheme: parseAccentTheme(stored.accent_theme), announcement };
 }
 
 export const SITE_SETTINGS_CACHE_KEY = 'vortex-site-settings';
@@ -259,8 +290,21 @@ export function getCachedSiteSettings(): SiteSettings | null {
     const facebookUrl = typeof cached.facebookUrl === 'string' && cached.facebookUrl.trim()
       ? cached.facebookUrl.trim()
       : 'https://facebook.com';
+    const cachedAnnouncement = cached.announcement && typeof cached.announcement === 'object' && !Array.isArray(cached.announcement)
+      ? cached.announcement as Record<string, unknown>
+      : {};
+    const announcement: AnnouncementSettings = {
+      title: typeof cachedAnnouncement.title === 'string' ? cachedAnnouncement.title : DEFAULT_ANNOUNCEMENT.title,
+      content: typeof cachedAnnouncement.content === 'string' ? cachedAnnouncement.content : DEFAULT_ANNOUNCEMENT.content,
+      tags: Array.isArray(cachedAnnouncement.tags)
+        ? cachedAnnouncement.tags.filter((tag): tag is string => typeof tag === 'string').map((tag) => tag.trim()).filter(Boolean).slice(0, 5)
+        : [...DEFAULT_ANNOUNCEMENT.tags],
+      publishedAt: typeof cachedAnnouncement.publishedAt === 'string' && !Number.isNaN(Date.parse(cachedAnnouncement.publishedAt))
+        ? cachedAnnouncement.publishedAt
+        : DEFAULT_ANNOUNCEMENT.publishedAt,
+    };
 
-    const settings = { header, homepage, seriesPage, seriesFilters, heroSlides, newSeriesOrder, facebookUrl, accentTheme: parseAccentTheme(cached.accentTheme) };
+    const settings = { header, homepage, seriesPage, seriesFilters, heroSlides, newSeriesOrder, facebookUrl, accentTheme: parseAccentTheme(cached.accentTheme), announcement };
     applyAccentTheme(settings.accentTheme);
     return settings;
   } catch {
@@ -314,6 +358,7 @@ export async function getSiteSettings(forceRefresh = false): Promise<SiteSetting
           heroSlides: [...DEFAULT_HERO_SLIDES],
           newSeriesOrder: [],
           accentTheme: 'halloween',
+          announcement: DEFAULT_ANNOUNCEMENT,
         };
         inMemorySettings = cached;
         lastSettingsFetchedAt = Date.now();
@@ -358,6 +403,7 @@ export async function saveSiteSettings(settings: SiteSettings): Promise<SiteSett
         new_series_order: settings.newSeriesOrder,
         facebook_url: settings.facebookUrl || 'https://facebook.com',
         accent_theme: settings.accentTheme,
+        announcement: settings.announcement,
       },
       updated_at: new Date().toISOString(),
     })

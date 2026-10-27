@@ -42,10 +42,12 @@ import SeriesCatalogManager from '../components/SeriesCatalogManager';
 import HeroSlidesManager from '../components/HeroSlidesManager';
 import AdminGuideModal from '../components/AdminGuideModal';
 import {
+  DEFAULT_ANNOUNCEMENT,
   DEFAULT_SITE_SETTINGS,
   getSiteSettings,
   saveSiteSettings,
   type HeaderVisibility,
+  type AnnouncementSettings,
   type AccentTheme,
   type HomepageVisibility,
   type SeriesFilterVisibility,
@@ -109,6 +111,7 @@ const homepageVisibilityOptions: { key: keyof HomepageVisibility; label: string;
   { key: 'featuredSeries', label: 'Featured series', description: 'Featured-series carousel at the top of the homepage.', group: 'Featured content' },
   { key: 'socialPromos', label: 'Social promotions', description: 'Share prompt and Facebook invitation cards.', group: 'Promotions' },
   { key: 'issueBanner', label: 'Issue report banner', description: 'Help and issue-report callout below the homepage banner.', group: 'Promotions' },
+  { key: 'announcement', label: 'Announcements', description: 'Show the announcement card above Recently Viewed.', group: 'Promotions' },
   { key: 'popularToday', label: 'Popular Today', description: 'Popular-series cover carousel.', group: 'Discovery' },
   { key: 'continueReading', label: 'Recently Viewed', description: 'Show series you recently opened on the homepage.', group: 'Discovery' },
   { key: 'latestReleases', label: 'Latest Releases', description: 'Recent series and chapter updates.', group: 'Discovery' },
@@ -425,7 +428,7 @@ function ComixDashboard({
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const [profileMenuOpen, setProfileMenuOpen] = useState(false);
   const profileMenuRef = useRef<HTMLDivElement>(null);
-  const [settingsSubTab, setSettingsSubTab] = useState<'homepage' | 'header' | 'series' | 'filters' | 'socials' | 'theme'>('homepage');
+  const [settingsSubTab, setSettingsSubTab] = useState<'homepage' | 'announcement' | 'header' | 'series' | 'filters' | 'socials' | 'theme'>('homepage');
   const [topSearch, setTopSearch] = useState('');
 
   // Series catalog stats
@@ -447,6 +450,8 @@ function ComixDashboard({
 
   // Site settings state
   const [settings, setSettings] = useState<SiteSettings | null>(null);
+  const [announcementDraft, setAnnouncementDraft] = useState<AnnouncementSettings>(DEFAULT_ANNOUNCEMENT);
+  const [announcementTagsInput, setAnnouncementTagsInput] = useState(DEFAULT_ANNOUNCEMENT.tags.join(', '));
   const [savingSettings, setSavingSettings] = useState(false);
   const [saveMessage, setSaveMessage] = useState('Saved');
   const [facebookUrlInput, setFacebookUrlInput] = useState('https://facebook.com');
@@ -473,6 +478,8 @@ function ComixDashboard({
     void getSiteSettings().then((s) => {
       if (active) {
         setSettings(s);
+        setAnnouncementDraft(s.announcement);
+        setAnnouncementTagsInput(s.announcement.tags.join(', '));
         if (s?.facebookUrl) setFacebookUrlInput(s.facebookUrl);
       }
     });
@@ -513,6 +520,34 @@ function ComixDashboard({
     try {
       const saved = await saveSiteSettings(nextSettings);
       setSettings(saved);
+      setSaveMessage('Saved');
+    } catch {
+      setSettings(previousSettings);
+      setSaveMessage('Error saving');
+    } finally {
+      setSavingSettings(false);
+    }
+  };
+
+  const saveAnnouncement = async () => {
+    if (!settings || savingSettings) return;
+    const previousSettings = settings;
+    const announcement: AnnouncementSettings = {
+      ...announcementDraft,
+      title: announcementDraft.title.trim(),
+      content: announcementDraft.content.trim(),
+      tags: announcementTagsInput.split(',').map((tag) => tag.trim()).filter(Boolean).slice(0, 5),
+      publishedAt: new Date().toISOString(),
+    };
+    const nextSettings: SiteSettings = { ...settings, announcement };
+    setSettings(nextSettings);
+    setSavingSettings(true);
+    setSaveMessage('Saving...');
+    try {
+      const saved = await saveSiteSettings(nextSettings);
+      setSettings(saved);
+      setAnnouncementDraft(saved.announcement);
+      setAnnouncementTagsInput(saved.announcement.tags.join(', '));
       setSaveMessage('Saved');
     } catch {
       setSettings(previousSettings);
@@ -939,6 +974,13 @@ function ComixDashboard({
                   </button>
                   <button
                     type="button"
+                    className={`comix-sub-tab ${settingsSubTab === 'announcement' ? 'is-active' : ''}`}
+                    onClick={() => setSettingsSubTab('announcement')}
+                  >
+                    Announcement
+                  </button>
+                  <button
+                    type="button"
                     className={`comix-sub-tab ${settingsSubTab === 'header' ? 'is-active' : ''}`}
                     onClick={() => setSettingsSubTab('header')}
                   >
@@ -1001,6 +1043,54 @@ function ComixDashboard({
                         </div>
                       );
                     })}
+                  </div>
+                )}
+
+                {settings && settingsSubTab === 'announcement' && (
+                  <div className="comix-setting-group">
+                    <div className="comix-group-title">Homepage announcement</div>
+                    <p className="comix-announcement-help">Edit the message shown above Recently Viewed. The date updates automatically when you save.</p>
+                    <div className="comix-announcement-form">
+                      <label>
+                        <span>Title</span>
+                        <input
+                          className="comix-announcement-input"
+                          maxLength={120}
+                          value={announcementDraft.title}
+                          onChange={(event) => setAnnouncementDraft({ ...announcementDraft, title: event.target.value })}
+                          placeholder="Announcement title"
+                        />
+                      </label>
+                      <label>
+                        <span>Content</span>
+                        <textarea
+                          className="comix-announcement-input comix-announcement-textarea"
+                          maxLength={1200}
+                          value={announcementDraft.content}
+                          onChange={(event) => setAnnouncementDraft({ ...announcementDraft, content: event.target.value })}
+                          placeholder="Write your announcement"
+                          rows={5}
+                        />
+                      </label>
+                      <label>
+                        <span>Tags <small>(comma separated, up to 5)</small></span>
+                        <input
+                          className="comix-announcement-input"
+                          maxLength={160}
+                          value={announcementTagsInput}
+                          onChange={(event) => setAnnouncementTagsInput(event.target.value)}
+                          placeholder="Early access, Service update"
+                        />
+                      </label>
+                      <div className="comix-announcement-date">
+                        <strong>Current date</strong>
+                        <span>{new Date(settings.announcement.publishedAt).toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric' })} · refreshed on save</span>
+                      </div>
+                      <button type="button" className="comix-announcement-save" onClick={saveAnnouncement} disabled={savingSettings}>
+                        {savingSettings ? <LoaderCircle className="spin-icon" size={15} /> : <Check size={15} />}
+                        {savingSettings ? 'Saving...' : 'Save Announcement'}
+                      </button>
+                    </div>
                   </div>
                 )}
 

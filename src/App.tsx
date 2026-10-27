@@ -1,5 +1,5 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState, type PointerEvent as ReactPointerEvent, type SyntheticEvent } from 'react';
-import { ArrowLeft, ArrowRight, ArrowUp, ArrowUpRight, ChevronDown, ChevronLeft, ChevronRight, Clock3, Flame, RefreshCw } from 'lucide-react';
+import { ArrowLeft, ArrowRight, ArrowUp, ArrowUpRight, ChevronDown, ChevronLeft, ChevronRight, Clock3, Flame, Megaphone, RefreshCw } from 'lucide-react';
 import { Route, Switch, Router as WouterRouter, useLocation } from 'wouter';
 import SiteSearch from './components/SiteSearch';
 import SiteFooter from './components/SiteFooter';
@@ -610,6 +610,26 @@ function HomePage() {
               />
             ))
           )}</div><button className="rail-arrow left" onClick={() => railRef.current?.scrollBy({ left: -500, behavior: 'smooth' })} aria-label="Previous popular"><ArrowLeft /></button><button className="rail-arrow right" onClick={() => railRef.current?.scrollBy({ left: 500, behavior: 'smooth' })} aria-label="Next popular"><ArrowRight /></button></div>
+        </section>}
+
+        {homepageVisibility.announcement && <section className="announcement-section content-width" aria-labelledby="home-announcements-title">
+          <div className="section-title"><h2 id="home-announcements-title">Announcements</h2></div>
+          <article className="announcement-card" aria-labelledby="home-announcement-title">
+            <span className="announcement-card__icon" aria-hidden="true"><Megaphone size={18} /></span>
+            <div className="announcement-card__content">
+              <h3 id="home-announcement-title">{siteSettings.announcement.title}</h3>
+              <p>{siteSettings.announcement.content}</p>
+              <div className="announcement-card__meta">
+                <span aria-hidden="true" />
+                {siteSettings.announcement.tags.length > 0 && (
+                  <span className="announcement-card__label">{siteSettings.announcement.tags.join(' · ')}</span>
+                )}
+                <time dateTime={siteSettings.announcement.publishedAt}>
+                  {new Date(siteSettings.announcement.publishedAt).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' })}
+                </time>
+              </div>
+            </div>
+          </article>
         </section>}
 
         {homepageVisibility.continueReading && continueReadingItems.length > 0 && (
