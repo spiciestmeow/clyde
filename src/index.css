@@ -129,7 +129,7 @@ img { display: block; max-width: 100%; }
 .icon-pill svg { width: 18px; height: 18px; }
 .icon-pill img { width: 18px; height: 18px; }
 .facebook-short svg { color: #fff; fill: currentColor; }
-.theme-light .facebook-short svg { color: #111; }
+.theme-light .facebook-short svg { color: rgba(25,25,29,.76); }
 .theme-light .nav-pill, .theme-light .bookmark-pill, .theme-light .icon-pill { background: rgba(0,0,0,.035); color: rgba(25,25,29,.76); }
 .theme-light .nav-pill:hover, .theme-light .bookmark-pill:hover, .theme-light .icon-pill:hover { color: var(--text); background: rgba(0,0,0,.075); border-color: var(--line); }
 .theme-light .nav-pill.selected { color: var(--text); background: rgba(0,0,0,.08); }
