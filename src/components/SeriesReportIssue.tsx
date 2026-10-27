@@ -3,6 +3,7 @@ import { BookOpen, Check, ChevronRight, Copyright, ImageOff, MessageSquareWarnin
 import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
 
 const seriesReportStyles = `
+.series-report-category[aria-pressed="true"] { border-color: color-mix(in srgb, var(--accent) 38%, #e8e1dc); background: color-mix(in srgb, var(--accent) 12%, #fffdfa); }
 html:has(.vortex-page.theme-dark) .series-report-dialog { border-color: #292522 !important; background: #141210 !important; color: #eee9e4 !important; }
 html:has(.vortex-page.theme-dark) .series-report-header,
 html:has(.vortex-page.theme-dark) .series-report-footer { border-color: #292522 !important; }
@@ -105,7 +106,7 @@ export function SeriesReportIssue({ open, onOpenChange, seriesSlug, seriesTitle 
                     type="button"
                     onClick={() => setIssueType(label)}
                     aria-pressed={issueType === label}
-                    className={`series-report-category flex min-h-[44px] w-full items-center gap-3 rounded-full border px-3.5 text-left text-[14px] transition-colors sm:min-h-[56px] sm:px-5 sm:text-base ${issueType === label ? 'border-[#f2a16d] bg-[#fff0e6]' : 'border-[#e8e1dc] bg-[#fbf9f7] hover:bg-[#fff7f2]'}`}
+                    className={`series-report-category flex min-h-[44px] w-full items-center gap-3 rounded-full border px-3.5 text-left text-[14px] transition-colors sm:min-h-[56px] sm:px-5 sm:text-base ${issueType === label ? '' : 'border-[#e8e1dc] bg-[#fbf9f7] hover:bg-[#fff7f2]'}`}
                   >
                     <Icon size={17} className="shrink-0 text-[var(--accent)]" />
                     <span className="flex-1">{label}</span>

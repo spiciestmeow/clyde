@@ -18,6 +18,7 @@ const reportScrollStyles = `
 .report-issue-scroll::-webkit-scrollbar { width: 8px; }
 .report-issue-scroll::-webkit-scrollbar-track { background: transparent; }
 .report-issue-scroll::-webkit-scrollbar-thumb { border-radius: 999px; background: #a39d97; }
+.report-issue-category[aria-pressed="true"] { border-color: color-mix(in srgb, var(--accent) 38%, #e5ddd7); background: color-mix(in srgb, var(--accent) 12%, #fffdfa); }
 html:has(.vortex-page.theme-dark) .report-issue-dialog { border: 1px solid #292522 !important; background: #141210 !important; color: #eee9e4 !important; }
 html:has(.vortex-page.theme-dark) .report-issue-header,
 html:has(.vortex-page.theme-dark) .report-issue-footer { border-color: #292522 !important; }
@@ -107,7 +108,7 @@ export function ReportIssue({ open, onOpenChange }: ReportIssueProps) {
                 <div className="space-y-1.5 sm:space-y-2">
                   {categories.map(({ label, Icon }) => (
                     <button key={label} type="button" onClick={() => setCategory(label)} aria-pressed={category === label}
-                      className={`report-issue-category flex h-9 w-full items-center gap-2.5 rounded-full border px-3 text-left text-[13px] transition-colors sm:h-[56px] sm:gap-3.5 sm:px-5 sm:text-base ${category === label ? 'border-[#e5ddd7] bg-[#fceddf]' : 'border-[#e5ddd7] bg-[#fbf9f7] hover:bg-[#fff7f2]'}`}>
+                      className={`report-issue-category flex h-9 w-full items-center gap-2.5 rounded-full border px-3 text-left text-[13px] transition-colors sm:h-[56px] sm:gap-3.5 sm:px-5 sm:text-base ${category === label ? '' : 'border-[#e5ddd7] bg-[#fbf9f7] hover:bg-[#fff7f2]'}`}>
                       <Icon size={14} className="shrink-0 text-[var(--accent)] sm:h-5 sm:w-5" />
                       <span className="flex-1">{label}</span>
                       {category === label
