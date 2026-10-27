@@ -225,11 +225,7 @@ main { padding-bottom: 38px; }
   max-width: none;
   transform: translateX(-50%);
   overflow: hidden;
-  background: #09090b;
-}
-
-.theme-light .hero-full-bleed {
-  background: #f4f4f5;
+  background: var(--page);
 }
 
 .main-banner-slider {

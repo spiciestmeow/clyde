@@ -35,7 +35,9 @@ type NotificationRow = {
 };
 
 const READ_IDS_KEY = 'vortex-notification-read-v1';
+const READ_AT_KEY = 'vortex-notification-read-at-v1';
 const HIDDEN_IDS_KEY = 'vortex-notification-hidden-v1';
+const NOTIFICATION_PAGE_SIZE = 50;
 
 function getStoredIds(key: string): Set<string> {
   try {
@@ -50,6 +52,20 @@ function storeIds(key: string, ids: Set<string>) {
   try { window.localStorage.setItem(key, JSON.stringify([...ids])); } catch { /* Storage may be unavailable. */ }
 }
 
+function getStoredReadTimes(): Record<string, string> {
+  try {
+    const parsed: unknown = JSON.parse(window.localStorage.getItem(READ_AT_KEY) || '{}');
+    if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) return {};
+    return Object.fromEntries(Object.entries(parsed).filter((entry): entry is [string, string] => typeof entry[1] === 'string'));
+  } catch {
+    return {};
+  }
+}
+
+function storeReadTimes(times: Record<string, string>) {
+  try { window.localStorage.setItem(READ_AT_KEY, JSON.stringify(times)); } catch { /* Storage may be unavailable. */ }
+}
+
 function relativeAge(value: string) {
   const timestamp = Date.parse(value);
   if (!Number.isFinite(timestamp)) return '';
@@ -61,22 +77,45 @@ function relativeAge(value: string) {
   return new Intl.DateTimeFormat(undefined, { month: 'short', day: 'numeric' }).format(timestamp);
 }
 
+function notificationDate(value: string) {
+  const timestamp = Date.parse(value);
+  if (!Number.isFinite(timestamp)) return '';
+  return new Intl.DateTimeFormat(undefined, { month: 'short', day: 'numeric' }).format(timestamp);
+}
+
+function notificationTimestamp(value: string) {
+  const timestamp = Date.parse(value);
+  if (!Number.isFinite(timestamp)) return '';
+  const date = new Date(timestamp);
+  const now = new Date();
+  if (date.toDateString() === now.toDateString()) {
+    return new Intl.DateTimeFormat(undefined, { hour: 'numeric', minute: '2-digit' }).format(date);
+  }
+  return new Intl.DateTimeFormat(undefined, { month: 'short', day: 'numeric' }).format(date);
+}
+
 const filters: { label: Filter; Icon: typeof Grid2X2 }[] = [
   { label: 'All', Icon: Grid2X2 },
   { label: 'Chapters', Icon: BookOpen },
   { label: 'Series', Icon: Layers3 },
 ];
 
-export default function NotificationPopover() {
-  const [, setLocation] = useLocation();
-  const [open, setOpen] = useState(false);
+type NotificationPopoverProps = { mode?: 'popover' | 'page' };
+
+export default function NotificationPopover({ mode = 'popover' }: NotificationPopoverProps) {
+  const [location, setLocation] = useLocation();
+  const isPage = mode === 'page';
+  const [open, setOpen] = useState(isPage);
   const [filter, setFilter] = useState<Filter>('All');
   const [items, setItems] = useState<NotificationRow[]>([]);
   const [readIds, setReadIds] = useState<Set<string>>(() => getStoredIds(READ_IDS_KEY));
+  const [readTimes, setReadTimes] = useState<Record<string, string>>(() => getStoredReadTimes());
   const [hiddenIds, setHiddenIds] = useState<Set<string>>(() => getStoredIds(HIDDEN_IDS_KEY));
   const [bookmarkIntervals, setBookmarkIntervals] = useState<Record<string, BookmarkSubscriptionInterval[]>>(() => getBookmarkIntervals());
   const [isLoading, setIsLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [loadingOlder, setLoadingOlder] = useState(false);
+  const [hasOlder, setHasOlder] = useState(false);
   const rootRef = useRef<HTMLDivElement>(null);
   const listIsLoading = isLoading || refreshing;
 
@@ -86,7 +125,10 @@ export default function NotificationPopover() {
   // Keep the badge and unread styling in sync if the header is recreated during
   // client-side navigation, or if another tab marks notifications as read.
   useEffect(() => {
-    const refreshReadState = () => setReadIds(getStoredIds(READ_IDS_KEY));
+    const refreshReadState = () => {
+      setReadIds(getStoredIds(READ_IDS_KEY));
+      setReadTimes(getStoredReadTimes());
+    };
     window.addEventListener('vortex-notification-read-change', refreshReadState);
     window.addEventListener('storage', refreshReadState);
     return () => {
@@ -114,7 +156,7 @@ export default function NotificationPopover() {
         .from('notifications')
         .select('id, category, series_id, series_title, series_slug, series_cover, message, created_at')
         .order('created_at', { ascending: false })
-        .limit(50);
+        .limit(NOTIFICATION_PAGE_SIZE);
       if (error) {
         console.error('Could not load notifications:', error.message);
         return;
@@ -144,10 +186,54 @@ export default function NotificationPopover() {
         ...item,
         series_cover: item.series_cover?.trim() || knownCoversRef.current.get(item.series_id) || '',
       })));
+      setHasOlder(notifications.length === NOTIFICATION_PAGE_SIZE);
     } finally {
       if (showInitialLoading) setIsLoading(false);
     }
   }, []);
+
+  const loadOlderNotifications = async () => {
+    if (!supabase || loadingOlder || !hasOlder) return;
+    setLoadingOlder(true);
+    try {
+      const offset = items.length;
+      const { data, error } = await supabase
+        .from('notifications')
+        .select('id, category, series_id, series_title, series_slug, series_cover, message, created_at')
+        .order('created_at', { ascending: false })
+        .range(offset, offset + NOTIFICATION_PAGE_SIZE - 1);
+      if (error) {
+        console.error('Could not load older notifications:', error.message);
+        return;
+      }
+
+      const older = (data ?? []) as NotificationRow[];
+      const missingCoverIds = [...new Set(
+        older
+          .filter((item) => !item.series_cover?.trim() && !knownCoversRef.current.has(item.series_id))
+          .map((item) => item.series_id),
+      )];
+      if (missingCoverIds.length > 0) {
+        const { data: series } = await supabase.from('series').select('id, cover').in('id', missingCoverIds);
+        (series ?? []).forEach((item) => {
+          if (item.cover) knownCoversRef.current.set(item.id, item.cover);
+        });
+      }
+
+      setItems((current) => {
+        const knownIds = new Set(current.map((item) => item.id));
+        return current.concat(older
+          .filter((item) => !knownIds.has(item.id))
+          .map((item) => ({
+            ...item,
+            series_cover: item.series_cover?.trim() || knownCoversRef.current.get(item.series_id) || '',
+          })));
+      });
+      setHasOlder(older.length === NOTIFICATION_PAGE_SIZE);
+    } finally {
+      setLoadingOlder(false);
+    }
+  };
 
   // Initial load once on mount, with a gentle 5-minute background check only when tab is visible
   useEffect(() => {
@@ -180,12 +266,6 @@ export default function NotificationPopover() {
     );
   }, [items, bookmarkIntervals]);
 
-  const hasActiveSubscriptions = useMemo(() => {
-    return Object.values(bookmarkIntervals).some((list) =>
-      Array.isArray(list) && list.some((interval) => !interval.unbookmarkedAt),
-    );
-  }, [bookmarkIntervals]);
-
   const visibleItems = useMemo(
     () => eligibleItems.filter((item) => !hiddenIds.has(item.id) && (filter === 'All' || item.category === filter)),
     [filter, hiddenIds, eligibleItems],
@@ -193,19 +273,34 @@ export default function NotificationPopover() {
   const todayStart = new Date();
   todayStart.setHours(0, 0, 0, 0);
   const todayItems = visibleItems.filter((item) => Date.parse(item.created_at) >= todayStart.getTime());
-  const earlierItems = visibleItems.filter((item) => Date.parse(item.created_at) < todayStart.getTime());
+  const weekStart = new Date(todayStart);
+  weekStart.setDate(weekStart.getDate() - ((weekStart.getDay() + 6) % 7));
+  const earlierThisWeekItems = visibleItems.filter((item) => {
+    const timestamp = Date.parse(item.created_at);
+    return timestamp >= weekStart.getTime() && timestamp < todayStart.getTime();
+  });
+  const olderItems = visibleItems.filter((item) => Date.parse(item.created_at) < weekStart.getTime());
   const unreadCount = eligibleItems.filter((item) => !hiddenIds.has(item.id) && !readIds.has(item.id)).length;
+  const visibleUnreadCount = visibleItems.filter((item) => !readIds.has(item.id)).length;
+  const visibleReadCount = visibleItems.length - visibleUnreadCount;
+  const unreadCountsByCategory = useMemo(() => ({
+    Chapters: eligibleItems.filter((item) => item.category === 'Chapters' && !hiddenIds.has(item.id) && !readIds.has(item.id)).length,
+    Series: eligibleItems.filter((item) => item.category === 'Series' && !hiddenIds.has(item.id) && !readIds.has(item.id)).length,
+  }), [eligibleItems, hiddenIds, readIds]);
 
-  const saveReadIds = (next: Set<string>) => {
+  const saveReadIds = (next: Set<string>, nextReadTimes: Record<string, string>) => {
     storeIds(READ_IDS_KEY, next);
+    storeReadTimes(nextReadTimes);
     setReadIds(next);
+    setReadTimes(nextReadTimes);
     window.dispatchEvent(new Event('vortex-notification-read-change'));
   };
 
   const markRead = (id: string) => {
     const next = new Set(readIds);
     next.add(id);
-    saveReadIds(next);
+    const nextReadTimes = { ...readTimes, [id]: readTimes[id] || new Date().toISOString() };
+    saveReadIds(next, nextReadTimes);
   };
 
   const openNotification = (item: NotificationRow) => {
@@ -228,13 +323,29 @@ export default function NotificationPopover() {
 
   const markAllRead = () => {
     const next = new Set(readIds);
-    eligibleItems.filter((item) => !hiddenIds.has(item.id)).forEach((item) => next.add(item.id));
-    saveReadIds(next);
+    const nextReadTimes = { ...readTimes };
+    const markedAt = new Date().toISOString();
+    eligibleItems.filter((item) => !hiddenIds.has(item.id) && !next.has(item.id)).forEach((item) => {
+      next.add(item.id);
+      nextReadTimes[item.id] = markedAt;
+    });
+    saveReadIds(next, nextReadTimes);
   };
 
-  const clearNotifications = () => setHiddenIds((current) => {
+  const markVisibleCategoryRead = () => {
+    const next = new Set(readIds);
+    const nextReadTimes = { ...readTimes };
+    const markedAt = new Date().toISOString();
+    visibleItems.filter((item) => !next.has(item.id)).forEach((item) => {
+      next.add(item.id);
+      nextReadTimes[item.id] = markedAt;
+    });
+    saveReadIds(next, nextReadTimes);
+  };
+
+  const deleteVisibleRead = () => setHiddenIds((current) => {
     const next = new Set(current);
-    eligibleItems.forEach((item) => next.add(item.id));
+    visibleItems.filter((item) => readIds.has(item.id)).forEach((item) => next.add(item.id));
     storeIds(HIDDEN_IDS_KEY, next);
     return next;
   });
@@ -258,6 +369,7 @@ export default function NotificationPopover() {
 
   const renderItems = (group: NotificationRow[]) => group.map((item) => {
     const unread = !readIds.has(item.id);
+    const timestamp = unread ? item.created_at : readTimes[item.id] || item.created_at;
     return (
       <button
         type="button"
@@ -276,16 +388,29 @@ export default function NotificationPopover() {
           </span>
         </span>
         <span className="notification-item__copy">
-          <span className="notification-item__text"><strong>{item.series_title}</strong> {item.message}</span>
+          <span className="notification-item__headline">
+            <span className="notification-item__kind">
+              {unread && <span className="notification-item__inline-dot" aria-hidden="true" />}
+              {item.category === 'Chapters' ? 'New chapter' : 'New series added'}
+            </span>
+            <time className="notification-item__date notification-item__date--inline" dateTime={timestamp}>{notificationTimestamp(timestamp)}</time>
+          </span>
+          <span className="notification-item__text"><strong>{item.series_title}</strong></span>
+          <span className="notification-item__preview">{item.message}</span>
           <span className="notification-item__age">{relativeAge(item.created_at)}</span>
         </span>
-        {unread && <span className="notification-item__unread-dot" aria-label="Unread" />}
+        {isPage && (
+          <time className="notification-item__date notification-item__date--side" dateTime={timestamp}>{notificationTimestamp(timestamp)}</time>
+        )}
+        {(isPage || unread) && (
+          <span className={`notification-item__unread-dot${unread ? '' : ' is-read'}`} aria-label={unread ? 'Unread' : 'Read'} />
+        )}
       </button>
     );
   });
 
   useEffect(() => {
-    if (!open) return;
+    if (!open || isPage) return;
     const handlePointerDown = (event: PointerEvent) => {
       if (!rootRef.current?.contains(event.target as Node)) setOpen(false);
     };
@@ -298,79 +423,172 @@ export default function NotificationPopover() {
       document.removeEventListener('pointerdown', handlePointerDown);
       document.removeEventListener('keydown', handleKeyDown);
     };
-  }, [open]);
+  }, [open, isPage]);
+
+  useEffect(() => {
+    if (!open || isPage || !window.matchMedia('(max-width: 680px)').matches) return;
+
+    const scrollY = window.scrollY;
+    const body = document.body;
+    const html = document.documentElement;
+    const previousBodyStyles = {
+      position: body.style.position,
+      top: body.style.top,
+      width: body.style.width,
+      overflow: body.style.overflow,
+    };
+    const previousHtmlOverflow = html.style.overflow;
+
+    body.style.position = 'fixed';
+    body.style.top = `-${scrollY}px`;
+    body.style.width = '100%';
+    body.style.overflow = 'hidden';
+    html.style.overflow = 'hidden';
+
+    return () => {
+      body.style.position = previousBodyStyles.position;
+      body.style.top = previousBodyStyles.top;
+      body.style.width = previousBodyStyles.width;
+      body.style.overflow = previousBodyStyles.overflow;
+      html.style.overflow = previousHtmlOverflow;
+      window.scrollTo(0, scrollY);
+    };
+  }, [open, isPage]);
+
+  const renderFilters = (className: string) => (
+    <nav className={className} aria-label="Filter notifications">
+      {filters.map(({ label, Icon }) => (
+        <button
+          type="button"
+          key={label}
+          className={filter === label ? 'is-active' : ''}
+          aria-pressed={filter === label}
+          onClick={() => setFilter(label)}
+        >
+          <Icon size={14} />
+          <span>{label}</span>
+          {(label === 'All' ? unreadCount : unreadCountsByCategory[label]) > 0 && (
+            <span className="notification-filters__count">
+              {label === 'All' ? unreadCount : unreadCountsByCategory[label]}
+            </span>
+          )}
+        </button>
+      ))}
+    </nav>
+  );
 
   return (
-    <div className="notification-center" ref={rootRef}>
-      <button
+    <div className={`notification-center${isPage ? ' notification-center--page' : ''}`} ref={rootRef}>
+      {!isPage && <button
         type="button"
-        className={`icon-pill notification-trigger${open ? ' is-open' : ''}`}
+        className={`icon-pill notification-trigger${open || location.split('?')[0] === '/notifications' ? ' is-open' : ''}`}
         aria-label={`Notifications${unreadCount ? `, ${unreadCount} unread` : ''}`}
-        aria-expanded={open}
-        aria-haspopup="dialog"
         onClick={() => {
+          if (location.split('?')[0] === '/notifications') {
+            void loadNotifications();
+            return;
+          }
+          if (window.matchMedia('(max-width: 680px)').matches) {
+            setLocation('/notifications');
+            return;
+          }
           setOpen((value) => !value);
           void loadNotifications();
         }}
       >
-        <Bell size={18} />
+        <Bell size={18} fill={open || location.split('?')[0] === '/notifications' ? 'currentColor' : 'none'} />
         {unreadCount > 0 && <span className="notification-count" aria-hidden="true">{unreadCount > 99 ? '99+' : unreadCount}</span>}
-      </button>
+      </button>}
 
-      {open && (
-        <section className="notification-panel" role="dialog" aria-label="Notifications">
+      {isPage && (
+        <aside className="notification-page-sidebar" aria-label="Notification categories">
+          {renderFilters('notification-filters notification-page-sidebar__filters')}
+        </aside>
+      )}
+
+      {(open || isPage) && (
+        <section className={`notification-panel${isPage ? ' notification-panel--page' : ''}`} role={isPage ? 'region' : 'dialog'} aria-label="Notifications">
           <header className="notification-panel__header">
             <div className="notification-panel__heading">
-              <h2>Notifications</h2>
-              <span>{unreadCount} unread</span>
+              <h2>
+                <span className="notification-panel__desktop-title">
+                  {isPage && filter !== 'All' ? `${filter} notifications` : 'Notifications'}
+                </span>
+                <span className="notification-panel__mobile-title">
+                  {filter === 'All' ? 'Notifications' : `${filter} notifications`}
+                </span>
+                {!isPage && !listIsLoading && visibleItems.length === 0 && (
+                  <span className="notification-panel__desktop-empty-status">You’re all caught up</span>
+                )}
+              </h2>
+              {(isPage ? visibleUnreadCount > 0 : listIsLoading || visibleUnreadCount > 0) && (
+                <span className="notification-panel__unread-count">{visibleUnreadCount}</span>
+              )}
             </div>
             <div className="notification-panel__actions">
-              <button type="button" aria-label="Mark all as read" title="Mark all as read" onClick={markAllRead}>
-                <CheckCheck size={19} />
-              </button>
-              <button type="button" aria-label="Clear notifications" title="Clear notifications" onClick={clearNotifications}>
-                <Trash2 size={18} />
-              </button>
+              {visibleReadCount > 0 && (
+                <button type="button" aria-label="Delete read" title="Delete read" onClick={deleteVisibleRead}>
+                  <Trash2 size={18} />
+                  <span>Delete read</span>
+                </button>
+              )}
+              {visibleUnreadCount > 0 && (
+                <button type="button" aria-label="Mark all as read" title="Mark all as read" onClick={markAllRead}>
+                  <CheckCheck size={19} />
+                  <span>Mark all as read</span>
+                </button>
+              )}
               <button type="button" aria-label="Refresh notifications" title="Refresh notifications" onClick={() => void refresh()}>
                 <RefreshCw className={refreshing ? 'is-refreshing' : ''} size={18} />
               </button>
             </div>
+            <div className="notification-panel__mobile-actions">
+              {visibleReadCount > 0 && (
+                <button type="button" aria-label="Delete read" onClick={deleteVisibleRead}>
+                  <Trash2 size={16} />
+                  <span>Delete read</span>
+                </button>
+              )}
+              <button type="button" onClick={markVisibleCategoryRead} disabled={visibleUnreadCount === 0}>
+                <CircleCheck size={16} />
+                <span>{filter === 'All' ? 'Mark all as read' : 'Mark category as read'}</span>
+              </button>
+            </div>
           </header>
 
-          <nav className="notification-filters" aria-label="Filter notifications">
-            {filters.map(({ label, Icon }) => (
-              <button
-                type="button"
-                key={label}
-                className={filter === label ? 'is-active' : ''}
-                aria-pressed={filter === label}
-                onClick={() => setFilter(label)}
-              >
-                <Icon size={14} />
-                <span>{label}</span>
-              </button>
-            ))}
-          </nav>
+          {!isPage && renderFilters('notification-filters')}
+          {isPage && renderFilters('notification-filters notification-page-mobile-filters')}
 
           <div className="notification-list" aria-live="polite" aria-busy={listIsLoading}>
             {listIsLoading ? <NotificationLoadingSkeleton /> : (
               <>
                 {todayItems.length > 0 && <div className="notification-list__section">Today</div>}
                 {renderItems(todayItems)}
-                {earlierItems.length > 0 && <div className="notification-list__section">Earlier</div>}
-                {renderItems(earlierItems)}
+                {earlierThisWeekItems.length > 0 && <div className="notification-list__section">Earlier this week</div>}
+                {renderItems(earlierThisWeekItems)}
+                {olderItems.length > 0 && <div className="notification-list__section">Earlier</div>}
+                {renderItems(olderItems)}
+                {hasOlder && (
+                  <button
+                    type="button"
+                    className="notification-load-older"
+                    onClick={() => void loadOlderNotifications()}
+                    disabled={loadingOlder}
+                  >
+                    <RefreshCw className={loadingOlder ? 'is-refreshing' : ''} size={14} />
+                    {loadingOlder ? 'Loading older notifications…' : 'Load older notifications'}
+                  </button>
+                )}
                 {!visibleItems.length && (
                   <div className="notification-empty">
                     <span className="notification-empty__icon" aria-hidden="true">
                       <Bell size={20} />
                     </span>
-                    <span className="notification-empty__title">You’re all caught up</span>
+                    <span className="notification-empty__title">
+                      {isPage ? 'No notifications yet' : 'You’re all caught up'}
+                    </span>
                     <span className="notification-empty__subtitle">
-                      {filter === 'Chapters'
-                        ? (!hasActiveSubscriptions
-                            ? 'Bookmark series to receive new chapter updates'
-                            : 'No new chapter updates for your bookmarked series')
-                        : 'No new notifications'}
+                      {isPage ? "When you get notifications, they'll show up here" : 'No new notifications'}
                     </span>
                   </div>
                 )}
@@ -378,11 +596,15 @@ export default function NotificationPopover() {
             )}
           </div>
 
-          <button type="button" className="notification-panel__footer" onClick={() => setOpen(false)}>
-            See all notifications
-          </button>
+          {!isPage && <button type="button" className="notification-panel__footer" onClick={() => {
+            setOpen(false);
+            setLocation('/notifications');
+          }}>
+            See more notifications
+          </button>}
         </section>
       )}
+
     </div>
   );
 }

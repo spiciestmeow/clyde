@@ -50,7 +50,7 @@ import {
 
 type CatalogItem = SeriesRecord;
 const assetList = assets as { src: string; alt: string }[];
-const PAGE_SIZE = 30;
+const PAGE_SIZE = 36;
 type SortMode = 'latest' | 'updated' | 'popular' | 'newest' | 'oldest' | 'chapters' | 'title';
 type SortDirection = 'desc' | 'asc';
 type GenreMode = 'include' | 'exclude';

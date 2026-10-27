@@ -4,6 +4,7 @@ import { Route, Switch, Router as WouterRouter, useLocation } from 'wouter';
 import SiteSearch from './components/SiteSearch';
 import SiteFooter from './components/SiteFooter';
 import SiteHeader from './components/SiteHeader';
+import NotificationPopover from './components/NotificationPopover';
 import { Shareable } from './components/Shareable';
 import { ReportIssue } from './components/ReportIssue';
 import NavigationProgress from './components/NavigationProgress';
@@ -893,6 +894,37 @@ function NotFoundPage() {
   );
 }
 
+function NotificationsPage() {
+  const { dark, toggleTheme } = useThemeMode();
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const catalogQuery = useSeriesCatalog();
+  const searchItems = useMemo(() => toSiteSearchItems(catalogQuery.items), [catalogQuery.items]);
+  const trendingSearchItems = useMemo(() => toTrendingSiteSearchItems(catalogQuery.items), [catalogQuery.items]);
+
+  return (
+    <div className={`vortex-page notifications-route ${dark ? 'theme-dark' : 'theme-light'}`}>
+      <SiteHeader
+        activeSection="home"
+        logoSrc="/clydee-logo.png"
+        discordSrc={assetUrl(manifest[5].src, 64)}
+        mobileMenuOpen={mobileMenuOpen}
+        onToggleMobileMenu={() => setMobileMenuOpen((open) => !open)}
+        dark={dark}
+        onToggleTheme={toggleTheme}
+        search={<SiteSearch items={searchItems} trendingItems={trendingSearchItems} />}
+      />
+      <main className="notifications-route__main">
+        <NotificationPopover mode="page" />
+      </main>
+      <SiteFooter
+        className="footer notifications-route__footer"
+        logoSrc="/clydee-logo.png"
+        tagline="Read comics, manga, manhua, and manhwa translated swiftly. Clydee, your ultimate library."
+      />
+    </div>
+  );
+}
+
 function App() {
   useEffect(() => {
     const cachedSettings = getCachedSiteSettings();
@@ -918,6 +950,7 @@ function App() {
         <Route path="/dmca-policy" component={CreditsPage} />
         <Route path="/series" component={SeriesBrowsePage} />
         <Route path="/series/:slug" component={SeriesDetailPage} />
+        <Route path="/notifications" component={NotificationsPage} />
         <Route component={NotFoundPage} />
       </Switch>
     </WouterRouter>
