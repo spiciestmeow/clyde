@@ -7,6 +7,7 @@
   --catalog-line: #e8e5e2;
   --catalog-panel: #fff;
   --catalog-soft: #f7f5f3;
+  --catalog-scrollbar-track: var(--catalog-panel);
   background: #fbfaf8;
   color: var(--catalog-ink);
 }
@@ -17,6 +18,7 @@
   --catalog-line: #343136;
   --catalog-panel: #201f23;
   --catalog-soft: #29272c;
+  --catalog-scrollbar-track: transparent;
   background: #171619;
 }
 .catalog-main { width: min(672px, calc(100% - 40px)); margin: 0 auto; padding: 5px 0 58px; }
@@ -88,20 +90,21 @@
 .catalog-filter-panel { width: 100%; min-width: 0; max-height: min(800px, calc(100vh - 120px)); overflow-y: auto; overscroll-behavior-y: contain; -webkit-overflow-scrolling: touch; padding: 12px 16px; border: 1px solid var(--catalog-line); border-radius: 16px; background: color-mix(in srgb, var(--catalog-panel) 94%, transparent); box-shadow: 0 2px 8px #28211b08; opacity: 0; transform: translateX(32px); pointer-events: none; transition: opacity 300ms cubic-bezier(.4, 0, .2, 1), transform 300ms cubic-bezier(.4, 0, .2, 1); scrollbar-color: auto; scrollbar-width: auto; }
 .catalog-filter-backdrop, .catalog-filter-sheet-handle, .catalog-filter-apply { display: none; }
 .catalog-results-layout.has-filters .catalog-filter-panel { opacity: 1; transform: translateX(0); pointer-events: auto; }
-.catalog-filter-panel::-webkit-scrollbar, .catalog-genre-options::-webkit-scrollbar { width: 10px; height: 10px; border-radius: 10px; background: #fff; }
+.catalog-filter-panel::-webkit-scrollbar, .catalog-genre-options::-webkit-scrollbar { width: 10px; height: 10px; border-radius: 10px; background: var(--catalog-scrollbar-track); }
 .catalog-filter-panel::-webkit-scrollbar-thumb, .catalog-genre-options::-webkit-scrollbar-thumb { min-height: 40px; border: 0; border-radius: 10px; background: var(--scrollbar-thumb); }
-.catalog-filter-panel::-webkit-scrollbar-track, .catalog-genre-options::-webkit-scrollbar-track { border-radius: 10px; background: #fff; }
+.catalog-filter-panel::-webkit-scrollbar-track, .catalog-genre-options::-webkit-scrollbar-track { border-radius: 10px; background: var(--catalog-scrollbar-track); }
 html.series-document-scrollbar, body.series-document-scrollbar { scrollbar-color: auto; scrollbar-width: auto; }
-html.series-document-scrollbar::-webkit-scrollbar, body.series-document-scrollbar::-webkit-scrollbar { width: 10px; height: 10px; background: #fff; }
+html.series-document-scrollbar::-webkit-scrollbar, body.series-document-scrollbar::-webkit-scrollbar { width: 10px; height: 10px; background: var(--scrollbar-track); }
 html.series-document-scrollbar::-webkit-scrollbar-thumb, body.series-document-scrollbar::-webkit-scrollbar-thumb { min-height: 40px; border: 0; border-radius: 10px; background: var(--scrollbar-thumb); }
-html.series-document-scrollbar::-webkit-scrollbar-track, body.series-document-scrollbar::-webkit-scrollbar-track { border-radius: 10px; background: #fff; }
-html.series-document-scrollbar::-webkit-scrollbar-track-piece, body.series-document-scrollbar::-webkit-scrollbar-track-piece { background: #fff; }
-html.series-document-scrollbar::-webkit-scrollbar-corner, body.series-document-scrollbar::-webkit-scrollbar-corner { background: #fff; }
+html.series-document-scrollbar::-webkit-scrollbar-track, body.series-document-scrollbar::-webkit-scrollbar-track { border-radius: 10px; background: var(--scrollbar-track); }
+html.series-document-scrollbar::-webkit-scrollbar-track-piece, body.series-document-scrollbar::-webkit-scrollbar-track-piece { background: var(--scrollbar-track); }
+html.series-document-scrollbar::-webkit-scrollbar-corner, body.series-document-scrollbar::-webkit-scrollbar-corner { background: var(--scrollbar-track); }
 html.series-document-scrollbar::-webkit-scrollbar-button, body.series-document-scrollbar::-webkit-scrollbar-button, .catalog-page::-webkit-scrollbar-button, .catalog-page *::-webkit-scrollbar-button { display: none !important; width: 0 !important; height: 0 !important; min-width: 0 !important; min-height: 0 !important; background: transparent !important; border: 0 !important; -webkit-appearance: none !important; }
-.catalog-filter-panel::-webkit-scrollbar-corner, .catalog-genre-options::-webkit-scrollbar-corner { background: #fff; }
-.catalog-filter-panel::-webkit-scrollbar-track-piece, .catalog-genre-options::-webkit-scrollbar-track-piece { background: #fff; }
+.catalog-filter-panel::-webkit-scrollbar-corner, .catalog-genre-options::-webkit-scrollbar-corner { background: var(--catalog-scrollbar-track); }
+.catalog-filter-panel::-webkit-scrollbar-track-piece, .catalog-genre-options::-webkit-scrollbar-track-piece { background: var(--catalog-scrollbar-track); }
 @supports not selector(::-webkit-scrollbar) {
-  html.series-document-scrollbar, body.series-document-scrollbar, .catalog-filter-panel, .catalog-genre-options { scrollbar-color: var(--scrollbar-thumb) #fff; }
+  html.series-document-scrollbar, body.series-document-scrollbar { scrollbar-color: var(--scrollbar-thumb) var(--scrollbar-track); }
+  .catalog-filter-panel, .catalog-genre-options { scrollbar-color: var(--scrollbar-thumb) var(--catalog-scrollbar-track); }
 }
 .catalog-filter-heading { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 0 0 8px; border-bottom: 1px solid var(--catalog-line); color: var(--catalog-ink); }
 .catalog-filter-heading h2 { margin: 0; font-size: 11px; line-height: 1.3; font-weight: 750; }
@@ -214,12 +217,12 @@ html.series-document-scrollbar::-webkit-scrollbar-button, body.series-document-s
 }
 @media (max-width: 850px) {
   .catalog-results-layout, .catalog-results-layout.has-filters { grid-template-columns: minmax(0, 1fr); }
-  .catalog-page.has-filter-sheet .topbar { display: none; }
-  .catalog-filter-backdrop { position: fixed; inset: 0; z-index: 99; display: block; width: 100%; height: 100%; padding: 0; border: 0; background: rgba(20, 18, 17, .72); touch-action: none; }
+  .catalog-page.has-filter-sheet .topbar { display: block; }
+  .catalog-filter-backdrop { position: fixed; inset: 60px 0 0; z-index: 69; display: block; width: 100%; height: auto; padding: 0; border: 0; background: rgba(20, 18, 17, .72); touch-action: none; }
   .catalog-filter-drawer {
     position: fixed;
-    z-index: 100;
-    top: 0;
+    z-index: 71;
+    top: auto;
     right: 0;
     bottom: 0;
     left: 0;
@@ -231,15 +234,16 @@ html.series-document-scrollbar::-webkit-scrollbar-button, body.series-document-s
     max-width: 100vw;
     min-width: 0;
     box-sizing: border-box;
-    height: 100%;
-    height: 100dvh;
-    max-height: 100dvh;
+    height: min(82vh, calc(100dvh - 60px));
+    max-height: calc(100dvh - 60px);
     margin: 0;
     padding: 0;
     overflow: hidden;
-    border-radius: 0;
+    border: 1px solid var(--catalog-line);
+    border-bottom: 0;
+    border-radius: 22px 22px 0 0;
     background: var(--catalog-panel);
-    box-shadow: none;
+    box-shadow: 0 -12px 36px rgba(0, 0, 0, .18);
     transform: translateY(100%);
     visibility: hidden;
     pointer-events: none;
@@ -250,7 +254,14 @@ html.series-document-scrollbar::-webkit-scrollbar-button, body.series-document-s
     visibility: visible;
     pointer-events: auto;
   }
-  .catalog-filter-sheet-handle { display: none; }
+  .catalog-filter-sheet-handle {
+    flex: 0 0 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--catalog-panel);
+  }
+  .catalog-filter-sheet-handle span { width: 44px; height: 4px; border-radius: 999px; background: var(--catalog-line); }
   .catalog-filter-panel {
     flex: 1 1 0%;
     width: 100%;
@@ -265,7 +276,7 @@ html.series-document-scrollbar::-webkit-scrollbar-button, body.series-document-s
     overscroll-behavior-y: contain;
     -webkit-overflow-scrolling: touch;
     scrollbar-gutter: auto;
-    scrollbar-color: var(--scrollbar-thumb) #fff;
+    scrollbar-color: auto;
     scrollbar-width: auto;
     border: 0;
     border-radius: 0;
@@ -275,8 +286,8 @@ html.series-document-scrollbar::-webkit-scrollbar-button, body.series-document-s
     transform: none;
     pointer-events: auto;
   }
-  .catalog-filter-panel::-webkit-scrollbar { width: 10px; height: 10px; background: #fff; }
-  .catalog-filter-panel::-webkit-scrollbar-track { border-radius: 10px; background: #fff; }
+  .catalog-filter-panel::-webkit-scrollbar { width: 10px; height: 10px; background: var(--catalog-scrollbar-track); }
+  .catalog-filter-panel::-webkit-scrollbar-track { border-radius: 10px; background: var(--catalog-scrollbar-track); }
   .catalog-filter-panel::-webkit-scrollbar-thumb { min-height: 40px; border: 0; border-radius: 10px; background: var(--scrollbar-thumb); }
   .catalog-filter-panel::-webkit-scrollbar-button,
   .catalog-genre-options::-webkit-scrollbar-button,

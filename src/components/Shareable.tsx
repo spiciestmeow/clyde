@@ -1,5 +1,6 @@
 import { Dialog, DialogContent } from '@/components/ui/dialog';
-import { Link, Phone, Share, Share2, X } from 'lucide-react';
+import { toast } from '@/hooks/use-toast';
+import { Link, Phone, Share2, X } from 'lucide-react';
 
 interface ShareableProps {
   open: boolean;
@@ -7,38 +8,111 @@ interface ShareableProps {
 }
 
 export function Shareable({ open, onOpenChange }: ShareableProps) {
+  const getShareContent = () => {
+    const pageTitle = document.querySelector('main h1')?.textContent?.trim() || document.title || 'Clydee';
+    const url = window.location.href;
+    const text = pageTitle.toLocaleLowerCase() === 'clydee'
+      ? 'Check out Clydee!'
+      : `Check out ${pageTitle} on Clydee!`;
+    return { pageTitle, text, url };
+  };
+
+  const copyText = async (text: string) => {
+    try {
+      if (navigator.clipboard?.writeText) {
+        await navigator.clipboard.writeText(text);
+        return;
+      }
+    } catch {
+      // Fall back for browsers or contexts that block the Clipboard API.
+    }
+
+    const field = document.createElement('textarea');
+    field.value = text;
+    field.setAttribute('readonly', '');
+    field.style.position = 'fixed';
+    field.style.opacity = '0';
+    document.body.appendChild(field);
+    field.select();
+    const copied = document.execCommand('copy');
+    field.remove();
+    if (!copied) throw new Error('Clipboard copy was blocked');
+  };
+
+  const openShareWindow = (url: string) => {
+    const popup = window.open(url, '_blank');
+    if (popup) {
+      popup.opener = null;
+      return true;
+    }
+    return false;
+  };
+
   const shareOnFacebook = () => {
-    const url = encodeURIComponent(window.location.href);
-    window.open(`https://www.facebook.com/sharer/sharer.php?u=${url}`, '_blank');
+    const { url } = getShareContent();
+    const shareUrl = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(url)}`;
+    if (!openShareWindow(shareUrl)) {
+      toast({ description: 'Your browser blocked the Facebook share window.' });
+      return;
+    }
     onOpenChange(false);
   };
 
   const shareOnX = () => {
-    const url = encodeURIComponent(window.location.href);
-    window.open(`https://twitter.com/intent/tweet?url=${url}&text=Clydee`, '_blank');
+    const { text, url } = getShareContent();
+    const shareUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(url)}`;
+    if (!openShareWindow(shareUrl)) {
+      toast({ description: 'Your browser blocked the X share window.' });
+      return;
+    }
     onOpenChange(false);
   };
 
   const shareOnWhatsApp = () => {
-    const text = encodeURIComponent('Clydee');
-    const url = encodeURIComponent(window.location.href);
-    window.open(`https://wa.me/?text=${text}%20${url}`, '_blank');
+    const { text, url } = getShareContent();
+    const shareUrl = `https://wa.me/?text=${encodeURIComponent(`${text}\n${url}`)}`;
+    if (!openShareWindow(shareUrl)) {
+      toast({ description: 'Your browser blocked the WhatsApp share window.' });
+      return;
+    }
     onOpenChange(false);
   };
 
   const copyLink = async () => {
-    await navigator.clipboard.writeText(window.location.href);
+    const { url } = getShareContent();
+    try {
+      await copyText(url);
+      toast({ description: 'Link copied to clipboard.' });
+    } catch {
+      toast({ description: 'Could not copy the link. Please copy it from your browser address bar.' });
+    }
     onOpenChange(false);
   };
 
-  const shareMoreOptions = () => {
+  const shareMoreOptions = async () => {
+    const { pageTitle, text, url } = getShareContent();
     if (navigator.share) {
-      navigator.share({
-        title: 'Clydee',
-        url: window.location.href,
-      }).catch(() => {});
+      try {
+        await navigator.share({ title: pageTitle, text, url });
+      } catch (error) {
+        if (error instanceof Error && error.name === 'AbortError') {
+          onOpenChange(false);
+          return;
+        }
+        try {
+          await copyText(url);
+          toast({ description: 'Sharing is unavailable here, so the link was copied instead.' });
+        } catch {
+          toast({ description: 'Sharing and copying are unavailable in this browser.' });
+        }
+      }
     } else {
-      void navigator.clipboard.writeText(window.location.href);
+      try {
+        await copyText(url);
+        toast({ description: 'This browser has no share menu, so the link was copied.' });
+      } catch {
+        toast({ description: 'Sharing and copying are unavailable in this browser.' });
+      }
     }
     onOpenChange(false);
   };
