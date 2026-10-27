@@ -173,7 +173,11 @@ export default async function handler(
             .map((s: any) => parseFloat(s?.rating))
             .filter((r: number) => !Number.isNaN(r) && r > 0);
           const topRating = detectedRatings.length ? Math.max(...detectedRatings) : null;
-          highestRatingStr = topRating !== null ? (topRating % 1 === 0 ? topRating.toFixed(1) : String(topRating)) : (item.rating || null);
+          // Always use the freshly scraped source rating when available.
+          // This overwrites any stale imported value (e.g. a "10" from MangaDex import)
+          // with the actual rating shown on the scanlator's site.
+          // Only fall back to null (not the old stored value) when no sources returned a rating.
+          highestRatingStr = topRating !== null ? (topRating % 1 === 0 ? topRating.toFixed(1) : String(topRating)) : null;
         } else {
           const altTitles = Array.isArray(item.alternate_titles) ? item.alternate_titles : [];
           const syncResult = await fetchScanlationSources(item.title, altTitles);

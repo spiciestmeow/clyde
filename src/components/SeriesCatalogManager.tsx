@@ -637,11 +637,25 @@ export default function SeriesCatalogManager({
           }
         }
 
+        // Compute the highest scraped source rating and replace the draft value.
+        // This ensures a stale imported rating (e.g. "10" from MangaDex) is
+        // overwritten with the actual rating shown on the scanlator's page.
+        const scrapedRatings = result.sourceResults
+          .map((s) => parseFloat(s.rating || ''))
+          .filter((r) => !Number.isNaN(r) && r > 0);
+        const topScrapedRating = scrapedRatings.length
+          ? Math.max(...scrapedRatings)
+          : null;
+        const nextRating = topScrapedRating !== null
+          ? (topScrapedRating % 1 === 0 ? topScrapedRating.toFixed(1) : String(topScrapedRating))
+          : prev.rating; // Only keep old value when no source returned a rating at all
+
         return {
           ...prev,
           facts: nextFacts,
           sources: nextSources,
           chapters: updatedChapters,
+          rating: nextRating,
         };
       });
 
