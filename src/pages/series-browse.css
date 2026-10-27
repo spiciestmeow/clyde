@@ -221,8 +221,8 @@ html.series-document-scrollbar::-webkit-scrollbar-button, body.series-document-s
   .catalog-filter-backdrop { position: fixed; inset: 0; z-index: 95; display: block; width: 100%; height: 100%; padding: 0; border: 0; background: rgba(20, 18, 17, .72); touch-action: none; }
   .catalog-filter-drawer {
     position: fixed;
-    z-index: 100;
-    top: auto;
+    z-index: 1000;
+    top: 0;
     right: 0;
     bottom: 0;
     left: 0;
@@ -235,17 +235,16 @@ html.series-document-scrollbar::-webkit-scrollbar-button, body.series-document-s
     min-width: 0;
     min-height: 0;
     box-sizing: border-box;
-    height: 85dvh;
-    height: min(85dvh, calc(100dvh - 54px));
-    max-height: calc(100dvh - 54px);
+    height: 100%;
+    height: 100dvh;
+    max-height: 100dvh;
     margin: 0;
     padding: 0;
     overflow: hidden;
-    border: 1px solid var(--catalog-line);
-    border-bottom: 0;
-    border-radius: 20px 20px 0 0;
+    border: 0;
+    border-radius: 0;
     background: var(--catalog-panel);
-    box-shadow: 0 -12px 36px rgba(0, 0, 0, .25);
+    box-shadow: none;
     transform: translateY(100%);
     visibility: hidden;
     pointer-events: none;
@@ -255,20 +254,14 @@ html.series-document-scrollbar::-webkit-scrollbar-button, body.series-document-s
     transform: translateY(0);
     visibility: visible;
     pointer-events: auto;
-    height: 85dvh;
-    height: min(85dvh, calc(100dvh - 54px));
-    max-height: calc(100dvh - 54px);
+    height: 100%;
+    height: 100dvh;
+    max-height: 100dvh;
     margin-top: 0;
   }
   .catalog-filter-sheet-handle {
-    flex: 0 0 20px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    background: var(--catalog-panel);
-    padding-top: 6px;
+    display: none;
   }
-  .catalog-filter-sheet-handle span { width: 44px; height: 4px; border-radius: 999px; background: var(--catalog-line); }
   .catalog-filter-panel {
     flex: 1 1 auto;
     width: 100%;
@@ -277,7 +270,7 @@ html.series-document-scrollbar::-webkit-scrollbar-button, body.series-document-s
     min-height: 0;
     box-sizing: border-box;
     max-height: none;
-    padding: 0 16px 16px;
+    padding: 0 16px 24px;
     overflow-x: hidden;
     overflow-y: auto;
     overscroll-behavior-y: contain;
