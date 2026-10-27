@@ -236,8 +236,8 @@
 .series-synopsis-toggle:hover { color: var(--accent-hover); }
 .series-synopsis-toggle svg { transition: transform .18s ease; }
 .series-synopsis-toggle svg.is-expanded { transform: rotate(180deg); }
-.series-synopsis-genres { display: flex; flex-wrap: wrap; gap: 8px; margin: 16px 0 8px; padding-left: 0; }
-.series-synopsis-genres span { display: inline-flex; align-items: center; padding: 4px 10px; border: 1px solid color-mix(in srgb, var(--accent) 22%, transparent); border-radius: 8px; background: color-mix(in srgb, var(--accent) 8%, transparent); color: var(--accent-strong); font-size: 12px; font-weight: 500; line-height: 1.5; }
+.series-synopsis-genres { display: flex; flex-wrap: wrap; gap: 6px; margin: 10px 0 6px; padding-left: 0; }
+.series-synopsis-genres span { display: inline-flex; align-items: center; padding: 3px 8px; border: 1px solid color-mix(in srgb, var(--accent) 22%, transparent); border-radius: 999px; background: color-mix(in srgb, var(--accent) 8%, transparent); color: var(--accent-strong); font-size: 10px; font-weight: 500; line-height: 1.2; }
 
 .series-social-strip { width: min(748px, 100%); container-type: inline-size; display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 8px auto 0; }
 .series-social-strip--single { grid-template-columns: minmax(0, 1fr); }
