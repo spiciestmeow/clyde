@@ -29,6 +29,7 @@ import { DEFAULT_SERIES_PAGE_VISIBILITY, SITE_SETTINGS_UPDATED_EVENT, getCachedS
 import { formatScanlatorSeriesUrl } from '../lib/scanlatorLinks';
 import { getWinningChapterSource } from '../lib/sourcePriority';
 import { recordRecentlyViewedSeries } from '../lib/recentlyViewedSeries';
+import { recordBookmarkEvent } from '../lib/bookmarkNotifications';
 import {
   getAnonymousVisitorId,
   loadSeriesReactionState,
@@ -571,6 +572,7 @@ export default function SeriesDetailPage() {
     setBookmarks(next);
     try {
       localStorage.setItem('vortex-series-bookmarks', JSON.stringify(next));
+      recordBookmarkEvent(series.slug, nextBookmarked ? 'bookmark' : 'unbookmark');
       window.dispatchEvent(new Event('vortex-bookmarks-change'));
     } catch {
       /* storage may be unavailable */

@@ -12,6 +12,11 @@ import {
 import { useLocation } from 'wouter';
 import { supabase } from '../lib/supabase';
 import { toast } from '../hooks/use-toast';
+import {
+  getBookmarkIntervals,
+  isNotificationEligibleForUser,
+  type BookmarkSubscriptionInterval,
+} from '../lib/bookmarkNotifications';
 import NotificationLoadingSkeleton from './NotificationLoadingSkeleton';
 import './notification-popover.css';
 
@@ -31,27 +36,6 @@ type NotificationRow = {
 
 const READ_IDS_KEY = 'vortex-notification-read-v1';
 const HIDDEN_IDS_KEY = 'vortex-notification-hidden-v1';
-const BOOKMARKS_STORAGE_KEY = 'vortex-series-bookmarks';
-
-function getBookmarkedSeries(): Set<string> {
-  if (typeof window === 'undefined') return new Set();
-  try {
-    const raw = window.localStorage.getItem(BOOKMARKS_STORAGE_KEY);
-    if (!raw) return new Set();
-    const parsed: unknown = JSON.parse(raw);
-    if (!Array.isArray(parsed)) return new Set();
-    const set = new Set<string>();
-    for (const item of parsed) {
-      if (typeof item === 'string') {
-        const slug = item.replace(/^\/series\//, '').replace(/\/$/, '').trim().toLowerCase();
-        if (slug) set.add(slug);
-      }
-    }
-    return set;
-  } catch {
-    return new Set();
-  }
-}
 
 function getStoredIds(key: string): Set<string> {
   try {
@@ -90,7 +74,7 @@ export default function NotificationPopover() {
   const [items, setItems] = useState<NotificationRow[]>([]);
   const [readIds, setReadIds] = useState<Set<string>>(() => getStoredIds(READ_IDS_KEY));
   const [hiddenIds, setHiddenIds] = useState<Set<string>>(() => getStoredIds(HIDDEN_IDS_KEY));
-  const [bookmarkedSeries, setBookmarkedSeries] = useState<Set<string>>(() => getBookmarkedSeries());
+  const [bookmarkIntervals, setBookmarkIntervals] = useState<Record<string, BookmarkSubscriptionInterval[]>>(() => getBookmarkIntervals());
   const [isLoading, setIsLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const rootRef = useRef<HTMLDivElement>(null);
@@ -111,9 +95,9 @@ export default function NotificationPopover() {
     };
   }, []);
 
-  // Keep bookmarked series in sync so chapter notifications immediately appear/disappear on bookmark toggle
+  // Keep bookmarked series in sync so future chapter updates appear
   useEffect(() => {
-    const refreshBookmarks = () => setBookmarkedSeries(getBookmarkedSeries());
+    const refreshBookmarks = () => setBookmarkIntervals(getBookmarkIntervals());
     window.addEventListener('vortex-bookmarks-change', refreshBookmarks);
     window.addEventListener('storage', refreshBookmarks);
     return () => {
@@ -186,18 +170,21 @@ export default function NotificationPopover() {
     }
   }, [open, loadNotifications]);
 
-  // Only show chapter updates for series the user has bookmarked.
+  // Only show chapter updates for series the user has bookmarked within their subscription intervals.
+  // Past chapters published before bookmarking do not show up.
+  // Unbookmarking preserves already-received chapters but stops future updates.
   // New series notifications are global and shown to everyone.
   const eligibleItems = useMemo(() => {
-    return items.filter((item) => {
-      if (item.category === 'Series') return true;
-      if (item.category === 'Chapters') {
-        const slug = (item.series_slug || '').trim().toLowerCase();
-        return bookmarkedSeries.has(slug);
-      }
-      return true;
-    });
-  }, [items, bookmarkedSeries]);
+    return items.filter((item) =>
+      isNotificationEligibleForUser(item.category, item.series_slug, item.created_at, bookmarkIntervals),
+    );
+  }, [items, bookmarkIntervals]);
+
+  const hasActiveSubscriptions = useMemo(() => {
+    return Object.values(bookmarkIntervals).some((list) =>
+      Array.isArray(list) && list.some((interval) => !interval.unbookmarkedAt),
+    );
+  }, [bookmarkIntervals]);
 
   const visibleItems = useMemo(
     () => eligibleItems.filter((item) => !hiddenIds.has(item.id) && (filter === 'All' || item.category === filter)),
@@ -380,7 +367,7 @@ export default function NotificationPopover() {
                     <span className="notification-empty__title">You’re all caught up</span>
                     <span className="notification-empty__subtitle">
                       {filter === 'Chapters'
-                        ? (bookmarkedSeries.size === 0
+                        ? (!hasActiveSubscriptions
                             ? 'Bookmark series to receive new chapter updates'
                             : 'No new chapter updates for your bookmarked series')
                         : 'No new notifications'}
