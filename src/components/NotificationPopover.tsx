@@ -31,6 +31,27 @@ type NotificationRow = {
 
 const READ_IDS_KEY = 'vortex-notification-read-v1';
 const HIDDEN_IDS_KEY = 'vortex-notification-hidden-v1';
+const BOOKMARKS_STORAGE_KEY = 'vortex-series-bookmarks';
+
+function getBookmarkedSeries(): Set<string> {
+  if (typeof window === 'undefined') return new Set();
+  try {
+    const raw = window.localStorage.getItem(BOOKMARKS_STORAGE_KEY);
+    if (!raw) return new Set();
+    const parsed: unknown = JSON.parse(raw);
+    if (!Array.isArray(parsed)) return new Set();
+    const set = new Set<string>();
+    for (const item of parsed) {
+      if (typeof item === 'string') {
+        const slug = item.replace(/^\/series\//, '').replace(/\/$/, '').trim().toLowerCase();
+        if (slug) set.add(slug);
+      }
+    }
+    return set;
+  } catch {
+    return new Set();
+  }
+}
 
 function getStoredIds(key: string): Set<string> {
   try {
@@ -69,6 +90,7 @@ export default function NotificationPopover() {
   const [items, setItems] = useState<NotificationRow[]>([]);
   const [readIds, setReadIds] = useState<Set<string>>(() => getStoredIds(READ_IDS_KEY));
   const [hiddenIds, setHiddenIds] = useState<Set<string>>(() => getStoredIds(HIDDEN_IDS_KEY));
+  const [bookmarkedSeries, setBookmarkedSeries] = useState<Set<string>>(() => getBookmarkedSeries());
   const [isLoading, setIsLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const rootRef = useRef<HTMLDivElement>(null);
@@ -86,6 +108,17 @@ export default function NotificationPopover() {
     return () => {
       window.removeEventListener('vortex-notification-read-change', refreshReadState);
       window.removeEventListener('storage', refreshReadState);
+    };
+  }, []);
+
+  // Keep bookmarked series in sync so chapter notifications immediately appear/disappear on bookmark toggle
+  useEffect(() => {
+    const refreshBookmarks = () => setBookmarkedSeries(getBookmarkedSeries());
+    window.addEventListener('vortex-bookmarks-change', refreshBookmarks);
+    window.addEventListener('storage', refreshBookmarks);
+    return () => {
+      window.removeEventListener('vortex-bookmarks-change', refreshBookmarks);
+      window.removeEventListener('storage', refreshBookmarks);
     };
   }, []);
 
@@ -153,15 +186,28 @@ export default function NotificationPopover() {
     }
   }, [open, loadNotifications]);
 
+  // Only show chapter updates for series the user has bookmarked.
+  // New series notifications are global and shown to everyone.
+  const eligibleItems = useMemo(() => {
+    return items.filter((item) => {
+      if (item.category === 'Series') return true;
+      if (item.category === 'Chapters') {
+        const slug = (item.series_slug || '').trim().toLowerCase();
+        return bookmarkedSeries.has(slug);
+      }
+      return true;
+    });
+  }, [items, bookmarkedSeries]);
+
   const visibleItems = useMemo(
-    () => items.filter((item) => !hiddenIds.has(item.id) && (filter === 'All' || item.category === filter)),
-    [filter, hiddenIds, items],
+    () => eligibleItems.filter((item) => !hiddenIds.has(item.id) && (filter === 'All' || item.category === filter)),
+    [filter, hiddenIds, eligibleItems],
   );
   const todayStart = new Date();
   todayStart.setHours(0, 0, 0, 0);
   const todayItems = visibleItems.filter((item) => Date.parse(item.created_at) >= todayStart.getTime());
   const earlierItems = visibleItems.filter((item) => Date.parse(item.created_at) < todayStart.getTime());
-  const unreadCount = items.filter((item) => !hiddenIds.has(item.id) && !readIds.has(item.id)).length;
+  const unreadCount = eligibleItems.filter((item) => !hiddenIds.has(item.id) && !readIds.has(item.id)).length;
 
   const saveReadIds = (next: Set<string>) => {
     storeIds(READ_IDS_KEY, next);
@@ -195,13 +241,13 @@ export default function NotificationPopover() {
 
   const markAllRead = () => {
     const next = new Set(readIds);
-    items.filter((item) => !hiddenIds.has(item.id)).forEach((item) => next.add(item.id));
+    eligibleItems.filter((item) => !hiddenIds.has(item.id)).forEach((item) => next.add(item.id));
     saveReadIds(next);
   };
 
   const clearNotifications = () => setHiddenIds((current) => {
     const next = new Set(current);
-    items.forEach((item) => next.add(item.id));
+    eligibleItems.forEach((item) => next.add(item.id));
     storeIds(HIDDEN_IDS_KEY, next);
     return next;
   });
@@ -332,7 +378,13 @@ export default function NotificationPopover() {
                       <Bell size={20} />
                     </span>
                     <span className="notification-empty__title">You’re all caught up</span>
-                    <span className="notification-empty__subtitle">No new notifications</span>
+                    <span className="notification-empty__subtitle">
+                      {filter === 'Chapters'
+                        ? (bookmarkedSeries.size === 0
+                            ? 'Bookmark series to receive new chapter updates'
+                            : 'No new chapter updates for your bookmarked series')
+                        : 'No new notifications'}
+                    </span>
                   </div>
                 )}
               </>

@@ -571,6 +571,7 @@ export default function SeriesDetailPage() {
     setBookmarks(next);
     try {
       localStorage.setItem('vortex-series-bookmarks', JSON.stringify(next));
+      window.dispatchEvent(new Event('vortex-bookmarks-change'));
     } catch {
       /* storage may be unavailable */
     }
