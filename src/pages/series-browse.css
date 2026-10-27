@@ -226,8 +226,8 @@ html.series-document-scrollbar::-webkit-scrollbar-button, body.series-document-s
     right: 0;
     bottom: 0;
     left: 0;
-    display: flex;
-    flex-direction: column;
+    display: grid;
+    grid-template-rows: 24px minmax(0, 1fr) auto;
     grid-column: auto;
     grid-row: auto;
     width: 100vw;
@@ -267,7 +267,7 @@ html.series-document-scrollbar::-webkit-scrollbar-button, body.series-document-s
   }
   .catalog-filter-sheet-handle span { width: 44px; height: 4px; border-radius: 999px; background: var(--catalog-line); }
   .catalog-filter-panel {
-    flex: 1 1 0%;
+    flex: none;
     width: 100%;
     max-width: 100%;
     min-width: 0;
@@ -276,12 +276,12 @@ html.series-document-scrollbar::-webkit-scrollbar-button, body.series-document-s
     max-height: none;
     padding: 0 16px;
     overflow-x: hidden;
-    overflow-y: auto;
+    overflow-y: scroll;
     overscroll-behavior-y: contain;
     -webkit-overflow-scrolling: touch;
     scrollbar-gutter: auto;
-    scrollbar-color: auto;
-    scrollbar-width: auto;
+    scrollbar-color: var(--scrollbar-thumb) transparent;
+    scrollbar-width: thin;
     border: 0;
     border-radius: 0;
     background: transparent;
@@ -290,9 +290,10 @@ html.series-document-scrollbar::-webkit-scrollbar-button, body.series-document-s
     transform: none;
     pointer-events: auto;
   }
-  .catalog-filter-panel::-webkit-scrollbar { width: 10px; height: 10px; background: var(--catalog-scrollbar-track); }
+  .catalog-filter-panel::-webkit-scrollbar { width: 6px; height: 6px; background: var(--catalog-scrollbar-track); }
   .catalog-filter-panel::-webkit-scrollbar-track { border-radius: 10px; background: var(--catalog-scrollbar-track); }
   .catalog-filter-panel::-webkit-scrollbar-thumb { min-height: 40px; border: 0; border-radius: 10px; background: var(--scrollbar-thumb); }
+  .catalog-genre-options { max-height: none; overflow: visible; padding-right: 0; }
   .catalog-filter-panel::-webkit-scrollbar-button,
   .catalog-genre-options::-webkit-scrollbar-button,
   .catalog-filter-panel::-webkit-scrollbar-button:single-button,
@@ -377,7 +378,7 @@ html.series-document-scrollbar::-webkit-scrollbar-button, body.series-document-s
   .catalog-genre-search { height: 36px; }
   .catalog-genre-search input { font-size: 14px; }
   .catalog-filter-help { margin-bottom: 8px; font-size: 11px; }
-  .catalog-genre-options { max-height: 260px; }
+  .catalog-genre-options { max-height: none; overflow: visible; padding-right: 0; }
   .catalog-genre-option { min-height: 34px; gap: 9px; padding: 4px 7px; font-size: 14px; }
   .catalog-genre-check { width: 18px; height: 18px; }
   .catalog-filter-chips { gap: 6px; }
