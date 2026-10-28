@@ -535,6 +535,7 @@
 .notification-item:not(.is-unread) .notification-item__text strong { color: var(--muted, #b8b2ad); }
 .notification-item__age { color: var(--faint, #89837f); font-size: 12px; font-weight: 650; }
 .notification-item.is-unread .notification-item__age { color: var(--accent); }
+.notification-panel:not(.notification-panel--page) .notification-item__age { font-weight: 400; }
 
 .notification-item__unread-dot {
   width: 12px;

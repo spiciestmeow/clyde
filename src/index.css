@@ -1314,6 +1314,7 @@ html[data-accent-theme="default"] .hero-spider { display: none; }
   .announcement-section { width: 66vw; min-width: 672px; max-width: 1280px; }
   .continue-section { width: 66vw; min-width: 672px; max-width: 1280px; }
   .latest-section { width: 66vw; min-width: 672px; max-width: 1280px; padding: 16px 0 20px; }
+  .most-popular.content-width { width: 66vw; min-width: 672px; max-width: 1280px; }
   .release-grid { gap: 12px 10px; }
   .release-title { font-size: 11px; }
   .release-chapter { font-size: 7px; }
@@ -1370,7 +1371,7 @@ html[data-accent-theme="default"] .hero-spider { display: none; }
 @media (max-width: 520px) {
   .topbar { height: 60px; }.nav-wrap { padding: 0 12px; gap: 8px; }.brand { width: 42px; max-width: 42px; height: 42px; }
   .desktop-nav { display: none !important; }.desktop-only { display: none !important; }
-  .content-width { width: calc(100% - 16px); }.section-title h2 { font-size: 16px; }.popular-section { margin-top: 24px; }
+  .content-width { width: calc(100% - 16px); }.most-popular.content-width { width: min(calc(100% - 24px), 420px); }.section-title h2 { font-size: 16px; }.popular-section { margin-top: 24px; }
   .announcement-section { margin-top: 14px; }
   .announcement-section > .section-title { margin-bottom: 8px; }
   .announcement-section > .section-title h2 { font-size: 19px; }
