@@ -183,6 +183,9 @@
   text-align: center;
 }
 
+.latest-updates-error { grid-column: 1 / -1; width: 100%; }
+.latest-updates-error .catalog-error-state { width: 100%; margin: 0; }
+
 @media (max-width: 1050px) {
   .latest-updates-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
 }

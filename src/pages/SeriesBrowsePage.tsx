@@ -23,6 +23,7 @@ import {
 import SiteHeader from '../components/SiteHeader';
 import SiteFooter from '../components/SiteFooter';
 import SiteSearch from '../components/SiteSearch';
+import { CatalogErrorState } from '../components/CatalogErrorState';
 import { toSiteSearchItems, toTrendingSiteSearchItems } from '../data/seriesSearchCatalog';
 import { seriesAvailability, seriesGenres, seriesStatuses, seriesTypes } from '../data/seriesFilterOptions';
 import { useThemeMode } from '../hooks/useThemeMode';
@@ -457,8 +458,8 @@ export default function SeriesBrowsePage() {
         <p>Explore a vast array of distinctive and exclusive works on our platform</p>
       </header>
       {catalogQuery.isLoading && catalogItems.length === 0 && <BrowsePageSkeleton />}
-      {catalogQuery.isError && <div className="series-data-status" role="alert"><p>The series catalog could not be loaded. Please try again.</p><button type="button" onClick={() => void catalogQuery.refetch()}>Try again</button></div>}
-      {!catalogQuery.isLoading && !catalogQuery.isError && <>
+      {catalogQuery.isError && <CatalogErrorState compactMobile hasCachedData={catalogItems.length > 0} onRetry={() => void catalogQuery.refetch()} />}
+      {!catalogQuery.isLoading && (!catalogQuery.isError || catalogItems.length > 0) && <>
       <div className="catalog-search">
         <Search size={17} aria-hidden="true" />
         <input

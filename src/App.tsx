@@ -13,6 +13,7 @@ import HeroSlider from './components/HeroSlider';
 import { PopularNowCard, type PopularNowCardItem } from './components/PopularNowCard';
 import { MostPopularCard, type MostPopularCardItem } from './components/MostPopularCard';
 import { LatestReleaseCard } from './components/LatestReleaseCard';
+import { CatalogErrorState } from './components/CatalogErrorState';
 import {
   PopularTodaySkeleton,
   LatestReleasesSkeleton,
@@ -398,7 +399,7 @@ function HomePage() {
         }
       />
       {/* Loading banner intentionally hidden — sections load progressively */}
-      {catalogQuery.isError && <div className="series-data-status" role="alert"><p>The series catalog could not be loaded. Please try again.</p><button type="button" onClick={() => void catalogQuery.refetch()}>Try again</button></div>}
+      {catalogQuery.isError && <CatalogErrorState compactMobile hasCachedData={catalogQuery.items.length > 0} onRetry={() => void catalogQuery.refetch()} />}
       <main>
         {homepageVisibility.featuredSeries && slides.length > 0 && (
           <HeroSlider slides={slides} />

@@ -3,6 +3,7 @@ import { Clock3, Flame, Grid2X2, List, Search, X } from 'lucide-react';
 import SiteHeader from '../components/SiteHeader';
 import SiteFooter from '../components/SiteFooter';
 import SiteSearch from '../components/SiteSearch';
+import { CatalogErrorState } from '../components/CatalogErrorState';
 import { LatestReleaseCard } from '../components/LatestReleaseCard';
 import { useThemeMode } from '../hooks/useThemeMode';
 import { useSeriesCatalog } from '../hooks/useSeriesCatalog';
@@ -146,10 +147,15 @@ function LatestUpdatesPage() {
           <p className="latest-updates-count">
             Showing {firstResult} to {lastResult} of {visibleReleases.length} results
           </p>
+          {catalogQuery.isError && catalogQuery.items.length > 0 && (
+            <div className="latest-updates-error">
+              <CatalogErrorState hasCachedData onRetry={() => void catalogQuery.refetch()} />
+            </div>
+          )}
           {catalogQuery.isLoading && catalogQuery.items.length === 0 ? (
             <div className="latest-updates-empty" role="status">Loading latest releases…</div>
           ) : catalogQuery.isError && catalogQuery.items.length === 0 ? (
-            <div className="latest-updates-empty" role="alert">Couldn’t load latest releases. Please try again.</div>
+            <div className="latest-updates-error"><CatalogErrorState onRetry={() => void catalogQuery.refetch()} /></div>
           ) : pagedReleases.length === 0 ? (
             <div className="latest-updates-empty" role="status">
               {search.trim() ? 'No results found for your search.' : 'No releases found.'}

@@ -24,9 +24,11 @@
 .catalog-main { width: min(672px, calc(100% - 40px)); margin: 0 auto; padding: 5px 0 58px; }
 @media (min-width: 1200px) and (max-width: 1399px) {
   .catalog-main { width: min(906px, 61.67vw); zoom: 1.2; }
+  .catalog-page .catalog-error-state { zoom: .833333; }
 }
 @media (min-width: 1400px) {
   .catalog-main { width: min(906px, 49.33vw); zoom: 1.5; }
+  .catalog-page .catalog-error-state { zoom: .666667; }
 }
 .catalog-intro { text-align: center; margin: 0 auto 10px; }
 .catalog-intro h1 { display: flex; justify-content: center; align-items: center; gap: 8px; margin: 0; font-size: clamp(27px, 3vw, 32px); line-height: 1.05; letter-spacing: -.045em; font-weight: 760; color: var(--catalog-ink); }
