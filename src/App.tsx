@@ -23,10 +23,13 @@ import AdminPage from './pages/AdminPage';
 import SeriesDetailPage from './pages/SeriesDetailPage';
 import SeriesBrowsePage from './pages/SeriesBrowsePage';
 import CreditsPage from './pages/CreditsPage';
+import LatestUpdatesPage from './pages/LatestUpdatesPage';
 import { toSiteSearchItems, toTrendingSiteSearchItems } from './data/seriesSearchCatalog';
 import { useThemeMode } from './hooks/useThemeMode';
 import { useSeriesCatalog } from './hooks/useSeriesCatalog';
 import { getWinningChapterSource } from './lib/sourcePriority';
+import { getNewSeriesReleases, sortLatestReleases } from './lib/latestReleases';
+import { getPaginationItems } from './lib/pagination';
 import {
   readRecentlyViewedSeries,
   RECENTLY_VIEWED_SERIES_KEY,
@@ -35,10 +38,7 @@ import {
 } from './lib/recentlyViewedSeries';
 import {
   DEFAULT_SERIES_COVER,
-  getSeriesReleaseTimestamp,
   getSeriesReleaseAgeMinutes,
-  getSeriesCreatedTimestamp,
-  type SeriesRecord,
 } from './lib/seriesCatalog';
 import assets from '../clone-data/asset-references.json';
 import {
@@ -57,30 +57,6 @@ const RELEASES_PER_PAGE = 36;
 const MAX_MOST_POPULAR_SERIES = 9;
 const MAX_POPULAR_SERIES = 20;
 const ADMIN_ROUTE = '/panel/7dbf9a4c2e81d603b5a7f0c9e4d2186a';
-type PaginationItem = number | 'ellipsis';
-function getPaginationItems(pageCount: number, currentPage: number): PaginationItem[] {
-  if (pageCount <= 7) {
-    return Array.from({ length: pageCount }, (_, index) => index + 1);
-  }
-
-  let startPage = Math.max(2, currentPage - 2);
-  let endPage = Math.min(pageCount - 1, currentPage + 2);
-
-  if (currentPage <= 4) {
-    startPage = 2;
-    endPage = 5;
-  } else if (currentPage >= pageCount - 3) {
-    startPage = pageCount - 4;
-    endPage = pageCount - 1;
-  }
-
-  const items: PaginationItem[] = [1];
-  if (startPage > 2) items.push('ellipsis');
-  for (let page = startPage; page <= endPage; page += 1) items.push(page);
-  if (endPage < pageCount - 1) items.push('ellipsis');
-  items.push(pageCount);
-  return items;
-}
 type RailGesture = {
   pointerId: number;
   startX: number;
@@ -267,21 +243,7 @@ function HomePage() {
   }, [seriesItems, popularPeriod]);
 
   // Section 2: Latest Releases (Sorted by newest chapter drop, preserving catalog order)
-  const latestReleases = useMemo(() => [...seriesItems].sort((left, right) => {
-    const rightTime = getSeriesReleaseTimestamp(right);
-    const leftTime = getSeriesReleaseTimestamp(left);
-    if (rightTime !== leftTime) return rightTime - leftTime;
-
-    const rightCreated = getSeriesCreatedTimestamp(right);
-    const leftCreated = getSeriesCreatedTimestamp(left);
-    if (rightCreated !== leftCreated) return rightCreated - leftCreated;
-
-    return (
-      left.pageNumber - right.pageNumber ||
-      left.pageOrder - right.pageOrder ||
-      left.title.localeCompare(right.title)
-    );
-  }), [seriesItems]);
+  const latestReleases = useMemo(() => sortLatestReleases(seriesItems), [seriesItems]);
   const [recentlyViewedSeries, setRecentlyViewedSeries] = useState<RecentlyViewedSeries[]>(() => readRecentlyViewedSeries());
   const continueReadingItems = useMemo<ContinueReadingItem[]>(() => {
     const bySlug = new Map(seriesItems.map((item) => [item.slug.toLocaleLowerCase(), item]));
@@ -358,52 +320,7 @@ function HomePage() {
 
   const visibleReleases = useMemo(() => {
     if (filter === 'Latest') return latestReleases;
-
-    const filtered = seriesItems.filter((release) => {
-      // 1. Explicit admin toggle from series upload/edit
-      if (release.isNew) return true;
-      if (release.facts?.is_new === 'true') return true;
-
-      // If explicitly set to false by admin, exclude from New tab
-      if (release.facts?.is_new === 'false') return false;
-
-      // 2. Fallback for legacy series: check for new chapter status or recent creation
-      const hasNewChapter = release.chapters.some((chapter) => {
-        const s = chapter.status.trim().toLowerCase();
-        return s === 'new' || s === 'just now' || s.includes('min') || s.includes('hour') || s === 'today';
-      });
-      if (hasNewChapter) return true;
-
-      const releaseAge = getSeriesReleaseAgeMinutes(release);
-      if (releaseAge <= 7 * 1440) return true;
-
-      return false;
-    });
-
-    // Honor the admin's explicit order for series tagged New; use upload recency for anything not manually ordered.
-    return filtered.sort((left, right) => {
-      const configuredOrder = siteSettings.newSeriesOrder;
-      if (configuredOrder.length > 0) {
-        const leftTagged = Boolean(left.isNew || left.facts?.is_new === 'true');
-        const rightTagged = Boolean(right.isNew || right.facts?.is_new === 'true');
-        if (leftTagged !== rightTagged) return leftTagged ? -1 : 1;
-
-        if (leftTagged && rightTagged) {
-          const leftRank = configuredOrder.indexOf(String(left.id));
-          const rightRank = configuredOrder.indexOf(String(right.id));
-          if (leftRank !== rightRank) {
-            if (leftRank === -1) return -1;
-            if (rightRank === -1) return 1;
-            return leftRank - rightRank;
-          }
-        }
-      }
-
-      const rightCreated = getSeriesCreatedTimestamp(right);
-      const leftCreated = getSeriesCreatedTimestamp(left);
-      if (rightCreated !== leftCreated) return rightCreated - leftCreated;
-      return (right.id || 0) - (left.id || 0);
-    });
+    return getNewSeriesReleases(seriesItems, siteSettings.newSeriesOrder);
   }, [filter, latestReleases, seriesItems, siteSettings.newSeriesOrder]);
   const releasePageCount = Math.max(1, Math.ceil(visibleReleases.length / RELEASES_PER_PAGE));
   const currentReleasePage = Math.min(releasePage, releasePageCount);
@@ -951,6 +868,7 @@ function App() {
         <Route path="/series" component={SeriesBrowsePage} />
         <Route path="/series/:slug" component={SeriesDetailPage} />
         <Route path="/notifications" component={NotificationsPage} />
+        <Route path="/latest-updates" component={LatestUpdatesPage} />
         <Route component={NotFoundPage} />
       </Switch>
     </WouterRouter>

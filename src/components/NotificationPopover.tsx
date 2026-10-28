@@ -2,7 +2,6 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   Bell,
   BookOpen,
-  CheckCheck,
   CircleCheck,
   Grid2X2,
   RefreshCw,
@@ -38,6 +37,8 @@ const READ_IDS_KEY = 'vortex-notification-read-v1';
 const READ_AT_KEY = 'vortex-notification-read-at-v1';
 const HIDDEN_IDS_KEY = 'vortex-notification-hidden-v1';
 const NOTIFICATION_PAGE_SIZE = 50;
+const DELETE_HOLD_DURATION_MS = 1200;
+const DELETE_HOLD_ARM_TIMEOUT_MS = 3000;
 
 function getStoredIds(key: string): Set<string> {
   try {
@@ -116,11 +117,23 @@ export default function NotificationPopover({ mode = 'popover' }: NotificationPo
   const [refreshing, setRefreshing] = useState(false);
   const [loadingOlder, setLoadingOlder] = useState(false);
   const [hasOlder, setHasOlder] = useState(false);
+  const [deleteHoldState, setDeleteHoldState] = useState<'idle' | 'armed' | 'holding' | 'deleting'>('idle');
+  const [deleteHoldProgress, setDeleteHoldProgress] = useState(0);
+  const [confirmDeleteRead, setConfirmDeleteRead] = useState(false);
+  const deleteHoldIntervalRef = useRef<number | null>(null);
+  const deleteHoldTimeoutRef = useRef<number | null>(null);
+  const deleteHoldArmTimeoutRef = useRef<number | null>(null);
   const rootRef = useRef<HTMLDivElement>(null);
   const listIsLoading = isLoading || refreshing;
 
   const lastLoadedAtRef = useRef<number>(0);
   const knownCoversRef = useRef<Map<number, string>>(new Map());
+
+  useEffect(() => () => {
+    if (deleteHoldIntervalRef.current !== null) window.clearInterval(deleteHoldIntervalRef.current);
+    if (deleteHoldTimeoutRef.current !== null) window.clearTimeout(deleteHoldTimeoutRef.current);
+    if (deleteHoldArmTimeoutRef.current !== null) window.clearTimeout(deleteHoldArmTimeoutRef.current);
+  }, []);
 
   // Keep the badge and unread styling in sync if the header is recreated during
   // client-side navigation, or if another tab marks notifications as read.
@@ -321,38 +334,167 @@ export default function NotificationPopover({ mode = 'popover' }: NotificationPo
     if (item.series_slug) setLocation(`/series/${encodeURIComponent(item.series_slug)}`);
   };
 
+  const showNotificationSuccessToast = (message: string) => {
+    toast({
+      description: (
+        <span className="notification-read-toast__content">
+          <CircleCheck aria-hidden="true" className="notification-read-toast__icon" size={18} />
+          <span>{message}</span>
+        </span>
+      ),
+      className: 'notification-read-toast',
+    });
+  };
+
   const markAllRead = () => {
     const next = new Set(readIds);
     const nextReadTimes = { ...readTimes };
     const markedAt = new Date().toISOString();
-    eligibleItems.filter((item) => !hiddenIds.has(item.id) && !next.has(item.id)).forEach((item) => {
+    const unreadItems = eligibleItems.filter((item) => !hiddenIds.has(item.id) && !next.has(item.id));
+    unreadItems.forEach((item) => {
       next.add(item.id);
       nextReadTimes[item.id] = markedAt;
     });
     saveReadIds(next, nextReadTimes);
+    if (unreadItems.length > 0) showNotificationSuccessToast('All notifications marked as read');
   };
 
   const markVisibleCategoryRead = () => {
     const next = new Set(readIds);
     const nextReadTimes = { ...readTimes };
     const markedAt = new Date().toISOString();
-    visibleItems.filter((item) => !next.has(item.id)).forEach((item) => {
+    const unreadItems = visibleItems.filter((item) => !next.has(item.id));
+    unreadItems.forEach((item) => {
       next.add(item.id);
       nextReadTimes[item.id] = markedAt;
     });
     saveReadIds(next, nextReadTimes);
+    if (unreadItems.length > 0) {
+      showNotificationSuccessToast(filter === 'All' ? 'All notifications marked as read' : 'Category notifications marked as read');
+    }
   };
 
-  const deleteVisibleRead = () => setHiddenIds((current) => {
-    const next = new Set(current);
-    visibleItems.filter((item) => readIds.has(item.id)).forEach((item) => next.add(item.id));
-    storeIds(HIDDEN_IDS_KEY, next);
-    return next;
-  });
+  const deleteVisibleRead = () => {
+    const readItems = visibleItems.filter((item) => readIds.has(item.id));
+    if (!readItems.length) return 0;
+    setHiddenIds((current) => {
+      const next = new Set(current);
+      readItems.forEach((item) => next.add(item.id));
+      storeIds(HIDDEN_IDS_KEY, next);
+      return next;
+    });
+    return readItems.length;
+  };
+
+  const showDeletedReadToast = (deletedCount: number) => {
+    if (deletedCount < 1) return;
+    showNotificationSuccessToast(`${deletedCount} read notification${deletedCount === 1 ? '' : 's'} deleted`);
+  };
+
+  const cancelDeleteHold = () => {
+    if (deleteHoldIntervalRef.current !== null) {
+      window.clearInterval(deleteHoldIntervalRef.current);
+      deleteHoldIntervalRef.current = null;
+    }
+    setDeleteHoldProgress(0);
+    setDeleteHoldState((current) => {
+      if (current !== 'holding') return current;
+      if (deleteHoldArmTimeoutRef.current !== null) window.clearTimeout(deleteHoldArmTimeoutRef.current);
+      deleteHoldArmTimeoutRef.current = window.setTimeout(() => {
+        deleteHoldArmTimeoutRef.current = null;
+        setDeleteHoldState('idle');
+      }, DELETE_HOLD_ARM_TIMEOUT_MS);
+      return 'armed';
+    });
+  };
+
+  const beginDeleteHold = () => {
+    if (!isPage || deleteHoldState !== 'armed') return;
+    if (deleteHoldArmTimeoutRef.current !== null) {
+      window.clearTimeout(deleteHoldArmTimeoutRef.current);
+      deleteHoldArmTimeoutRef.current = null;
+    }
+    const startedAt = Date.now();
+    setDeleteHoldState('holding');
+    deleteHoldIntervalRef.current = window.setInterval(() => {
+      const progress = Math.min(100, ((Date.now() - startedAt) / DELETE_HOLD_DURATION_MS) * 100);
+      setDeleteHoldProgress(progress);
+      if (progress < 100) return;
+
+      if (deleteHoldIntervalRef.current !== null) {
+        window.clearInterval(deleteHoldIntervalRef.current);
+        deleteHoldIntervalRef.current = null;
+      }
+      setDeleteHoldState('deleting');
+      deleteHoldTimeoutRef.current = window.setTimeout(() => {
+        deleteHoldTimeoutRef.current = null;
+        const deletedCount = deleteVisibleRead();
+        setDeleteHoldProgress(0);
+        setDeleteHoldState('idle');
+        showDeletedReadToast(deletedCount);
+      }, 280);
+    }, 24);
+  };
+
+  const renderDeleteReadButton = (mobile = false) => {
+    const label = deleteHoldState === 'deleting'
+      ? 'Deleting…'
+      : deleteHoldState === 'holding'
+        ? 'Keep holding…'
+        : deleteHoldState === 'armed'
+          ? 'Hold to delete'
+          : 'Delete read';
+    const className = isPage
+      ? `notification-delete-hold${deleteHoldState !== 'idle' ? ` is-${deleteHoldState}` : ''}${mobile ? ' notification-delete-hold--mobile' : ''}`
+      : undefined;
+
+    return (
+      <button
+        type="button"
+        className={className}
+        data-notification-action="delete-read"
+        aria-label={label}
+        title={label}
+        aria-pressed={isPage ? deleteHoldState === 'armed' || deleteHoldState === 'holding' : undefined}
+        onClick={isPage ? () => {
+          if (deleteHoldState === 'idle') {
+            setDeleteHoldState('armed');
+            deleteHoldArmTimeoutRef.current = window.setTimeout(() => {
+              deleteHoldArmTimeoutRef.current = null;
+              setDeleteHoldState('idle');
+            }, DELETE_HOLD_ARM_TIMEOUT_MS);
+          }
+        } : () => setConfirmDeleteRead(true)}
+        onPointerDown={isPage ? (event) => {
+          if (deleteHoldState !== 'armed') return;
+          event.currentTarget.setPointerCapture(event.pointerId);
+          beginDeleteHold();
+        } : undefined}
+        onPointerUp={isPage ? cancelDeleteHold : undefined}
+        onPointerCancel={isPage ? cancelDeleteHold : undefined}
+        onKeyDown={isPage ? (event) => {
+          if ((event.key === ' ' || event.key === 'Enter') && deleteHoldState === 'armed' && !event.repeat) {
+            event.preventDefault();
+            beginDeleteHold();
+          }
+        } : undefined}
+        onKeyUp={isPage ? (event) => {
+          if (event.key === ' ' || event.key === 'Enter') cancelDeleteHold();
+        } : undefined}
+        style={isPage && deleteHoldState === 'holding'
+          ? { background: `linear-gradient(90deg, rgba(var(--accent-rgb), .2) ${deleteHoldProgress}%, transparent ${deleteHoldProgress}%)` }
+          : undefined}
+      >
+        <Trash2 size={mobile ? 16 : 18} />
+        <span>{label}</span>
+      </button>
+    );
+  };
 
   const refresh = async () => {
     if (refreshing) return;
     const startedAt = Date.now();
+    const previousLoadedAt = lastLoadedAtRef.current;
     setRefreshing(true);
     try {
       await loadNotifications(true);
@@ -364,6 +506,9 @@ export default function NotificationPopover({ mode = 'popover' }: NotificationPo
         await new Promise<void>((resolve) => window.setTimeout(resolve, remaining));
       }
       setRefreshing(false);
+    }
+    if (!isPage && lastLoadedAtRef.current !== previousLoadedAt) {
+      showNotificationSuccessToast('Notifications refreshed');
     }
   };
 
@@ -395,8 +540,10 @@ export default function NotificationPopover({ mode = 'popover' }: NotificationPo
             </span>
             <time className="notification-item__date notification-item__date--inline" dateTime={timestamp}>{notificationTimestamp(timestamp)}</time>
           </span>
-          <span className="notification-item__text"><strong>{item.series_title}</strong></span>
-          <span className="notification-item__preview">{item.message}</span>
+          <span className="notification-item__summary">
+            <span className="notification-item__text"><strong>{item.series_title}</strong></span>
+            <span className="notification-item__preview">{item.message}</span>
+          </span>
           <span className="notification-item__age">{relativeAge(item.created_at)}</span>
         </span>
         {isPage && (
@@ -527,14 +674,17 @@ export default function NotificationPopover({ mode = 'popover' }: NotificationPo
             </div>
             <div className="notification-panel__actions">
               {visibleReadCount > 0 && (
-                <button type="button" aria-label="Delete read" title="Delete read" onClick={deleteVisibleRead}>
-                  <Trash2 size={18} />
-                  <span>Delete read</span>
-                </button>
+                renderDeleteReadButton()
               )}
-              {visibleUnreadCount > 0 && (
-                <button type="button" aria-label="Mark all as read" title="Mark all as read" onClick={markAllRead}>
-                  <CheckCheck size={19} />
+              {(isPage || visibleUnreadCount > 0) && (
+                <button
+                  type="button"
+                  aria-label="Mark all as read"
+                  title="Mark all as read"
+                  onClick={markAllRead}
+                  disabled={visibleUnreadCount === 0}
+                >
+                  <CircleCheck size={19} />
                   <span>Mark all as read</span>
                 </button>
               )}
@@ -544,10 +694,7 @@ export default function NotificationPopover({ mode = 'popover' }: NotificationPo
             </div>
             <div className="notification-panel__mobile-actions">
               {visibleReadCount > 0 && (
-                <button type="button" aria-label="Delete read" onClick={deleteVisibleRead}>
-                  <Trash2 size={16} />
-                  <span>Delete read</span>
-                </button>
+                renderDeleteReadButton(true)
               )}
               <button type="button" onClick={markVisibleCategoryRead} disabled={visibleUnreadCount === 0}>
                 <CircleCheck size={16} />
@@ -555,6 +702,26 @@ export default function NotificationPopover({ mode = 'popover' }: NotificationPo
               </button>
             </div>
           </header>
+
+          {!isPage && confirmDeleteRead && (
+            <div className="notification-delete-confirmation" role="alertdialog" aria-label="Confirm deleting read notifications">
+              <span>Delete all read notifications? This can’t be undone.</span>
+              <div className="notification-delete-confirmation__actions">
+                <button type="button" onClick={() => setConfirmDeleteRead(false)}>Cancel</button>
+                <button
+                  type="button"
+                  className="notification-delete-confirmation__delete"
+                  onClick={() => {
+                    const deletedCount = deleteVisibleRead();
+                    setConfirmDeleteRead(false);
+                    showDeletedReadToast(deletedCount);
+                  }}
+                >
+                  Delete
+                </button>
+              </div>
+            </div>
+          )}
 
           {!isPage && renderFilters('notification-filters')}
           {isPage && renderFilters('notification-filters notification-page-mobile-filters')}

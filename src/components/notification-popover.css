@@ -46,6 +46,9 @@
   color: #f5f3f0;
   box-shadow: none;
   animation: notification-panel-enter .16s ease-out;
+  /* Prevent accidental drag-selection across notification controls and rows. */
+  -webkit-user-select: none;
+  user-select: none;
 }
 
 .notification-panel__header {
@@ -119,6 +122,48 @@
   animation: notification-spin .65s linear infinite;
 }
 
+.notification-panel:not(.notification-panel--page) .notification-delete-confirmation {
+  margin: 0 16px 12px;
+  padding: 10px 12px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  border: 1px solid rgba(var(--accent-rgb), .1);
+  border-radius: 18px;
+  background: rgba(var(--accent-rgb), .1);
+  color: var(--text, #f5f3f0);
+  font-size: 13px;
+  line-height: 1.35;
+}
+
+.notification-delete-confirmation__actions {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: 8px;
+}
+
+.notification-panel:not(.notification-panel--page) .notification-delete-confirmation__actions button {
+  min-height: 34px;
+  padding: 0 10px;
+  border: 0;
+  border-radius: 10px;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+}
+
+.notification-panel:not(.notification-panel--page) .notification-delete-confirmation__actions .notification-delete-confirmation__delete {
+  background: var(--accent);
+  color: #fff;
+}
+
+.notification-panel:not(.notification-panel--page) .notification-delete-confirmation__actions .notification-delete-confirmation__delete:hover {
+  background: var(--accent-strong, var(--accent));
+}
+
 .notification-filters {
   min-height: 53px;
   padding: 9px 15px 11px;
@@ -167,13 +212,84 @@
   flex: 1 1 auto;
   overflow-y: auto;
   overscroll-behavior: contain;
-  scrollbar-color: #fb853c transparent;
-  scrollbar-width: thin;
+  /* Keep this `auto` so Chromium applies the WebKit scrollbar rules below. */
+  scrollbar-color: auto;
+  scrollbar-width: auto;
 }
 
-.notification-list::-webkit-scrollbar { width: 9px; }
-.notification-list::-webkit-scrollbar-track { background: transparent; }
-.notification-list::-webkit-scrollbar-thumb { border: 2px solid transparent; border-radius: 999px; background: #fb853c; background-clip: padding-box; }
+.notification-list::-webkit-scrollbar,
+.notification-panel::-webkit-scrollbar { width: 10px; height: 10px; background: var(--scrollbar-track); }
+.notification-list::-webkit-scrollbar-track,
+.notification-list::-webkit-scrollbar-track-piece,
+.notification-list::-webkit-scrollbar-corner,
+.notification-panel::-webkit-scrollbar-track,
+.notification-panel::-webkit-scrollbar-track-piece,
+.notification-panel::-webkit-scrollbar-corner { border-radius: 10px; background: var(--scrollbar-track); }
+.notification-list::-webkit-scrollbar-thumb,
+.notification-panel::-webkit-scrollbar-thumb { min-height: 40px; border: 0; border-radius: 10px; background: var(--scrollbar-thumb); }
+.notification-list::-webkit-scrollbar-button,
+.notification-panel::-webkit-scrollbar-button {
+  display: none !important;
+  width: 0 !important;
+  height: 0 !important;
+  min-width: 0 !important;
+  min-height: 0 !important;
+  max-width: 0 !important;
+  max-height: 0 !important;
+  padding: 0 !important;
+  color: transparent !important;
+  background: transparent !important;
+  background-image: none !important;
+  border: 0 !important;
+  opacity: 0 !important;
+  -webkit-appearance: none !important;
+  appearance: none !important;
+}
+
+.notification-list::-webkit-scrollbar-button:vertical:start:decrement,
+.notification-list::-webkit-scrollbar-button:vertical:end:increment,
+.notification-list::-webkit-scrollbar-button:vertical:decrement,
+.notification-list::-webkit-scrollbar-button:vertical:increment,
+.notification-list::-webkit-scrollbar-button:decrement,
+.notification-list::-webkit-scrollbar-button:increment,
+.notification-list::-webkit-scrollbar-button:horizontal:start:decrement,
+.notification-list::-webkit-scrollbar-button:horizontal:end:increment,
+.notification-panel::-webkit-scrollbar-button:vertical:start:decrement,
+.notification-panel::-webkit-scrollbar-button:vertical:end:increment,
+.notification-panel::-webkit-scrollbar-button:vertical:decrement,
+.notification-panel::-webkit-scrollbar-button:vertical:increment,
+.notification-panel::-webkit-scrollbar-button:decrement,
+.notification-panel::-webkit-scrollbar-button:increment,
+.notification-panel::-webkit-scrollbar-button:horizontal:start:decrement,
+.notification-panel::-webkit-scrollbar-button:horizontal:end:increment {
+  display: none !important;
+  width: 0 !important;
+  height: 0 !important;
+  padding: 0 !important;
+  color: transparent !important;
+  background: none !important;
+  background-image: none !important;
+  border: 0 !important;
+  opacity: 0 !important;
+  -webkit-appearance: none !important;
+  appearance: none !important;
+}
+
+/* Some Chromium builds expose the track arrows as single-button scrollbar parts. */
+.notification-list::-webkit-scrollbar-button:single-button,
+.notification-panel::-webkit-scrollbar-button:single-button {
+  display: none !important;
+  width: 0 !important;
+  height: 0 !important;
+  min-width: 0 !important;
+  min-height: 0 !important;
+  padding: 0 !important;
+  background: none !important;
+  background-image: none !important;
+  border: 0 !important;
+  -webkit-appearance: none !important;
+  appearance: none !important;
+}
 
 .notification-skeleton {
   --skeleton-base: #29292f;
@@ -382,29 +498,40 @@
   display: none;
 }
 
+.notification-item__summary {
+  width: 100%;
+  min-width: 0;
+  display: block;
+  overflow: visible;
+  line-height: 1.42;
+  white-space: normal;
+}
+
 .notification-item__text {
-  display: -webkit-box;
-  overflow: hidden;
+  display: inline;
+  width: auto;
+  min-width: 0;
+  margin-right: 4px;
+  overflow: visible;
   color: var(--muted, #b8b2ad);
   font-size: 14px;
   line-height: 1.42;
-  text-overflow: ellipsis;
-  -webkit-box-orient: vertical;
-  -webkit-line-clamp: 3;
+  white-space: normal;
 }
 
 .notification-item__preview {
-  display: block;
-  overflow: hidden;
+  display: inline;
+  width: auto;
+  min-width: 0;
+  overflow: visible;
   color: var(--muted, #b8b2ad);
-  font-size: 12px;
+  font-size: 14px;
   line-height: 1.35;
-  white-space: nowrap;
-  text-overflow: ellipsis;
+  white-space: normal;
 }
 .notification-item__date { display: none; }
 
-.notification-item__text strong { color: var(--text, #f5f3f0); font-weight: 750; }
+.notification-item__text strong { display: inline; color: var(--text, #f5f3f0); font-weight: 750; }
 .notification-item:not(.is-unread) .notification-item__text strong { color: var(--muted, #b8b2ad); }
 .notification-item__age { color: var(--faint, #89837f); font-size: 12px; font-weight: 650; }
 .notification-item.is-unread .notification-item__age { color: var(--accent); }
@@ -468,7 +595,7 @@
   color: var(--accent);
   font: inherit;
   font-size: 14px;
-  font-weight: 750;
+  font-weight: 400;
   cursor: pointer;
 }
 
@@ -499,7 +626,11 @@
 .notification-panel__actions button[aria-label="Delete read"]:hover,
 .notification-panel__actions button[aria-label="Delete read"]:focus-visible,
 .notification-panel__mobile-actions button[aria-label="Delete read"]:hover,
-.notification-panel__mobile-actions button[aria-label="Delete read"]:focus-visible {
+.notification-panel__mobile-actions button[aria-label="Delete read"]:focus-visible,
+.notification-panel--page .notification-panel__actions button[data-notification-action="delete-read"]:hover,
+.notification-panel--page .notification-panel__actions button[data-notification-action="delete-read"]:focus-visible,
+.notification-panel--page .notification-panel__mobile-actions button[data-notification-action="delete-read"]:hover,
+.notification-panel--page .notification-panel__mobile-actions button[data-notification-action="delete-read"]:focus-visible {
   background: transparent;
   color: var(--accent);
 }
@@ -519,16 +650,46 @@
   bottom: auto !important;
   left: 50% !important;
   z-index: 200 !important;
-  display: flex !important;
+  display: grid !important;
+  height: 78px !important;
   width: fit-content !important;
   min-width: 220px !important;
   max-width: calc(100vw - 24px) !important;
   max-height: none !important;
   padding: 0 !important;
   transform: translateX(-50%);
-  flex-direction: column !important;
-  align-items: center !important;
+  align-items: start !important;
+  justify-items: center !important;
+  overflow: visible !important;
   pointer-events: none;
+}
+
+.notification-read-toast-viewport > * {
+  grid-area: 1 / 1;
+  justify-self: center;
+  margin: 0;
+  transition: transform .22s ease, opacity .22s ease;
+}
+
+.notification-read-toast-viewport > :first-child {
+  z-index: 1;
+  transform: translateY(34px) scale(.92);
+  opacity: .48;
+  pointer-events: none;
+}
+
+.notification-read-toast-viewport > :nth-child(2) {
+  z-index: 2;
+  transform: translateY(20px) scale(.96);
+  opacity: .72;
+  pointer-events: none;
+}
+
+.notification-read-toast-viewport > :last-child {
+  z-index: 3;
+  transform: none;
+  opacity: 1;
+  pointer-events: auto;
 }
 
 .notification-read-toast {
@@ -546,6 +707,24 @@
   color: #25211e;
   box-shadow: 0 8px 24px rgba(31, 24, 18, .12);
   pointer-events: auto;
+}
+
+@keyframes notification-toast-drop-in {
+  from { opacity: 0; translate: 0 -18px; }
+  to { opacity: 1; translate: 0 0; }
+}
+
+@keyframes notification-toast-lift-out {
+  from { opacity: 1; translate: 0 0; }
+  to { opacity: 0; translate: 0 -18px; }
+}
+
+.notification-read-toast[data-state="open"] {
+  animation: notification-toast-drop-in .24s cubic-bezier(.2, .75, .25, 1) both;
+}
+
+.notification-read-toast[data-state="closed"] {
+  animation: notification-toast-lift-out .2s ease-in both;
 }
 
 .notification-read-toast > .grid {
@@ -578,6 +757,16 @@
 .notification-read-toast [toast-close] { display: none; }
 
 @media (max-width: 680px) {
+  .notification-read-toast {
+    box-sizing: border-box;
+    max-width: calc(100vw - 24px);
+    padding-inline: 14px;
+  }
+  .notification-read-toast .notification-read-toast__content,
+  .notification-read-toast .notification-read-toast__content > span:last-child {
+    flex-wrap: nowrap;
+    white-space: nowrap;
+  }
   .notification-panel {
     position: fixed;
     z-index: 90;
@@ -592,7 +781,11 @@
     border: 0;
     border-radius: 0;
     background: var(--page, #09090b);
+    /* Avoid native arrows; let the custom WebKit scrollbar styles take over. */
+    scrollbar-color: auto;
+    scrollbar-width: auto;
   }
+  .notification-panel::-webkit-scrollbar { width: 10px; height: 10px; }
   .notification-panel__header {
     order: 1;
     min-height: 0;
@@ -697,9 +890,10 @@
   .notification-item__kind { min-width: 0; display: inline-flex; align-items: center; gap: 6px; color: var(--text, #f5f3f0); font-size: 12px; font-weight: 650; }
   .notification-item__inline-dot { width: 7px; height: 7px; flex: 0 0 7px; border-radius: 50%; background: #ef3340; }
   .notification-item__date { display: inline; flex: 0 0 auto; color: var(--muted, #aaa5a0); font-size: 10px; font-weight: 500; }
-  .notification-item__text { display: block; width: 100%; color: var(--text, #f5f3f0); font-size: 12px; line-height: 1.35; white-space: nowrap; text-overflow: ellipsis; }
+  .notification-item__text { display: inline; width: auto; color: var(--text, #f5f3f0); font-size: 12px; line-height: 1.35; white-space: normal; }
   .notification-item__text strong { font-weight: 500; }
-  .notification-item__preview { display: block; width: 100%; overflow: hidden; color: var(--muted, #aaa5a0); font-size: 11px; line-height: 1.35; white-space: nowrap; text-overflow: ellipsis; }
+  .notification-item__text { margin-right: 3px; }
+  .notification-item__preview { display: inline; width: auto; overflow: visible; color: var(--muted, #aaa5a0); font-size: 12px; line-height: 1.35; white-space: normal; }
   .notification-item__age, .notification-item__unread-dot { display: none; }
   .notification-panel__footer { display: none; }
   .notification-load-older { width: calc(100% - 20px); margin: 12px 10px 20px; }
@@ -828,6 +1022,23 @@
 }
 .notification-panel--page .notification-panel__actions button > span { display: inline; }
 .notification-panel--page .notification-panel__actions button[aria-label="Refresh notifications"] { display: none; }
+.notification-panel--page .notification-panel__actions button:disabled {
+  color: #b8b2ad;
+  cursor: not-allowed;
+}
+.notification-panel--page .notification-delete-hold {
+  position: relative;
+  overflow: hidden;
+  border-radius: 8px;
+  touch-action: none;
+  user-select: none;
+  white-space: nowrap;
+}
+.notification-panel--page .notification-delete-hold.is-armed { color: var(--accent); }
+.notification-panel--page .notification-delete-hold.is-holding { color: var(--accent); }
+.notification-panel--page .notification-delete-hold.is-deleting { color: #fff; }
+.notification-panel--page .notification-delete-hold.is-deleting,
+.notification-panel--page .notification-delete-hold--mobile.is-deleting { background: var(--accent); }
 .notification-panel--page .notification-item__headline {
   width: 100%;
   display: flex;
@@ -863,9 +1074,10 @@
   align-self: center;
   margin-left: auto;
 }
-.notification-panel--page .notification-item__text { width: 100%; color: var(--text, #211d1a); }
+.notification-panel--page .notification-item__summary { display: block; overflow: visible; white-space: normal; }
+.notification-panel--page .notification-item__text { display: block; width: 100%; color: var(--text, #211d1a); }
 .notification-panel--page .notification-item__text strong { color: var(--text, #211d1a); font-weight: 400; }
-.notification-panel--page .notification-item__preview { width: 100%; }
+.notification-panel--page .notification-item__preview { display: block; width: 100%; }
 .notification-panel--page .notification-item__age { display: none; }
 .notification-panel--page .notification-item__unread-dot {
   width: 14px;
@@ -946,6 +1158,8 @@
 
 @media (prefers-reduced-motion: reduce) {
   .notification-panel { animation: none; }
+  .notification-read-toast[data-state="open"],
+  .notification-read-toast[data-state="closed"] { animation: none; }
   .notification-panel__actions .is-refreshing { animation-duration: 1.5s; }
   .notification-skeleton__line::after,
   .notification-skeleton__avatar::after,

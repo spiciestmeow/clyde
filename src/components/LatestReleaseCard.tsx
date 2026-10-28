@@ -253,7 +253,6 @@ export function LatestReleaseCard({
     : latestChapter?.href;
   const relativeTime = formatReleaseTime(release);
   const categoryLabel = release.category?.trim() || 'Manhwa';
-
   return (
     <article className={`release-card${variant === 'series' ? ' release-card--series' : ''}`}>
       <Link className="release-cover" href={release.href} title={release.title}>
