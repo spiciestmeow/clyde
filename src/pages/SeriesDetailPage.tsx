@@ -1,6 +1,6 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState, type SyntheticEvent } from 'react';
 import { Link, useLocation, useParams } from 'wouter';
-import { Activity, ArrowLeft, ArrowUpRight, Bell, BookOpen, Bookmark, CalendarDays, Check, ChevronDown, ChevronRight, Clock3, Eye, Flag, Heart, List, Maximize2, MessageSquare, MessageSquareText, PenLine, Rows3, Search, Share2, Square, Star, TriangleAlert, Type, X, ZoomIn } from 'lucide-react';
+import { Activity, ArrowDownUp, ArrowLeft, ArrowUpRight, Bell, BookOpen, Bookmark, CalendarDays, Check, CheckCircle2, ChevronDown, ChevronRight, Clock3, Eye, Flag, Heart, List, Maximize2, MessageSquare, MessageSquareText, PenLine, Rows3, Search, Share2, Square, Star, TriangleAlert, Type, X, ZoomIn } from 'lucide-react';
 import { useQueryClient } from '@tanstack/react-query';
 import {
   cacheSeriesCatalog,
@@ -291,6 +291,8 @@ export default function SeriesDetailPage() {
   );
   const [sourceReactions, setSourceReactions] = useState<string[]>([]);
   const [visitedSources, setVisitedSources] = useState<string[]>([]);
+  const [sourceSearch, setSourceSearch] = useState('');
+  const [sourcesNewestFirst, setSourcesNewestFirst] = useState(true);
   const [shareModalOpen, setShareModalOpen] = useState(false);
   const [mobileNav, setMobileNav] = useState(false);
   const { dark, toggleTheme } = useThemeMode();
@@ -386,6 +388,8 @@ export default function SeriesDetailPage() {
     setBookmarks(readSet('vortex-series-bookmarks'));
     setSourceReactions(readSet(`vortex-source-reactions:${slug}`));
     setVisitedSources(readSet(`vortex-visited-sources:${slug}`));
+    setSourceSearch('');
+    setSourcesNewestFirst(true);
     setActiveTab('sources');
     setSynopsisExpanded(false);
     setAlternateTitlesExpanded(false);
@@ -661,6 +665,12 @@ export default function SeriesDetailPage() {
     setVisitedSources(next);
     try { localStorage.setItem(`vortex-visited-sources:${slug}`, JSON.stringify(next)); } catch { /* keep visited state for this session */ }
   };
+  const markAllSourcesRead = () => {
+    const sourceUrls = series?.sources.map((source) => source.url).filter(Boolean) ?? [];
+    const next = Array.from(new Set([...visitedSources, ...sourceUrls]));
+    setVisitedSources(next);
+    try { localStorage.setItem(`vortex-visited-sources:${slug}`, JSON.stringify(next)); } catch { /* keep read state for this session */ }
+  };
   const toggleSourceReaction = (sourceUrl: string) => {
     if (sourceReactionBusy.includes(sourceUrl)) return;
     const next = sourceReactions.includes(sourceUrl)
@@ -770,6 +780,25 @@ export default function SeriesDetailPage() {
     // Keep the series-wide winning source first when timestamps tie.
     return Number(b.url.trim() === latestChapterSourceUrl) - Number(a.url.trim() === latestChapterSourceUrl);
   });
+  const sourceQuery = sourceSearch.trim().toLocaleLowerCase();
+  const visibleSources = prioritizedSources
+    .filter((source) => {
+      if (!sourceQuery) return true;
+      const sourceMatches = [source.name, source.latestChapterNumber, source.url]
+        .some((value) => value?.toLocaleLowerCase().includes(sourceQuery));
+      const chapterMatches = series.chapters.some((chapter) => {
+        const sourceMatchesChapter = !chapter.sourceName || chapter.sourceName.toLocaleLowerCase() === source.name.toLocaleLowerCase();
+        return sourceMatchesChapter && chapter.title.toLocaleLowerCase().includes(sourceQuery);
+      });
+      return sourceMatches || chapterMatches;
+    })
+    .sort((a, b) => {
+      const aTime = a.latestChapterAt ? Date.parse(a.latestChapterAt) : Number.NaN;
+      const bTime = b.latestChapterAt ? Date.parse(b.latestChapterAt) : Number.NaN;
+      if (Number.isNaN(aTime) || Number.isNaN(bTime) || aTime === bTime) return 0;
+      return sourcesNewestFirst ? bTime - aTime : aTime - bTime;
+    });
+  const allSourcesRead = prioritizedSources.length > 0 && prioritizedSources.every((source) => visitedSources.includes(source.url));
   const winningChapterSource = getWinningChapterSource(prioritizedSources, latestChapterSourceUrl);
   const winningSourceUrl = winningChapterSource?.url?.trim() || latestChapterSourceUrl;
   const firstSource = prioritizedSources.find((source) => source.url.trim());
@@ -900,7 +929,37 @@ export default function SeriesDetailPage() {
               {seriesPageVisibility.reviews && <button type="button" role="tab" aria-selected={visibleActiveTab === 'reviews'} className={visibleActiveTab === 'reviews' ? 'is-active' : ''} onClick={() => setActiveTab('reviews')}><MessageSquareText size={14} aria-hidden="true" /> Reviews{detail?.reviewCount !== undefined ? ` (${detail.reviewCount})` : ''}</button>}
             </div>
             {visibleActiveTab === 'sources' ? <>
-              {prioritizedSources.length ? <div className="series-source-list">{prioritizedSources.map((source, index) => {
+              <div className="series-source-tools">
+                <div className="series-source-tools__top">
+                  <label className="series-source-search">
+                    <Search size={16} aria-hidden="true" />
+                    <input
+                      type="search"
+                      value={sourceSearch}
+                      onChange={(event) => setSourceSearch(event.target.value)}
+                      placeholder="Search by chapter number or title..."
+                      aria-label="Search sources by chapter number or title"
+                    />
+                  </label>
+                  <button
+                    type="button"
+                    className="series-source-sort"
+                    onClick={() => setSourcesNewestFirst((newest) => !newest)}
+                    aria-label={`Sort sources ${sourcesNewestFirst ? 'oldest' : 'newest'} first`}
+                  ><ArrowDownUp size={15} aria-hidden="true" />{sourcesNewestFirst ? 'Newest' : 'Oldest'}</button>
+                </div>
+                <button
+                  type="button"
+                  className={`series-mark-all-read${allSourcesRead ? ' is-complete' : ''}`}
+                  onClick={markAllSourcesRead}
+                  disabled={!prioritizedSources.length || allSourcesRead}
+                  aria-pressed={allSourcesRead}
+                >
+                  <span className="series-mark-all-read__icon"><CheckCircle2 size={21} aria-hidden="true" /></span>
+                  <span className="series-mark-all-read__copy"><strong>{allSourcesRead ? 'All Chapters Read' : 'Mark All as Read'}</strong><small>{allSourcesRead ? 'All chapters are marked as read' : 'Mark all chapters as read'}</small></span>
+                </button>
+              </div>
+              {prioritizedSources.length ? visibleSources.length ? <div className="series-source-list">{visibleSources.map((source, index) => {
                 const getSourceFavicon = (url?: string) => {
                   if (!url) return '';
                   try {
@@ -929,7 +988,7 @@ export default function SeriesDetailPage() {
                     }}
                   >
                     <a className="series-source-main" href={targetUrl} target="_blank" rel="noopener noreferrer" data-testid={`link-source-${index}`}>
-                      <span className="series-source-logo">
+                      <span className={`series-source-logo${isTopSource ? ' is-top-source' : ''}`}>
                         {logoUrl ? (
                           <img
                             src={imageUrl(logoUrl, 96)}
@@ -951,6 +1010,7 @@ export default function SeriesDetailPage() {
                             {source.name.trim().charAt(0).toUpperCase()}
                           </span>
                         )}
+                        {isTopSource && <img className="series-source-helmet" src="/trick_pumpkin.webp" alt="" aria-hidden="true" loading="lazy" />}
                       </span>
                       <span className="series-source-copy">
                         <span className="series-source-heading">
@@ -984,7 +1044,7 @@ export default function SeriesDetailPage() {
                     </button>
                   </div>
                 );
-              })}</div> : <div className="series-empty">No translation sources have been added for this series yet.</div>}
+              })}</div> : <div className="series-empty">No sources match your search.</div> : <div className="series-empty">No translation sources have been added for this series yet.</div>}
             </> : visibleActiveTab === 'synopsis' ? <div className={`series-synopsis-panel${synopsis ? ' has-content' : ''}`}>
               <h2>Summary</h2>
               <p className={`series-synopsis-copy${hasExpandableSynopsis && !synopsisExpanded ? ' is-collapsed' : ''}`}>

@@ -1859,6 +1859,8 @@ html[data-accent-theme="default"] .hero-spider { display: none; }
 
 /* Shared series-card variant used on the Series page and Latest Releases. */
 .release-card--series {
+  position: relative;
+  isolation: isolate;
   --series-card-gap: 6px;
   --series-card-padding: 4px;
   --series-card-radius: 10px;
@@ -1894,6 +1896,28 @@ html[data-accent-theme="default"] .hero-spider { display: none; }
   border-radius: var(--series-card-radius);
   box-shadow: 0 3px 10px #28211b12, 0 1px 2px #28211b0a;
 }
+.release-card--series::after {
+  position: absolute;
+  z-index: 1;
+  top: 0;
+  right: 0;
+  width: 48px;
+  height: 48px;
+  border-top-right-radius: inherit;
+  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='224' height='224' viewBox='0 0 56 56' fill='none' stroke='%23d6d6d6' stroke-width='1'%3E%3Cpath d='M53 4.4L1.5 27M53 4.4L1.5 54.1M53 4.4L28.5 54.1M53 4.4L43.5 0.8'/%3E%3Cpath d='M8.2 0L22.2 33.3L55.5 47.5'/%3E%3Cpath d='M19.8 0L30.5 25.8L55.5 36.3'/%3E%3Cpath d='M31.8 0L38.8 16.6L55.5 24.1'/%3E%3C/svg%3E") top right / 48px 48px no-repeat;
+  content: '';
+  opacity: .72;
+  pointer-events: none;
+}
+.catalog-page .release-card--series::after {
+  width: 33px;
+  height: 33px;
+  background-size: 33px 33px;
+}
+@media (min-width: 601px) {
+  .catalog-page .catalog-grid .release-card--series { --series-title-size: 11px; }
+}
+.release-card--series > * { position: relative; z-index: 2; }
 .release-card--series:hover { border-color: var(--line); transform: none; }
 .release-card--series .release-cover { width: var(--series-cover-width); min-width: var(--series-cover-width); flex: 0 0 var(--series-cover-width); border-radius: var(--series-cover-radius); }
 .release-card--series .release-info { min-width: 0; padding: var(--series-info-padding); }
