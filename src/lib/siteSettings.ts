@@ -96,10 +96,32 @@ export type SiteSettings = {
   seriesFilters: SeriesFilterVisibility;
   heroSlides: HeroSlide[];
   newSeriesOrder: string[];
+  customSourceNames: string[];
   facebookUrl?: string;
   accentTheme: AccentTheme;
   announcement: AnnouncementSettings;
 };
+
+export const DEFAULT_CUSTOM_SOURCE_NAMES = [
+  'Asura Scans', 'Diva Scans', 'Dusk Scans', 'Kayn Scan', 'Lagoon Scans',
+  'Madara Scans', 'Mist Scans', 'Nyx Scans', 'Qi Scans', 'Thunder Scans',
+  'Vortex Scans', 'WebToon', 'StoneScape', 'Demonic Scans', 'HiveToon',
+  'Drake Scans', 'ElfToon', 'GenzToon', 'Ken Scans',
+];
+
+function parseCustomSourceNames(value: unknown): string[] {
+  if (!Array.isArray(value)) return [...DEFAULT_CUSTOM_SOURCE_NAMES];
+  const seen = new Set<string>();
+  return value
+    .filter((name): name is string => typeof name === 'string')
+    .map((name) => name.trim())
+    .filter((name) => {
+      const key = name.toLocaleLowerCase();
+      if (!name || seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    });
+}
 
 export const DEFAULT_ANNOUNCEMENT: AnnouncementSettings = {
   title: 'Welcome to Clydee Early Access',
@@ -166,6 +188,7 @@ export const DEFAULT_SITE_SETTINGS: SiteSettings = {
   seriesFilters: DEFAULT_SERIES_FILTER_VISIBILITY,
   heroSlides: DEFAULT_HERO_SLIDES,
   newSeriesOrder: [],
+  customSourceNames: [...DEFAULT_CUSTOM_SOURCE_NAMES],
   facebookUrl: 'https://facebook.com',
   accentTheme: 'halloween',
   announcement: DEFAULT_ANNOUNCEMENT,
@@ -262,7 +285,9 @@ function parseSiteSettings(value: unknown): SiteSettings | null {
       : DEFAULT_ANNOUNCEMENT.publishedAt,
   };
 
-  return { header, homepage, seriesPage, seriesFilters, heroSlides, newSeriesOrder, facebookUrl, accentTheme: parseAccentTheme(stored.accent_theme), announcement };
+  const customSourceNames = parseCustomSourceNames(stored.custom_source_names);
+
+  return { header, homepage, seriesPage, seriesFilters, heroSlides, newSeriesOrder, customSourceNames, facebookUrl, accentTheme: parseAccentTheme(stored.accent_theme), announcement };
 }
 
 export const SITE_SETTINGS_CACHE_KEY = 'vortex-site-settings';
@@ -287,6 +312,7 @@ export function getCachedSiteSettings(): SiteSettings | null {
     const newSeriesOrder = Array.isArray(cached.newSeriesOrder)
       ? cached.newSeriesOrder.filter((id): id is string => typeof id === 'string' && id.trim().length > 0)
       : [];
+    const customSourceNames = parseCustomSourceNames(cached.customSourceNames);
     const facebookUrl = typeof cached.facebookUrl === 'string' && cached.facebookUrl.trim()
       ? cached.facebookUrl.trim()
       : 'https://facebook.com';
@@ -304,7 +330,7 @@ export function getCachedSiteSettings(): SiteSettings | null {
         : DEFAULT_ANNOUNCEMENT.publishedAt,
     };
 
-    const settings = { header, homepage, seriesPage, seriesFilters, heroSlides, newSeriesOrder, facebookUrl, accentTheme: parseAccentTheme(cached.accentTheme), announcement };
+    const settings = { header, homepage, seriesPage, seriesFilters, heroSlides, newSeriesOrder, customSourceNames, facebookUrl, accentTheme: parseAccentTheme(cached.accentTheme), announcement };
     applyAccentTheme(settings.accentTheme);
     return settings;
   } catch {
@@ -357,6 +383,7 @@ export async function getSiteSettings(forceRefresh = false): Promise<SiteSetting
           seriesFilters: { ...DEFAULT_SERIES_FILTER_VISIBILITY },
           heroSlides: [...DEFAULT_HERO_SLIDES],
           newSeriesOrder: [],
+          customSourceNames: [...DEFAULT_CUSTOM_SOURCE_NAMES],
           accentTheme: 'halloween',
           announcement: DEFAULT_ANNOUNCEMENT,
         };
@@ -401,6 +428,7 @@ export async function saveSiteSettings(settings: SiteSettings): Promise<SiteSett
         series_filter_sections: settings.seriesFilters,
         hero_slides: settings.heroSlides,
         new_series_order: settings.newSeriesOrder,
+        custom_source_names: parseCustomSourceNames(settings.customSourceNames),
         facebook_url: settings.facebookUrl || 'https://facebook.com',
         accent_theme: settings.accentTheme,
         announcement: settings.announcement,

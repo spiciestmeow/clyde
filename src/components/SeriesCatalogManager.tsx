@@ -345,15 +345,119 @@ function CreditsAutocompleteField({
   );
 }
 
+function SourceNameAutocomplete({
+  value,
+  suggestions,
+  onChange,
+}: {
+  value: string;
+  suggestions: string[];
+  onChange: (value: string) => void;
+}) {
+  const [isOpen, setIsOpen] = useState(false);
+  const [highlightedIndex, setHighlightedIndex] = useState(0);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const listRef = useRef<HTMLDivElement>(null);
+  const query = value.trim().toLocaleLowerCase();
+  const options = useMemo(
+    () => suggestions.filter((name) => !query || name.toLocaleLowerCase().includes(query)).slice(0, 30),
+    [query, suggestions],
+  );
+
+  useEffect(() => {
+    const handlePointerDown = (event: MouseEvent) => {
+      if (!containerRef.current?.contains(event.target as Node)) setIsOpen(false);
+    };
+    document.addEventListener('mousedown', handlePointerDown);
+    return () => document.removeEventListener('mousedown', handlePointerDown);
+  }, []);
+
+  useEffect(() => {
+    if (isOpen && highlightedIndex >= 0) {
+      const items = listRef.current?.querySelectorAll('.credits-autocomplete-item');
+      (items?.[highlightedIndex] as HTMLElement | undefined)?.scrollIntoView({ block: 'nearest' });
+    }
+  }, [highlightedIndex, isOpen]);
+
+  const choose = (name: string) => {
+    onChange(name);
+    setIsOpen(false);
+  };
+
+  const handleKeyDown = (event: ReactKeyboardEvent<HTMLInputElement>) => {
+    if (event.key === 'ArrowDown' && options.length) {
+      event.preventDefault();
+      setIsOpen(true);
+      setHighlightedIndex((index) => (index + 1) % options.length);
+    } else if (event.key === 'ArrowUp' && options.length) {
+      event.preventDefault();
+      setIsOpen(true);
+      setHighlightedIndex((index) => (index <= 0 ? options.length - 1 : index - 1));
+    } else if (event.key === 'Enter' && isOpen && options[highlightedIndex]) {
+      event.preventDefault();
+      choose(options[highlightedIndex]);
+    } else if (event.key === 'Escape') {
+      setIsOpen(false);
+    }
+  };
+
+  return (
+    <div className="source-name-autocomplete-wrap" ref={containerRef}>
+      <input
+        type="text"
+        className="text-input"
+        placeholder="Source name"
+        value={value}
+        onChange={(event) => {
+          onChange(event.target.value);
+          setIsOpen(true);
+          setHighlightedIndex(0);
+        }}
+        onFocus={() => {
+          setIsOpen(true);
+          setHighlightedIndex(0);
+        }}
+        onKeyDown={handleKeyDown}
+        autoComplete="off"
+        role="combobox"
+        aria-expanded={isOpen && options.length > 0}
+        aria-autocomplete="list"
+      />
+      {isOpen && options.length > 0 && (
+        <div className="credits-autocomplete-dropdown source-name-autocomplete-dropdown" ref={listRef} role="listbox">
+          {options.map((name, index) => (
+            <button
+              key={name}
+              type="button"
+              role="option"
+              aria-selected={index === highlightedIndex}
+              className={`credits-autocomplete-item${index === highlightedIndex ? ' is-highlighted' : ''}`}
+              onMouseEnter={() => setHighlightedIndex(index)}
+              onMouseDown={(event) => {
+                event.preventDefault();
+                choose(name);
+              }}
+            >
+              {name}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function SeriesCatalogManager({
   globalSearch = '',
   newSeriesOrder = [],
+  customSourceNames = [],
   onSaveNewSeriesOrder,
   isSavingNewSeriesOrder = false,
   newSeriesOrderSaveMessage = 'Saved',
 }: {
   globalSearch?: string;
   newSeriesOrder?: string[];
+  customSourceNames?: string[];
   onSaveNewSeriesOrder?: (order: string[]) => Promise<void>;
   isSavingNewSeriesOrder?: boolean;
   newSeriesOrderSaveMessage?: string;
@@ -1961,13 +2065,10 @@ export default function SeriesCatalogManager({
             )}
             {draft.sources.map((source, idx) => (
               <div key={idx} className="link-edit-row">
-                <input
-                  type="text"
-                  className="text-input"
-                  placeholder="Source name"
+                <SourceNameAutocomplete
                   value={source.name}
-                  onChange={(e) => {
-                    const val = e.target.value;
+                  suggestions={customSourceNames}
+                  onChange={(val) => {
                     setDraft((c) => ({
                       ...c,
                       sources: c.sources.map((s, i) => (i === idx ? { ...s, name: val } : s)),

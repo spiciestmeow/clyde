@@ -1909,6 +1909,7 @@ html[data-accent-theme="default"] .hero-spider { display: none; }
   opacity: .72;
   pointer-events: none;
 }
+.theme-dark .release-card--series::after { opacity: .14; }
 .catalog-page .release-card--series::after {
   width: 33px;
   height: 33px;

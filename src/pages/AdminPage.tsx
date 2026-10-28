@@ -43,6 +43,7 @@ import HeroSlidesManager from '../components/HeroSlidesManager';
 import AdminGuideModal from '../components/AdminGuideModal';
 import {
   DEFAULT_ANNOUNCEMENT,
+  DEFAULT_CUSTOM_SOURCE_NAMES,
   DEFAULT_SITE_SETTINGS,
   getSiteSettings,
   saveSiteSettings,
@@ -428,7 +429,7 @@ function ComixDashboard({
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const [profileMenuOpen, setProfileMenuOpen] = useState(false);
   const profileMenuRef = useRef<HTMLDivElement>(null);
-  const [settingsSubTab, setSettingsSubTab] = useState<'homepage' | 'announcement' | 'header' | 'series' | 'filters' | 'socials' | 'theme'>('homepage');
+  const [settingsSubTab, setSettingsSubTab] = useState<'homepage' | 'announcement' | 'header' | 'series' | 'filters' | 'socials' | 'sources' | 'theme'>('homepage');
   const [topSearch, setTopSearch] = useState('');
 
   // Series catalog stats
@@ -455,6 +456,7 @@ function ComixDashboard({
   const [savingSettings, setSavingSettings] = useState(false);
   const [saveMessage, setSaveMessage] = useState('Saved');
   const [facebookUrlInput, setFacebookUrlInput] = useState('https://facebook.com');
+  const [customSourceNamesInput, setCustomSourceNamesInput] = useState(DEFAULT_CUSTOM_SOURCE_NAMES.join('\n'));
 
   useEffect(() => {
     if (!profileMenuOpen) return;
@@ -480,6 +482,7 @@ function ComixDashboard({
         setSettings(s);
         setAnnouncementDraft(s.announcement);
         setAnnouncementTagsInput(s.announcement.tags.join(', '));
+        setCustomSourceNamesInput(s.customSourceNames.join('\n'));
         if (s?.facebookUrl) setFacebookUrlInput(s.facebookUrl);
       }
     });
@@ -504,6 +507,30 @@ function ComixDashboard({
       if (saved?.facebookUrl) setFacebookUrlInput(saved.facebookUrl);
       setSaveMessage('Saved');
     } catch {
+      setSaveMessage('Error saving');
+    } finally {
+      setSavingSettings(false);
+    }
+  };
+
+  const saveCustomSourceNames = async () => {
+    if (!settings || savingSettings) return;
+    const customSourceNames = customSourceNamesInput
+      .split(/\r?\n/)
+      .map((name) => name.trim())
+      .filter((name, index, names) => name && names.findIndex((candidate) => candidate.toLocaleLowerCase() === name.toLocaleLowerCase()) === index);
+    const previousSettings = settings;
+    const nextSettings: SiteSettings = { ...settings, customSourceNames };
+    setSettings(nextSettings);
+    setSavingSettings(true);
+    setSaveMessage('Saving...');
+    try {
+      const saved = await saveSiteSettings(nextSettings);
+      setSettings(saved);
+      setCustomSourceNamesInput(saved.customSourceNames.join('\n'));
+      setSaveMessage('Saved');
+    } catch {
+      setSettings(previousSettings);
       setSaveMessage('Error saving');
     } finally {
       setSavingSettings(false);
@@ -939,6 +966,7 @@ function ComixDashboard({
               <SeriesCatalogManager
                 globalSearch={topSearch}
                 newSeriesOrder={settings?.newSeriesOrder ?? []}
+                customSourceNames={settings?.customSourceNames ?? DEFAULT_CUSTOM_SOURCE_NAMES}
                 onSaveNewSeriesOrder={saveNewSeriesOrder}
                 isSavingNewSeriesOrder={savingSettings || !settings}
                 newSeriesOrderSaveMessage={saveMessage}
@@ -1006,6 +1034,13 @@ function ComixDashboard({
                     onClick={() => setSettingsSubTab('socials')}
                   >
                     Social Links
+                  </button>
+                  <button
+                    type="button"
+                    className={`comix-sub-tab ${settingsSubTab === 'sources' ? 'is-active' : ''}`}
+                    onClick={() => setSettingsSubTab('sources')}
+                  >
+                    Source Names
                   </button>
                   <button
                     type="button"
@@ -1235,6 +1270,46 @@ function ComixDashboard({
                           </button>
                         </div>
                       </div>
+                    </div>
+                  </div>
+                )}
+
+                {settings && settingsSubTab === 'sources' && (
+                  <div className="comix-setting-group">
+                    <div className="comix-group-title">Custom source names</div>
+                    <div className="comix-setting-item" style={{ flexDirection: 'column', alignItems: 'stretch', gap: '12px' }}>
+                      <div className="comix-setting-info">
+                        <strong>Upload source suggestions</strong>
+                        <span>Enter one source name per line. These appear as suggestions in the source name field when uploading or editing a series; you can still type a name that is not listed.</span>
+                      </div>
+                      <textarea
+                        className="comix-search-input"
+                        aria-label="Custom source names, one per line"
+                        value={customSourceNamesInput}
+                        onChange={(event) => setCustomSourceNamesInput(event.target.value)}
+                        rows={12}
+                        style={{
+                          width: '100%',
+                          maxWidth: '560px',
+                          padding: '12px 14px',
+                          borderRadius: '6px',
+                          border: '1px solid var(--cx-border)',
+                          background: 'var(--cx-input-bg)',
+                          color: 'var(--cx-text)',
+                          outline: 'none',
+                          fontSize: '13px',
+                          resize: 'vertical',
+                        }}
+                      />
+                      <button
+                        type="button"
+                        className="btn-teal"
+                        style={{ alignSelf: 'flex-start' }}
+                        onClick={() => void saveCustomSourceNames()}
+                        disabled={savingSettings}
+                      >
+                        {savingSettings ? 'Saving...' : 'Save source names'}
+                      </button>
                     </div>
                   </div>
                 )}
