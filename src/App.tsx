@@ -1,5 +1,5 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState, type PointerEvent as ReactPointerEvent, type SyntheticEvent } from 'react';
-import { ArrowLeft, ArrowRight, ArrowUp, ArrowUpRight, ChevronDown, ChevronLeft, ChevronRight, Clock3, Flame, Megaphone, RefreshCw } from 'lucide-react';
+import { ArrowLeft, ArrowRight, ArrowUp, ArrowUpRight, ChevronDown, ChevronLeft, ChevronRight, Clock3, Flame, Megaphone, RefreshCw, WifiOff } from 'lucide-react';
 import { Route, Switch, Router as WouterRouter, useLocation } from 'wouter';
 import SiteSearch from './components/SiteSearch';
 import SiteFooter from './components/SiteFooter';
@@ -142,6 +142,15 @@ function SectionTitle({ children, icon }: { children: string; icon?: boolean }) 
   return <div className="section-title">{icon && <Flame size={17} fill="currentColor" />}<h2>{children}</h2></div>;
 }
 
+function CatalogSectionUnavailable({ children }: { children: string }) {
+  return (
+    <div className="catalog-section-unavailable" role="status">
+      <WifiOff size={16} aria-hidden="true" />
+      <span>{children}</span>
+    </div>
+  );
+}
+
 
 function HomePage() {
   const [slide, setSlide] = useState(0);
@@ -160,6 +169,7 @@ function HomePage() {
 
   const catalogQuery = useSeriesCatalog();
   const seriesItems = catalogQuery.items;
+  const catalogUnavailable = catalogQuery.isError && seriesItems.length === 0;
   const searchItems = useMemo(() => toSiteSearchItems(seriesItems), [seriesItems]);
   const trendingSearchItems = useMemo(() => toTrendingSiteSearchItems(seriesItems), [seriesItems]);
 
@@ -503,7 +513,9 @@ function HomePage() {
 
         {homepageVisibility.popularToday && <section className="popular-section content-width">
           <SectionTitle icon>Popular Today</SectionTitle>
-          <div className="cover-rail-wrap"><div
+          {catalogUnavailable ? (
+            <CatalogSectionUnavailable>Popular titles will return when the catalog is available.</CatalogSectionUnavailable>
+          ) : <div className="cover-rail-wrap"><div
             className="cover-rail"
             ref={railRef}
             onScroll={(event) => normalizeRailScrollPosition(event.currentTarget, railGestureRef.current)}
@@ -528,7 +540,7 @@ function HomePage() {
                 imageSrc={assetUrl(card.src, 400)}
               />
             ))
-          )}</div><button className="rail-arrow left" onClick={() => railRef.current?.scrollBy({ left: -500, behavior: 'smooth' })} aria-label="Previous popular"><ArrowLeft /></button><button className="rail-arrow right" onClick={() => railRef.current?.scrollBy({ left: 500, behavior: 'smooth' })} aria-label="Next popular"><ArrowRight /></button></div>
+          )}</div><button className="rail-arrow left" onClick={() => railRef.current?.scrollBy({ left: -500, behavior: 'smooth' })} aria-label="Previous popular"><ArrowLeft /></button><button className="rail-arrow right" onClick={() => railRef.current?.scrollBy({ left: 500, behavior: 'smooth' })} aria-label="Next popular"><ArrowRight /></button></div>}
         </section>}
 
         {homepageVisibility.announcement && <section className="announcement-section content-width" aria-labelledby="home-announcements-title">
@@ -558,7 +570,9 @@ function HomePage() {
         {homepageVisibility.latestReleases && <section className="latest-section content-width">
           <div className="latest-heading"><div className="section-title"><h2>Latest Releases</h2></div><div className="latest-tabs"><button className={filter === 'Latest' ? 'on' : ''} onClick={() => { setFilter('Latest'); setReleasePage(1); }}><RefreshCw size={15} />Latest</button><button className={filter === 'New' ? 'on' : ''} onClick={() => { setFilter('New'); setReleasePage(1); }}><Clock3 size={15} />New</button></div><a className="view-all" href="/latest-updates" aria-label="View All Latest Updates"><ArrowUpRight /></a></div>
           <div className="release-grid">
-            {catalogQuery.isLoading && seriesItems.length === 0 ? (
+            {catalogUnavailable ? (
+              <CatalogSectionUnavailable>Latest releases will return when the catalog is available.</CatalogSectionUnavailable>
+            ) : catalogQuery.isLoading && seriesItems.length === 0 ? (
               <LatestReleasesSkeleton />
             ) : (
               pagedReleases.map((release) => (
@@ -698,7 +712,9 @@ function HomePage() {
               </div>
             </div>
             <div className="popular-rank-grid">
-              {catalogQuery.isLoading && seriesItems.length === 0 ? (
+              {catalogUnavailable ? (
+                <CatalogSectionUnavailable>Most popular titles will return when the catalog is available.</CatalogSectionUnavailable>
+              ) : catalogQuery.isLoading && seriesItems.length === 0 ? (
                 <MostPopularSkeleton />
               ) : (
                 mostPopularItems.map((item, i) => (

@@ -29,6 +29,25 @@
   font-weight: 700;
 }
 
+.catalog-section-unavailable {
+  display: flex;
+  grid-column: 1 / -1;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+  min-height: 64px;
+  margin: 8px 0 12px;
+  padding: 14px 18px;
+  border: 1px dashed color-mix(in srgb, var(--line) 78%, var(--muted));
+  border-radius: 12px;
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.45;
+  text-align: center;
+}
+
+.catalog-section-unavailable svg { flex: 0 0 auto; color: var(--accent); opacity: .78; }
+
 .catalog-error-state {
   position: relative;
   display: flex;
