@@ -26,6 +26,7 @@ import { Shareable } from '../components/Shareable';
 import { toSiteSearchItems, toTrendingSiteSearchItems } from '../data/seriesSearchCatalog';
 import { useThemeMode } from '../hooks/useThemeMode';
 import { useSeriesCatalog } from '../hooks/useSeriesCatalog';
+import { useSeriesDetail } from '../hooks/useSeriesDetail';
 import { DEFAULT_SERIES_PAGE_VISIBILITY, SITE_SETTINGS_UPDATED_EVENT, getCachedSiteSettings, getSiteSettings } from '../lib/siteSettings';
 import { formatScanlatorSeriesUrl } from '../lib/scanlatorLinks';
 import { getWinningChapterSource } from '../lib/sourcePriority';
@@ -258,11 +259,12 @@ export default function SeriesDetailPage() {
   const [, setLocation] = useLocation();
   const slug = decodeURIComponent(params.slug || '').replace(/\/$/, '');
   const queryClient = useQueryClient();
+  const detailQuery = useSeriesDetail(slug);
   const catalogQuery = useSeriesCatalog();
-  const seriesQuery = catalogQuery;
-  const series: SeriesRecord | undefined = catalogQuery.items.find(
+  const series: SeriesRecord | undefined = detailQuery.data ?? catalogQuery.items.find(
     (item) => item.slug.toLocaleLowerCase() === slug.toLocaleLowerCase(),
   );
+  const seriesQuery = detailQuery;
   const detail = series;
   const alternateTitleText = detail?.alternateTitles?.join(' / ') ?? '';
   const searchItems = useMemo(() => toSiteSearchItems(catalogQuery.items), [catalogQuery.items]);

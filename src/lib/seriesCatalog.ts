@@ -376,6 +376,27 @@ export async function getSeriesCatalog(): Promise<SeriesCatalogResponse> {
   return result;
 }
 
+export async function getSeriesBySlug(slug: string): Promise<SeriesRecord | null> {
+  const client = requireSupabase();
+  const cleanSlug = slug.trim().toLowerCase();
+  if (!cleanSlug) return null;
+
+  const { data, error } = await client
+    .from('series')
+    .select(
+      'id, slug, title, href, cover, category, rating, status, pinned, chapters, ' +
+      'alternate_titles, synopsis, author, artist, publishers, content_rating, year, ' +
+      'original_language, demographics, genres, formats, tags, trackers, sources, ' +
+      'facts, favorites, views, review_count, page_number, page_order, created_at, updated_at',
+    )
+    .eq('slug', cleanSlug)
+    .maybeSingle();
+
+  if (error) throw error;
+  if (!data) return null;
+  return toSeriesRecord(data);
+}
+
 export async function createSeriesRecord(input: CreateSeriesRequest): Promise<SeriesRecord> {
   const client = requireSupabase();
   const title = input.title.trim();

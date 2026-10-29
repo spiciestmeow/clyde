@@ -248,18 +248,10 @@ export default function NotificationPopover({ mode = 'popover' }: NotificationPo
     }
   };
 
-  // Initial load once on mount, with a gentle 5-minute background check only when tab is visible
+  // Initial load once on mount so the bell badge has the initial count.
+  // We do NOT poll continuously in the background to prevent eating Supabase log ingestion and egress.
   useEffect(() => {
     void loadNotifications(true);
-
-    const intervalId = window.setInterval(() => {
-      if (typeof document !== 'undefined' && document.hidden) return;
-      void loadNotifications(false);
-    }, 5 * 60 * 1000); // 5 minutes (reduced from aggressive 15s polling to save egress/logs)
-
-    return () => {
-      window.clearInterval(intervalId);
-    };
   }, [loadNotifications]);
 
   // Refresh when user actively opens the notification popover if older than 60 seconds
