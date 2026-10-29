@@ -261,8 +261,8 @@ html.series-document-scrollbar::-webkit-scrollbar-button, body.series-document-s
     margin-top: 0;
   }
   .catalog-results-layout.has-filters .catalog-filter-drawer.has-expanded-sections {
-    top: max(95px, env(safe-area-inset-top, 0px));
-    height: calc(100dvh - max(95px, env(safe-area-inset-top, 0px)));
+    top: auto;
+    height: fit-content;
     max-height: calc(100dvh - max(95px, env(safe-area-inset-top, 0px)));
   }
   .catalog-filter-sheet-handle {
@@ -305,7 +305,7 @@ html.series-document-scrollbar::-webkit-scrollbar-button, body.series-document-s
     pointer-events: auto;
   }
   .catalog-filter-drawer.has-expanded-sections .catalog-filter-panel {
-    flex: 1 1 0px;
+    flex: 0 1 auto;
     max-height: none;
   }
   .catalog-filter-panel::-webkit-scrollbar {
@@ -443,4 +443,3 @@ html.series-document-scrollbar::-webkit-scrollbar-button, body.series-document-s
   .catalog-filter-toggle { height: 36px; flex: 0 0 auto; gap: 5px; padding: 0 9px; font-size: 12px; }
   .catalog-grid { grid-template-columns: 1fr; gap: 8px; }
 }
-
