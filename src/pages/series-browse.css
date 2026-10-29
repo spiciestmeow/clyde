@@ -237,8 +237,8 @@ html.series-document-scrollbar::-webkit-scrollbar-button, body.series-document-s
     min-width: 0;
     min-height: 0;
     box-sizing: border-box;
-    height: auto;
-    max-height: none;
+    height: calc(100dvh - max(60px, env(safe-area-inset-top, 0px)));
+    max-height: calc(100dvh - max(60px, env(safe-area-inset-top, 0px)));
     margin: 0;
     padding: 0;
     overflow: hidden;
@@ -256,8 +256,8 @@ html.series-document-scrollbar::-webkit-scrollbar-button, body.series-document-s
     transform: translateY(0);
     visibility: visible;
     pointer-events: auto;
-    height: auto;
-    max-height: none;
+    height: calc(100dvh - max(60px, env(safe-area-inset-top, 0px)));
+    max-height: calc(100dvh - max(60px, env(safe-area-inset-top, 0px)));
     margin-top: 0;
   }
   .catalog-filter-sheet-handle {
