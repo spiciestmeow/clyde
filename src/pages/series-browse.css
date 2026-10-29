@@ -224,7 +224,7 @@ html.series-document-scrollbar::-webkit-scrollbar-button, body.series-document-s
   .catalog-filter-drawer {
     position: fixed;
     z-index: 1000;
-    top: max(60px, env(safe-area-inset-top, 0px));
+    top: auto;
     right: 0;
     bottom: 0;
     left: 0;
@@ -237,7 +237,7 @@ html.series-document-scrollbar::-webkit-scrollbar-button, body.series-document-s
     min-width: 0;
     min-height: 0;
     box-sizing: border-box;
-    height: calc(100dvh - max(60px, env(safe-area-inset-top, 0px)));
+    height: fit-content;
     max-height: calc(100dvh - max(60px, env(safe-area-inset-top, 0px)));
     margin: 0;
     padding: 0;
@@ -256,7 +256,7 @@ html.series-document-scrollbar::-webkit-scrollbar-button, body.series-document-s
     transform: translateY(0);
     visibility: visible;
     pointer-events: auto;
-    height: calc(100dvh - max(60px, env(safe-area-inset-top, 0px)));
+    height: fit-content;
     max-height: calc(100dvh - max(60px, env(safe-area-inset-top, 0px)));
     margin-top: 0;
   }
@@ -276,13 +276,13 @@ html.series-document-scrollbar::-webkit-scrollbar-button, body.series-document-s
     background: color-mix(in srgb, var(--catalog-ink) 24%, transparent);
   }
   .catalog-filter-panel {
-    flex: 1 1 0px;
+    flex: 0 1 auto;
     width: 100%;
     max-width: 100%;
     min-width: 0;
     min-height: 0;
     box-sizing: border-box;
-    max-height: none;
+    max-height: calc(100dvh - max(60px, env(safe-area-inset-top, 0px)) - 126px);
     padding: 0 16px 12px;
     overflow-x: hidden;
     overflow-y: auto;
