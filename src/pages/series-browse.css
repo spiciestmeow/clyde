@@ -219,7 +219,7 @@ html.series-document-scrollbar::-webkit-scrollbar-button, body.series-document-s
 }
 @media (max-width: 850px) {
   .catalog-results-layout, .catalog-results-layout.has-filters { grid-template-columns: minmax(0, 1fr); }
-  .catalog-page.has-filter-sheet .topbar.series-topbar { position: fixed; z-index: 90; top: 0; right: 0; left: 0; display: block; }
+  .catalog-page.has-filter-sheet .topbar.series-topbar { position: sticky; z-index: 90; top: 0; right: 0; left: 0; display: block; }
   .catalog-filter-backdrop { position: fixed; top: 60px; right: 0; bottom: 0; left: 0; z-index: 95; display: block; width: 100%; height: auto; padding: 0; border: 0; background: rgba(20, 18, 17, .72); touch-action: none; }
   .catalog-filter-drawer {
     position: fixed;
