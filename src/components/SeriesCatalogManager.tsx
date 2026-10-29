@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState, type ChangeEvent, type FormEvent, type KeyboardEvent as ReactKeyboardEvent } from 'react';
+import { createPortal } from 'react-dom';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import {
   AlertCircle,
@@ -488,6 +489,8 @@ export default function SeriesCatalogManager({
   // Form draft & editing state
   const [editingSeriesId, setEditingSeriesId] = useState<number | null>(() => savedTitleEditor?.editingSeriesId ?? null);
   const [draft, setDraft] = useState<FormDraft>(() => savedTitleEditor?.draft ?? initialFormDraft());
+  const [coverPreviewOpen, setCoverPreviewOpen] = useState(false);
+  const coverPreviewDialogRef = useRef<HTMLDialogElement>(null);
   const [pendingSourceRemovalIndex, setPendingSourceRemovalIndex] = useState<number | null>(null);
   const [seriesPendingDelete, setSeriesPendingDelete] = useState<SeriesRecord | null>(null);
   const [newAuthor, setNewAuthor] = useState('');
@@ -502,6 +505,19 @@ export default function SeriesCatalogManager({
   const [duplicateTitle, setDuplicateTitle] = useState<{ title: string; href: string } | null>(null);
   const [importSuccess, setImportSuccess] = useState<string | null>(null);
   const [submitError, setSubmitError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (view !== 'new-title') {
+      setCoverPreviewOpen(false);
+      return;
+    }
+
+    const dialog = coverPreviewDialogRef.current;
+    if (!dialog) return;
+
+    if (coverPreviewOpen && !dialog.open) dialog.showModal();
+    if (!coverPreviewOpen && dialog.open) dialog.close();
+  }, [coverPreviewOpen, view]);
 
   useEffect(() => {
     if (view !== 'new-title') {
@@ -1568,13 +1584,19 @@ export default function SeriesCatalogManager({
             <div className="field-group">
               <label className="field-label">Cover image</label>
               <div className="cover-upload-area">
-                <div className="cover-preview-box">
+                <button
+                  type="button"
+                  className={`cover-preview-box${draft.cover ? ' has-cover' : ''}`}
+                  onClick={() => draft.cover && setCoverPreviewOpen(true)}
+                  disabled={!draft.cover}
+                  aria-label={draft.cover ? 'Preview cover image' : 'No cover image uploaded'}
+                >
                   {draft.cover ? (
                     <img src={draft.cover} alt="Cover preview" className="cover-img" />
                   ) : (
                     <span className="no-cover-label">No cover</span>
                   )}
-                </div>
+                </button>
 
                 <div className="cover-upload-controls">
                   <input
@@ -1596,7 +1618,10 @@ export default function SeriesCatalogManager({
                     <button
                       type="button"
                       className="btn-text-danger"
-                      onClick={() => setDraft((c) => ({ ...c, cover: '' }))}
+                      onClick={() => {
+                        setCoverPreviewOpen(false);
+                        setDraft((c) => ({ ...c, cover: '' }));
+                      }}
                     >
                       Remove cover
                     </button>
@@ -2153,6 +2178,31 @@ export default function SeriesCatalogManager({
           </div>
         </form>
         {syncSourcesModalElement}
+        {coverPreviewOpen && draft.cover && createPortal(
+          <dialog
+            ref={coverPreviewDialogRef}
+            className="cover-preview-backdrop"
+            aria-label="Cover image preview"
+            onCancel={(event) => {
+              event.preventDefault();
+              setCoverPreviewOpen(false);
+            }}
+            onClick={(event) => {
+              if (event.target === event.currentTarget) setCoverPreviewOpen(false);
+            }}
+          >
+            <button
+              type="button"
+              className="cover-preview-close"
+              onClick={() => setCoverPreviewOpen(false)}
+              aria-label="Close cover preview"
+            >
+              <X size={22} />
+            </button>
+            <img className="cover-preview-large" src={draft.cover} alt={`${draft.title || 'Series'} cover`} />
+          </dialog>,
+          document.body,
+        )}
         <ConfirmationDialog
           open={pendingSourceRemovalIndex !== null}
           onOpenChange={(open) => {
