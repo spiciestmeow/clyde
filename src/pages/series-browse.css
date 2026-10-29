@@ -224,7 +224,7 @@ html.series-document-scrollbar::-webkit-scrollbar-button, body.series-document-s
   .catalog-filter-drawer {
     position: fixed;
     z-index: 1000;
-    top: 0;
+    top: auto;
     right: 0;
     bottom: 0;
     left: 0;
@@ -237,32 +237,43 @@ html.series-document-scrollbar::-webkit-scrollbar-button, body.series-document-s
     min-width: 0;
     min-height: 0;
     box-sizing: border-box;
-    height: 100%;
-    height: 100dvh;
-    max-height: 100dvh;
+    height: auto;
+    max-height: min(88dvh, calc(100dvh - 56px));
     margin: 0;
     padding: 0;
     overflow: hidden;
     border: 0;
-    border-radius: 0;
+    border-top-left-radius: 18px;
+    border-top-right-radius: 18px;
     background: var(--catalog-panel);
-    box-shadow: none;
+    box-shadow: 0 -8px 32px rgba(0, 0, 0, .32);
     transform: translateY(100%);
     visibility: hidden;
     pointer-events: none;
-    transition: transform 260ms cubic-bezier(.2, .8, 0.2, 1), visibility 260ms;
+    transition: transform 260ms cubic-bezier(.2, .8, 0.2, 1), max-height 220ms ease, visibility 260ms;
   }
   .catalog-results-layout.has-filters .catalog-filter-drawer {
     transform: translateY(0);
     visibility: visible;
     pointer-events: auto;
-    height: 100%;
-    height: 100dvh;
-    max-height: 100dvh;
+    height: auto;
+    max-height: min(88dvh, calc(100dvh - 56px));
     margin-top: 0;
   }
   .catalog-filter-sheet-handle {
-    display: none;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 10px 0 4px;
+    flex-shrink: 0;
+    cursor: pointer;
+  }
+  .catalog-filter-sheet-handle span {
+    display: block;
+    width: 44px;
+    height: 4px;
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--catalog-ink) 24%, transparent);
   }
   .catalog-filter-panel {
     flex: 1 1 auto;
@@ -272,13 +283,13 @@ html.series-document-scrollbar::-webkit-scrollbar-button, body.series-document-s
     min-height: 0;
     box-sizing: border-box;
     max-height: none;
-    padding: 0 16px 24px;
+    padding: 0 16px 20px;
     overflow-x: hidden;
     overflow-y: auto;
     overscroll-behavior-y: contain;
     -webkit-overflow-scrolling: touch;
-    scrollbar-gutter: auto;
-    scrollbar-color: var(--scrollbar-thumb) transparent;
+    scrollbar-gutter: stable;
+    scrollbar-color: color-mix(in srgb, var(--catalog-ink) 42%, transparent) color-mix(in srgb, var(--catalog-ink) 8%, transparent);
     scrollbar-width: thin;
     border: 0;
     border-radius: 0;
@@ -288,22 +299,42 @@ html.series-document-scrollbar::-webkit-scrollbar-button, body.series-document-s
     transform: none;
     pointer-events: auto;
   }
-  .catalog-filter-panel::-webkit-scrollbar { width: 6px; height: 6px; background: var(--catalog-scrollbar-track); }
-  .catalog-filter-panel::-webkit-scrollbar-track { border-radius: 10px; background: var(--catalog-scrollbar-track); }
-  .catalog-filter-panel::-webkit-scrollbar-thumb { min-height: 40px; border: 0; border-radius: 10px; background: var(--scrollbar-thumb); }
-  .catalog-genre-options { max-height: 260px; overflow-y: auto; padding-right: 4px; }
-  .catalog-filter-panel::-webkit-scrollbar-button,
-  .catalog-genre-options::-webkit-scrollbar-button,
-  .catalog-filter-panel::-webkit-scrollbar-button:single-button,
-  .catalog-genre-options::-webkit-scrollbar-button:single-button,
-  .catalog-filter-panel::-webkit-scrollbar-button:vertical:decrement,
-  .catalog-filter-panel::-webkit-scrollbar-button:vertical:increment,
-  .catalog-genre-options::-webkit-scrollbar-button:vertical:decrement,
-  .catalog-genre-options::-webkit-scrollbar-button:vertical:increment,
-  .catalog-page::-webkit-scrollbar-button:vertical:start:decrement,
-  .catalog-page::-webkit-scrollbar-button:vertical:end:increment,
-  .catalog-page *::-webkit-scrollbar-button:vertical:start:decrement,
-  .catalog-page *::-webkit-scrollbar-button:vertical:end:increment { display: none !important; width: 0 !important; height: 0 !important; min-width: 0 !important; min-height: 0 !important; padding: 0 !important; color: transparent !important; background: none !important; background-image: none !important; border: 0 !important; opacity: 0 !important; -webkit-appearance: none !important; appearance: none !important; }
+  .catalog-filter-panel::-webkit-scrollbar {
+    width: 7px;
+    display: block;
+  }
+  .catalog-filter-panel::-webkit-scrollbar-track {
+    border-radius: 10px;
+    background: color-mix(in srgb, var(--catalog-ink) 8%, transparent);
+  }
+  .catalog-filter-panel::-webkit-scrollbar-thumb {
+    min-height: 40px;
+    border: 0;
+    border-radius: 10px;
+    background: color-mix(in srgb, var(--catalog-ink) 42%, transparent);
+  }
+  .catalog-filter-panel::-webkit-scrollbar-thumb:hover {
+    background: color-mix(in srgb, var(--catalog-ink) 65%, transparent);
+  }
+  .catalog-genre-options {
+    max-height: 220px;
+    overflow-y: auto;
+    padding-right: 6px;
+    scrollbar-width: thin;
+    scrollbar-color: color-mix(in srgb, var(--catalog-ink) 42%, transparent) color-mix(in srgb, var(--catalog-ink) 8%, transparent);
+  }
+  .catalog-genre-options::-webkit-scrollbar {
+    width: 6px;
+    display: block;
+  }
+  .catalog-genre-options::-webkit-scrollbar-track {
+    border-radius: 10px;
+    background: color-mix(in srgb, var(--catalog-ink) 8%, transparent);
+  }
+  .catalog-genre-options::-webkit-scrollbar-thumb {
+    border-radius: 10px;
+    background: color-mix(in srgb, var(--catalog-ink) 42%, transparent);
+  }
   .catalog-filter-heading {
     position: sticky;
     top: 0;
@@ -311,28 +342,13 @@ html.series-document-scrollbar::-webkit-scrollbar-button, body.series-document-s
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: max(14px, env(safe-area-inset-top, 14px)) 0 12px 0;
+    padding: 6px 0 10px 0;
     border-bottom: 1px solid var(--catalog-line);
     background: var(--catalog-panel);
   }
   .catalog-filter-heading h2 { font-size: 18px; font-weight: 750; margin: 0; }
   .catalog-filter-close {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 34px;
-    height: 34px;
-    padding: 0;
-    border: 1px solid var(--catalog-line);
-    border-radius: 8px;
-    background: var(--catalog-soft);
-    color: var(--catalog-ink);
-    cursor: pointer;
-    transition: background 0.15s ease, border-color 0.15s ease;
-  }
-  .catalog-filter-close:hover {
-    background: var(--catalog-panel);
-    border-color: var(--catalog-accent);
+    display: none;
   }
   .catalog-clear-filters {
     font-size: 13px;
@@ -374,7 +390,7 @@ html.series-document-scrollbar::-webkit-scrollbar-button, body.series-document-s
   .catalog-results-layout.has-filters .catalog-empty { grid-column: 1; grid-row: 2; }
 }
 @media (max-width: 600px) {
-  .catalog-filter-heading { padding: max(12px, env(safe-area-inset-top, 12px)) 0 10px 0; border-bottom: 1px solid var(--catalog-line); }
+  .catalog-filter-heading { padding: 4px 0 8px 0; border-bottom: 1px solid var(--catalog-line); }
   .catalog-filter-heading h2 { font-size: 17px; }
   .catalog-filter-section-toggle { min-height: 48px; font-size: 14px; }
   .catalog-filter-section-toggle > span svg { width: 16px; height: 16px; }
