@@ -237,8 +237,8 @@ html.series-document-scrollbar::-webkit-scrollbar-button, body.series-document-s
     min-width: 0;
     min-height: 0;
     box-sizing: border-box;
-    height: auto;
-    max-height: min(88dvh, calc(100dvh - 56px));
+    height: min(88dvh, calc(100dvh - 54px));
+    max-height: min(88dvh, calc(100dvh - 54px));
     margin: 0;
     padding: 0;
     overflow: hidden;
@@ -250,14 +250,14 @@ html.series-document-scrollbar::-webkit-scrollbar-button, body.series-document-s
     transform: translateY(100%);
     visibility: hidden;
     pointer-events: none;
-    transition: transform 260ms cubic-bezier(.2, .8, 0.2, 1), max-height 220ms ease, visibility 260ms;
+    transition: transform 260ms cubic-bezier(.2, .8, 0.2, 1), visibility 260ms;
   }
   .catalog-results-layout.has-filters .catalog-filter-drawer {
     transform: translateY(0);
     visibility: visible;
     pointer-events: auto;
-    height: auto;
-    max-height: min(88dvh, calc(100dvh - 56px));
+    height: min(88dvh, calc(100dvh - 54px));
+    max-height: min(88dvh, calc(100dvh - 54px));
     margin-top: 0;
   }
   .catalog-filter-sheet-handle {
@@ -265,7 +265,7 @@ html.series-document-scrollbar::-webkit-scrollbar-button, body.series-document-s
     justify-content: center;
     align-items: center;
     padding: 10px 0 4px;
-    flex-shrink: 0;
+    flex: 0 0 auto;
     cursor: pointer;
   }
   .catalog-filter-sheet-handle span {
@@ -276,14 +276,14 @@ html.series-document-scrollbar::-webkit-scrollbar-button, body.series-document-s
     background: color-mix(in srgb, var(--catalog-ink) 24%, transparent);
   }
   .catalog-filter-panel {
-    flex: 1 1 auto;
+    flex: 1 1 0px;
     width: 100%;
     max-width: 100%;
     min-width: 0;
     min-height: 0;
     box-sizing: border-box;
     max-height: none;
-    padding: 0 16px 20px;
+    padding: 0 16px 28px;
     overflow-x: hidden;
     overflow-y: auto;
     overscroll-behavior-y: contain;
