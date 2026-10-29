@@ -187,6 +187,8 @@ export default function SeriesBrowsePage() {
     chapterCount: false,
     releaseDate: false,
   });
+  const hasExpandedFilterSection = (Object.keys(filterSectionsOpen) as FilterSection[])
+    .some((section) => seriesFilterVisibility[section] && filterSectionsOpen[section]);
   const [sort, setSort] = useState<SortMode>('latest');
   const [sortDirection, setSortDirection] = useState<SortDirection>('desc');
   const [sortMenuOpen, setSortMenuOpen] = useState(false);
@@ -575,7 +577,7 @@ export default function SeriesBrowsePage() {
           {filtersOpen && <button className="catalog-filter-backdrop" type="button" aria-label="Close filters" onClick={() => setFiltersOpen(false)} />}
           <aside
             id="series-filters-panel"
-            className="catalog-filter-drawer"
+            className={`catalog-filter-drawer${hasExpandedFilterSection ? ' has-expanded-sections' : ''}`}
             aria-label="Series filters"
             aria-hidden={!filtersOpen}
             inert={!filtersOpen}

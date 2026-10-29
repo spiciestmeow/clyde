@@ -260,6 +260,11 @@ html.series-document-scrollbar::-webkit-scrollbar-button, body.series-document-s
     max-height: calc(100dvh - max(60px, env(safe-area-inset-top, 0px)));
     margin-top: 0;
   }
+  .catalog-results-layout.has-filters .catalog-filter-drawer.has-expanded-sections {
+    top: max(95px, env(safe-area-inset-top, 0px));
+    height: calc(100dvh - max(95px, env(safe-area-inset-top, 0px)));
+    max-height: calc(100dvh - max(95px, env(safe-area-inset-top, 0px)));
+  }
   .catalog-filter-sheet-handle {
     display: flex;
     justify-content: center;
@@ -298,6 +303,10 @@ html.series-document-scrollbar::-webkit-scrollbar-button, body.series-document-s
     opacity: 1;
     transform: none;
     pointer-events: auto;
+  }
+  .catalog-filter-drawer.has-expanded-sections .catalog-filter-panel {
+    flex: 1 1 0px;
+    max-height: none;
   }
   .catalog-filter-panel::-webkit-scrollbar {
     width: 7px;
