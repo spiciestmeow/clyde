@@ -735,10 +735,10 @@ html[data-accent-theme="default"] .hero-spider { display: none; }
 .announcement-section > .section-title { margin-bottom: 10px; }
 .announcement-section > .section-title h2 { font-size: clamp(18px, 1.3vw, 24px); }
 .announcement-card { min-width: 0; display: flex; align-items: center; gap: 12px; padding: 14px 18px; border: 1px solid var(--line); border-radius: 12px; background: var(--panel); color: var(--text); }
-.announcement-card__icon { width: 40px; height: 40px; flex: 0 0 40px; display: grid; place-items: center; border-radius: 50%; background: color-mix(in srgb, var(--accent) 14%, transparent); color: var(--accent); }
+.announcement-card__icon { width: 40px; height: 40px; flex: 0 0 40px; align-self: center; display: grid; place-items: center; border-radius: 50%; background: color-mix(in srgb, var(--accent) 14%, transparent); color: var(--accent); }
 .announcement-card__content { min-width: 0; flex: 1; }
-.announcement-card__content h3 { margin: 0 0 3px; color: var(--text); font-size: clamp(13px, .9vw, 16px); font-weight: 750; line-height: 1.3; }
-.announcement-card__content p { margin: 0; color: var(--muted); font-size: clamp(11px, .72vw, 13px); line-height: 1.5; white-space: pre-line; }
+.announcement-card__content h3 { margin: 0 0 3px; color: var(--text); font-size: 16px; font-weight: 750; line-height: 1.3; }
+.announcement-card__content p { margin: 0; color: var(--muted); font-size: 13px; line-height: 1.5; white-space: pre-line; }
 .announcement-card__content p strong { color: var(--text); font-weight: 650; }
 .announcement-card__meta { display: flex; align-items: center; gap: 6px; margin-top: 6px; color: var(--muted); font-size: 10px; line-height: 1.3; }
 .announcement-card__meta > span:first-child { width: 6px; height: 6px; flex: 0 0 6px; border-radius: 50%; background: var(--accent); }
@@ -1378,8 +1378,8 @@ html[data-accent-theme="default"] .hero-spider { display: none; }
   .announcement-card { align-items: flex-start; gap: 10px; padding: 12px; border-radius: 12px; }
   .announcement-card__icon { width: 34px; height: 34px; flex-basis: 34px; }
   .announcement-card__icon svg { width: 16px; height: 16px; }
-  .announcement-card__content h3 { font-size: 14px; }
-  .announcement-card__content p { font-size: 12px; }
+  .announcement-card__content h3 { font-size: 16px; }
+  .announcement-card__content p { font-size: 13px; }
    .continue-section,.latest-section,.collection-section,.community-grid,.most-popular { margin-top: 20px; }.continue-section__heading h2 { font-size: 20px; }.continue-section__heading p { font-size: 12px; }.continue-card { flex-basis: 132px; }.continue-card__title { min-height: 30px; font-size: 12px; }.continue-card__activity { font-size: 10px; }.continue-card__last-read svg { width: 11px; height: 11px; }
   .latest-section { width: 100%; padding: 10px 0; border-radius: 0; }
   .latest-section .release-grid { width: calc(100% - 24px); max-width: 420px; margin-inline: auto; }
@@ -1980,7 +1980,7 @@ html[data-accent-theme="default"] .hero-spider { display: none; }
     --series-card-gap: 8px;
     --series-card-padding: 6px;
     --series-card-radius: 12px;
-    --series-cover-width: 150px;
+    --series-cover-width: 164px;
     --series-cover-radius: 5px;
     --series-info-padding: 2px 3px 3px 0;
     --series-title-size: 14px;
@@ -2009,14 +2009,16 @@ html[data-accent-theme="default"] .hero-spider { display: none; }
     --series-pill-padding: 2px 6px;
   }
   .catalog-page .catalog-grid .release-card--series {
-    --series-cover-width: clamp(130px, 39%, 150px);
+    --series-cover-width: clamp(140px, 42%, 164px);
   }
-  .release-card--series .release-cover { align-self: stretch; height: auto; }
+  .release-card--series .release-cover { align-self: flex-start; height: auto; aspect-ratio: auto; }
+  .release-card--series .release-cover { background: transparent; }
+  .release-card--series .release-cover img { width: 100%; height: auto; object-fit: contain; object-position: top center; }
 }
 @media (max-width: 360px) {
   .release-card--series {
     --series-card-gap: 6px;
-    --series-cover-width: 124px;
+    --series-cover-width: 136px;
     --series-title-size: 13px;
     --series-box-height: 31px;
     --series-type-size: 11px;

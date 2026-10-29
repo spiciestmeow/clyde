@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   Bell,
   BookOpen,
+  CheckCheck,
   CircleCheck,
   Grid2X2,
   RefreshCw,
@@ -661,7 +662,10 @@ export default function NotificationPopover({ mode = 'popover' }: NotificationPo
                 )}
               </h2>
               {(isPage ? visibleUnreadCount > 0 : listIsLoading || visibleUnreadCount > 0) && (
-                <span className="notification-panel__unread-count">{visibleUnreadCount}</span>
+                <span className="notification-panel__unread-count">
+                  {visibleUnreadCount}
+                  {!isPage && <span className="notification-panel__unread-label">unread</span>}
+                </span>
               )}
             </div>
             <div className="notification-panel__actions">
@@ -676,7 +680,7 @@ export default function NotificationPopover({ mode = 'popover' }: NotificationPo
                   onClick={markAllRead}
                   disabled={visibleUnreadCount === 0}
                 >
-                  <CircleCheck size={19} />
+                  {isPage ? <CircleCheck size={19} /> : <CheckCheck size={19} />}
                   <span>Mark all as read</span>
                 </button>
               )}
@@ -689,7 +693,7 @@ export default function NotificationPopover({ mode = 'popover' }: NotificationPo
                 renderDeleteReadButton(true)
               )}
               <button type="button" onClick={markVisibleCategoryRead} disabled={visibleUnreadCount === 0}>
-                <CircleCheck size={16} />
+                {isPage ? <CircleCheck size={16} /> : <CheckCheck size={16} />}
                 <span>{filter === 'All' ? 'Mark all as read' : 'Mark category as read'}</span>
               </button>
             </div>

@@ -89,6 +89,10 @@
   font-size: 14px;
   line-height: 1.25;
 }
+.notification-panel:not(.notification-panel--page) .notification-panel__unread-label {
+  margin-left: 4px;
+  font-weight: 400;
+}
 
 .notification-panel__actions {
   display: flex;
@@ -633,6 +637,17 @@
 .notification-panel--page .notification-panel__mobile-actions button[data-notification-action="delete-read"]:hover,
 .notification-panel--page .notification-panel__mobile-actions button[data-notification-action="delete-read"]:focus-visible {
   background: transparent;
+  color: var(--accent);
+}
+
+.notification-panel:not(.notification-panel--page) .notification-panel__actions button {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+}
+.notification-panel:not(.notification-panel--page) .notification-panel__actions button:not(:disabled):hover,
+.notification-panel:not(.notification-panel--page) .notification-panel__actions button:not(:disabled):focus-visible {
+  background: color-mix(in srgb, var(--accent) 14%, transparent);
   color: var(--accent);
 }
 
