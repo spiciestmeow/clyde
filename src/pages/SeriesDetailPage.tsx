@@ -804,8 +804,9 @@ export default function SeriesDetailPage() {
   const winningChapterSource = getWinningChapterSource(prioritizedSources, latestChapterSourceUrl);
   const winningSourceUrl = winningChapterSource?.url?.trim() || latestChapterSourceUrl;
   const firstSource = prioritizedSources.find((source) => source.url.trim());
-  const readChapterHref = firstSource
-    ? formatScanlatorSeriesUrl(firstSource.name, firstSource.url, series.title)
+  const readChapterSource = winningChapterSource?.url?.trim() ? winningChapterSource : firstSource;
+  const readChapterHref = readChapterSource
+    ? formatScanlatorSeriesUrl(readChapterSource.name, readChapterSource.url, series.title)
     : newestChapter?.href;
   const chapterLabel = winningChapterSource?.latestChapterNumber
     ? `Chapter ${winningChapterSource.latestChapterNumber.replace(/^ch(?:apter)?\.?\s*/i, '')}`
@@ -873,7 +874,7 @@ export default function SeriesDetailPage() {
             <img src={DEFAULT_SERIES_COVER} alt={`No cover available for ${title}`} />
           </div>}
           <div className="series-left-actions">
-            {newestChapter && readChapterHref ? <a href={readChapterHref} className="series-action series-action--primary" target={firstSource ? '_blank' : undefined} rel={firstSource ? 'noopener noreferrer' : undefined}><span>Read {newestChapter.title}</span></a> : <button className="series-action series-action--primary" disabled title="No chapter link is available yet">Reading unavailable</button>}
+            {readChapterHref && chapterLabel ? <a href={readChapterHref} className="series-action series-action--primary" target={readChapterSource ? '_blank' : undefined} rel={readChapterSource ? 'noopener noreferrer' : undefined}><span>Read {chapterLabel}</span></a> : <button className="series-action series-action--primary" disabled title="No chapter link is available yet">Reading unavailable</button>}
             <button className={`series-action series-action--bookmark${bookmarked ? ' is-saved' : ''}`} onClick={toggleBookmark} aria-pressed={bookmarked} disabled={bookmarkBusy} data-testid="button-bookmark-series">{bookmarked ? <Check size={15} /> : <Bookmark size={15} />}{bookmarked ? 'Bookmarked' : 'Bookmark'}</button>
           </div>
           {!bookmarked && !bookmarkNoticeDismissed && <div className="series-bookmark-notice" role="status">
