@@ -69,8 +69,8 @@ function chapterNumberFromAnchor(attributes: string, innerHtml: string): number 
 }
 
 /**
- * Some scanlator sites (including Drake Scans and ElfToon) place relative
- * chapter ages beside chapter links in nested chapter rows. The generic
+ * Some scanlator sites (including Drake Scans, ElfToon, and WitchToons) place
+ * relative chapter ages beside chapter links in nested chapter rows. The generic
  * scraper finds the links, but its conservative row boundary can miss these
  * layouts. Keep chapter detection shared and resolve nearby timestamps here.
  */

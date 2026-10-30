@@ -136,7 +136,8 @@ export async function scrapeDirectSources(
       const resolvedSourceUrl = res.url || src.url;
       const sourceHostname = new URL(resolvedSourceUrl).hostname;
       const usesAdjacentRelativeTimes = /(^|\.)drakecomic\.net$/i.test(sourceHostname)
-        || /(^|\.)elftoon\.net$/i.test(sourceHostname);
+        || /(^|\.)elftoon\.net$/i.test(sourceHostname)
+        || /(^|\.)witchtoons\.net$/i.test(sourceHostname);
       const chapters = usesAdjacentRelativeTimes
         ? extractChaptersWithRelativeRowTimes(html, resolvedSourceUrl)
         : extractChaptersFromHtml(html, resolvedSourceUrl, title);
