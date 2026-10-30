@@ -1,6 +1,7 @@
 import type { IncomingMessage, ServerResponse } from 'node:http';
 import { fetchPublicPage } from './_lib/public-fetch.js';
 import { extractChaptersFromHtml, extractPageLastUpdate } from './_lib/direct-source-parser.js';
+import { extractChaptersWithRelativeRowTimes } from './_lib/relative-chapter-time-parser.js';
 import type { DetectedChapterItem } from './_lib/direct-source-parser.js';
 export type { DetectedChapterItem } from './_lib/direct-source-parser.js';
 
@@ -132,7 +133,13 @@ export async function scrapeDirectSources(
       // Parse relative chapter URLs against the final URL after redirects.
       // Some scan sites switch between www and apex hosts or canonicalize
       // their series route before serving the chapter list.
-      const chapters = extractChaptersFromHtml(html, res.url || src.url, title);
+      const resolvedSourceUrl = res.url || src.url;
+      const sourceHostname = new URL(resolvedSourceUrl).hostname;
+      const usesAdjacentRelativeTimes = /(^|\.)drakecomic\.net$/i.test(sourceHostname)
+        || /(^|\.)elftoon\.net$/i.test(sourceHostname);
+      const chapters = usesAdjacentRelativeTimes
+        ? extractChaptersWithRelativeRowTimes(html, resolvedSourceUrl)
+        : extractChaptersFromHtml(html, resolvedSourceUrl, title);
       if (chapters.length === 0) {
         sourceIssues.push({
           name: sourceName,
