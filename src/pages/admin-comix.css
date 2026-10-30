@@ -866,6 +866,110 @@
   color: var(--cx-text-muted);
 }
 
+.custom-source-name-editor {
+  display: grid;
+  gap: 16px;
+  width: 100%;
+}
+
+.custom-source-name-groups {
+  display: grid;
+  gap: 10px;
+}
+
+.custom-source-name-group {
+  display: grid;
+  grid-template-columns: 22px minmax(0, 1fr);
+  align-items: start;
+  gap: 8px;
+  padding-bottom: 9px;
+  border-bottom: 1px solid var(--cx-border);
+}
+
+.custom-source-name-group:last-child {
+  padding-bottom: 9px;
+  border-bottom: 1px solid var(--cx-border);
+}
+
+.custom-source-name-letter {
+  margin: 5px 0 0;
+  color: var(--cx-text-subtle);
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 1.4;
+}
+
+.custom-source-name-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.custom-source-name-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 26px;
+  padding: 3px 8px;
+  border: 1px solid var(--cx-border);
+  border-radius: 5px;
+  background: var(--cx-input-bg);
+  color: var(--cx-text);
+  font-size: 12px;
+}
+
+.custom-source-name-chip button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--cx-text-muted);
+  cursor: pointer;
+}
+
+.custom-source-name-chip button:hover { color: var(--cx-danger, #ef4444); }
+.custom-source-name-chip button:disabled { cursor: not-allowed; opacity: .55; }
+
+.custom-source-name-add-row {
+  display: flex;
+  gap: 8px;
+  width: 100%;
+}
+
+.custom-source-name-add-row .comix-announcement-input { min-width: 0; }
+
+.custom-source-name-add-button {
+  display: none;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  min-height: 40px;
+  padding: 0 12px;
+  border: 1px dashed var(--cx-border);
+  border-radius: 6px;
+  background: transparent;
+  color: var(--cx-text-muted);
+  font: inherit;
+  font-size: 13px;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.custom-source-name-add-button:hover:not(:disabled) {
+  border-color: var(--cx-teal);
+  color: var(--cx-teal);
+  background: color-mix(in srgb, var(--cx-teal) 7%, transparent);
+}
+
+.custom-source-name-add-button:disabled { cursor: not-allowed; opacity: .55; }
+
+@media (max-width: 640px) {
+  .custom-source-name-add-button { display: inline-flex; }
+}
+
 .comix-theme-description {
   margin: -4px 0 16px;
   color: var(--cx-text-muted);

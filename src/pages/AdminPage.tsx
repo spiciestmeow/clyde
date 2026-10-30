@@ -25,6 +25,7 @@ import {
   MessageSquare,
   Moon,
   Palette,
+  Plus,
   Radio,
   RefreshCw,
   Rss,
@@ -37,6 +38,7 @@ import {
   UserCheck,
   UserX,
   Users,
+  X,
 } from 'lucide-react';
 import SeriesCatalogManager from '../components/SeriesCatalogManager';
 import HeroSlidesManager from '../components/HeroSlidesManager';
@@ -456,7 +458,21 @@ function ComixDashboard({
   const [savingSettings, setSavingSettings] = useState(false);
   const [saveMessage, setSaveMessage] = useState('Saved');
   const [facebookUrlInput, setFacebookUrlInput] = useState('https://facebook.com');
-  const [customSourceNamesInput, setCustomSourceNamesInput] = useState(DEFAULT_CUSTOM_SOURCE_NAMES.join('\n'));
+  const [customSourceNamesDraft, setCustomSourceNamesDraft] = useState<string[]>(DEFAULT_CUSTOM_SOURCE_NAMES);
+  const [customSourceNameInput, setCustomSourceNameInput] = useState('');
+  const groupedCustomSourceNames = useMemo(() => {
+    const groups = new Map<string, string[]>();
+    [...customSourceNamesDraft]
+      .map((name) => name.trim())
+      .filter(Boolean)
+      .sort((a, b) => a.localeCompare(b, undefined, { sensitivity: 'base' }))
+      .forEach((name) => {
+        const firstCharacter = name.charAt(0).toLocaleUpperCase();
+        const letter = /^[A-Z]$/.test(firstCharacter) ? firstCharacter : '#';
+        groups.set(letter, [...(groups.get(letter) || []), name]);
+      });
+    return [...groups.entries()].sort(([a], [b]) => a.localeCompare(b));
+  }, [customSourceNamesDraft]);
 
   useEffect(() => {
     if (!profileMenuOpen) return;
@@ -482,7 +498,7 @@ function ComixDashboard({
         setSettings(s);
         setAnnouncementDraft(s.announcement);
         setAnnouncementTagsInput(s.announcement.tags.join(', '));
-        setCustomSourceNamesInput(s.customSourceNames.join('\n'));
+        setCustomSourceNamesDraft(s.customSourceNames);
         if (s?.facebookUrl) setFacebookUrlInput(s.facebookUrl);
       }
     });
@@ -515,22 +531,34 @@ function ComixDashboard({
 
   const saveCustomSourceNames = async () => {
     if (!settings || savingSettings) return;
-    const customSourceNames = customSourceNamesInput
-      .split(/\r?\n/)
+    const pendingName = customSourceNameInput.trim();
+    const sourceNames = pendingName ? [...customSourceNamesDraft, pendingName] : customSourceNamesDraft;
+    const seen = new Set<string>();
+    const customSourceNames = sourceNames
       .map((name) => name.trim())
-      .filter((name, index, names) => name && names.findIndex((candidate) => candidate.toLocaleLowerCase() === name.toLocaleLowerCase()) === index);
+      .filter((name) => {
+        const key = name.toLocaleLowerCase();
+        if (!name || seen.has(key)) return false;
+        seen.add(key);
+        return true;
+      })
+      .sort((a, b) => a.localeCompare(b, undefined, { sensitivity: 'base' }));
     const previousSettings = settings;
     const nextSettings: SiteSettings = { ...settings, customSourceNames };
+    setCustomSourceNamesDraft(customSourceNames);
+    setCustomSourceNameInput('');
     setSettings(nextSettings);
     setSavingSettings(true);
     setSaveMessage('Saving...');
     try {
       const saved = await saveSiteSettings(nextSettings);
       setSettings(saved);
-      setCustomSourceNamesInput(saved.customSourceNames.join('\n'));
+      setCustomSourceNamesDraft(saved.customSourceNames);
       setSaveMessage('Saved');
     } catch {
       setSettings(previousSettings);
+      setCustomSourceNamesDraft(previousSettings.customSourceNames);
+      setCustomSourceNameInput(pendingName);
       setSaveMessage('Error saving');
     } finally {
       setSavingSettings(false);
@@ -811,10 +839,6 @@ function ComixDashboard({
                     {id === 'uploads' && <span className="nav-badge">{catalogItems.length}</span>}
                   </button>
                 ))}
-                <button type="button" className="comix-mobile-nav-option" onClick={handleSignOut}>
-                  <LogOut size={16} />
-                  <span>Sign out</span>
-                </button>
               </div>
             )}
           </div>
@@ -947,15 +971,6 @@ function ComixDashboard({
             >
               <Settings size={16} className="nav-icon" />
               <span>Settings</span>
-            </button>
-            <button
-              type="button"
-              className="comix-nav-item"
-              onClick={handleSignOut}
-              style={{ color: 'var(--cx-text-subtle)' }}
-            >
-              <LogOut size={16} className="nav-icon" />
-              <span>Sign out</span>
             </button>
           </aside>
 
@@ -1280,27 +1295,59 @@ function ComixDashboard({
                     <div className="comix-setting-item" style={{ flexDirection: 'column', alignItems: 'stretch', gap: '12px' }}>
                       <div className="comix-setting-info">
                         <strong>Upload source suggestions</strong>
-                        <span>Enter one source name per line. These appear as suggestions in the source name field when uploading or editing a series; you can still type a name that is not listed.</span>
+                        <span>Add source names as tags. They appear as suggestions when uploading or editing a series; names are kept in alphabetical order, and you can still enter a name that is not listed.</span>
                       </div>
-                      <textarea
-                        className="comix-search-input"
-                        aria-label="Custom source names, one per line"
-                        value={customSourceNamesInput}
-                        onChange={(event) => setCustomSourceNamesInput(event.target.value)}
-                        rows={12}
-                        style={{
-                          width: '100%',
-                          maxWidth: '560px',
-                          padding: '12px 14px',
-                          borderRadius: '6px',
-                          border: '1px solid var(--cx-border)',
-                          background: 'var(--cx-input-bg)',
-                          color: 'var(--cx-text)',
-                          outline: 'none',
-                          fontSize: '13px',
-                          resize: 'vertical',
-                        }}
-                      />
+                      <div className="custom-source-name-editor">
+                        {groupedCustomSourceNames.length > 0 && (
+                          <div className="custom-source-name-groups" aria-label="Saved source names, grouped alphabetically">
+                            {groupedCustomSourceNames.map(([letter, names]) => (
+                              <section className="custom-source-name-group" key={letter} aria-labelledby={`custom-source-group-${letter}`}>
+                                <h3 id={`custom-source-group-${letter}`} className="custom-source-name-letter">{letter}</h3>
+                                <div className="custom-source-name-chips">
+                                  {names.map((name) => (
+                                    <span key={name.toLocaleLowerCase()} className="custom-source-name-chip">
+                                      {name}
+                                      <button
+                                        type="button"
+                                        onClick={() => setCustomSourceNamesDraft((current) => current.filter((item) => item.toLocaleLowerCase() !== name.toLocaleLowerCase()))}
+                                        disabled={savingSettings}
+                                        aria-label={`Remove ${name}`}
+                                        title={`Remove ${name}`}
+                                      >
+                                        <X size={13} />
+                                      </button>
+                                    </span>
+                                  ))}
+                                </div>
+                              </section>
+                            ))}
+                          </div>
+                        )}
+                        <form
+                          className="custom-source-name-add-row"
+                          onSubmit={(event) => {
+                            event.preventDefault();
+                            const name = customSourceNameInput.trim();
+                            if (!name || customSourceNamesDraft.some((item) => item.toLocaleLowerCase() === name.toLocaleLowerCase())) return;
+                            setCustomSourceNamesDraft((current) => [...current, name].sort((a, b) => a.localeCompare(b, undefined, { sensitivity: 'base' })));
+                            setCustomSourceNameInput('');
+                          }}
+                        >
+                          <input
+                            type="text"
+                            className="comix-announcement-input"
+                            aria-label="Add a source name"
+                            placeholder="Add source name..."
+                            value={customSourceNameInput}
+                            onChange={(event) => setCustomSourceNameInput(event.target.value)}
+                            disabled={savingSettings}
+                          />
+                          <button type="submit" className="custom-source-name-add-button" disabled={!customSourceNameInput.trim() || savingSettings} aria-label="Add source name">
+                            <Plus size={16} />
+                            <span>Add</span>
+                          </button>
+                        </form>
+                      </div>
                       <button
                         type="button"
                         className="btn-teal"

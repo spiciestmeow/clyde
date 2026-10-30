@@ -1910,6 +1910,7 @@ html[data-accent-theme="default"] .hero-spider { display: none; }
   pointer-events: none;
 }
 .theme-dark .release-card--series::after { opacity: .14; }
+html[data-accent-theme="default"] .release-card--series::after { display: none; }
 .catalog-page .release-card--series::after {
   width: 33px;
   height: 33px;
