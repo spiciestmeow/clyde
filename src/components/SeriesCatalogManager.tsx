@@ -610,6 +610,7 @@ export default function SeriesCatalogManager({
   const [listSearch, setListSearch] = useState('');
   const [typeFilters, setTypeFilters] = useState<string[]>([]);
   const [statusFilters, setStatusFilters] = useState<string[]>([]);
+  const [sourceFilters, setSourceFilters] = useState<string[]>([]);
   const [sortOrder, setSortOrder] = useState<'newest' | 'oldest'>('newest');
 
   useEffect(() => {
@@ -922,6 +923,17 @@ export default function SeriesCatalogManager({
 
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  const sourceFilterOptions = useMemo(() => {
+    const names = new Map<string, string>();
+    catalogItems.forEach((item) => {
+      item.sources?.forEach((source) => {
+        const name = source.name?.trim();
+        if (name) names.set(name.toLocaleLowerCase(), name);
+      });
+    });
+    return [...names.values()].sort((a, b) => a.localeCompare(b, undefined, { sensitivity: 'base' }));
+  }, [catalogItems]);
+
   // Filtered titles for Main List (Image 1)
   const filteredTitles = useMemo(() => {
     const filtered = catalogItems.filter((item) => {
@@ -937,6 +949,12 @@ export default function SeriesCatalogManager({
           return itemStatus === filterNorm;
         });
         if (!matchesStatus) return false;
+      }
+      if (sourceFilters.length > 0) {
+        const itemSources = new Set((item.sources || [])
+          .map((source) => source.name?.trim().toLocaleLowerCase())
+          .filter((name): name is string => !!name));
+        if (!sourceFilters.some((source) => itemSources.has(source.toLocaleLowerCase()))) return false;
       }
       const searchTerm = (globalSearch.trim() || listSearch.trim()).toLowerCase();
       if (searchTerm) {
@@ -955,7 +973,7 @@ export default function SeriesCatalogManager({
       return sortOrder === 'newest' ? bTime - aTime : aTime - bTime;
     });
     return filtered;
-  }, [catalogItems, globalSearch, listSearch, typeFilters, statusFilters, sortOrder]);
+  }, [catalogItems, globalSearch, listSearch, typeFilters, statusFilters, sourceFilters, sortOrder]);
 
   const newTaggedSeries = useMemo(() => catalogItems
     .filter((item) => item.isNew || item.facts?.is_new === 'true')
@@ -2532,6 +2550,18 @@ export default function SeriesCatalogManager({
           onToggleOption={(status) => setStatusFilters((current) => {
             if (!status) return [];
             return current.includes(status) ? current.filter((selected) => selected !== status) : [...current, status];
+          })}
+        />
+
+        <UploadFilterDropdown
+          label="Filter by source"
+          value={sourceFilters.length === 0 ? 'All sources' : sourceFilters.length === 1 ? sourceFilters[0] : `${sourceFilters.length} sources selected`}
+          options={['All sources', ...sourceFilterOptions]}
+          multiple
+          selectedValues={sourceFilters}
+          onToggleOption={(source) => setSourceFilters((current) => {
+            if (!source) return [];
+            return current.includes(source) ? current.filter((selected) => selected !== source) : [...current, source];
           })}
         />
 
