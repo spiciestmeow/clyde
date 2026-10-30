@@ -13,6 +13,7 @@ import {
   Edit2,
   ExternalLink,
   FileText,
+  Grid2X2,
   GripVertical,
   Image as ImageIcon,
   List,
@@ -47,6 +48,7 @@ import {
 import { useSeriesCatalog } from '../hooks/useSeriesCatalog';
 import { fetchMangaDexDetails } from '../lib/mangadex';
 import { uploadOrCompressCover } from '../lib/imageUpload';
+import { getWinningChapterSource } from '../lib/sourcePriority';
 import './series-catalog-manager.css';
 import { BackgroundSyncTimer } from './BackgroundSyncTimer';
 import { SyncActivityLogs } from './SyncActivityLogs';
@@ -105,6 +107,95 @@ const ALL_TYPES = ['Manga', 'Manhwa', 'Manhua', 'Comic', 'Novel'];
 const ALL_RATINGS = ['Safe', 'Suggestive', 'Erotica', 'Pornographic'];
 const ALL_STATUSES = ['Releasing', 'Completed', 'Hiatus', 'Cancelled'];
 
+function UploadFilterDropdown({
+  label,
+  value,
+  options,
+  onChange,
+  multiple = false,
+  selectedValues = [],
+  onToggleOption,
+}: {
+  label: string;
+  value: string;
+  options: string[];
+  onChange?: (value: string) => void;
+  multiple?: boolean;
+  selectedValues?: string[];
+  onToggleOption?: (value: string) => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const rootRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!open) return;
+    const closeOnOutsideClick = (event: MouseEvent) => {
+      if (!rootRef.current?.contains(event.target as Node)) setOpen(false);
+    };
+    const closeOnEscape = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') setOpen(false);
+    };
+    document.addEventListener('mousedown', closeOnOutsideClick);
+    document.addEventListener('keydown', closeOnEscape);
+    return () => {
+      document.removeEventListener('mousedown', closeOnOutsideClick);
+      document.removeEventListener('keydown', closeOnEscape);
+    };
+  }, [open]);
+
+  return (
+    <div className="filter-dropdown-wrap uploads-filter-dropdown" ref={rootRef}>
+      <button
+        type="button"
+        className="filter-select uploads-filter-trigger"
+        aria-label={label}
+        aria-haspopup="menu"
+        aria-expanded={open}
+        onClick={() => setOpen((current) => !current)}
+      >
+        <span>{value}</span>
+        <ChevronDown size={14} className={`select-arrow${open ? ' is-open' : ''}`} />
+      </button>
+      {open && (
+        <div className="uploads-filter-options" role="menu" aria-label={label}>
+          {options.map((option) => {
+            const isAllOption = multiple && option === options[0];
+            const selected = multiple
+              ? (isAllOption ? selectedValues.length === 0 : selectedValues.includes(option))
+              : value === option;
+            return (
+              <button
+                key={option}
+                type="button"
+                role={multiple ? 'menuitemcheckbox' : 'menuitemradio'}
+                aria-checked={selected}
+                className={`uploads-filter-option${selected ? ' is-selected' : ''}${multiple ? ' is-multiple' : ''}`}
+                onClick={() => {
+                  if (multiple) {
+                    onToggleOption?.(isAllOption ? '' : option);
+                    return;
+                  }
+                  onChange?.(option);
+                  setOpen(false);
+                }}
+              >
+                <span className="uploads-filter-option-label">{option}</span>
+                {multiple ? (
+                  <span className="uploads-filter-checkbox" aria-hidden="true">
+                    {selected && <Check size={12} strokeWidth={2.5} />}
+                  </span>
+                ) : (
+                  selected && <Check size={15} aria-hidden="true" />
+                )}
+              </button>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+}
+
 function formatDetectedSourceAge(timestamp?: string): string {
   if (!timestamp) return 'time unavailable';
   const parsed = Date.parse(timestamp);
@@ -147,6 +238,37 @@ const initialFormDraft = (): FormDraft => ({
 });
 
 const TITLE_EDITOR_SESSION_KEY = 'comix-admin-title-editor-v1';
+const TITLE_LAYOUT_STORAGE_KEY = 'comix-admin-title-layout-v1';
+
+function getAdminTitleReleaseAge(series: SeriesRecord): string {
+  const winningSource = getWinningChapterSource(series.sources, series.facts?.latest_source_url || undefined);
+  const releaseDate = winningSource?.latestChapterAt
+    || series.facts?.last_chapter_added_at
+    || series.facts?.lastUpdate
+    || series.chapters?.[0]?.createdAt;
+  if (!releaseDate) return 'Time unavailable';
+
+  const timestamp = Date.parse(releaseDate);
+  if (Number.isNaN(timestamp)) return 'Time unavailable';
+  const elapsedMinutes = Math.max(0, Math.floor((Date.now() - timestamp) / 60_000));
+  if (elapsedMinutes < 1) return 'Just now';
+  if (elapsedMinutes < 60) return `${elapsedMinutes}m ago`;
+  const elapsedHours = Math.floor(elapsedMinutes / 60);
+  if (elapsedHours < 24) return `${elapsedHours}h ago`;
+  const elapsedDays = Math.floor(elapsedHours / 24);
+  if (elapsedDays === 1) return 'Yesterday';
+  if (elapsedDays < 7) return `${elapsedDays}d ago`;
+  const elapsedWeeks = Math.floor(elapsedDays / 7);
+  if (elapsedWeeks < 5) return `${elapsedWeeks}w ago`;
+  return `${Math.floor(elapsedDays / 30)}mo ago`;
+}
+
+function getAdminTitleChapterLabel(series: SeriesRecord): string {
+  const chapterNumber = series.facts?.latest_chapter_number
+    || getWinningChapterSource(series.sources, series.facts?.latest_source_url || undefined)?.latestChapterNumber;
+  if (chapterNumber) return `Ch. ${chapterNumber.replace(/^ch(?:apter)?\.?\s*/i, '')}`;
+  return `${series.chapters?.length || 0} chapters`;
+}
 
 function loadTitleEditorSession(): { draft: FormDraft; editingSeriesId: number | null } | null {
   try {
@@ -474,14 +596,29 @@ export default function SeriesCatalogManager({
   const [isModalOpen, setIsModalOpen] = useState(false);
   // Main tabs: 'titles' or 'chapters'
   const [mainTab, setMainTab] = useState<'titles' | 'chapters' | 'new-order'>('titles');
+  const [titleLayout, setTitleLayout] = useState<'list' | 'grid'>(() => {
+    try {
+      return localStorage.getItem(TITLE_LAYOUT_STORAGE_KEY) === 'grid' ? 'grid' : 'list';
+    } catch {
+      return 'list';
+    }
+  });
   const [draggedNewSeriesId, setDraggedNewSeriesId] = useState<number | null>(null);
   const [dragOverNewSeriesId, setDragOverNewSeriesId] = useState<number | null>(null);
 
   // List filters
   const [listSearch, setListSearch] = useState('');
-  const [typeFilter, setTypeFilter] = useState('All types');
-  const [statusFilter, setStatusFilter] = useState('All statuses');
+  const [typeFilters, setTypeFilters] = useState<string[]>([]);
+  const [statusFilters, setStatusFilters] = useState<string[]>([]);
   const [sortOrder, setSortOrder] = useState<'newest' | 'oldest'>('newest');
+
+  useEffect(() => {
+    try {
+      localStorage.setItem(TITLE_LAYOUT_STORAGE_KEY, titleLayout);
+    } catch {
+      // Keep the view switch usable when browser storage is unavailable.
+    }
+  }, [titleLayout]);
 
   // Modal search
   const [modalSearch, setModalSearch] = useState('');
@@ -492,6 +629,8 @@ export default function SeriesCatalogManager({
   const [coverPreviewOpen, setCoverPreviewOpen] = useState(false);
   const coverPreviewDialogRef = useRef<HTMLDialogElement>(null);
   const [pendingSourceRemovalIndex, setPendingSourceRemovalIndex] = useState<number | null>(null);
+  const [selectedDraftSourceIndices, setSelectedDraftSourceIndices] = useState<number[]>([]);
+  const [bulkSourceRemovalOpen, setBulkSourceRemovalOpen] = useState(false);
   const [seriesPendingDelete, setSeriesPendingDelete] = useState<SeriesRecord | null>(null);
   const [newAuthor, setNewAuthor] = useState('');
   const [newArtist, setNewArtist] = useState('');
@@ -786,14 +925,18 @@ export default function SeriesCatalogManager({
   // Filtered titles for Main List (Image 1)
   const filteredTitles = useMemo(() => {
     const filtered = catalogItems.filter((item) => {
-      if (typeFilter !== 'All types') {
-        const itemType = (item.category || item.facts?.type || '').toLowerCase(); if (!itemType || itemType !== typeFilter.toLowerCase()) return false;
+      if (typeFilters.length > 0) {
+        const itemType = (item.category || item.facts?.type || '').toLowerCase();
+        if (!itemType || !typeFilters.some((type) => itemType === type.toLowerCase())) return false;
       }
-      if (statusFilter !== 'All statuses') {
+      if (statusFilters.length > 0) {
         const itemStatus = (item.status || '').toLowerCase();
-        const filterNorm = statusFilter.toLowerCase();
-        if (filterNorm === 'releasing' && itemStatus !== 'releasing' && itemStatus !== 'ongoing') return false;
-        if (filterNorm !== 'releasing' && itemStatus !== filterNorm) return false;
+        const matchesStatus = statusFilters.some((status) => {
+          const filterNorm = status.toLowerCase();
+          if (filterNorm === 'releasing') return itemStatus === 'releasing' || itemStatus === 'ongoing';
+          return itemStatus === filterNorm;
+        });
+        if (!matchesStatus) return false;
       }
       const searchTerm = (globalSearch.trim() || listSearch.trim()).toLowerCase();
       if (searchTerm) {
@@ -812,7 +955,7 @@ export default function SeriesCatalogManager({
       return sortOrder === 'newest' ? bTime - aTime : aTime - bTime;
     });
     return filtered;
-  }, [catalogItems, globalSearch, listSearch, typeFilter, statusFilter, sortOrder]);
+  }, [catalogItems, globalSearch, listSearch, typeFilters, statusFilters, sortOrder]);
 
   const newTaggedSeries = useMemo(() => catalogItems
     .filter((item) => item.isNew || item.facts?.is_new === 'true')
@@ -1968,10 +2111,10 @@ export default function SeriesCatalogManager({
             <h2 className="section-title">Trackers</h2>
             <p className="section-description">Link this title to external tracker entries.</p>
             {draft.trackers.map((tracker, idx) => (
-              <div key={idx} className="link-edit-row">
+              <div key={idx} className="link-edit-row tracker-edit-row">
                 <input
                   type="text"
-                  className="text-input"
+                  className="text-input tracker-name-input"
                   placeholder="Tracker name (e.g. MangaDex)"
                   value={tracker.name}
                   onChange={(e) => {
@@ -1984,7 +2127,7 @@ export default function SeriesCatalogManager({
                 />
                 <input
                   type="url"
-                  className="text-input"
+                  className="text-input tracker-url-input"
                   placeholder="https://..."
                   value={tracker.url}
                   onChange={(e) => {
@@ -2043,6 +2186,39 @@ export default function SeriesCatalogManager({
               </div>
             </div>
 
+            <div className="source-bulk-toolbar">
+              <label className="source-select-all">
+                <input
+                  type="checkbox"
+                  checked={draft.sources.length > 0 && selectedDraftSourceIndices.length === draft.sources.length}
+                  ref={(input) => {
+                    if (input) {
+                      input.indeterminate = selectedDraftSourceIndices.length > 0 && selectedDraftSourceIndices.length < draft.sources.length;
+                    }
+                  }}
+                  disabled={draft.sources.length === 0}
+                  onChange={(event) => {
+                    setSelectedDraftSourceIndices(event.target.checked ? draft.sources.map((_, index) => index) : []);
+                  }}
+                  aria-label="Select all sources"
+                />
+                <span>Select all</span>
+              </label>
+              {selectedDraftSourceIndices.length > 0 && (
+                <div className="source-bulk-actions">
+                  <span>{selectedDraftSourceIndices.length} selected</span>
+                  <button
+                    type="button"
+                    className="source-bulk-delete"
+                    onClick={() => setBulkSourceRemovalOpen(true)}
+                  >
+                    <Trash2 size={15} />
+                    Delete selected
+                  </button>
+                </div>
+              )}
+            </div>
+
             {directSyncFeedback && (
               <div
                 className={`manual-sync-feedback manual-sync-feedback--${directSyncFeedback.type}`}
@@ -2089,7 +2265,19 @@ export default function SeriesCatalogManager({
               </div>
             )}
             {draft.sources.map((source, idx) => (
-              <div key={idx} className="link-edit-row">
+              <div key={idx} className={`link-edit-row source-edit-row${selectedDraftSourceIndices.includes(idx) ? ' is-selected' : ''}`}>
+                <label className="source-row-select">
+                  <input
+                    type="checkbox"
+                    checked={selectedDraftSourceIndices.includes(idx)}
+                    onChange={(event) => {
+                      setSelectedDraftSourceIndices((current) => event.target.checked
+                        ? [...current, idx].sort((a, b) => a - b)
+                        : current.filter((selectedIndex) => selectedIndex !== idx));
+                    }}
+                    aria-label={`Select ${source.name || `source ${idx + 1}`}`}
+                  />
+                </label>
                 <SourceNameAutocomplete
                   value={source.name}
                   suggestions={customSourceNames}
@@ -2132,6 +2320,7 @@ export default function SeriesCatalogManager({
                   type="button"
                   className="btn-icon-danger"
                   aria-label={`Remove ${source.name || 'source'}`}
+                  title={`Remove ${source.name || 'source'}`}
                   onClick={() => setPendingSourceRemovalIndex(idx)}
                 >
                   <Trash2 size={16} />
@@ -2220,7 +2409,26 @@ export default function SeriesCatalogManager({
               ...current,
               sources: current.sources.filter((_, sourceIndex) => sourceIndex !== index),
             }));
+                setSelectedDraftSourceIndices((current) => current
+                  .filter((selectedIndex) => selectedIndex !== index)
+                  .map((selectedIndex) => selectedIndex > index ? selectedIndex - 1 : selectedIndex));
             setPendingSourceRemovalIndex(null);
+          }}
+        />
+        <ConfirmationDialog
+          open={bulkSourceRemovalOpen}
+          onOpenChange={setBulkSourceRemovalOpen}
+          title="Remove selected sources?"
+          description={`Remove ${selectedDraftSourceIndices.length} selected source${selectedDraftSourceIndices.length === 1 ? '' : 's'} from this title? The change will be applied when you save.`}
+          confirmLabel={`Remove ${selectedDraftSourceIndices.length} source${selectedDraftSourceIndices.length === 1 ? '' : 's'}`}
+          onConfirm={() => {
+            const selected = new Set(selectedDraftSourceIndices);
+            setDraft((current) => ({
+              ...current,
+              sources: current.sources.filter((_, index) => !selected.has(index)),
+            }));
+            setSelectedDraftSourceIndices([]);
+            setBulkSourceRemovalOpen(false);
           }}
         />
       </div>
@@ -2280,6 +2488,14 @@ export default function SeriesCatalogManager({
 
       {/* Filter and Search Bar */}
       {mainTab === 'titles' && <div className="uploads-filter-bar">
+        <div className="uploads-title-result-count" aria-live="polite">
+          <strong>{filteredTitles.length}</strong>
+          <span>
+            {filteredTitles.length === catalogItems.length
+              ? (catalogItems.length === 1 ? 'title' : 'titles')
+              : `of ${catalogItems.length} titles`}
+          </span>
+        </div>
         <div className="search-input-box">
           <Search size={16} className="search-icon" />
           <input
@@ -2295,44 +2511,58 @@ export default function SeriesCatalogManager({
           )}
         </div>
 
-        <div className="filter-dropdown-wrap">
-          <select
-            className="filter-select"
-            value={typeFilter}
-            onChange={(e) => setTypeFilter(e.target.value)}
-          >
-            <option>All types</option>
-            {ALL_TYPES.map((t) => (
-              <option key={t} value={t}>{t}</option>
-            ))}
-          </select>
-          <ChevronDown className="select-arrow" size={14} />
-        </div>
+        <UploadFilterDropdown
+          label="Filter by type"
+          value={typeFilters.length === 0 ? 'All types' : typeFilters.length === 1 ? typeFilters[0] : `${typeFilters.length} types selected`}
+          options={['All types', ...ALL_TYPES]}
+          multiple
+          selectedValues={typeFilters}
+          onToggleOption={(type) => setTypeFilters((current) => {
+            if (!type) return [];
+            return current.includes(type) ? current.filter((selected) => selected !== type) : [...current, type];
+          })}
+        />
 
-        <div className="filter-dropdown-wrap">
-          <select
-            className="filter-select"
-            value={statusFilter}
-            onChange={(e) => setStatusFilter(e.target.value)}
-          >
-            <option>All statuses</option>
-            {ALL_STATUSES.map((s) => (
-              <option key={s} value={s}>{s}</option>
-            ))}
-          </select>
-          <ChevronDown className="select-arrow" size={14} />
-        </div>
+        <UploadFilterDropdown
+          label="Filter by status"
+          value={statusFilters.length === 0 ? 'All statuses' : statusFilters.length === 1 ? statusFilters[0] : `${statusFilters.length} statuses selected`}
+          options={['All statuses', ...ALL_STATUSES]}
+          multiple
+          selectedValues={statusFilters}
+          onToggleOption={(status) => setStatusFilters((current) => {
+            if (!status) return [];
+            return current.includes(status) ? current.filter((selected) => selected !== status) : [...current, status];
+          })}
+        />
 
-        <div className="filter-dropdown-wrap">
-          <select
-            className="filter-select"
-            value={sortOrder}
-            onChange={(e) => setSortOrder(e.target.value as 'newest' | 'oldest')}
+        <UploadFilterDropdown
+          label="Sort titles"
+          value={sortOrder === 'newest' ? 'Newest first' : 'Oldest first'}
+          options={['Newest first', 'Oldest first']}
+          onChange={(value) => setSortOrder(value === 'newest' || value === 'Newest first' ? 'newest' : 'oldest')}
+        />
+
+        <div className="uploads-layout-toggle" role="group" aria-label="Title layout">
+          <button
+            type="button"
+            aria-label="List view"
+            title="List view"
+            aria-pressed={titleLayout === 'list'}
+            className={titleLayout === 'list' ? 'is-active' : ''}
+            onClick={() => setTitleLayout('list')}
           >
-            <option value="newest">Newest first</option>
-            <option value="oldest">Oldest first</option>
-          </select>
-          <ChevronDown className="select-arrow" size={14} />
+            <List size={15} />
+          </button>
+          <button
+            type="button"
+            aria-label="Grid view"
+            title="Grid view"
+            aria-pressed={titleLayout === 'grid'}
+            className={titleLayout === 'grid' ? 'is-active' : ''}
+            onClick={() => setTitleLayout('grid')}
+          >
+            <Grid2X2 size={15} />
+          </button>
         </div>
       </div>}
 
@@ -2347,12 +2577,12 @@ export default function SeriesCatalogManager({
             <p className="empty-subtitle">Upload a chapter to any manga page to start.</p>
           </div>
         ) : (
-          <div className="uploads-titles-grid">
+          <div className={`uploads-titles-grid${titleLayout === 'grid' ? ' is-grid-view' : ''}`}>
             {filteredTitles.map((series) => (
-              <div key={series.id} className="title-item-card">
-                <div className="title-cover">
+              <div key={series.id} className={`title-item-card${titleLayout === 'grid' ? ' is-grid-view' : ''}`}>
+                <div className={`title-cover${series.cover ? '' : ' is-placeholder'}`}>
                   {series.cover ? (
-                    <img src={series.cover} alt={series.title} loading="lazy" />
+                    <img className="title-cover-image" src={series.cover} alt={series.title} loading="lazy" />
                   ) : (
                     <BookOpen size={24} className="cover-fallback-icon" />
                   )}
@@ -2369,7 +2599,8 @@ export default function SeriesCatalogManager({
                     )}
                   </div>
                   <div className="title-stats">
-                    <span>{series.facts?.latest_chapter_number ? `Ch. ${series.facts.latest_chapter_number}` : `${series.chapters?.length || 0} chapters`}</span>
+                    <span>{getAdminTitleChapterLabel(series)}</span>
+                    {titleLayout === 'grid' && <span>{getAdminTitleReleaseAge(series)}</span>}
                     <span>{series.sources?.length ?? 0} sources</span>
                   </div>
                 </div>
