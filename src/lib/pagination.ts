@@ -1,7 +1,7 @@
 export type PaginationItem = number | 'ellipsis';
 
 export function getPaginationItems(pageCount: number, currentPage: number): PaginationItem[] {
-  if (pageCount <= 7) return Array.from({ length: pageCount }, (_, index) => index + 1);
+  if (pageCount <= 5) return Array.from({ length: pageCount }, (_, index) => index + 1);
 
   let startPage = Math.max(2, currentPage - 2);
   let endPage = Math.min(pageCount - 1, currentPage + 2);

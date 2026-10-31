@@ -117,6 +117,7 @@ img { display: block; max-width: 100%; }
 .brand.brand-fallback::after { content: 'C'; width: 20px; height: 20px; display: grid; place-items: center; border-radius: 50%; color: #fff; background: #d5334a; font-size: 13px; font-weight: 800; }
 .main-nav { display: flex; align-items: center; gap: 8px; }
 .nav-pill, .bookmark-pill, .icon-pill { height: 36px; display: inline-flex; align-items: center; justify-content: center; gap: 8px; border: 1px solid transparent; border-radius: 18px; padding: 0 16px; background: #17171b; color: #c6c6cc; font-size: 14px; white-space: nowrap; transition: background .2s,color .2s,border-color .2s; }
+.nav-pill .nav-primary-icon, .mobile-nav-card__left .nav-primary-icon { width: 19px; height: 19px; flex: 0 0 19px; }
 .nav-pill:hover, .bookmark-pill:hover, .icon-pill:hover { color: white; background: #27272d; }
 .nav-pill.selected { color: #f5f5f6; background: #202025; }
 .nav-search { height: 36px; min-width: 170px; flex: 1; margin-left: auto; display: flex; align-items: center; gap: 8px; border: 1px solid #29292e; background: #141418; border-radius: 18px; padding: 0 14px; color: #96969f; }
@@ -128,6 +129,7 @@ img { display: block; max-width: 100%; }
 .bookmark-pill { padding: 0 14px; }
 .icon-pill { padding: 0; width: 36px; height: 36px; }
 .icon-pill svg { width: 18px; height: 18px; }
+.icon-pill .light-mode-icon, .icon-pill .theme-mode-icon { width: 22px; height: 22px; }
 .icon-pill img { width: 18px; height: 18px; }
 .facebook-short svg { color: #fff; fill: currentColor; }
 .theme-light .facebook-short svg { color: rgba(25,25,29,.76); }
@@ -1937,7 +1939,10 @@ html[data-accent-theme="default"] .release-card--series::after { display: none; 
 .release-card--series .chapter-badge.is-new { font-size: var(--series-chapter-size); }
 .release-card--series .chapter-badge.is-free { padding: var(--series-free-padding); font-size: var(--series-free-size); }
 .release-card--series .chapter-badge.is-time { font-size: var(--series-time-size); }
-.release-card--series .release-type { padding: var(--series-type-padding); font-size: var(--series-type-size); font-weight: var(--series-type-weight); }
+.release-card--series .release-type { top: 3px; right: 3px; padding: var(--series-type-padding); border-radius: 3px; font-size: var(--series-type-size); font-weight: var(--series-type-weight); box-shadow: none; }
+.catalog-page .catalog-grid .release-card--series .release-type { padding: 3px 4px; border-radius: 2px; font-size: 8px; }
+.catalog-page .catalog-grid .release-card--series .release-cover-pill.is-views { gap: 2px; padding: 1px 5px; border-width: 1px; font-size: 8px; }
+.catalog-page .catalog-grid .release-card--series .release-cover-pill.is-views svg { width: 10px; height: 10px; }
 .catalog-page .release-card--series .release-type { font-weight: 400; }
 .release-card--series .release-cover-pill,
 .release-card--series .release-views { gap: 3px; padding: var(--series-pill-padding); font-size: var(--series-pill-size); }
@@ -2003,8 +2008,8 @@ html[data-accent-theme="default"] .release-card--series::after { display: none; 
     --series-free-size: 10px;
     --series-free-padding: 1px 5px;
     --series-time-size: 10px;
-    --series-type-size: 12px;
-    --series-type-padding: 4px 9px;
+    --series-type-size: 10px;
+    --series-type-padding: 3px 7px;
     --series-type-weight: 400;
     --series-pill-size: 10px;
     --series-pill-padding: 2px 6px;
@@ -2022,8 +2027,8 @@ html[data-accent-theme="default"] .release-card--series::after { display: none; 
     --series-cover-width: 136px;
     --series-title-size: 13px;
     --series-box-height: 31px;
-    --series-type-size: 11px;
-    --series-type-padding: 3px 7px;
+    --series-type-size: 9px;
+    --series-type-padding: 3px 6px;
   }
 }
 

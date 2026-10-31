@@ -7,8 +7,50 @@
   position: relative;
 }
 
+.notification-trigger .notification-bell-icon {
+  width: 22px;
+  height: 22px;
+}
+
 .notification-trigger.is-open svg {
   fill: currentColor;
+  transform-origin: 50% 12%;
+  animation: notification-bell-ring 650ms ease-in-out both;
+}
+
+.icon-pill.notification-trigger.is-open {
+  background: #17171b;
+  border-color: transparent;
+}
+
+.icon-pill.notification-trigger.is-open:hover {
+  background: #17171b;
+  border-color: transparent;
+}
+
+.theme-light .icon-pill.notification-trigger.is-open,
+.theme-light .icon-pill.notification-trigger.is-open:hover {
+  color: rgba(25, 25, 29, .76);
+  background: rgba(0, 0, 0, .035);
+  border-color: transparent;
+}
+
+.notification-trigger.is-open .notification-bell-icon {
+  width: 24px;
+  height: 24px;
+}
+
+@keyframes notification-bell-ring {
+  0%, 100% { transform: rotate(0deg); }
+  24% { transform: rotate(-12deg); }
+  50% { transform: rotate(12deg); }
+  76% { transform: rotate(-8deg); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .notification-trigger.is-open svg {
+    animation: none;
+  }
 }
 
 .notification-count {

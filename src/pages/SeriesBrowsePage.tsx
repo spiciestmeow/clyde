@@ -146,7 +146,7 @@ function recoverImage(event: SyntheticEvent<HTMLDivElement>) {
 }
 
 function pageNumbers(pageCount: number, current: number) {
-  if (pageCount <= 7) return Array.from({ length: pageCount }, (_, index) => index + 1);
+  if (pageCount <= 5) return Array.from({ length: pageCount }, (_, index) => index + 1);
   const first = Math.max(2, Math.min(current - 2, pageCount - 4));
   const last = Math.min(pageCount - 1, first + 3);
   return [1, ...(first > 2 ? ['…'] : []), ...Array.from({ length: last - first + 1 }, (_, i) => first + i), ...(last < pageCount - 1 ? ['…'] : []), pageCount] as (number | string)[];
