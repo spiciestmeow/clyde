@@ -16,6 +16,7 @@ import {
   FolderKanban,
   Globe,
   History,
+  Image as ImageIcon,
   LayoutDashboard,
   LayoutTemplate,
   LoaderCircle,
@@ -42,6 +43,7 @@ import {
 } from 'lucide-react';
 import SeriesCatalogManager from '../components/SeriesCatalogManager';
 import HeroSlidesManager from '../components/HeroSlidesManager';
+import FeaturedSpotlightManager from '../components/FeaturedSpotlightManager';
 import AdminGuideModal from '../components/AdminGuideModal';
 import {
   DEFAULT_ANNOUNCEMENT,
@@ -88,6 +90,7 @@ type SidebarTab =
   | 'posts'
   | 'uploads'
   | 'hero-slides'
+  | 'featured-series'
   | 'import-export'
   | 'blocked-users'
   | 'settings';
@@ -105,13 +108,15 @@ const mobileSidebarItems = [
   { id: 'posts', label: 'Posts', Icon: FileText },
   { id: 'uploads', label: 'Uploaded Chapters', Icon: Upload },
   { id: 'hero-slides', label: 'Hero Slides', Icon: LayoutTemplate },
+  { id: 'featured-series', label: 'Featured Series', Icon: ImageIcon },
   { id: 'import-export', label: 'Import / Export', Icon: Database },
   { id: 'blocked-users', label: 'Blocked Users', Icon: UserX },
   { id: 'settings', label: 'Settings', Icon: Settings },
 ] satisfies { id: SidebarTab; label: string; Icon: typeof UserCheck }[];
 
 const homepageVisibilityOptions: { key: keyof HomepageVisibility; label: string; description: string; group: string }[] = [
-  { key: 'featuredSeries', label: 'Featured series', description: 'Featured-series carousel at the top of the homepage.', group: 'Featured content' },
+  { key: 'featuredSpotlight', label: 'Featured Series spotlight', description: 'Animated series spotlight at the top of the homepage.', group: 'Featured content' },
+  { key: 'featuredSeries', label: 'Classic hero banner', description: 'Legacy featured-series banner carousel below the spotlight.', group: 'Featured content' },
   { key: 'socialPromos', label: 'Social promotions', description: 'Share prompt and Facebook invitation cards.', group: 'Promotions' },
   { key: 'issueBanner', label: 'Issue report banner', description: 'Help and issue-report callout below the homepage banner.', group: 'Promotions' },
   { key: 'announcement', label: 'Announcements', description: 'Show the announcement card above Recently Viewed.', group: 'Promotions' },
@@ -947,6 +952,15 @@ function ComixDashboard({
 
             <button
               type="button"
+              className={`comix-nav-item ${activeTab === 'featured-series' ? 'is-active' : ''}`}
+              onClick={() => setActiveTab('featured-series')}
+            >
+              <ImageIcon size={16} className="nav-icon" />
+              <span>Featured Series</span>
+            </button>
+
+            <button
+              type="button"
               className={`comix-nav-item ${activeTab === 'import-export' ? 'is-active' : ''}`}
               onClick={() => setActiveTab('import-export')}
             >
@@ -991,6 +1005,10 @@ function ComixDashboard({
             {/* 2. HERO SLIDES MANAGER */}
             {activeTab === 'hero-slides' && (
               <HeroSlidesManager settings={settings} onSave={(updated) => setSettings(updated)} />
+            )}
+
+            {activeTab === 'featured-series' && (
+              <FeaturedSpotlightManager settings={settings} onSave={(updated) => setSettings(updated)} />
             )}
 
             {/* 3. SETTINGS (Homepage, Header, Series Page toggles) */}

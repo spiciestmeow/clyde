@@ -10,6 +10,7 @@ import { ReportIssue } from './components/ReportIssue';
 import NavigationProgress from './components/NavigationProgress';
 import { Toaster } from './components/ui/toaster';
 import HeroSlider from './components/HeroSlider';
+import TryTheLookShowcase from './components/TryTheLookShowcase';
 import { PopularNowCard, type PopularNowCardItem } from './components/PopularNowCard';
 import { MostPopularCard, type MostPopularCardItem } from './components/MostPopularCard';
 import { LatestReleaseCard } from './components/LatestReleaseCard';
@@ -341,6 +342,10 @@ function HomePage() {
   );
   const paginationItems = getPaginationItems(releasePageCount, currentReleasePage);
   const slides = siteSettings.heroSlides;
+  const spotlightSeriesItems = siteSettings.featuredSpotlightItems.flatMap(({ seriesId, image }) => {
+    const series = seriesItems.find((item) => item.id === seriesId);
+    return series ? [{ ...series, spotlightImage: image }] : [];
+  });
   const moveCarousel = (direction: number) => setSlide((current) => (current + direction + slides.length) % slides.length);
   const startRailGesture = (event: ReactPointerEvent<HTMLDivElement>) => {
     if (event.pointerType !== 'mouse' || event.button !== 0) return;
@@ -411,6 +416,7 @@ function HomePage() {
       {/* Loading banner intentionally hidden — sections load progressively */}
       {catalogQuery.isError && <CatalogErrorState compactMobile hasCachedData={catalogQuery.items.length > 0} onRetry={() => void catalogQuery.refetch()} />}
       <main>
+        {homepageVisibility.featuredSpotlight && spotlightSeriesItems.length > 0 && <TryTheLookShowcase series={spotlightSeriesItems} />}
         {homepageVisibility.featuredSeries && slides.length > 0 && (
           <HeroSlider slides={slides} />
         )}

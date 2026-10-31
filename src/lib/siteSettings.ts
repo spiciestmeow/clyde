@@ -14,6 +14,7 @@ export type HeaderVisibility = {
 };
 
 export type HomepageVisibility = {
+  featuredSpotlight: boolean;
   featuredSeries: boolean;
   socialPromos: boolean;
   issueBanner: boolean;
@@ -59,6 +60,11 @@ export type HeroSlide = {
   href: string;
 };
 
+export type FeaturedSpotlightItem = {
+  seriesId: number;
+  image: string;
+};
+
 export type AnnouncementSettings = {
   title: string;
   content: string;
@@ -89,12 +95,15 @@ export const DEFAULT_HERO_SLIDES: HeroSlide[] = [
   },
 ];
 
+export const DEFAULT_FEATURED_SPOTLIGHT_ITEMS: FeaturedSpotlightItem[] = [];
+
 export type SiteSettings = {
   header: HeaderVisibility;
   homepage: HomepageVisibility;
   seriesPage: SeriesPageVisibility;
   seriesFilters: SeriesFilterVisibility;
   heroSlides: HeroSlide[];
+  featuredSpotlightItems: FeaturedSpotlightItem[];
   newSeriesOrder: string[];
   customSourceNames: string[];
   facebookUrl?: string;
@@ -144,6 +153,7 @@ export const DEFAULT_HEADER_VISIBILITY: HeaderVisibility = {
 };
 
 export const DEFAULT_HOMEPAGE_VISIBILITY: HomepageVisibility = {
+  featuredSpotlight: true,
   featuredSeries: true,
   socialPromos: true,
   issueBanner: true,
@@ -187,6 +197,7 @@ export const DEFAULT_SITE_SETTINGS: SiteSettings = {
   seriesPage: DEFAULT_SERIES_PAGE_VISIBILITY,
   seriesFilters: DEFAULT_SERIES_FILTER_VISIBILITY,
   heroSlides: DEFAULT_HERO_SLIDES,
+  featuredSpotlightItems: DEFAULT_FEATURED_SPOTLIGHT_ITEMS,
   newSeriesOrder: [],
   customSourceNames: [...DEFAULT_CUSTOM_SOURCE_NAMES],
   facebookUrl: 'https://facebook.com',
@@ -252,6 +263,18 @@ export function parseHeroSlides(value: unknown): HeroSlide[] {
   return slides;
 }
 
+function parseFeaturedSpotlightItems(value: unknown): FeaturedSpotlightItem[] {
+  if (!Array.isArray(value)) return [...DEFAULT_FEATURED_SPOTLIGHT_ITEMS];
+  return value
+    .filter((item): item is Record<string, unknown> => Boolean(item && typeof item === 'object'))
+    .map((item) => ({
+      seriesId: typeof item.seriesId === 'number' && Number.isInteger(item.seriesId) ? item.seriesId : -1,
+      image: typeof item.image === 'string' ? item.image.trim() : '',
+    }))
+    .filter((item) => item.seriesId >= 0 && item.image.length > 0)
+    .slice(0, 6);
+}
+
 function parseSiteSettings(value: unknown): SiteSettings | null {
   if (!value || typeof value !== 'object' || Array.isArray(value)) return null;
 
@@ -263,6 +286,7 @@ function parseSiteSettings(value: unknown): SiteSettings | null {
   const heroSlides = stored.hero_slides !== undefined
     ? parseHeroSlides(stored.hero_slides)
     : [...DEFAULT_HERO_SLIDES];
+  const featuredSpotlightItems = parseFeaturedSpotlightItems(stored.featured_spotlight_items);
   const newSeriesOrder = Array.isArray(stored.new_series_order)
     ? stored.new_series_order.filter((id): id is string => typeof id === 'string' && id.trim().length > 0)
     : [];
@@ -287,7 +311,7 @@ function parseSiteSettings(value: unknown): SiteSettings | null {
 
   const customSourceNames = parseCustomSourceNames(stored.custom_source_names);
 
-  return { header, homepage, seriesPage, seriesFilters, heroSlides, newSeriesOrder, customSourceNames, facebookUrl, accentTheme: parseAccentTheme(stored.accent_theme), announcement };
+  return { header, homepage, seriesPage, seriesFilters, heroSlides, featuredSpotlightItems, newSeriesOrder, customSourceNames, facebookUrl, accentTheme: parseAccentTheme(stored.accent_theme), announcement };
 }
 
 export const SITE_SETTINGS_CACHE_KEY = 'vortex-site-settings';
@@ -309,6 +333,7 @@ export function getCachedSiteSettings(): SiteSettings | null {
     const seriesPage = parseBooleanSettings(cached.seriesPage, DEFAULT_SERIES_PAGE_VISIBILITY);
     const seriesFilters = parseBooleanSettings(cached.seriesFilters, DEFAULT_SERIES_FILTER_VISIBILITY);
     const heroSlides = cached.heroSlides ? parseHeroSlides(cached.heroSlides) : [...DEFAULT_HERO_SLIDES];
+    const featuredSpotlightItems = parseFeaturedSpotlightItems(cached.featuredSpotlightItems);
     const newSeriesOrder = Array.isArray(cached.newSeriesOrder)
       ? cached.newSeriesOrder.filter((id): id is string => typeof id === 'string' && id.trim().length > 0)
       : [];
@@ -330,7 +355,7 @@ export function getCachedSiteSettings(): SiteSettings | null {
         : DEFAULT_ANNOUNCEMENT.publishedAt,
     };
 
-    const settings = { header, homepage, seriesPage, seriesFilters, heroSlides, newSeriesOrder, customSourceNames, facebookUrl, accentTheme: parseAccentTheme(cached.accentTheme), announcement };
+    const settings = { header, homepage, seriesPage, seriesFilters, heroSlides, featuredSpotlightItems, newSeriesOrder, customSourceNames, facebookUrl, accentTheme: parseAccentTheme(cached.accentTheme), announcement };
     applyAccentTheme(settings.accentTheme);
     return settings;
   } catch {
@@ -350,6 +375,12 @@ function cacheSiteSettings(settings: SiteSettings): void {
         ...slide,
         src: slide.src && slide.src.startsWith('data:') && slide.src.length > 50000 ? '' : slide.src,
       })),
+      featuredSpotlightItems: (settings.featuredSpotlightItems || [])
+        .map((item) => ({
+          ...item,
+          image: item.image.startsWith('data:') && item.image.length > 50000 ? '' : item.image,
+        }))
+        .filter((item) => item.image),
     };
     window.localStorage.setItem(SITE_SETTINGS_CACHE_KEY, JSON.stringify(safeSettings));
   } catch {
@@ -382,6 +413,7 @@ export async function getSiteSettings(forceRefresh = false): Promise<SiteSetting
           seriesPage: { ...DEFAULT_SERIES_PAGE_VISIBILITY },
           seriesFilters: { ...DEFAULT_SERIES_FILTER_VISIBILITY },
           heroSlides: [...DEFAULT_HERO_SLIDES],
+          featuredSpotlightItems: [...DEFAULT_FEATURED_SPOTLIGHT_ITEMS],
           newSeriesOrder: [],
           customSourceNames: [...DEFAULT_CUSTOM_SOURCE_NAMES],
           accentTheme: 'halloween',
@@ -427,6 +459,7 @@ export async function saveSiteSettings(settings: SiteSettings): Promise<SiteSett
         series_page_sections: settings.seriesPage,
         series_filter_sections: settings.seriesFilters,
         hero_slides: settings.heroSlides,
+        featured_spotlight_items: settings.featuredSpotlightItems,
         new_series_order: settings.newSeriesOrder,
         custom_source_names: parseCustomSourceNames(settings.customSourceNames),
         facebook_url: settings.facebookUrl || 'https://facebook.com',
