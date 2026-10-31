@@ -1,6 +1,10 @@
 import type { IncomingMessage, ServerResponse } from 'node:http';
 import { fetchPublicPage } from './_lib/public-fetch.js';
-import { extractChaptersFromHtml, extractPageLastUpdate } from './_lib/direct-source-parser.js';
+import {
+  extractChaptersFromHtml,
+  extractLagoonHomepageChapterTimestamp,
+  extractPageLastUpdate,
+} from './_lib/direct-source-parser.js';
 import { extractChaptersWithRelativeRowTimes } from './_lib/relative-chapter-time-parser.js';
 import type { DetectedChapterItem } from './_lib/direct-source-parser.js';
 export type { DetectedChapterItem } from './_lib/direct-source-parser.js';
@@ -148,6 +152,28 @@ export async function scrapeDirectSources(
           reason: 'Page loaded, but no supported chapter links were found. The page may render chapters with JavaScript or use a layout the scraper does not recognize.',
         });
         continue;
+      }
+      // Lagoon's detail page shows calendar dates, while its homepage cards
+      // can expose a more precise relative age. Only replace the detail-page
+      // value when the matching series card and same chapter are found.
+      if (/lagoon/i.test(sourceHostname) && chapters[0]) {
+        try {
+          const homepageUrl = new URL('/', resolvedSourceUrl).toString();
+          const homepageResponse = await fetchPublicPage(homepageUrl);
+          if (homepageResponse.ok) {
+            const homepageTimestamp = extractLagoonHomepageChapterTimestamp(
+              homepageResponse.text,
+              homepageResponse.url || homepageUrl,
+              resolvedSourceUrl,
+              chapters[0].number,
+              title,
+            );
+            if (homepageTimestamp) chapters[0].releasedAt = homepageTimestamp;
+          }
+        } catch {
+          // Keep the timestamp from the series page if the optional homepage
+          // lookup fails or Lagoon changes its homepage markup.
+        }
       }
       if (chapters.length > 0 && !chapters[0].releasedAt) {
         const pageLastUpdate = extractPageLastUpdate(html);

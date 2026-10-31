@@ -186,7 +186,7 @@ function formatFavoriteCount(count: number): string {
   return String(count);
 }
 
-function formatRelativeTime(timestamp: number): string {
+function formatRelativeTime(timestamp: number, sourceName?: string): string {
   const diffMs = Date.now() - timestamp;
   const diffMin = Math.floor(diffMs / 60000);
   if (diffMin < 1) return 'Just now';
@@ -198,6 +198,10 @@ function formatRelativeTime(timestamp: number): string {
   if (diffDays < 7) return `${diffDays} days ago`;
   const diffWeeks = Math.floor(diffDays / 7);
   if (diffWeeks < 5) return `${diffWeeks} week${diffWeeks > 1 ? 's' : ''} ago`;
+  if (/lagoon/i.test(sourceName || '') && diffDays < 365) {
+    const roundedMonths = Math.max(1, Math.round(diffDays / 30));
+    return `${roundedMonths} month${roundedMonths > 1 ? 's' : ''} ago`;
+  }
   const diffMonths = Math.floor(diffDays / 30);
   if (diffMonths < 12) return `${diffMonths} month${diffMonths > 1 ? 's' : ''} ago`;
   const diffYears = Math.floor(diffDays / 365);
@@ -977,7 +981,7 @@ export default function SeriesDetailPage() {
                 const isTopSource = Boolean(winningSourceUrl && source.url.trim() === winningSourceUrl);
                 const sourceReleaseTimestamp = source.latestChapterAt ? Date.parse(source.latestChapterAt) : NaN;
                 const sourceReleaseTime = !Number.isNaN(sourceReleaseTimestamp)
-                  ? formatRelativeTime(sourceReleaseTimestamp)
+                  ? formatRelativeTime(sourceReleaseTimestamp, source.name)
                   : '';
 
                 const isVisited = visitedSources.includes(source.url);

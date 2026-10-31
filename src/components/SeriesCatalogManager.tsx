@@ -196,7 +196,7 @@ function UploadFilterDropdown({
   );
 }
 
-function formatDetectedSourceAge(timestamp?: string): string {
+function formatDetectedSourceAge(timestamp?: string, sourceName?: string): string {
   if (!timestamp) return 'time unavailable';
   const parsed = Date.parse(timestamp);
   if (Number.isNaN(parsed)) return 'time unavailable';
@@ -207,6 +207,10 @@ function formatDetectedSourceAge(timestamp?: string): string {
   const elapsedHours = Math.floor(elapsedMinutes / 60);
   if (elapsedHours < 24) return `${elapsedHours} hr${elapsedHours === 1 ? '' : 's'} ago`;
   const elapsedDays = Math.floor(elapsedHours / 24);
+  if (/lagoon/i.test(sourceName || '') && elapsedDays >= 30 && elapsedDays < 365) {
+    const roundedMonths = Math.max(1, Math.round(elapsedDays / 30));
+    return `${roundedMonths} month${roundedMonths > 1 ? 's' : ''} ago`;
+  }
   if (elapsedDays === 1) return '1 day ago';
   return `${elapsedDays} days ago`;
 }
@@ -2250,7 +2254,7 @@ export default function SeriesCatalogManager({
                     <ul className="manual-sync-feedback__sources">
                       {directSyncFeedback.sourceResults.map((source) => (
                         <li key={source.url}>
-                          Latest is Chapter {source.latestChapterNumber.replace(/^ch(?:apter)?\.?\s*/i, '')} ({formatDetectedSourceAge(source.latestChapterAt)}) (reported by {source.name})
+                          Latest is Chapter {source.latestChapterNumber.replace(/^ch(?:apter)?\.?\s*/i, '')} ({formatDetectedSourceAge(source.latestChapterAt, source.name)}) (reported by {source.name})
                         </li>
                       ))}
                     </ul>

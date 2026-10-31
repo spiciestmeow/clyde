@@ -585,6 +585,128 @@ function extractMistScanChapters(
   return Array.from(chapters.values()).sort((a, b) => b.number - a.number);
 }
 
+/**
+ * Lagoon's series page can show only calendar dates while its homepage cards
+ * show relative ages. Use the homepage age only when both the series permalink
+ * and requested chapter are found in the same card/row.
+ */
+export function extractLagoonHomepageChapterTimestamp(
+  html: string,
+  homepageUrl: string,
+  seriesUrl: string,
+  chapterNumber: number,
+  seriesTitle?: string,
+): string | undefined {
+  let homepage: URL;
+  let series: URL;
+  try {
+    homepage = new URL(homepageUrl);
+    series = new URL(seriesUrl);
+  } catch {
+    return undefined;
+  }
+
+  if (!/lagoon/i.test(homepage.hostname) || !isSameSiteHost(homepage, series)) return undefined;
+
+  const seriesSlug = normalizeSeriesPathSegment(series.pathname.split('/').filter(Boolean).pop() || '');
+  const normalizedSeriesTitle = normalizeSeriesPathSegment(seriesTitle || '');
+  if (!seriesSlug) return undefined;
+
+  const seriesAnchors: { start: number; end: number }[] = [];
+  const anchorRegex = /<a\b([^>]*)>([\s\S]*?)<\/a>/gi;
+  let anchorMatch: RegExpExecArray | null;
+  while ((anchorMatch = anchorRegex.exec(html)) !== null) {
+    const href = anchorMatch[1].match(/\bhref\s*=\s*["']([^"']+)["']/i)?.[1];
+    if (!href) continue;
+    try {
+      const candidate = new URL(href, homepage);
+      const candidateSlug = normalizeSeriesPathSegment(candidate.pathname.split('/').filter(Boolean).pop() || '');
+      const candidateTitle = normalizeSeriesPathSegment(matchChapterNumberInLabel(anchorMatch[2]) ? '' : anchorMatch[2].replace(/<[^>]+>/g, ' '));
+      const sameTitle = normalizedSeriesTitle.length >= 8
+        && candidateTitle.length >= 8
+        && (candidateTitle.startsWith(normalizedSeriesTitle) || normalizedSeriesTitle.startsWith(candidateTitle));
+      if (isSameSiteHost(candidate, series) && (candidateSlug === seriesSlug || sameTitle)) {
+        seriesAnchors.push({ start: anchorMatch.index, end: anchorRegex.lastIndex });
+      }
+    } catch {
+      // Ignore malformed or non-URL anchor targets.
+    }
+  }
+
+  const relativeAgePattern =
+    /(?:about\s+)?\d+(?:\.\d+)?\s*(?:seconds?|secs?|minutes?|mins?|hours?|hrs?|days?|weeks?|wks?|months?|mos?|years?|yrs?|[mhdwymo]\b)(?:\s*ago)?|\b(?:yesterday|just now|today)\b/i;
+
+  for (const seriesAnchor of seriesAnchors) {
+    const searchStart = Math.max(0, seriesAnchor.start - 15000);
+    const prefix = html.slice(searchStart, seriesAnchor.start);
+    const candidates: { index: number; tag: string }[] = [];
+    const openingTags = /<(article|li|div|section)\b[^>]*>/gi;
+    let opening: RegExpExecArray | null;
+    while ((opening = openingTags.exec(prefix)) !== null) {
+      candidates.push({ index: searchStart + opening.index, tag: opening[1].toLowerCase() });
+    }
+
+    // Try the nearest wrappers first; the first successful match is the
+    // smallest card containing both this series link and its chapter row.
+    for (let candidateIndex = candidates.length - 1; candidateIndex >= 0; candidateIndex -= 1) {
+      const candidate = candidates[candidateIndex];
+      const tagRegex = new RegExp(`<\\/?${candidate.tag}\\b[^>]*>`, 'gi');
+      tagRegex.lastIndex = candidate.index;
+      let depth = 0;
+      let tagMatch: RegExpExecArray | null;
+      let regionEnd = -1;
+      while ((tagMatch = tagRegex.exec(html)) !== null) {
+        if (/^<\//.test(tagMatch[0])) {
+          depth -= 1;
+          if (depth === 0) {
+            regionEnd = tagRegex.lastIndex;
+            break;
+          }
+        } else {
+          depth += 1;
+        }
+      }
+      if (regionEnd < seriesAnchor.end) continue;
+
+      const cardHtml = html.slice(candidate.index, regionEnd);
+      const chapterAnchorRegex = /<a\b([^>]*)>([\s\S]*?)<\/a>/gi;
+      const cardChapterAnchors: { start: number; end: number; number: number }[] = [];
+      let chapterAnchor: RegExpExecArray | null;
+      while ((chapterAnchor = chapterAnchorRegex.exec(cardHtml)) !== null) {
+        const href = chapterAnchor[1].match(/\bhref\s*=\s*["']([^"']+)["']/i)?.[1] || '';
+        const chapterLabel = matchChapterNumberInLabel(chapterAnchor[2])
+          ?? matchChapterNumberInUrl(href);
+        if (!chapterLabel) continue;
+        cardChapterAnchors.push({
+          start: candidate.index + chapterAnchor.index,
+          end: candidate.index + chapterAnchorRegex.lastIndex,
+          number: Number.parseFloat(chapterLabel[1]),
+        });
+      }
+
+      for (let chapterIndex = 0; chapterIndex < cardChapterAnchors.length; chapterIndex += 1) {
+        const current = cardChapterAnchors[chapterIndex];
+        if (current.number !== chapterNumber) continue;
+        const previous = cardChapterAnchors[chapterIndex - 1];
+        const next = cardChapterAnchors[chapterIndex + 1];
+        const contextStart = previous
+          ? Math.floor((previous.end + current.start) / 2)
+          : Math.max(candidate.index, current.start - 700);
+        const contextEnd = next
+          ? Math.ceil((current.end + next.start) / 2)
+          : Math.min(regionEnd, current.end + 700);
+        const rowContext = html.slice(contextStart, contextEnd);
+        if (!relativeAgePattern.test(rowContext)) continue;
+
+        const timestamp = extractTimeFromContext(rowContext, 'relative');
+        if (timestamp) return new Date(timestamp).toISOString();
+      }
+    }
+  }
+
+  return undefined;
+}
+
 export function extractPageLastUpdate(html: string): number | null {
   if (!html) return null;
   const patterns = [
@@ -627,7 +749,7 @@ export function extractChaptersFromHtml(
   const seriesPath = parsedUrl.pathname.replace(/\/+$/, '');
   const seriesSlug = seriesPath.split('/').filter(Boolean).pop() || '';
   const timestampPreference: 'rightmost' | 'newest' | 'oldest' | 'calendar' | 'relative' =
-    isGenzToonsHost(parsedUrl.hostname)
+    isGenzToonsHost(parsedUrl.hostname) || /lagoon/i.test(parsedUrl.hostname)
       ? 'relative'
       : /(^|\.)nyxscans\.com$/i.test(parsedUrl.hostname)
       ? 'oldest'
