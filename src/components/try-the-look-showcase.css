@@ -286,7 +286,7 @@ html:not(.theme-light) .try-look-modal-model::after { background: radial-gradien
   .try-look-intro-kicker { gap: 6px; margin-bottom: 7px; padding: 4px 7px; font-size: 7px; }
   .try-look-intro h1 { font-size: clamp(24px, 7vw, 29px); }
   .try-look-intro p { max-width: 100%; margin-top: 7px; font-size: 10px; }
-  .try-look-stage { inset: 35px 0 90px; }
+  .try-look-stage { inset: 35px 0 108px; }
   .try-look-model-echo,
   .try-look-model:not(.try-look-model-echo)[data-slot="-3"],
   .try-look-model:not(.try-look-model-echo)[data-slot="3"],
@@ -299,7 +299,7 @@ html:not(.theme-light) .try-look-modal-model::after { background: radial-gradien
   .try-look-model:not(.try-look-model-echo)[data-slot="3"],
   .try-look-model:not(.try-look-model-echo)[data-slot="-2"],
   .try-look-model:not(.try-look-model-echo)[data-slot="2"] { pointer-events: none !important; }
-  .try-look-controls { bottom: clamp(68px, 9vh, 76px); justify-content: center; gap: 0; padding-inline: 12px; }
+  .try-look-controls { bottom: 12px; justify-content: center; gap: 0; padding-inline: 12px; }
   .try-look-arrow, .try-look-play { display: none; }
   .try-look-tabs { width: min(118px, 30vw); justify-content: center; gap: 0; }
   .try-look-tab { display: none; }

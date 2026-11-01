@@ -421,7 +421,7 @@ function HomePage() {
           <HeroSlider slides={slides} />
         )}
         {(homepageVisibility.socialPromos || homepageVisibility.issueBanner) && (
-          <div className="social-promo-container">
+          <div className={`social-promo-container${homepageVisibility.featuredSpotlight && spotlightSeriesItems.length > 0 ? ' after-featured-spotlight' : ''}`}>
             {homepageVisibility.socialPromos && (
               <div className="social-promo-grid">
                 {/* Share Card */}
