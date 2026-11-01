@@ -592,7 +592,7 @@ html[data-accent-theme="default"] .hero-spider { display: none; }
     margin-bottom: 24px;
   }
   .social-promo-container.after-featured-spotlight {
-    margin-top: -14px;
+    margin-top: 0;
   }
   .social-card {
     padding: 0;
