@@ -476,16 +476,19 @@ function SourceNameAutocomplete({
   value,
   suggestions,
   onChange,
+  onPendingSearchChange,
 }: {
   value: string;
   suggestions: string[];
   onChange: (value: string) => void;
+  onPendingSearchChange: (value: string | null) => void;
 }) {
   const [isOpen, setIsOpen] = useState(false);
   const [highlightedIndex, setHighlightedIndex] = useState(0);
+  const [searchQuery, setSearchQuery] = useState('');
   const containerRef = useRef<HTMLDivElement>(null);
   const listRef = useRef<HTMLDivElement>(null);
-  const query = value.trim().toLocaleLowerCase();
+  const query = searchQuery.trim().toLocaleLowerCase();
   const options = useMemo(
     () => suggestions.filter((name) => !query || name.toLocaleLowerCase().includes(query)).slice(0, 30),
     [query, suggestions],
@@ -493,7 +496,10 @@ function SourceNameAutocomplete({
 
   useEffect(() => {
     const handlePointerDown = (event: MouseEvent) => {
-      if (!containerRef.current?.contains(event.target as Node)) setIsOpen(false);
+      if (!containerRef.current?.contains(event.target as Node)) {
+        setIsOpen(false);
+        setSearchQuery('');
+      }
     };
     document.addEventListener('mousedown', handlePointerDown);
     return () => document.removeEventListener('mousedown', handlePointerDown);
@@ -508,7 +514,9 @@ function SourceNameAutocomplete({
 
   const choose = (name: string) => {
     onChange(name);
+    onPendingSearchChange(null);
     setIsOpen(false);
+    setSearchQuery('');
   };
 
   const handleKeyDown = (event: ReactKeyboardEvent<HTMLInputElement>) => {
@@ -525,6 +533,8 @@ function SourceNameAutocomplete({
       choose(options[highlightedIndex]);
     } else if (event.key === 'Escape') {
       setIsOpen(false);
+      setSearchQuery('');
+      onPendingSearchChange(null);
     }
   };
 
@@ -533,14 +543,17 @@ function SourceNameAutocomplete({
       <input
         type="text"
         className="text-input"
-        placeholder="Source name"
-        value={value}
+        placeholder={suggestions.length ? 'Select a source' : 'Add source suggestions in Settings first'}
+        value={isOpen ? searchQuery : value}
         onChange={(event) => {
-          onChange(event.target.value);
+          const queryValue = event.target.value;
+          setSearchQuery(queryValue);
+          onPendingSearchChange(queryValue.trim() || null);
           setIsOpen(true);
           setHighlightedIndex(0);
         }}
         onFocus={() => {
+          setSearchQuery('');
           setIsOpen(true);
           setHighlightedIndex(0);
         }}
@@ -649,10 +662,12 @@ export default function SeriesCatalogManager({
   const [duplicateTitle, setDuplicateTitle] = useState<{ title: string; href: string } | null>(null);
   const [importSuccess, setImportSuccess] = useState<string | null>(null);
   const [submitError, setSubmitError] = useState<string | null>(null);
+  const [pendingSourceSearches, setPendingSourceSearches] = useState<Record<number, string>>({});
 
   useEffect(() => {
     if (view !== 'new-title') {
       setCoverPreviewOpen(false);
+      setPendingSourceSearches({});
       return;
     }
 
@@ -1310,6 +1325,12 @@ export default function SeriesCatalogManager({
     e.preventDefault();
     setSubmitError(null);
 
+    const unselectedSourceSearches = Object.values(pendingSourceSearches).filter(Boolean);
+    if (unselectedSourceSearches.length > 0) {
+      setSubmitError(`Select a source from the suggestions before saving. Unselected entries: ${unselectedSourceSearches.join(', ')}.`);
+      return;
+    }
+
     // Flush any pending tag-style inputs that weren't yet confirmed with Enter
     const pendingAuthor = newAuthor.trim();
     const pendingArtist = newArtist.trim();
@@ -1337,6 +1358,25 @@ export default function SeriesCatalogManager({
 
     if (duplicateTitle) {
       setSubmitError('This title already exists in your website catalog. Prevent duplicate.');
+      return;
+    }
+
+    const sourceRowsToSave = draft.sources.filter((source) => source.name.trim() || source.url.trim());
+    if (sourceRowsToSave.some((source) => !source.name.trim())) {
+      setSubmitError('Select a source name from the saved suggestions for each source URL.');
+      return;
+    }
+    if (sourceRowsToSave.some((source) => !source.url.trim())) {
+      setSubmitError('Add a URL for each selected source before saving.');
+      return;
+    }
+
+    const allowedSourceNames = new Set(customSourceNames.map((name) => name.trim().toLocaleLowerCase()));
+    const unlistedSourceNames = [...new Set(sourceRowsToSave
+      .map((source) => source.name.trim())
+      .filter((name) => !allowedSourceNames.has(name.toLocaleLowerCase())))];
+    if (unlistedSourceNames.length > 0) {
+      setSubmitError(`Select source names from the saved suggestions. Add these in Admin Settings first: ${unlistedSourceNames.join(', ')}.`);
       return;
     }
 
@@ -2303,6 +2343,12 @@ export default function SeriesCatalogManager({
                 <SourceNameAutocomplete
                   value={source.name}
                   suggestions={customSourceNames}
+                  onPendingSearchChange={(value) => setPendingSourceSearches((current) => {
+                    const next = { ...current };
+                    if (value) next[idx] = value;
+                    else delete next[idx];
+                    return next;
+                  })}
                   onChange={(val) => {
                     setDraft((c) => ({
                       ...c,
@@ -2434,6 +2480,13 @@ export default function SeriesCatalogManager({
                 setSelectedDraftSourceIndices((current) => current
                   .filter((selectedIndex) => selectedIndex !== index)
                   .map((selectedIndex) => selectedIndex > index ? selectedIndex - 1 : selectedIndex));
+            setPendingSourceSearches((current) => Object.fromEntries(
+              Object.entries(current).flatMap(([sourceIndex, value]) => {
+                const parsedIndex = Number(sourceIndex);
+                if (parsedIndex === index) return [];
+                return [[String(parsedIndex > index ? parsedIndex - 1 : parsedIndex), value] as const];
+              }),
+            ));
             setPendingSourceRemovalIndex(null);
           }}
         />
@@ -2449,6 +2502,14 @@ export default function SeriesCatalogManager({
               ...current,
               sources: current.sources.filter((_, index) => !selected.has(index)),
             }));
+            setPendingSourceSearches((current) => Object.fromEntries(
+              Object.entries(current).flatMap(([sourceIndex, value]) => {
+                const parsedIndex = Number(sourceIndex);
+                if (selected.has(parsedIndex)) return [];
+                const removedBefore = [...selected].filter((index) => index < parsedIndex).length;
+                return [[String(parsedIndex - removedBefore), value] as const];
+              }),
+            ));
             setSelectedDraftSourceIndices([]);
             setBulkSourceRemovalOpen(false);
           }}

@@ -1312,8 +1312,11 @@ function ComixDashboard({
                     <div className="comix-group-title">Custom source names</div>
                     <div className="comix-setting-item" style={{ flexDirection: 'column', alignItems: 'stretch', gap: '12px' }}>
                       <div className="comix-setting-info">
-                        <strong>Upload source suggestions</strong>
-                        <span>Add source names as tags. They appear as suggestions when uploading or editing a series; names are kept in alphabetical order, and you can still enter a name that is not listed.</span>
+                        <strong>
+                          Upload source suggestions
+                          <small className="custom-source-name-count">{customSourceNamesDraft.length} total</small>
+                        </strong>
+                        <span>Add source names here before using them on a series. Series source names must be selected from this saved list, which appears in alphabetical order.</span>
                       </div>
                       <div className="custom-source-name-editor">
                         {groupedCustomSourceNames.length > 0 && (
@@ -1500,6 +1503,7 @@ function ComixDashboard({
             {/* 5. PLACEHOLDER FOR OTHER TABS */}
             {activeTab !== 'uploads' &&
               activeTab !== 'hero-slides' &&
+              activeTab !== 'featured-series' &&
               activeTab !== 'settings' &&
               activeTab !== 'import-export' &&
               activeTab !== 'edit-profile' && (
