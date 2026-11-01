@@ -644,6 +644,8 @@ export default function SeriesCatalogManager({
   // Form draft & editing state
   const [editingSeriesId, setEditingSeriesId] = useState<number | null>(() => savedTitleEditor?.editingSeriesId ?? null);
   const [draft, setDraft] = useState<FormDraft>(() => savedTitleEditor?.draft ?? initialFormDraft());
+  const [coverUploadProgress, setCoverUploadProgress] = useState<number | null>(null);
+  const coverUploadResetTimerRef = useRef<number | null>(null);
   const [coverPreviewOpen, setCoverPreviewOpen] = useState(false);
   const coverPreviewDialogRef = useRef<HTMLDialogElement>(null);
   const [pendingSourceRemovalIndex, setPendingSourceRemovalIndex] = useState<number | null>(null);
@@ -677,6 +679,10 @@ export default function SeriesCatalogManager({
     if (coverPreviewOpen && !dialog.open) dialog.showModal();
     if (!coverPreviewOpen && dialog.open) dialog.close();
   }, [coverPreviewOpen, view]);
+
+  useEffect(() => () => {
+    if (coverUploadResetTimerRef.current !== null) window.clearTimeout(coverUploadResetTimerRef.current);
+  }, []);
 
   useEffect(() => {
     if (view !== 'new-title') {
@@ -1193,6 +1199,7 @@ export default function SeriesCatalogManager({
   // Cover file upload handler (compresses to ~25KB or uploads to Supabase Storage)
   const handleFileChange = async (event: ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
+    event.target.value = '';
     if (!file) return;
 
     if (!file.type.startsWith('image/')) {
@@ -1200,13 +1207,18 @@ export default function SeriesCatalogManager({
       return;
     }
 
+    if (coverUploadResetTimerRef.current !== null) window.clearTimeout(coverUploadResetTimerRef.current);
+    setCoverUploadProgress(0);
     try {
-      const coverResult = await uploadOrCompressCover(file, draft.title || 'cover');
+      const coverResult = await uploadOrCompressCover(file, draft.title || 'cover', setCoverUploadProgress);
       if (coverResult) {
         setDraft((curr) => ({ ...curr, cover: coverResult }));
       }
+      setCoverUploadProgress(100);
+      coverUploadResetTimerRef.current = window.setTimeout(() => setCoverUploadProgress(null), 800);
     } catch (err: any) {
       console.error('Failed to process image cover:', err);
+      setCoverUploadProgress(null);
       alert('Failed to process cover image. Please try another image.');
     }
   };
@@ -1794,12 +1806,25 @@ export default function SeriesCatalogManager({
                   className={`cover-preview-box${draft.cover ? ' has-cover' : ''}`}
                   onClick={() => draft.cover && setCoverPreviewOpen(true)}
                   disabled={!draft.cover}
-                  aria-label={draft.cover ? 'Preview cover image' : 'No cover image uploaded'}
+                  aria-label={coverUploadProgress !== null ? `Cover upload ${coverUploadProgress}%` : draft.cover ? 'Preview cover image' : 'No cover image uploaded'}
                 >
                   {draft.cover ? (
                     <img src={draft.cover} alt="Cover preview" className="cover-img" />
                   ) : (
                     <span className="no-cover-label">No cover</span>
+                  )}
+                  {coverUploadProgress !== null && (
+                    <span
+                      className="cover-upload-progress"
+                      role="progressbar"
+                      aria-label="Cover upload progress"
+                      aria-valuemin={0}
+                      aria-valuemax={100}
+                      aria-valuenow={coverUploadProgress}
+                    >
+                      <span className="cover-upload-progress-label">{coverUploadProgress === 100 ? 'Ready' : `Uploading ${coverUploadProgress}%`}</span>
+                      <span className="cover-upload-progress-track"><span style={{ width: `${coverUploadProgress}%` }} /></span>
+                    </span>
                   )}
                 </button>
 
@@ -1815,8 +1840,9 @@ export default function SeriesCatalogManager({
                     type="button"
                     className="btn-dark btn-upload"
                     onClick={() => fileInputRef.current?.click()}
+                    disabled={coverUploadProgress !== null && coverUploadProgress < 100}
                   >
-                    Upload
+                    {coverUploadProgress !== null && coverUploadProgress < 100 ? 'Uploading…' : 'Upload'}
                   </button>
                   <p className="hint-text">JPG/PNG/WEBP, recommended 400×600.</p>
                   {draft.cover && (

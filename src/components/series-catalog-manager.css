@@ -1369,6 +1369,7 @@ body:has(.comix-admin-wrapper.theme-dark) .title-actions-menu-item::after {
 }
 
 .cover-preview-box {
+  position: relative;
   width: 100px;
   height: 140px;
   padding: 0;
@@ -1388,6 +1389,25 @@ body:has(.comix-admin-wrapper.theme-dark) .title-actions-menu-item::after {
 .cover-preview-box.has-cover:hover { border-color: var(--up-teal); }
 .cover-preview-box.has-cover:focus-visible { outline: 2px solid var(--up-teal); outline-offset: 2px; }
 .cover-preview-box:disabled { cursor: default; }
+
+.cover-upload-progress {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  justify-content: flex-end;
+  gap: 7px;
+  padding: 10px 8px;
+  background: linear-gradient(180deg, rgba(8, 12, 18, .08) 10%, rgba(8, 12, 18, .78) 100%);
+  color: #fff;
+  text-align: left;
+  pointer-events: none;
+}
+
+.cover-upload-progress-label { font-size: 10px; font-weight: 700; line-height: 1.2; }
+.cover-upload-progress-track { display: block; width: 100%; height: 4px; overflow: hidden; border-radius: 999px; background: rgba(255, 255, 255, .3); }
+.cover-upload-progress-track > span { display: block; height: 100%; border-radius: inherit; background: var(--up-teal); transition: width .12s linear; }
 
 .cover-preview-backdrop {
   position: fixed;
