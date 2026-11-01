@@ -274,17 +274,18 @@ function getAdminTitleChapterLabel(series: SeriesRecord): string {
   return `${series.chapters?.length || 0} chapters`;
 }
 
-function loadTitleEditorSession(): { draft: FormDraft; editingSeriesId: number | null } | null {
+function loadTitleEditorSession(): { draft: FormDraft; editingSeriesId: number | null; importUrl: string } | null {
   try {
     const saved = sessionStorage.getItem(TITLE_EDITOR_SESSION_KEY);
     if (!saved) return null;
 
-    const parsed = JSON.parse(saved) as { draft?: FormDraft; editingSeriesId?: number | null };
+    const parsed = JSON.parse(saved) as { draft?: FormDraft; editingSeriesId?: number | null; importUrl?: string };
     if (!parsed.draft || typeof parsed.draft !== 'object') return null;
 
     return {
       draft: { ...initialFormDraft(), ...parsed.draft },
       editingSeriesId: typeof parsed.editingSeriesId === 'number' ? parsed.editingSeriesId : null,
+      importUrl: typeof parsed.importUrl === 'string' ? parsed.importUrl : '',
     };
   } catch {
     return null;
@@ -658,7 +659,7 @@ export default function SeriesCatalogManager({
   const [newTag, setNewTag] = useState('');
 
   // Import states
-  const [importUrl, setImportUrl] = useState('');
+  const [importUrl, setImportUrl] = useState(() => savedTitleEditor?.importUrl ?? '');
   const [isImporting, setIsImporting] = useState(false);
   const [importError, setImportError] = useState<string | null>(null);
   const [duplicateTitle, setDuplicateTitle] = useState<{ title: string; href: string } | null>(null);
@@ -690,13 +691,13 @@ export default function SeriesCatalogManager({
       return;
     }
 
-    const session = JSON.stringify({ draft, editingSeriesId });
+    const session = JSON.stringify({ draft, editingSeriesId, importUrl });
     try {
       sessionStorage.setItem(TITLE_EDITOR_SESSION_KEY, session);
     } catch {
       // Keep the editor state in memory if the browser storage quota is exhausted.
     }
-  }, [view, draft, editingSeriesId]);
+  }, [view, draft, editingSeriesId, importUrl]);
 
   // Chapter upload states
   const [selectedSeriesForChapter, setSelectedSeriesForChapter] = useState<SeriesRecord | null>(null);
