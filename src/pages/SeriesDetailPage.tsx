@@ -1,12 +1,16 @@
-import { useEffect, useLayoutEffect, useMemo, useRef, useState, type SyntheticEvent } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type SyntheticEvent } from 'react';
 import { Link, useLocation, useParams } from 'wouter';
 import { Activity, ArrowDownUp, ArrowLeft, ArrowUpRight, Bell, BookOpen, Bookmark, CalendarDays, Check, CheckCircle2, ChevronDown, ChevronRight, Clock3, Eye, Flag, Heart, List, Maximize2, MessageSquare, MessageSquareText, PenLine, Rows3, Search, Share2, Square, Star, TriangleAlert, Type, X, ZoomIn } from 'lucide-react';
-import { useQueryClient } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   cacheSeriesCatalog,
+  getHomeCatalogHighlights,
   incrementSeriesViews,
+  getSeriesCatalogPage,
+  getSeriesRecommendations,
   SERIES_CATALOG_QUERY_KEY,
   DEFAULT_SERIES_COVER,
+  type SeriesRecommendation,
   type SeriesCatalogResponse,
   type SeriesRecord,
 } from '../lib/seriesCatalog';
@@ -25,7 +29,6 @@ import { SeriesReportIssue } from '../components/SeriesReportIssue';
 import { Shareable } from '../components/Shareable';
 import { toSiteSearchItems, toTrendingSiteSearchItems } from '../data/seriesSearchCatalog';
 import { useThemeMode } from '../hooks/useThemeMode';
-import { useSeriesCatalog } from '../hooks/useSeriesCatalog';
 import { useSeriesDetail } from '../hooks/useSeriesDetail';
 import { DEFAULT_SERIES_PAGE_VISIBILITY, SITE_SETTINGS_UPDATED_EVENT, getCachedSiteSettings, getSiteSettings } from '../lib/siteSettings';
 import { formatScanlatorSeriesUrl } from '../lib/scanlatorLinks';
@@ -50,11 +53,10 @@ type ReactionCounts = SeriesReactionCounts;
 type RailPosition = { left: number; top: number; width: number; maxHeight: number };
 type FixedRailPositions = { left: RailPosition; right: RailPosition };
 
-function getDisplayedChapterCount(item: SeriesRecord): number {
-  const latestChapter = getWinningChapterSource(item.sources, item.facts?.latest_source_url || undefined)?.latestChapterNumber
-    || item.chapters[0]?.title
-    || item.facts?.latest_chapter_number
-    || item.facts?.last_chapter_number;
+function getDisplayedChapterCount(item: Pick<SeriesRecord, 'facts' | 'chapters'>): number {
+  const latestChapter = item.facts?.latest_chapter_number
+    || item.facts?.last_chapter_number
+    || item.chapters[0]?.title;
   const parsedChapter = Number.parseFloat(String(latestChapter || '').replace(/^ch(?:apter)?\.?\s*/i, ''));
   return Number.isFinite(parsedChapter) ? parsedChapter : item.chapters.length;
 }
@@ -264,15 +266,21 @@ export default function SeriesDetailPage() {
   const slug = decodeURIComponent(params.slug || '').replace(/\/$/, '');
   const queryClient = useQueryClient();
   const detailQuery = useSeriesDetail(slug);
-  const catalogQuery = useSeriesCatalog();
-  const series: SeriesRecord | undefined = detailQuery.data ?? catalogQuery.items.find(
-    (item) => item.slug.toLocaleLowerCase() === slug.toLocaleLowerCase(),
-  );
+  const series: SeriesRecord | undefined = detailQuery.data ?? undefined;
   const seriesQuery = detailQuery;
   const detail = series;
   const alternateTitleText = detail?.alternateTitles?.join(' / ') ?? '';
-  const searchItems = useMemo(() => toSiteSearchItems(catalogQuery.items), [catalogQuery.items]);
-  const trendingSearchItems = useMemo(() => toTrendingSiteSearchItems(catalogQuery.items), [catalogQuery.items]);
+  const searchHighlightsQuery = useQuery({
+    queryKey: [...SERIES_CATALOG_QUERY_KEY, 'series-detail-search-highlights'],
+    queryFn: () => getHomeCatalogHighlights(12),
+    staleTime: 5 * 60 * 1000,
+  });
+  const searchItems = useMemo(() => toSiteSearchItems(searchHighlightsQuery.data ?? []), [searchHighlightsQuery.data]);
+  const trendingSearchItems = useMemo(() => toTrendingSiteSearchItems(searchHighlightsQuery.data ?? []), [searchHighlightsQuery.data]);
+  const searchSeries = useCallback(async (query: string) => {
+    const result = await getSeriesCatalogPage({ page: 1, pageSize: 4, search: query });
+    return { items: toSiteSearchItems(result.items), totalCount: result.totalCount };
+  }, []);
   const [bookmarks, setBookmarks] = useState<string[]>(() => readSet('vortex-series-bookmarks'));
   const [favoriteCount, setFavoriteCount] = useState<number>(() => {
     return parseInt(String(series?.favorites || '0').replace(/[^\d]/g, ''), 10) || 0;
@@ -295,6 +303,15 @@ export default function SeriesDetailPage() {
   const [seriesPageVisibility, setSeriesPageVisibility] = useState(
     () => getCachedSiteSettings()?.seriesPage ?? DEFAULT_SERIES_PAGE_VISIBILITY,
   );
+  const [showDetailSkeleton, setShowDetailSkeleton] = useState(false);
+  const relatedQuery = useQuery({
+    queryKey: [...SERIES_CATALOG_QUERY_KEY, 'series-detail-recommendations', series?.id, series?.category, series?.genres, series?.tags, series?.author, series?.artist],
+    queryFn: ({ signal }) => series ? getSeriesRecommendations(series, 7, signal) : Promise.resolve([]),
+    enabled: Boolean(series?.id) && seriesPageVisibility.similarSeries,
+    staleTime: 5 * 60 * 1000,
+    retry: true,
+    retryDelay: (attempt) => Math.min(1000 * (2 ** attempt), 30_000),
+  });
   const [sourceReactions, setSourceReactions] = useState<string[]>([]);
   const [visitedSources, setVisitedSources] = useState<string[]>([]);
   const [sourceSearch, setSourceSearch] = useState('');
@@ -314,6 +331,15 @@ export default function SeriesDetailPage() {
   const seriesLayoutRef = useRef<HTMLDivElement>(null);
   const [fixedRailPositions, setFixedRailPositions] = useState<FixedRailPositions | null>(null);
   const lastIncrementedSeriesIdRef = useRef<number | null>(null);
+
+  useEffect(() => {
+    if (!seriesQuery.isLoading) {
+      setShowDetailSkeleton(false);
+      return;
+    }
+    const timeout = window.setTimeout(() => setShowDetailSkeleton(true), 150);
+    return () => window.clearTimeout(timeout);
+  }, [seriesQuery.isLoading, slug]);
 
   useEffect(() => {
     setBookmarkNoticeDismissed(false);
@@ -528,7 +554,7 @@ export default function SeriesDetailPage() {
       window.cancelAnimationFrame(frame);
       window.removeEventListener('resize', scheduleUpdate);
     };
-  }, [slug, series, seriesPageVisibility.similarSeries, catalogQuery.items]);
+  }, [slug, series, seriesPageVisibility.similarSeries]);
 
   useLayoutEffect(() => {
     window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
@@ -572,22 +598,13 @@ export default function SeriesDetailPage() {
     }
   }, [series?.favorites]);
 
-  const related = useMemo(() => {
-    return catalogQuery.items
-      .filter((item) => item.slug !== slug)
-      .sort((left, right) =>
-        Number(right.pinned) - Number(left.pinned) ||
-        Number(right.rating ?? 0) - Number(left.rating ?? 0),
-      )
-      .slice(0, 7)
-      .map((item) => ({
-        title: item.title,
-        href: item.href,
-        cover: item.cover,
-        rating: item.rating,
-        chapterCount: getDisplayedChapterCount(item),
-      }));
-  }, [catalogQuery.items, slug]);
+  const related = useMemo(() => (relatedQuery.data ?? []).map((item: SeriesRecommendation) => ({
+    title: item.title,
+    href: item.href,
+    cover: item.cover,
+    rating: item.rating,
+    chapterCount: getDisplayedChapterCount(item),
+  })), [relatedQuery.data]);
 
   const toggleBookmark = async () => {
     if (!series || bookmarkBusy) return;
@@ -719,6 +736,7 @@ export default function SeriesDetailPage() {
         <SiteSearch
           items={searchItems}
           trendingItems={trendingSearchItems}
+          searchFn={searchSeries}
         />
       }
     />
@@ -734,7 +752,56 @@ export default function SeriesDetailPage() {
   if (seriesQuery.isLoading) {
     return <div className={`vortex-page series-page ${dark ? 'theme-dark' : 'theme-light'}`}>
       {siteHeader}
-      <main className="series-not-found"><div className="series-data-status" role="status"><p>Loading series from the catalog…</p></div></main>
+      {showDetailSkeleton ? <main className="series-main series-detail-loading" aria-busy="true" aria-label="Loading series details">
+        <div className={`series-layout${seriesPageVisibility.similarSeries ? '' : ' series-layout--without-sidebar'}`}>
+          <aside className="series-left-rail" aria-hidden="true">
+            <div className="series-detail-loading__cover card-shimmer" />
+            <div className="series-detail-loading__actions">
+              <span className="card-shimmer" />
+              <span className="card-shimmer" />
+            </div>
+            <span className="series-detail-loading__report card-shimmer" />
+            <div className="series-detail-loading__stats">
+              <span className="card-shimmer" />
+              <span className="card-shimmer" />
+            </div>
+            <div className="series-detail-loading__facts">
+              {Array.from({ length: 6 }, (_, index) => <span className="card-shimmer" key={index} />)}
+            </div>
+          </aside>
+          <section className="series-primary" aria-hidden="true">
+            <div className="series-detail-loading__eyebrow card-shimmer" />
+            <div className="series-detail-loading__title card-shimmer" />
+            <div className="series-detail-loading__tabs">
+              <span className="card-shimmer" />
+              <span className="card-shimmer" />
+              <span className="card-shimmer" />
+            </div>
+            <div className="series-detail-loading__search card-shimmer" />
+            <div className="series-detail-loading__mark-read">
+              <span className="card-shimmer" />
+              <div><span className="card-shimmer" /><span className="card-shimmer" /></div>
+            </div>
+            <div className="series-detail-loading__chapters">
+              {Array.from({ length: 6 }, (_, index) => (
+                <div className="series-detail-loading__chapter" key={index}>
+                  <span className="card-shimmer" />
+                  <div><span className="card-shimmer" /><span className="card-shimmer" /></div>
+                </div>
+              ))}
+            </div>
+          </section>
+          {seriesPageVisibility.similarSeries && <aside className="series-sidebar" aria-hidden="true">
+            <div className="series-detail-loading__related-title card-shimmer" />
+            {Array.from({ length: 6 }, (_, index) => (
+              <div className="series-detail-loading__related" key={index}>
+                <span className="card-shimmer" />
+                <div><span className="card-shimmer" /><span className="card-shimmer" /></div>
+              </div>
+            ))}
+          </aside>}
+        </div>
+      </main> : <main className="series-main series-detail-loading-pending" aria-busy="true"><span className="sr-only">Loading series details</span></main>}
       {seriesPageVisibility.footer && siteFooter}
     </div>;
   }
@@ -1103,9 +1170,14 @@ export default function SeriesDetailPage() {
           </section>}
         </div>
 
-        {seriesPageVisibility.similarSeries && <aside className="series-sidebar" style={fixedRailPositions?.right}>
+        {seriesPageVisibility.similarSeries && <aside className={`series-sidebar${relatedQuery.isLoading ? ' is-loading' : ''}`} style={fixedRailPositions?.right}>
           <div className="series-sidebar-head"><h2>Similar series</h2></div>
-          <div className="series-related-list">{related.map((item) => <Link href={item.href} className="series-related" key={item.href} data-testid={`link-related-${item.href.split('/').pop()}`} data-recommendation-item="true">
+          {relatedQuery.isLoading ? <div className="series-related-list" role="status" aria-label="Loading similar series">
+            {Array.from({ length: 7 }, (_, index) => <div className="series-detail-loading__related" key={index} aria-hidden="true">
+              <span className="card-shimmer" />
+              <div><span className="card-shimmer" /><span className="card-shimmer" /></div>
+            </div>)}
+          </div> : related.length > 0 ? <div className="series-related-list">{related.map((item) => <Link href={item.href} className="series-related" key={item.href} data-testid={`link-related-${item.href.split('/').pop()}`} data-recommendation-item="true">
             <span className="series-related-cover"><img src={imageUrl(item.cover, 120)} alt={item.title} width={56} height={75} loading="lazy" /></span>
             <span className="series-related-copy">
               <strong>{item.title}</strong>
@@ -1114,7 +1186,10 @@ export default function SeriesDetailPage() {
                 <span>{item.chapterCount} ch</span>
               </small>
             </span>
-          </Link>)}</div>
+          </Link>)}</div> : relatedQuery.isError ? <div className="series-empty" role="alert">Could not load similar series. <button type="button" onClick={() => void relatedQuery.refetch()}>Retry</button></div>
+            : relatedQuery.fetchStatus === 'paused' ? <div className="series-empty" role="status">Waiting for a network connection…</div>
+              : relatedQuery.isSuccess ? <div className="series-empty">No similar series found.</div>
+                : <div className="series-empty" role="alert">Similar series haven’t loaded. <button type="button" onClick={() => void relatedQuery.refetch()}>Retry</button></div>}
         </aside>}
       </div>
     </main>

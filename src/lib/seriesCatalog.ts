@@ -102,6 +102,9 @@ export type SeriesBrowseIndexItem = Pick<SeriesRecord,
   'id' | 'slug' | 'title' | 'href' | 'cover' | 'category' | 'rating' | 'status' | 'pinned' |
   'chapters' | 'genres' | 'sources' | 'facts' | 'year' | 'pageNumber' | 'pageOrder' | 'createdAt'
 >;
+export type SeriesRecommendation = Pick<SeriesRecord,
+  'title' | 'href' | 'cover' | 'rating' | 'chapters' | 'facts'
+>;
 
 
 export const SERIES_CATALOG_QUERY_KEY = ['series-catalog'] as const;
@@ -558,6 +561,55 @@ export async function getHomeCatalogHighlights(limit = 60): Promise<SeriesRecord
     .limit(limit);
   if (error) throw error;
   return (data ?? []).map(toSeriesRecord);
+}
+
+export async function getSeriesRecommendations(
+  currentSeries: Pick<SeriesRecord, 'id' | 'category' | 'genres' | 'tags' | 'author' | 'artist'>,
+  limit = 7,
+  signal?: AbortSignal,
+): Promise<SeriesRecommendation[]> {
+  const client = requireSupabase();
+  let request = client
+    .from('series')
+    .select('id, title, href, cover, rating, chapters, facts, category, genres, tags, author, artist, pinned, created_at')
+    .neq('id', currentSeries.id)
+    .order('pinned', { ascending: false })
+    .order('rating', { ascending: false, nullsFirst: false })
+    .order('created_at', { ascending: false })
+    .limit(80);
+  if (signal) request = request.abortSignal(signal);
+  const { data, error } = await request;
+  if (error) throw error;
+  const normalize = (value: string) => value.trim().toLocaleLowerCase();
+  const currentGenres = new Set(currentSeries.genres.map(normalize));
+  const currentTags = new Set(currentSeries.tags.map(normalize));
+  const currentAuthor = normalize(currentSeries.author ?? '');
+  const currentArtist = normalize(currentSeries.artist ?? '');
+  const recommendations = (data ?? []).map((row) => {
+    const sharedGenres = (row.genres ?? []).filter((genre: string) => currentGenres.has(normalize(genre))).length;
+    const sharedTags = (row.tags ?? []).filter((tag: string) => currentTags.has(normalize(tag))).length;
+    const sharesCreator = Boolean((currentAuthor && normalize(row.author ?? '') === currentAuthor)
+      || (currentArtist && normalize(row.artist ?? '') === currentArtist));
+    const sharesCategory = normalize(row.category || String(row.facts?.type ?? '')) === normalize(currentSeries.category);
+    const rating = Number.parseFloat(String(getHighestSeriesRating(row.rating) ?? '0')) || 0;
+    const similarityScore = sharedGenres * 4 + sharedTags * 2 + Number(sharesCategory) * 3
+      + Number(sharesCreator) * 2 + rating / 10;
+    return { row, similarityScore, rating };
+  });
+  return recommendations
+    .sort((left, right) => right.similarityScore - left.similarityScore
+      || Number(right.row.pinned) - Number(left.row.pinned)
+      || right.rating - left.rating
+      || Date.parse(right.row.created_at) - Date.parse(left.row.created_at))
+    .slice(0, limit)
+    .map(({ row }) => ({
+      title: row.title,
+      href: row.href,
+      cover: row.cover ?? '',
+      rating: getHighestSeriesRating(row.rating),
+      chapters: row.chapters ?? [],
+      facts: row.facts ?? {},
+    }));
 }
 
 export async function getHomeLatestReleasePage(page: number, pageSize: number, search = ''): Promise<SeriesCatalogResponse> {
