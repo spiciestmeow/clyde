@@ -960,6 +960,43 @@ export default function SeriesCatalogManager({
     return [...names.values()].sort((a, b) => a.localeCompare(b, undefined, { sensitivity: 'base' }));
   }, [catalogItems]);
 
+  const detectSourceNameFromUrl = (value: string): string | undefined => {
+    let hostname: string;
+    try {
+      hostname = new URL(value.trim()).hostname.toLocaleLowerCase().replace(/^www\./, '');
+    } catch {
+      return undefined;
+    }
+
+    const configuredNames = new Map(customSourceNames.map((name) => [
+      name.trim().toLocaleLowerCase(), name.trim(),
+    ]));
+    const knownSource = catalogItems
+      .flatMap((item) => item.sources || [])
+      .find((source) => {
+        if (!source.name?.trim() || !source.url?.trim()) return false;
+        try {
+          const sourceHost = new URL(source.url).hostname.toLocaleLowerCase().replace(/^www\./, '');
+          return sourceHost === hostname;
+        } catch {
+          return false;
+        }
+      });
+    if (knownSource?.name) {
+      const configuredMatch = configuredNames.get(knownSource.name.trim().toLocaleLowerCase());
+      if (configuredMatch) return configuredMatch;
+    }
+
+    // Match the site hostname to a configured display name, such as
+    // "vortexscans.org" -> "Vortex Scans" or "yakshacomics.com" -> "Yaksha Comics".
+    const hostKey = hostname.replace(/[^a-z0-9]/g, '');
+    const nameMatch = customSourceNames
+      .map((name) => ({ name, key: name.toLocaleLowerCase().replace(/[^a-z0-9]/g, '') }))
+      .filter(({ key }) => key.length >= 5 && (hostKey.includes(key) || key.includes(hostKey)))
+      .sort((a, b) => b.key.length - a.key.length)[0];
+    return nameMatch?.name;
+  };
+
   // Filtered titles for Main List (Image 1)
   const filteredTitles = useMemo(() => {
     const filtered = catalogItems.filter((item) => {
@@ -1044,6 +1081,7 @@ export default function SeriesCatalogManager({
       setView('list');
       setEditingSeriesId(null);
       setDraft(initialFormDraft());
+      setDirectSyncFeedback(null);
       setImportUrl('');
       setImportError(null);
       setDuplicateTitle(null);
@@ -1063,6 +1101,7 @@ export default function SeriesCatalogManager({
       setView('list');
       setEditingSeriesId(null);
       setDraft(initialFormDraft());
+      setDirectSyncFeedback(null);
       setImportUrl('');
       setImportError(null);
       setDuplicateTitle(null);
@@ -2390,9 +2429,25 @@ export default function SeriesCatalogManager({
                   value={source.url}
                   onChange={(e) => {
                     const val = e.target.value;
+                    const detectedName = detectSourceNameFromUrl(val);
+                    if (detectedName) {
+                      setPendingSourceSearches((current) => {
+                        const next = { ...current };
+                        delete next[idx];
+                        return next;
+                      });
+                    }
                     setDraft((c) => ({
                       ...c,
-                      sources: c.sources.map((s, i) => (i === idx ? { ...s, url: val } : s)),
+                      sources: c.sources.map((s, i) => {
+                        if (i !== idx) return s;
+                        const currentNameWasDetected = s.name.trim() && detectSourceNameFromUrl(s.url) === s.name;
+                        return {
+                          ...s,
+                          url: val,
+                          ...(detectedName && (!s.name.trim() || currentNameWasDetected) ? { name: detectedName } : {}),
+                        };
+                      }),
                     }));
                   }}
                 />
@@ -2745,6 +2800,7 @@ export default function SeriesCatalogManager({
                         data-label="Edit"
                         onSelect={() => {
                           setEditingSeriesId(series.id);
+                          setDirectSyncFeedback(null);
                           setDraft({
                             title: series.title || '',
                             cover: series.cover || '',
@@ -3013,6 +3069,7 @@ export default function SeriesCatalogManager({
                     onClick={() => {
                       setIsModalOpen(false);
                       setView('new-title');
+                      setDirectSyncFeedback(null);
                       setDraft(initialFormDraft());
                       setImportUrl('');
                       setImportError(null);

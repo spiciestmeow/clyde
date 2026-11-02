@@ -366,6 +366,10 @@ function isGenzToonsHost(hostname: string): boolean {
   return /(^|\.)genztoons\.(?:com|net|org)$/i.test(hostname);
 }
 
+function isYakshaComicsHost(hostname: string): boolean {
+  return /(^|\.)yakshacomics\.com$/i.test(hostname);
+}
+
 function matchChapterNumberInUrl(value: string): RegExpMatchArray | null {
   // Some sites use opaque IDs after `/chapter/` (for example, `/chapter/64f1...`).
   // Require a separator/end after the number so an ID prefix is never treated
@@ -585,6 +589,76 @@ function extractMistScanChapters(
   return Array.from(chapters.values()).sort((a, b) => b.number - a.number);
 }
 
+function extractYakshaComicsChapters(
+  html: string,
+  pageUrl: URL,
+): DetectedChapterItem[] {
+  const seriesPath = pageUrl.pathname.replace(/\/+$/, '');
+  if (!seriesPath) return [];
+
+  const chapters = new Map<number, DetectedChapterItem>();
+  const anchorRegex = /<a\b([^>]*)>([\s\S]*?)<\/a>/gi;
+  let anchorMatch: RegExpExecArray | null;
+
+  while ((anchorMatch = anchorRegex.exec(html)) !== null) {
+    const attributes = anchorMatch[1];
+    const innerHtml = anchorMatch[2];
+    const hrefMatch = attributes.match(/\bhref\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s>]+))/i);
+    const href = hrefMatch?.[1] ?? hrefMatch?.[2] ?? hrefMatch?.[3];
+    if (!href) continue;
+
+    let chapterUrl: URL;
+    try {
+      chapterUrl = new URL(href, pageUrl);
+    } catch {
+      continue;
+    }
+    if (!isSameSiteHost(chapterUrl, pageUrl)) continue;
+
+    // Yaksha's detail page shares its HTML with site-wide latest-release cards.
+    // Only accept chapter links nested under this exact manga permalink, so a
+    // popular unrelated series (for example, chapter 346) cannot win the scan.
+    const chapterPathPrefix = `${seriesPath}/chapter-`;
+    if (!chapterUrl.pathname.toLowerCase().startsWith(chapterPathPrefix.toLowerCase())) continue;
+
+    const routeChapter = chapterUrl.pathname.slice(chapterPathPrefix.length).match(/^(\d+(?:\.\d+)?)(?:\/|$)/);
+    const visibleChapter = matchChapterNumberInLabel(innerHtml);
+    const chapterLabel = visibleChapter?.[1] ?? routeChapter?.[1];
+    if (!chapterLabel) continue;
+
+    const number = Number.parseFloat(chapterLabel);
+    if (!Number.isFinite(number) || number < 0 || number >= 5000) continue;
+
+    let timestamp = extractTimeFromContext(`${attributes} ${innerHtml}`);
+    if (!timestamp) {
+      const rowContext = extractChapterRowContext(
+        html,
+        anchorMatch.index,
+        anchorMatch.index + anchorMatch[0].length,
+        number,
+      );
+      if (rowContext) timestamp = extractTimeFromContext(rowContext);
+    }
+
+    const existing = chapters.get(number);
+    if (!existing) {
+      chapters.set(number, {
+        number,
+        title: `Chapter ${chapterLabel}`,
+        url: href,
+        releasedAt: timestamp ? new Date(timestamp).toISOString() : undefined,
+      });
+    } else if (timestamp) {
+      const existingTimestamp = existing.releasedAt ? Date.parse(existing.releasedAt) : Number.NaN;
+      if (Number.isNaN(existingTimestamp) || timestamp > existingTimestamp) {
+        existing.releasedAt = new Date(timestamp).toISOString();
+      }
+    }
+  }
+
+  return Array.from(chapters.values()).sort((a, b) => b.number - a.number);
+}
+
 /**
  * Lagoon's series page can show only calendar dates while its homepage cards
  * show relative ages. Use the homepage age only when both the series permalink
@@ -760,6 +834,12 @@ export function extractChaptersFromHtml(
           : 'newest';
 
   const foundChapters = new Map<number, DetectedChapterItem>();
+
+  if (isYakshaComicsHost(parsedUrl.hostname)) {
+    // Do not fall through to the generic scraper here: it can mistake a
+    // site-wide latest-release card for a chapter from this manga.
+    return extractYakshaComicsChapters(cleanHtml, parsedUrl);
+  }
 
   if (isGenzToonsHost(parsedUrl.hostname)) {
     const genzToonsChapters = extractGenzToonsChapters(cleanHtml, parsedUrl, timestampPreference);

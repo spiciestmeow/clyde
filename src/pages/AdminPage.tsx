@@ -711,9 +711,6 @@ function ComixDashboard({
           >
             {theme === 'dark' ? <Sun size={18} /> : <Moon size={18} />}
           </button>
-          <a href="/" className="comix-icon-btn" title="View public website">
-            <ArrowLeft size={18} />
-          </a>
           <button type="button" className="comix-icon-btn" onClick={() => setActiveTab('settings')} title="Settings">
             <Settings size={18} />
           </button>
