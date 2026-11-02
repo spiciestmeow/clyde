@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import {
   BookOpen,
   BookText,
@@ -8,7 +9,7 @@ import {
   ChevronRight,
   Smartphone,
 } from 'lucide-react';
-import type { SeriesRecord } from '../lib/seriesCatalog';
+import { getSeriesCatalogPage, SERIES_CATALOG_QUERY_KEY, type SeriesRecord } from '../lib/seriesCatalog';
 
 type AdminGuideFormat = 'Manga' | 'Manhwa' | 'Manhua' | 'Novels';
 
@@ -45,6 +46,12 @@ export default function AdminGuideModal({ userId, catalogItems }: AdminGuideModa
   const [genres, setGenres] = useState<string[]>([]);
   const [selectedSeries, setSelectedSeries] = useState<number[]>([]);
   const [finding, setFinding] = useState(false);
+  const guideCatalogQuery = useQuery({
+    queryKey: [...SERIES_CATALOG_QUERY_KEY, 'admin-guide-sample'],
+    queryFn: () => getSeriesCatalogPage({ page: 1, pageSize: 25, sortOrder: 'newest' }),
+    enabled: finding,
+    staleTime: 10 * 60 * 1000,
+  });
 
   const finishGuide = useCallback(() => {
     try {
@@ -85,7 +92,8 @@ export default function AdminGuideModal({ userId, catalogItems }: AdminGuideModa
       : [...current, genre]);
   };
 
-  const recommendations = useMemo(() => catalogItems
+  const guideCatalogItems = guideCatalogQuery.data?.items ?? catalogItems;
+  const recommendations = useMemo(() => guideCatalogItems
     .map((series) => {
       const genreMatches = series.genres.filter((genre) => genres.some((picked) => picked.toLowerCase() === genre.toLowerCase())).length;
       const normalizedCategory = series.category.toLowerCase();
@@ -98,7 +106,7 @@ export default function AdminGuideModal({ userId, catalogItems }: AdminGuideModa
     .filter(({ series }) => Boolean(series.cover))
     .sort((a, b) => b.score - a.score || a.series.title.localeCompare(b.series.title))
     .slice(0, 12)
-    .map(({ series }) => series), [catalogItems, formats, genres]);
+    .map(({ series }) => series), [guideCatalogItems, formats, genres]);
 
   if (!open) return null;
 
@@ -110,7 +118,7 @@ export default function AdminGuideModal({ userId, catalogItems }: AdminGuideModa
           <h2 id="admin-guide-title">Let’s build your shelf</h2>
           <p>Three quick picks and your home page is tuned to you.</p>
           <div className="admin-guide-cover-stack" aria-hidden="true">
-            {catalogItems.slice(0, 3).map((series) => (
+            {guideCatalogItems.slice(0, 3).map((series) => (
               <img key={series.id} src={series.cover} alt="" />
             ))}
           </div>

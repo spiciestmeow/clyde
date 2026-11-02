@@ -11,9 +11,9 @@
   --cx-text: #f1f5f9;
   --cx-text-muted: #8b98a5;
   --cx-text-subtle: #64748b;
-  --cx-teal: #2dd4bf;
-  --cx-teal-hover: #14b8a6;
-  --cx-teal-text: #042f2e;
+  --cx-teal: var(--accent);
+  --cx-teal-hover: var(--accent-hover);
+  --cx-teal-text: #ffffff;
   --cx-avatar-bg: #9d174d;
   --cx-avatar-text: #ffffff;
   --cx-input-bg: #151b22;
@@ -36,8 +36,8 @@
   --cx-text: #0f172a;
   --cx-text-muted: #475569;
   --cx-text-subtle: #94a3b8;
-  --cx-teal: #0d9488;
-  --cx-teal-hover: #0f766e;
+  --cx-teal: var(--accent);
+  --cx-teal-hover: var(--accent-hover);
   --cx-teal-text: #ffffff;
   --cx-avatar-bg: #be185d;
   --cx-avatar-text: #ffffff;
@@ -714,6 +714,12 @@
   transition: border-color 0.15s ease, background-color 0.15s ease, opacity 0.15s ease;
 }
 
+.comix-new-series-row--skeleton { pointer-events: none; }
+.comix-new-series-skeleton-cover { width: 34px; height: 46px; border-radius: 4px; }
+.comix-new-series-skeleton-title { width: min(42%, 360px); height: 14px; flex: 1 1 0; }
+.comix-new-series-skeleton-tag { width: 38px; height: 22px; border-radius: 5px; }
+.comix-new-series-skeleton-action { width: 28px; height: 28px; border-radius: 5px; }
+
 .comix-new-series-row[draggable='true'] {
   cursor: grab;
 }
@@ -886,6 +892,41 @@
   gap: 16px;
   width: 100%;
 }
+
+.custom-source-name-search {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  width: 100%;
+  min-height: 40px;
+  padding: 0 11px;
+  border: 1px solid var(--cx-input-border);
+  border-radius: 7px;
+  background: var(--cx-input-bg);
+  color: var(--cx-text-subtle);
+}
+
+.custom-source-name-search:focus-within {
+  border-color: var(--cx-teal);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--cx-teal) 16%, transparent);
+}
+
+.custom-source-name-search input {
+  width: 100%;
+  min-width: 0;
+  border: 0;
+  outline: 0;
+  background: transparent;
+  color: var(--cx-text);
+  font: inherit;
+  font-size: 13px;
+}
+
+.custom-source-name-search input::placeholder { color: var(--cx-text-subtle); }
+.custom-source-name-search button { display: inline-flex; padding: 3px; border: 0; background: transparent; color: var(--cx-text-muted); cursor: pointer; }
+.custom-source-name-search button:hover { color: var(--cx-text); }
+
+.custom-source-name-no-results { margin: 0; color: var(--cx-text-muted); font-size: 12px; }
 
 .custom-source-name-groups {
   display: grid;
@@ -1393,6 +1434,8 @@
   .comix-new-series-grip { width: 15px; }
   .comix-new-series-position { flex-basis: 16px; font-size: 11px; }
   .comix-new-series-row > img { width: 28px; height: 40px; }
+  .comix-new-series-skeleton-cover { width: 28px; height: 40px; }
+  .comix-new-series-skeleton-action { width: 24px; height: 24px; }
   .comix-new-series-title { font-size: 12px; }
   .comix-new-series-tag { display: none; }
   .comix-new-series-controls { gap: 2px; }

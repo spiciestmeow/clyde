@@ -370,6 +370,14 @@ function isYakshaComicsHost(hostname: string): boolean {
   return /(^|\.)yakshacomics\.com$/i.test(hostname);
 }
 
+function isWebDexScansHost(hostname: string): boolean {
+  return /(^|\.)webdexscans\.com$/i.test(hostname);
+}
+
+function isMangaFireHost(hostname: string): boolean {
+  return /(^|\.)mangafire\.to$/i.test(hostname);
+}
+
 function matchChapterNumberInUrl(value: string): RegExpMatchArray | null {
   // Some sites use opaque IDs after `/chapter/` (for example, `/chapter/64f1...`).
   // Require a separator/end after the number so an ID prefix is never treated
@@ -659,6 +667,155 @@ function extractYakshaComicsChapters(
   return Array.from(chapters.values()).sort((a, b) => b.number - a.number);
 }
 
+function extractWebDexScansChapters(
+  html: string,
+  pageUrl: URL,
+): DetectedChapterItem[] {
+  const seriesPath = pageUrl.pathname.replace(/\/+$/, '');
+  if (!seriesPath || !/^\/series\//i.test(seriesPath)) return [];
+
+  const chapters = new Map<number, DetectedChapterItem>();
+  const anchorRegex = /<a\b([^>]*)>([\s\S]*?)<\/a>/gi;
+  let anchorMatch: RegExpExecArray | null;
+
+  while ((anchorMatch = anchorRegex.exec(html)) !== null) {
+    const attributes = anchorMatch[1];
+    const innerHtml = anchorMatch[2];
+    const chapterLabel = matchChapterNumberInLabel(`${attributes} ${innerHtml}`);
+    if (!chapterLabel) continue;
+
+    const hrefMatch = attributes.match(/\bhref\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s>]+))/i);
+    const href = hrefMatch?.[1] ?? hrefMatch?.[2] ?? hrefMatch?.[3];
+    if (!href) continue;
+
+    let chapterUrl: URL;
+    try {
+      chapterUrl = new URL(href, pageUrl);
+    } catch {
+      continue;
+    }
+    if (!isSameSiteHost(chapterUrl, pageUrl)) continue;
+
+    const chapterPath = chapterUrl.pathname.toLowerCase();
+    const belongsToSeries = chapterPath.startsWith(`${seriesPath.toLowerCase()}/`);
+    // WebDex chapter routes may use opaque IDs, so the number often exists
+    // only in the card label. Restrict candidates to chapter/read routes or
+    // routes nested under this series, excluding navigation and series cards.
+    const isChapterRoute = /(?:^|\/)(?:chapters?|read)(?:\/|-|$)/i.test(chapterPath)
+      || /(?:^|\/)chapter-\d/i.test(chapterPath);
+    if (!belongsToSeries && !isChapterRoute) continue;
+
+    const number = Number.parseFloat(chapterLabel[1]);
+    if (!Number.isFinite(number) || number < 0 || number >= 5000) continue;
+
+    let timestamp = extractTimeFromContext(`${attributes} ${innerHtml}`);
+    if (!timestamp) {
+      const rowContext = extractChapterRowContext(
+        html,
+        anchorMatch.index,
+        anchorMatch.index + anchorMatch[0].length,
+        number,
+      );
+      if (rowContext) timestamp = extractTimeFromContext(rowContext);
+    }
+
+    const existing = chapters.get(number);
+    if (!existing) {
+      chapters.set(number, {
+        number,
+        title: `Chapter ${chapterLabel[1]}`,
+        url: href,
+        releasedAt: timestamp ? new Date(timestamp).toISOString() : undefined,
+      });
+    } else if (timestamp) {
+      const existingTimestamp = existing.releasedAt ? Date.parse(existing.releasedAt) : Number.NaN;
+      if (Number.isNaN(existingTimestamp) || timestamp > existingTimestamp) {
+        existing.releasedAt = new Date(timestamp).toISOString();
+      }
+    }
+  }
+
+  return Array.from(chapters.values()).sort((a, b) => b.number - a.number);
+}
+
+function extractMangaFireChapters(
+  html: string,
+  pageUrl: URL,
+): DetectedChapterItem[] {
+  const titleSegment = pageUrl.pathname.match(/^\/title\/([^/]+)/i)?.[1];
+  const mangaId = titleSegment?.split('-')[0]?.toLowerCase();
+  if (!mangaId) return [];
+
+  const chapters = new Map<number, DetectedChapterItem>();
+  const anchorRegex = /<a\b([^>]*)>([\s\S]*?)<\/a>/gi;
+  let anchorMatch: RegExpExecArray | null;
+
+  while ((anchorMatch = anchorRegex.exec(html)) !== null) {
+    const attributes = anchorMatch[1];
+    const innerHtml = anchorMatch[2];
+    const hrefMatch = attributes.match(/\bhref\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s>]+))/i);
+    const href = hrefMatch?.[1] ?? hrefMatch?.[2] ?? hrefMatch?.[3];
+    if (!href) continue;
+
+    let chapterUrl: URL;
+    try {
+      chapterUrl = new URL(href, pageUrl);
+    } catch {
+      continue;
+    }
+    if (!isSameSiteHost(chapterUrl, pageUrl)) continue;
+
+    const chapterPath = chapterUrl.pathname.toLowerCase();
+    if (!chapterPath.startsWith('/read/')) continue;
+    // MangaFire's reader routes identify a title with its short ID (for
+    // example, /read/series-slug.mjnwz/en/chapter-15). This keeps links from
+    // other title cards on the page out of this series' results.
+    if (!new RegExp(`(?:^|[./-])${mangaId}(?:[./-]|$)`, 'i').test(chapterPath)) continue;
+
+    const routeChapter = chapterPath.match(/\/chapter-(\d+(?:\.\d+)?)(?:\/|$)/i);
+    const labelText = innerHtml
+      .replace(/<[^>]+>/g, ' ')
+      .replace(/&nbsp;|&#160;/gi, ' ')
+      .replace(/\s+/g, ' ')
+      .trim();
+    const labelChapter = labelText.match(/\b(?:ch|chapter)\.?\s*(\d+(?:\.\d+)?)/i);
+    const chapterLabel = routeChapter?.[1] ?? labelChapter?.[1];
+    if (!chapterLabel) continue;
+
+    const number = Number.parseFloat(chapterLabel);
+    if (!Number.isFinite(number) || number < 0 || number >= 5000) continue;
+
+    let timestamp = extractTimeFromContext(`${attributes} ${innerHtml}`, 'relative');
+    if (!timestamp) {
+      const rowContext = extractChapterRowContext(
+        html,
+        anchorMatch.index,
+        anchorMatch.index + anchorMatch[0].length,
+        undefined,
+        'relative',
+      );
+      if (rowContext) timestamp = extractTimeFromContext(rowContext, 'relative');
+    }
+
+    const existing = chapters.get(number);
+    if (!existing) {
+      chapters.set(number, {
+        number,
+        title: `Chapter ${chapterLabel}`,
+        url: href,
+        releasedAt: timestamp ? new Date(timestamp).toISOString() : undefined,
+      });
+    } else if (timestamp) {
+      const existingTimestamp = existing.releasedAt ? Date.parse(existing.releasedAt) : Number.NaN;
+      if (Number.isNaN(existingTimestamp) || timestamp > existingTimestamp) {
+        existing.releasedAt = new Date(timestamp).toISOString();
+      }
+    }
+  }
+
+  return Array.from(chapters.values()).sort((a, b) => b.number - a.number);
+}
+
 /**
  * Lagoon's series page can show only calendar dates while its homepage cards
  * show relative ages. Use the homepage age only when both the series permalink
@@ -839,6 +996,18 @@ export function extractChaptersFromHtml(
     // Do not fall through to the generic scraper here: it can mistake a
     // site-wide latest-release card for a chapter from this manga.
     return extractYakshaComicsChapters(cleanHtml, parsedUrl);
+  }
+
+  if (isWebDexScansHost(parsedUrl.hostname)) {
+    // WebDex chapter links can use opaque route IDs; use the chapter card's
+    // displayed number and its associated date instead of inferring from URLs.
+    return extractWebDexScansChapters(cleanHtml, parsedUrl);
+  }
+
+  if (isMangaFireHost(parsedUrl.hostname)) {
+    // MangaFire labels list entries as "Ch. N" and keeps the chapter age next
+    // to each entry, so read the route and its own row rather than other cards.
+    return extractMangaFireChapters(cleanHtml, parsedUrl);
   }
 
   if (isGenzToonsHost(parsedUrl.hostname)) {

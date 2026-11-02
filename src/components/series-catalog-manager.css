@@ -11,9 +11,9 @@
   --up-text: #e6edf3;
   --up-text-muted: #8b98a5;
   --up-text-subtle: #657484;
-  --up-teal: #2dd4bf;
-  --up-teal-hover: #14b8a6;
-  --up-teal-text: #042f2e;
+  --up-teal: var(--accent);
+  --up-teal-hover: var(--accent-hover);
+  --up-teal-text: #ffffff;
   --up-danger: #f87171;
   --up-danger-bg: #2d1616;
   --up-danger-border: #7f1d1d;
@@ -41,8 +41,8 @@
   --up-text: #0f172a;
   --up-text-muted: #475569;
   --up-text-subtle: #94a3b8;
-  --up-teal: #0d9488;
-  --up-teal-hover: #0f766e;
+  --up-teal: var(--accent);
+  --up-teal-hover: var(--accent-hover);
   --up-teal-text: #ffffff;
   --up-danger: #ef4444;
   --up-danger-bg: #fee2e2;
@@ -555,6 +555,58 @@
   transition: border-color 0.15s ease, transform 0.15s ease;
 }
 
+.title-item-card--skeleton { min-height: 96px; pointer-events: none; }
+.title-item-card--skeleton:hover { border-color: var(--up-border); transform: none; }
+.title-item-card--skeleton.is-grid-view { min-height: 0; }
+
+.title-skeleton {
+  position: relative;
+  display: block;
+  flex: 0 0 auto;
+  overflow: hidden;
+  border-radius: 5px;
+  background: color-mix(in srgb, var(--up-text) 7%, var(--up-input-bg));
+}
+
+.title-skeleton::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(105deg, transparent 20%, color-mix(in srgb, var(--up-text) 13%, transparent) 45%, color-mix(in srgb, var(--up-teal) 18%, transparent) 52%, transparent 78%);
+  transform: translateX(-100%);
+  animation: uploads-title-skeleton-shimmer 680ms ease-in-out infinite;
+}
+
+.title-skeleton-cover { width: 100%; height: 100%; border-radius: inherit; }
+.title-skeleton-info { min-width: 0; flex: 1; }
+.title-skeleton-title { width: 72%; height: 14px; margin-bottom: 8px; }
+.title-skeleton-badges, .title-skeleton-stats { display: flex; align-items: center; gap: 7px; }
+.title-skeleton-badges { margin-bottom: 6px; }
+.title-skeleton-badge { width: 48px; height: 17px; border-radius: 4px; }
+.title-skeleton-badge--wide { width: 64px; }
+.title-skeleton-badge--new { width: 31px; }
+.title-skeleton-stat { width: 43px; height: 9px; border-radius: 4px; }
+.title-skeleton-stat--short { width: 29px; }
+.title-skeleton-stat--medium { width: 55px; }
+.title-skeleton-actions { position: absolute; top: 10px; right: 10px; z-index: 2; width: 26px; height: 26px; border-radius: 6px; }
+
+.title-item-card--skeleton.is-grid-view { padding: 8px; gap: 8px; }
+.title-item-card--skeleton.is-grid-view .title-cover { width: 100%; height: auto; aspect-ratio: .72; border-radius: 6px; background: var(--up-input-bg); }
+.title-item-card--skeleton.is-grid-view .title-skeleton-info { width: 100%; display: flex; flex-direction: column; }
+.title-item-card--skeleton.is-grid-view .title-skeleton-stats { order: -1; flex-wrap: wrap; gap: 5px; margin: 0 0 5px; }
+.title-item-card--skeleton.is-grid-view .title-skeleton-title { order: 0; width: 88%; min-height: 2.7em; height: 16px; margin: 0 0 6px; }
+.title-item-card--skeleton.is-grid-view .title-skeleton-badges { order: 1; flex-wrap: wrap; gap: 4px; margin: 0; }
+.title-item-card--skeleton.is-grid-view .title-skeleton-badge { height: 16px; }
+.title-item-card--skeleton.is-grid-view .title-skeleton-actions { top: 12px; right: 12px; }
+
+@keyframes uploads-title-skeleton-shimmer {
+  100% { transform: translateX(100%); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .title-skeleton::after { animation-duration: 1800ms; }
+}
+
 .title-item-card:hover {
   border-color: var(--up-border-light);
   transform: translateY(-1px);
@@ -693,7 +745,7 @@
 
 .status-badge {
   color: var(--up-teal);
-  background-color: #042f2e44;
+  background-color: color-mix(in srgb, var(--up-teal) 14%, transparent);
 }
 
 .title-stats {
@@ -877,7 +929,7 @@ body:has(.comix-admin-wrapper.theme-light) .title-actions-menu-item > svg {
 
 body:has(.comix-admin-wrapper.theme-light) .title-actions-menu-item:hover,
 body:has(.comix-admin-wrapper.theme-light) .title-actions-menu-item:focus-visible {
-  color: #0d9488;
+  color: var(--up-teal);
   background: #f1f5f9;
 }
 
@@ -922,7 +974,7 @@ body:has(.comix-admin-wrapper.theme-dark) .title-actions-menu-item > svg {
 
 body:has(.comix-admin-wrapper.theme-dark) .title-actions-menu-item:hover,
 body:has(.comix-admin-wrapper.theme-dark) .title-actions-menu-item:focus-visible {
-  color: #2dd4bf;
+  color: var(--up-teal);
   background: #242d38;
 }
 
@@ -1637,7 +1689,7 @@ body:has(.comix-admin-wrapper.theme-dark) .title-actions-menu-item::after {
 
 .credits-autocomplete-item:hover,
 .credits-autocomplete-item.is-highlighted {
-  color: var(--up-teal, #2dd4bf);
+  color: var(--up-teal, var(--accent));
   background-color: var(--up-menu-hover, #242d38);
 }
 

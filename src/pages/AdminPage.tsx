@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState, type FormEvent } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import type { Session } from '@supabase/supabase-js';
 import {
   ArrowLeft,
@@ -60,7 +61,7 @@ import {
   type SiteSettings,
 } from '../lib/siteSettings';
 import { supabase, supabaseConfigReady } from '../lib/supabase';
-import { useSeriesCatalog } from '../hooks/useSeriesCatalog';
+import { getSeriesCatalog, getSeriesCatalogCount, getSeriesCatalogCoverSamples, SERIES_CATALOG_QUERY_KEY } from '../lib/seriesCatalog';
 import './admin-comix.css';
 
 function AdminBrand({ href }: { href?: string }) {
@@ -168,8 +169,13 @@ const seriesFilterVisibilityOptions: { key: keyof SeriesFilterVisibility; label:
 export default function AdminPage() {
   const [session, setSession] = useState<Session | null>(null);
   const [checkingSession, setCheckingSession] = useState(true);
-  const catalogQuery = useSeriesCatalog();
-  const loginCovers = catalogQuery.items.map((item) => item.cover).filter(Boolean).slice(0, 12);
+  const loginCoversQuery = useQuery({
+    queryKey: [...SERIES_CATALOG_QUERY_KEY, 'admin-login-covers'],
+    queryFn: getSeriesCatalogCoverSamples,
+    enabled: !session && !checkingSession,
+    staleTime: 10 * 60 * 1000,
+  });
+  const loginCovers = loginCoversQuery.data ?? [];
 
   // Theme toggle state (light / dark)
   const [theme, setTheme] = useState<'dark' | 'light'>(() => {
@@ -440,11 +446,20 @@ function ComixDashboard({
   const [topSearch, setTopSearch] = useState('');
 
   // Series catalog stats
-  const catalogQuery = useSeriesCatalog();
-  const catalogItems = catalogQuery.items;
-  const totalChapters = useMemo(() => {
-    return catalogItems.reduce((acc, s) => acc + (s.chapters?.length || 0), 0);
-  }, [catalogItems]);
+  const catalogCountQuery = useQuery({
+    queryKey: [...SERIES_CATALOG_QUERY_KEY, 'admin-count'],
+    queryFn: getSeriesCatalogCount,
+    staleTime: 10 * 60 * 1000,
+  });
+  const catalogQuery = useQuery({
+    queryKey: [...SERIES_CATALOG_QUERY_KEY, 'admin-full'],
+    queryFn: getSeriesCatalog,
+    enabled: activeTab === 'import-export',
+    staleTime: 10 * 60 * 1000,
+  });
+  const catalogItems = catalogQuery.data?.items ?? [];
+  const totalTitleCount = catalogCountQuery.data ?? 0;
+  const totalChapters = useMemo(() => catalogItems.reduce((acc, s) => acc + (s.chapters?.length || 0), 0), [catalogItems]);
   const totalGroups = useMemo(() => {
     const names = new Set<string>();
     catalogItems.forEach((series) => {
@@ -464,12 +479,13 @@ function ComixDashboard({
   const [saveMessage, setSaveMessage] = useState('Saved');
   const [facebookUrlInput, setFacebookUrlInput] = useState('https://facebook.com');
   const [customSourceNamesDraft, setCustomSourceNamesDraft] = useState<string[]>(DEFAULT_CUSTOM_SOURCE_NAMES);
+  const [customSourceNamesSearch, setCustomSourceNamesSearch] = useState('');
   const [customSourceNameInput, setCustomSourceNameInput] = useState('');
   const groupedCustomSourceNames = useMemo(() => {
     const groups = new Map<string, string[]>();
     [...customSourceNamesDraft]
       .map((name) => name.trim())
-      .filter(Boolean)
+      .filter((name) => name && name.toLocaleLowerCase().includes(customSourceNamesSearch.trim().toLocaleLowerCase()))
       .sort((a, b) => a.localeCompare(b, undefined, { sensitivity: 'base' }))
       .forEach((name) => {
         const firstCharacter = name.charAt(0).toLocaleUpperCase();
@@ -477,7 +493,7 @@ function ComixDashboard({
         groups.set(letter, [...(groups.get(letter) || []), name]);
       });
     return [...groups.entries()].sort(([a], [b]) => a.localeCompare(b));
-  }, [customSourceNamesDraft]);
+  }, [customSourceNamesDraft, customSourceNamesSearch]);
 
   useEffect(() => {
     if (!profileMenuOpen) return;
@@ -574,6 +590,7 @@ function ComixDashboard({
     if (!settings || savingSettings || settings.accentTheme === accentTheme) return;
     const previousSettings = settings;
     const nextSettings: SiteSettings = { ...settings, accentTheme };
+    document.documentElement.dataset.accentTheme = accentTheme;
     setSettings(nextSettings);
     setSavingSettings(true);
     setSaveMessage('Saving...');
@@ -582,6 +599,7 @@ function ComixDashboard({
       setSettings(saved);
       setSaveMessage('Saved');
     } catch {
+      document.documentElement.dataset.accentTheme = previousSettings.accentTheme;
       setSettings(previousSettings);
       setSaveMessage('Error saving');
     } finally {
@@ -786,15 +804,15 @@ function ComixDashboard({
 
           <div className="comix-stats-row">
             <div className="comix-stat-col">
-              <span className="comix-stat-number">{catalogItems.length}</span>
+              <span className="comix-stat-number">{catalogCountQuery.isPending ? '…' : totalTitleCount}</span>
               <span className="comix-stat-label">Titles</span>
             </div>
             <div className="comix-stat-col">
-              <span className="comix-stat-number">{totalGroups}</span>
+              <span className="comix-stat-number">{activeTab !== 'import-export' ? '—' : catalogQuery.isPending ? '…' : totalGroups}</span>
               <span className="comix-stat-label">Groups</span>
             </div>
             <div className="comix-stat-col">
-              <span className="comix-stat-number">{totalChapters}</span>
+              <span className="comix-stat-number">{activeTab !== 'import-export' ? '—' : catalogQuery.isPending ? '…' : totalChapters}</span>
               <span className="comix-stat-label">Chapters</span>
             </div>
             <div className="comix-stat-col">
@@ -838,7 +856,7 @@ function ComixDashboard({
                   >
                     <Icon size={16} />
                     <span>{label}</span>
-                    {id === 'uploads' && <span className="nav-badge">{catalogItems.length}</span>}
+                    {id === 'uploads' && <span className="nav-badge">{catalogCountQuery.isPending ? '…' : totalTitleCount}</span>}
                   </button>
                 ))}
               </div>
@@ -935,7 +953,7 @@ function ComixDashboard({
             >
               <Upload size={16} className="nav-icon" />
               <span>Uploaded Chapters</span>
-              <span className="nav-badge">{catalogItems.length}</span>
+              <span className="nav-badge">{catalogCountQuery.isPending ? '…' : totalTitleCount}</span>
             </button>
 
             <button
@@ -1316,6 +1334,21 @@ function ComixDashboard({
                         <span>Add source names here before using them on a series. Series source names must be selected from this saved list, which appears in alphabetical order.</span>
                       </div>
                       <div className="custom-source-name-editor">
+                        <label className="custom-source-name-search">
+                          <Search size={16} aria-hidden="true" />
+                          <input
+                            type="search"
+                            aria-label="Search saved source names"
+                            placeholder="Search source names..."
+                            value={customSourceNamesSearch}
+                            onChange={(event) => setCustomSourceNamesSearch(event.target.value)}
+                          />
+                          {customSourceNamesSearch && (
+                            <button type="button" aria-label="Clear source name search" onClick={() => setCustomSourceNamesSearch('')}>
+                              <X size={14} />
+                            </button>
+                          )}
+                        </label>
                         {groupedCustomSourceNames.length > 0 && (
                           <div className="custom-source-name-groups" aria-label="Saved source names, grouped alphabetically">
                             {groupedCustomSourceNames.map(([letter, names]) => (
@@ -1340,6 +1373,11 @@ function ComixDashboard({
                               </section>
                             ))}
                           </div>
+                        )}
+                        {groupedCustomSourceNames.length === 0 && (
+                          <p className="custom-source-name-no-results" role="status">
+                            {customSourceNamesSearch.trim() ? 'No source names match your search.' : 'No source names saved yet.'}
+                          </p>
                         )}
                         <form
                           className="custom-source-name-add-row"
@@ -1382,7 +1420,7 @@ function ComixDashboard({
                 {settings && settingsSubTab === 'theme' && (
                   <div className="comix-setting-group">
                     <div className="comix-group-title">Site accent theme</div>
-                    <p className="comix-theme-description">Choose the accent color used across the public site. The current orange palette is saved as Halloween.</p>
+                    <p className="comix-theme-description">Choose the accent color used across the public site and admin pages. The current orange palette is saved as Halloween.</p>
                     <div className="comix-theme-options">
                       <button
                         type="button"
@@ -1440,6 +1478,7 @@ function ComixDashboard({
                     <button
                       type="button"
                       className="btn-dark"
+                      disabled={catalogQuery.isPending}
                       onClick={() => {
                         const blob = new Blob([JSON.stringify(catalogItems, null, 2)], { type: 'application/json' });
                         const url = URL.createObjectURL(blob);
@@ -1450,7 +1489,7 @@ function ComixDashboard({
                         URL.revokeObjectURL(url);
                       }}
                     >
-                      <Download size={15} /> Export JSON
+                      <Download size={15} /> {catalogQuery.isPending ? 'Loading catalog…' : 'Export JSON'}
                     </button>
                   </div>
                 </div>

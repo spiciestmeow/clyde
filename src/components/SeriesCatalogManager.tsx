@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState, type ChangeEvent, type FormEvent, type KeyboardEvent as ReactKeyboardEvent } from 'react';
 import { createPortal } from 'react-dom';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   AlertCircle,
   AlertTriangle,
@@ -39,16 +39,20 @@ import {
   updateSeriesRecord,
   deleteSeriesRecord,
   addSeriesChapter,
+  getSeriesCatalog,
+  getNewSeriesCatalogIndex,
+  getSeriesCatalogByIds,
+  getSeriesCatalogPage,
   SERIES_CATALOG_QUERY_KEY,
   type CreateSeriesRequest,
   type UpdateSeriesRequest,
   type SeriesLink,
   type SeriesRecord,
 } from '../lib/seriesCatalog';
-import { useSeriesCatalog } from '../hooks/useSeriesCatalog';
 import { fetchMangaDexDetails } from '../lib/mangadex';
 import { uploadOrCompressCover } from '../lib/imageUpload';
 import { getWinningChapterSource } from '../lib/sourcePriority';
+import { getPaginationItems } from '../lib/pagination';
 import './series-catalog-manager.css';
 import { BackgroundSyncTimer } from './BackgroundSyncTimer';
 import { SyncActivityLogs } from './SyncActivityLogs';
@@ -106,6 +110,7 @@ const ALL_DEMOGRAPHICS = ['Josei', 'Seinen', 'Shoujo', 'Shounen'];
 const ALL_TYPES = ['Manga', 'Manhwa', 'Manhua', 'Comic', 'Novel'];
 const ALL_RATINGS = ['Safe', 'Suggestive', 'Erotica', 'Pornographic'];
 const ALL_STATUSES = ['Releasing', 'Completed', 'Hiatus', 'Cancelled'];
+const TITLE_PAGE_SIZE = 25;
 
 function UploadFilterDropdown({
   label,
@@ -588,6 +593,61 @@ function SourceNameAutocomplete({
   );
 }
 
+function TitleCardSkeleton({ grid }: { grid: boolean }) {
+  return (
+    <div className={`title-item-card title-item-card--skeleton${grid ? ' is-grid-view' : ''}`} aria-hidden="true">
+      <div className={`title-cover${grid ? ' is-placeholder' : ''}`}>
+        <span className="title-skeleton title-skeleton-cover" />
+      </div>
+      <div className={`title-info title-skeleton-info${grid ? ' is-grid' : ''}`}>
+        {grid && (
+          <div className="title-skeleton-stats">
+            <span className="title-skeleton title-skeleton-stat title-skeleton-stat--short" />
+            <span className="title-skeleton title-skeleton-stat" />
+            <span className="title-skeleton title-skeleton-stat title-skeleton-stat--medium" />
+          </div>
+        )}
+        <span className="title-skeleton title-skeleton-title" />
+        {!grid && (
+          <div className="title-skeleton-badges">
+            <span className="title-skeleton title-skeleton-badge" />
+            <span className="title-skeleton title-skeleton-badge title-skeleton-badge--wide" />
+          </div>
+        )}
+        {grid && (
+          <div className="title-skeleton-badges">
+            <span className="title-skeleton title-skeleton-badge" />
+            <span className="title-skeleton title-skeleton-badge title-skeleton-badge--wide" />
+            <span className="title-skeleton title-skeleton-badge title-skeleton-badge--new" />
+          </div>
+        )}
+        {!grid && (
+          <div className="title-skeleton-stats">
+            <span className="title-skeleton title-skeleton-stat title-skeleton-stat--short" />
+            <span className="title-skeleton title-skeleton-stat" />
+            <span className="title-skeleton title-skeleton-stat title-skeleton-stat--medium" />
+          </div>
+        )}
+      </div>
+      <span className="title-skeleton title-skeleton-actions" />
+    </div>
+  );
+}
+
+function NewSeriesOrderSkeleton({ position }: { position: number }) {
+  return (
+    <div className="comix-new-series-row comix-new-series-row--skeleton" aria-hidden="true">
+      <GripVertical className="comix-new-series-grip" size={18} />
+      <span className="comix-new-series-position">{position}</span>
+      <span className="title-skeleton comix-new-series-skeleton-cover" />
+      <span className="title-skeleton comix-new-series-skeleton-title" />
+      <span className="title-skeleton comix-new-series-skeleton-tag" />
+      <span className="title-skeleton comix-new-series-skeleton-action" />
+      <span className="title-skeleton comix-new-series-skeleton-action" />
+    </div>
+  );
+}
+
 export default function SeriesCatalogManager({
   globalSearch = '',
   newSeriesOrder = [],
@@ -604,8 +664,6 @@ export default function SeriesCatalogManager({
   newSeriesOrderSaveMessage?: string;
 }) {
   const queryClient = useQueryClient();
-  const catalogQuery = useSeriesCatalog();
-  const catalogItems = catalogQuery.items;
   const [savedTitleEditor] = useState(loadTitleEditorSession);
 
   // View state: 'list' (Image 1) or 'new-title' (Image 3)
@@ -614,6 +672,13 @@ export default function SeriesCatalogManager({
   const [isModalOpen, setIsModalOpen] = useState(false);
   // Main tabs: 'titles' or 'chapters'
   const [mainTab, setMainTab] = useState<'titles' | 'chapters' | 'new-order'>('titles');
+  const catalogQuery = useQuery({
+    queryKey: [...SERIES_CATALOG_QUERY_KEY, 'admin-full'],
+    queryFn: getSeriesCatalog,
+    enabled: view === 'new-title' || isModalOpen,
+    staleTime: 10 * 60 * 1000,
+  });
+  const catalogItems = catalogQuery.data?.items ?? [];
   const [titleLayout, setTitleLayout] = useState<'list' | 'grid'>(() => {
     try {
       return localStorage.getItem(TITLE_LAYOUT_STORAGE_KEY) === 'grid' ? 'grid' : 'list';
@@ -630,6 +695,72 @@ export default function SeriesCatalogManager({
   const [statusFilters, setStatusFilters] = useState<string[]>([]);
   const [sourceFilters, setSourceFilters] = useState<string[]>([]);
   const [sortOrder, setSortOrder] = useState<'newest' | 'oldest'>('newest');
+  const [titlePage, setTitlePage] = useState(1);
+  const [newSeriesPage, setNewSeriesPage] = useState(1);
+  const [debouncedListSearch, setDebouncedListSearch] = useState('');
+  const titleSearch = globalSearch.trim() || debouncedListSearch.trim();
+  const titlePageQuery = useQuery({
+    queryKey: [...SERIES_CATALOG_QUERY_KEY, 'admin-page', {
+      page: titlePage,
+      search: titleSearch,
+      categories: typeFilters,
+      statuses: statusFilters,
+      sources: sourceFilters,
+      sortOrder,
+    }],
+    queryFn: () => getSeriesCatalogPage({
+      page: titlePage,
+      pageSize: TITLE_PAGE_SIZE,
+      search: titleSearch,
+      categories: typeFilters,
+      statuses: statusFilters.flatMap((status) => status === 'Releasing' ? ['Releasing', 'Ongoing'] : [status]),
+      sources: sourceFilters,
+      sortOrder,
+    }),
+    placeholderData: keepPreviousData,
+    staleTime: 2 * 60 * 1000,
+    enabled: view === 'list' && mainTab === 'titles',
+  });
+  const isTitleTransitioning = titlePageQuery.isFetching;
+  const pagedTitles = titlePageQuery.data?.items ?? [];
+  const filteredTitleCount = titlePageQuery.data?.totalCount ?? 0;
+  const newSeriesIndexQuery = useQuery({
+    queryKey: [...SERIES_CATALOG_QUERY_KEY, 'admin-new-series-index'],
+    queryFn: getNewSeriesCatalogIndex,
+    enabled: mainTab === 'new-order',
+    staleTime: 2 * 60 * 1000,
+  });
+  const newSeriesIndex = newSeriesIndexQuery.data ?? [];
+  const orderedNewSeriesIds = useMemo(() => [...newSeriesIndex]
+    .sort((left, right) => {
+      const leftIndex = newSeriesOrder.indexOf(String(left.id));
+      const rightIndex = newSeriesOrder.indexOf(String(right.id));
+      if (leftIndex !== -1 || rightIndex !== -1) {
+        if (leftIndex === -1) return -1;
+        if (rightIndex === -1) return 1;
+        if (leftIndex !== rightIndex) return leftIndex - rightIndex;
+      }
+      const leftCreated = left.createdAt ? new Date(left.createdAt).getTime() : left.id;
+      const rightCreated = right.createdAt ? new Date(right.createdAt).getTime() : right.id;
+      return rightCreated - leftCreated;
+    })
+    .map((item) => item.id), [newSeriesIndex, newSeriesOrder]);
+  const newSeriesPageCount = Math.max(1, Math.ceil(orderedNewSeriesIds.length / TITLE_PAGE_SIZE));
+  const currentNewSeriesPage = Math.min(newSeriesPage, newSeriesPageCount);
+  const newSeriesPageIds = orderedNewSeriesIds.slice(
+    (currentNewSeriesPage - 1) * TITLE_PAGE_SIZE,
+    currentNewSeriesPage * TITLE_PAGE_SIZE,
+  );
+  const newSeriesPageQuery = useQuery({
+    queryKey: [...SERIES_CATALOG_QUERY_KEY, 'admin-new-series-page', currentNewSeriesPage, newSeriesPageIds],
+    queryFn: () => getSeriesCatalogByIds(newSeriesPageIds),
+    placeholderData: keepPreviousData,
+    staleTime: 2 * 60 * 1000,
+    enabled: mainTab === 'new-order' && newSeriesIndexQuery.isSuccess && newSeriesPageIds.length > 0,
+  });
+  const newTaggedSeries = newSeriesPageQuery.data ?? [];
+  const isNewSeriesPageLoading = mainTab === 'new-order' &&
+    (newSeriesIndexQuery.isPending || newSeriesIndexQuery.isFetching || newSeriesPageQuery.isFetching);
 
   useEffect(() => {
     try {
@@ -638,6 +769,19 @@ export default function SeriesCatalogManager({
       // Keep the view switch usable when browser storage is unavailable.
     }
   }, [titleLayout]);
+
+  useEffect(() => {
+    setTitlePage(1);
+  }, [globalSearch]);
+
+  useEffect(() => {
+    const timer = window.setTimeout(() => setDebouncedListSearch(listSearch), 250);
+    return () => window.clearTimeout(timer);
+  }, [listSearch]);
+
+  useEffect(() => {
+    setTitlePage(1);
+  }, [debouncedListSearch, typeFilters, statusFilters, sourceFilters, sortOrder]);
 
   // Modal search
   const [modalSearch, setModalSearch] = useState('');
@@ -951,6 +1095,10 @@ export default function SeriesCatalogManager({
 
   const sourceFilterOptions = useMemo(() => {
     const names = new Map<string, string>();
+    customSourceNames.forEach((name) => {
+      const clean = name.trim();
+      if (clean) names.set(clean.toLocaleLowerCase(), clean);
+    });
     catalogItems.forEach((item) => {
       item.sources?.forEach((source) => {
         const name = source.name?.trim();
@@ -958,7 +1106,7 @@ export default function SeriesCatalogManager({
       });
     });
     return [...names.values()].sort((a, b) => a.localeCompare(b, undefined, { sensitivity: 'base' }));
-  }, [catalogItems]);
+  }, [catalogItems, customSourceNames]);
 
   const detectSourceNameFromUrl = (value: string): string | undefined => {
     let hostname: string;
@@ -997,65 +1145,24 @@ export default function SeriesCatalogManager({
     return nameMatch?.name;
   };
 
-  // Filtered titles for Main List (Image 1)
-  const filteredTitles = useMemo(() => {
-    const filtered = catalogItems.filter((item) => {
-      if (typeFilters.length > 0) {
-        const itemType = (item.category || item.facts?.type || '').toLowerCase();
-        if (!itemType || !typeFilters.some((type) => itemType === type.toLowerCase())) return false;
-      }
-      if (statusFilters.length > 0) {
-        const itemStatus = (item.status || '').toLowerCase();
-        const matchesStatus = statusFilters.some((status) => {
-          const filterNorm = status.toLowerCase();
-          if (filterNorm === 'releasing') return itemStatus === 'releasing' || itemStatus === 'ongoing';
-          return itemStatus === filterNorm;
-        });
-        if (!matchesStatus) return false;
-      }
-      if (sourceFilters.length > 0) {
-        const itemSources = new Set((item.sources || [])
-          .map((source) => source.name?.trim().toLocaleLowerCase())
-          .filter((name): name is string => !!name));
-        if (!sourceFilters.some((source) => itemSources.has(source.toLocaleLowerCase()))) return false;
-      }
-      const searchTerm = (globalSearch.trim() || listSearch.trim()).toLowerCase();
-      if (searchTerm) {
-        const term = searchTerm;
-        const matchTitle = item.title.toLowerCase().includes(term);
-        const matchSlug = item.slug.toLowerCase().includes(term);
-        const matchAlt = item.alternateTitles?.some((alt) => alt.toLowerCase().includes(term));
-        if (!matchTitle && !matchSlug && !matchAlt) return false;
-      }
-      return true;
-    });
-    // Sort by date added (createdAt) or id as fallback
-    filtered.sort((a, b) => {
-      const aTime = a.createdAt ? new Date(a.createdAt).getTime() : (a.id || 0);
-      const bTime = b.createdAt ? new Date(b.createdAt).getTime() : (b.id || 0);
-      return sortOrder === 'newest' ? bTime - aTime : aTime - bTime;
-    });
-    return filtered;
-  }, [catalogItems, globalSearch, listSearch, typeFilters, statusFilters, sourceFilters, sortOrder]);
+  const titlePageCount = Math.max(1, Math.ceil(filteredTitleCount / TITLE_PAGE_SIZE));
+  const currentTitlePage = titlePage;
+  const titlePaginationItems = getPaginationItems(titlePageCount, currentTitlePage);
 
-  const newTaggedSeries = useMemo(() => catalogItems
-    .filter((item) => item.isNew || item.facts?.is_new === 'true')
-    .sort((left, right) => {
-      const leftIndex = newSeriesOrder.indexOf(String(left.id));
-      const rightIndex = newSeriesOrder.indexOf(String(right.id));
-      if (leftIndex !== -1 || rightIndex !== -1) {
-        if (leftIndex === -1) return -1;
-        if (rightIndex === -1) return 1;
-        if (leftIndex !== rightIndex) return leftIndex - rightIndex;
-      }
-      const leftCreated = left.createdAt ? new Date(left.createdAt).getTime() : (left.id || 0);
-      const rightCreated = right.createdAt ? new Date(right.createdAt).getTime() : (right.id || 0);
-      return rightCreated - leftCreated;
-    }), [catalogItems, newSeriesOrder]);
+  const changeTitlePage = (page: number) => {
+    if (page === currentTitlePage) return;
+    setTitlePage(page);
+  };
+
+  const changeTitleLayout = (layout: 'list' | 'grid') => {
+    if (layout === titleLayout) return;
+    setTitleLayout(layout);
+    void titlePageQuery.refetch();
+  };
 
   const moveNewSeries = (sourceId: number, targetId: number) => {
     if (sourceId === targetId || isSavingNewSeriesOrder || !onSaveNewSeriesOrder) return;
-    const orderedIds = newTaggedSeries.map((item) => item.id);
+    const orderedIds = [...orderedNewSeriesIds];
     const sourceIndex = orderedIds.indexOf(sourceId);
     const targetIndex = orderedIds.indexOf(targetId);
     if (sourceIndex === -1 || targetIndex === -1) return;
@@ -2647,19 +2754,15 @@ export default function SeriesCatalogManager({
           className={`uploads-tab ${mainTab === 'new-order' ? 'is-active' : ''}`}
           onClick={() => setMainTab('new-order')}
         >
-          New Series Order <span className="comix-order-count">{newTaggedSeries.length}</span>
+          New Series Order <span className="comix-order-count">{newSeriesIndexQuery.isPending ? '…' : orderedNewSeriesIds.length}</span>
         </button>
       </div>
 
       {/* Filter and Search Bar */}
       {mainTab === 'titles' && <div className="uploads-filter-bar">
         <div className="uploads-title-result-count" aria-live="polite">
-          <strong>{filteredTitles.length}</strong>
-          <span>
-            {filteredTitles.length === catalogItems.length
-              ? (catalogItems.length === 1 ? 'title' : 'titles')
-              : `of ${catalogItems.length} titles`}
-          </span>
+          <strong>{filteredTitleCount}</strong>
+          <span>{filteredTitleCount === 1 ? 'title' : 'titles'}</span>
         </div>
         <div className="search-input-box">
           <Search size={16} className="search-icon" />
@@ -2667,10 +2770,13 @@ export default function SeriesCatalogManager({
             type="text"
             placeholder="Search titles you uploaded..."
             value={listSearch}
-            onChange={(e) => setListSearch(e.target.value)}
+            onChange={(e) => {
+              setTitlePage(1);
+              setListSearch(e.target.value);
+            }}
           />
           {listSearch && (
-            <button type="button" className="search-clear" onClick={() => setListSearch('')}>
+            <button type="button" className="search-clear" onClick={() => { setTitlePage(1); setListSearch(''); }}>
               <X size={14} />
             </button>
           )}
@@ -2682,10 +2788,13 @@ export default function SeriesCatalogManager({
           options={['All types', ...ALL_TYPES]}
           multiple
           selectedValues={typeFilters}
-          onToggleOption={(type) => setTypeFilters((current) => {
-            if (!type) return [];
-            return current.includes(type) ? current.filter((selected) => selected !== type) : [...current, type];
-          })}
+          onToggleOption={(type) => {
+            setTitlePage(1);
+            setTypeFilters((current) => {
+              if (!type) return [];
+              return current.includes(type) ? current.filter((selected) => selected !== type) : [...current, type];
+            });
+          }}
         />
 
         <UploadFilterDropdown
@@ -2694,10 +2803,13 @@ export default function SeriesCatalogManager({
           options={['All statuses', ...ALL_STATUSES]}
           multiple
           selectedValues={statusFilters}
-          onToggleOption={(status) => setStatusFilters((current) => {
-            if (!status) return [];
-            return current.includes(status) ? current.filter((selected) => selected !== status) : [...current, status];
-          })}
+          onToggleOption={(status) => {
+            setTitlePage(1);
+            setStatusFilters((current) => {
+              if (!status) return [];
+              return current.includes(status) ? current.filter((selected) => selected !== status) : [...current, status];
+            });
+          }}
         />
 
         <UploadFilterDropdown
@@ -2706,17 +2818,23 @@ export default function SeriesCatalogManager({
           options={['All sources', ...sourceFilterOptions]}
           multiple
           selectedValues={sourceFilters}
-          onToggleOption={(source) => setSourceFilters((current) => {
-            if (!source) return [];
-            return current.includes(source) ? current.filter((selected) => selected !== source) : [...current, source];
-          })}
+          onToggleOption={(source) => {
+            setTitlePage(1);
+            setSourceFilters((current) => {
+              if (!source) return [];
+              return current.includes(source) ? current.filter((selected) => selected !== source) : [...current, source];
+            });
+          }}
         />
 
         <UploadFilterDropdown
           label="Sort titles"
           value={sortOrder === 'newest' ? 'Newest first' : 'Oldest first'}
           options={['Newest first', 'Oldest first']}
-          onChange={(value) => setSortOrder(value === 'newest' || value === 'Newest first' ? 'newest' : 'oldest')}
+          onChange={(value) => {
+            setTitlePage(1);
+            setSortOrder(value === 'newest' || value === 'Newest first' ? 'newest' : 'oldest');
+          }}
         />
 
         <div className="uploads-layout-toggle" role="group" aria-label="Title layout">
@@ -2726,7 +2844,7 @@ export default function SeriesCatalogManager({
             title="List view"
             aria-pressed={titleLayout === 'list'}
             className={titleLayout === 'list' ? 'is-active' : ''}
-            onClick={() => setTitleLayout('list')}
+            onClick={() => changeTitleLayout('list')}
           >
             <List size={15} />
           </button>
@@ -2736,7 +2854,7 @@ export default function SeriesCatalogManager({
             title="Grid view"
             aria-pressed={titleLayout === 'grid'}
             className={titleLayout === 'grid' ? 'is-active' : ''}
-            onClick={() => setTitleLayout('grid')}
+            onClick={() => changeTitleLayout('grid')}
           >
             <Grid2X2 size={15} />
           </button>
@@ -2745,7 +2863,7 @@ export default function SeriesCatalogManager({
 
       {/* Main Content Area: Empty State or Grid */}
       {mainTab === 'titles' ? (
-        filteredTitles.length === 0 ? (
+        !titlePageQuery.isPending && filteredTitleCount === 0 ? (
           <div className="uploads-empty-state">
             <div className="empty-icon-outline">
               <FileText size={32} strokeWidth={1.5} />
@@ -2754,9 +2872,17 @@ export default function SeriesCatalogManager({
             <p className="empty-subtitle">Upload a chapter to any manga page to start.</p>
           </div>
         ) : (
-          <div className={`uploads-titles-grid${titleLayout === 'grid' ? ' is-grid-view' : ''}`}>
-            {filteredTitles.map((series) => (
-              <div key={series.id} className={`title-item-card${titleLayout === 'grid' ? ' is-grid-view' : ''}`}>
+          <>
+          <div className={`uploads-titles-grid${titleLayout === 'grid' ? ' is-grid-view' : ''}`} aria-busy={isTitleTransitioning}>
+            {isTitleTransitioning
+              ? Array.from({ length: titlePageQuery.isPending ? TITLE_PAGE_SIZE : pagedTitles.length || Math.min(TITLE_PAGE_SIZE, Math.max(1, filteredTitleCount - (currentTitlePage - 1) * TITLE_PAGE_SIZE)) }, (_, index) => (
+                  <TitleCardSkeleton key={`skeleton-${currentTitlePage}-${index}`} grid={titleLayout === 'grid'} />
+                ))
+              : pagedTitles.map((series) => (
+              <div
+                key={series.id}
+                className={`title-item-card${titleLayout === 'grid' ? ' is-grid-view' : ''}`}
+              >
                 <div className={`title-cover${series.cover ? '' : ' is-placeholder'}`}>
                   {series.cover ? (
                     <img className="title-cover-image" src={series.cover} alt={series.title} loading="lazy" />
@@ -2770,7 +2896,7 @@ export default function SeriesCatalogManager({
                     <span className="badge-tag">{series.category || 'Manga'}</span>
                     <span className="badge-tag status-badge">{series.status || 'Ongoing'}</span>
                     {series.isNew && (
-                      <span className="badge-tag" style={{ background: '#059669', color: '#fff', fontWeight: 600 }}>
+                      <span className="badge-tag" style={{ background: 'var(--accent)', color: '#fff', fontWeight: 600 }}>
                         New
                       </span>
                     )}
@@ -2862,6 +2988,34 @@ export default function SeriesCatalogManager({
               </div>
             ))}
           </div>
+          {filteredTitleCount > TITLE_PAGE_SIZE && (
+            <div className="release-pagination-wrap">
+              <nav className="release-pagination" aria-label="Uploaded title pages">
+                <div className="release-pagination__controls">
+                  <button type="button" className="release-page-button release-page-button--edge" aria-label="First page" onClick={() => changeTitlePage(1)} disabled={currentTitlePage === 1 || isTitleTransitioning}>«</button>
+                  <button type="button" className="release-page-button" aria-label="Previous page" onClick={() => changeTitlePage(currentTitlePage - 1)} disabled={currentTitlePage === 1 || isTitleTransitioning}>‹</button>
+                </div>
+                <ul className="release-pagination__pages">
+                  {titlePaginationItems.map((item, index) => item === 'ellipsis'
+                    ? <li key={`ellipsis-${index}`}><span className="release-page-button release-page-button--ellipsis" aria-hidden="true">…</span></li>
+                    : <li key={item}><button
+                      type="button"
+                      className={`release-page-button release-page-button--number${item === currentTitlePage ? ' is-current' : ''}`}
+                      aria-label={`Page ${item}`}
+                      aria-current={item === currentTitlePage ? 'page' : undefined}
+                      onClick={() => changeTitlePage(item)}
+                      disabled={isTitleTransitioning}
+                    >{item}</button></li>)}
+                </ul>
+                <div className="release-pagination__controls">
+                  <button type="button" className="release-page-button" aria-label="Next page" onClick={() => changeTitlePage(currentTitlePage + 1)} disabled={currentTitlePage === titlePageCount || isTitleTransitioning}>›</button>
+                  <button type="button" className="release-page-button release-page-button--edge" aria-label="Last page" onClick={() => changeTitlePage(titlePageCount)} disabled={currentTitlePage === titlePageCount || isTitleTransitioning}>»</button>
+                </div>
+                <span className="release-pagination__status" aria-live="polite">Page <b>{currentTitlePage}</b> of <b>{titlePageCount}</b></span>
+              </nav>
+            </div>
+          )}
+          </>
         )
       ) : mainTab === 'chapters' ? (
         /* Sync Logs Tab */
@@ -2877,60 +3031,102 @@ export default function SeriesCatalogManager({
               </span>
             )}
           </div>
-          {newTaggedSeries.length === 0 ? (
-            <div className="comix-new-series-empty">No series are currently tagged New.</div>
-          ) : (
-            <div className="comix-new-series-list" role="list" aria-label="Series tagged New, ordered for homepage display">
-              {newTaggedSeries.map((series, index) => (
-                <div
-                  key={series.id}
-                  className={`comix-new-series-row ${draggedNewSeriesId === series.id ? 'is-dragging' : ''} ${dragOverNewSeriesId === series.id ? 'is-drop-target' : ''}`}
-                  role="listitem"
-                  draggable={!isSavingNewSeriesOrder && Boolean(onSaveNewSeriesOrder)}
-                  onDragStart={(event) => {
-                    setDraggedNewSeriesId(series.id);
-                    event.dataTransfer.effectAllowed = 'move';
-                    event.dataTransfer.setData('text/plain', String(series.id));
-                  }}
-                  onDragOver={(event) => {
-                    event.preventDefault();
-                    event.dataTransfer.dropEffect = 'move';
-                    setDragOverNewSeriesId(series.id);
-                  }}
-                  onDrop={(event) => {
-                    event.preventDefault();
-                    const sourceId = Number(event.dataTransfer.getData('text/plain')) || draggedNewSeriesId;
-                    if (sourceId !== null) moveNewSeries(sourceId, series.id);
-                    setDraggedNewSeriesId(null);
-                    setDragOverNewSeriesId(null);
-                  }}
-                  onDragEnd={() => {
-                    setDraggedNewSeriesId(null);
-                    setDragOverNewSeriesId(null);
-                  }}
-                >
-                  <GripVertical className="comix-new-series-grip" size={18} aria-hidden="true" />
-                  <span className="comix-new-series-position">{index + 1}</span>
-                  <img src={series.cover} alt="" loading="lazy" />
-                  <span className="comix-new-series-title">{series.title}</span>
-                  <span className="comix-new-series-tag">New</span>
-                  <div className="comix-new-series-controls" aria-label={`Move ${series.title}`}>
-                    <button
-                      type="button"
-                      aria-label={`Move ${series.title} up`}
-                      disabled={isSavingNewSeriesOrder || index === 0}
-                      onClick={() => moveNewSeries(series.id, newTaggedSeries[index - 1].id)}
-                    ><ArrowUp size={14} /></button>
-                    <button
-                      type="button"
-                      aria-label={`Move ${series.title} down`}
-                      disabled={isSavingNewSeriesOrder || index === newTaggedSeries.length - 1}
-                      onClick={() => moveNewSeries(series.id, newTaggedSeries[index + 1].id)}
-                    ><ArrowDown size={14} /></button>
-                  </div>
-                </div>
+          {isNewSeriesPageLoading ? (
+            <div className="comix-new-series-list comix-new-series-list--loading" aria-busy="true" aria-label="Loading new series page">
+              {Array.from({
+                length: newTaggedSeries.length || (newSeriesIndexQuery.isPending
+                  ? TITLE_PAGE_SIZE
+                  : Math.min(TITLE_PAGE_SIZE, Math.max(1, orderedNewSeriesIds.length - (currentNewSeriesPage - 1) * TITLE_PAGE_SIZE))),
+              }, (_, index) => (
+                <NewSeriesOrderSkeleton key={`new-series-skeleton-${currentNewSeriesPage}-${index}`} position={(currentNewSeriesPage - 1) * TITLE_PAGE_SIZE + index + 1} />
               ))}
             </div>
+          ) : orderedNewSeriesIds.length === 0 ? (
+            <div className="comix-new-series-empty">No series are currently tagged New.</div>
+          ) : (
+            <>
+              <div className="comix-new-series-list" role="list" aria-label="Series tagged New, ordered for homepage display">
+                {newTaggedSeries.map((series, index) => {
+                  const globalIndex = (currentNewSeriesPage - 1) * TITLE_PAGE_SIZE + index;
+                  return (
+                    <div
+                      key={series.id}
+                      className={`comix-new-series-row ${draggedNewSeriesId === series.id ? 'is-dragging' : ''} ${dragOverNewSeriesId === series.id ? 'is-drop-target' : ''}`}
+                      role="listitem"
+                      draggable={!isSavingNewSeriesOrder && Boolean(onSaveNewSeriesOrder)}
+                      onDragStart={(event) => {
+                        setDraggedNewSeriesId(series.id);
+                        event.dataTransfer.effectAllowed = 'move';
+                        event.dataTransfer.setData('text/plain', String(series.id));
+                      }}
+                      onDragOver={(event) => {
+                        event.preventDefault();
+                        event.dataTransfer.dropEffect = 'move';
+                        setDragOverNewSeriesId(series.id);
+                      }}
+                      onDrop={(event) => {
+                        event.preventDefault();
+                        const sourceId = Number(event.dataTransfer.getData('text/plain')) || draggedNewSeriesId;
+                        if (sourceId !== null) moveNewSeries(sourceId, series.id);
+                        setDraggedNewSeriesId(null);
+                        setDragOverNewSeriesId(null);
+                      }}
+                      onDragEnd={() => {
+                        setDraggedNewSeriesId(null);
+                        setDragOverNewSeriesId(null);
+                      }}
+                    >
+                      <GripVertical className="comix-new-series-grip" size={18} aria-hidden="true" />
+                      <span className="comix-new-series-position">{globalIndex + 1}</span>
+                      <img src={series.cover} alt="" loading="lazy" />
+                      <span className="comix-new-series-title">{series.title}</span>
+                      <span className="comix-new-series-tag">New</span>
+                      <div className="comix-new-series-controls" aria-label={`Move ${series.title}`}>
+                        <button
+                          type="button"
+                          aria-label={`Move ${series.title} up`}
+                          disabled={isSavingNewSeriesOrder || globalIndex === 0}
+                          onClick={() => moveNewSeries(series.id, orderedNewSeriesIds[globalIndex - 1])}
+                        ><ArrowUp size={14} /></button>
+                        <button
+                          type="button"
+                          aria-label={`Move ${series.title} down`}
+                          disabled={isSavingNewSeriesOrder || globalIndex === orderedNewSeriesIds.length - 1}
+                          onClick={() => moveNewSeries(series.id, orderedNewSeriesIds[globalIndex + 1])}
+                        ><ArrowDown size={14} /></button>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+              {orderedNewSeriesIds.length > TITLE_PAGE_SIZE && (
+                <div className="release-pagination-wrap">
+                  <nav className="release-pagination" aria-label="New series order pages">
+                    <div className="release-pagination__controls">
+                      <button type="button" className="release-page-button release-page-button--edge" aria-label="First page" onClick={() => setNewSeriesPage(1)} disabled={currentNewSeriesPage === 1 || isNewSeriesPageLoading}>«</button>
+                      <button type="button" className="release-page-button" aria-label="Previous page" onClick={() => setNewSeriesPage(currentNewSeriesPage - 1)} disabled={currentNewSeriesPage === 1 || isNewSeriesPageLoading}>‹</button>
+                    </div>
+                    <ul className="release-pagination__pages">
+                      {getPaginationItems(newSeriesPageCount, currentNewSeriesPage).map((item, index) => item === 'ellipsis'
+                        ? <li key={`new-order-ellipsis-${index}`}><span className="release-page-button release-page-button--ellipsis" aria-hidden="true">…</span></li>
+                        : <li key={item}><button
+                          type="button"
+                          className={`release-page-button release-page-button--number${item === currentNewSeriesPage ? ' is-current' : ''}`}
+                          aria-label={`Page ${item}`}
+                          aria-current={item === currentNewSeriesPage ? 'page' : undefined}
+                          onClick={() => setNewSeriesPage(item)}
+                          disabled={isNewSeriesPageLoading}
+                        >{item}</button></li>)}
+                    </ul>
+                    <div className="release-pagination__controls">
+                      <button type="button" className="release-page-button" aria-label="Next page" onClick={() => setNewSeriesPage(currentNewSeriesPage + 1)} disabled={currentNewSeriesPage === newSeriesPageCount || isNewSeriesPageLoading}>›</button>
+                      <button type="button" className="release-page-button release-page-button--edge" aria-label="Last page" onClick={() => setNewSeriesPage(newSeriesPageCount)} disabled={currentNewSeriesPage === newSeriesPageCount || isNewSeriesPageLoading}>»</button>
+                    </div>
+                    <span className="release-pagination__status" aria-live="polite">Page <b>{currentNewSeriesPage}</b> of <b>{newSeriesPageCount}</b></span>
+                  </nav>
+                </div>
+              )}
+            </>
           )}
         </section>
       )}
