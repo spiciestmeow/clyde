@@ -332,7 +332,10 @@
 .series-reaction { min-width: 0; display: flex; flex-direction: column; align-items: center; gap: 0; padding: 0 2px; border: 0; border-radius: 0; background: transparent; color: var(--series-muted); cursor: pointer; outline: none; -webkit-tap-highlight-color: transparent; transition: color .16s ease; }
 .series-reaction:hover { background: transparent; }
 .series-reaction.is-selected { background: transparent; }
-.series-reaction-icon { width: 48px; height: 48px; flex: 0 0 48px; display: grid; place-items: center; border-radius: 50%; background: rgba(244,242,240,.5); border: 2px solid transparent; box-shadow: 0 2px 6px rgba(0,0,0,.035); line-height: 1; transition: background .2s ease, border-color .2s ease, box-shadow .2s ease, transform .2s ease; }
+.series-reaction-icon { width: 48px; height: 48px; flex: 0 0 48px; position: relative; display: grid; place-items: center; border-radius: 50%; background: rgba(244,242,240,.5); border: 2px solid transparent; box-shadow: 0 2px 6px rgba(0,0,0,.035); line-height: 1; transition: background .2s ease, border-color .2s ease, box-shadow .2s ease, transform .2s ease; }
+.series-reaction-icon.is-loading img { visibility: hidden; }
+.series-reaction-icon.is-loading::after { content: ''; position: absolute; inset: 0; width: 18px; height: 18px; margin: auto; border: 2px solid rgba(var(--accent-rgb),.2); border-top-color: var(--accent); border-right-color: var(--accent); border-radius: 50%; animation: series-reaction-spinner .8s linear infinite; pointer-events: none; }
+@keyframes series-reaction-spinner { to { transform: rotate(360deg); } }
 .series-page.theme-dark .series-reaction-icon { background: #3b3834; border-color: #46423d; box-shadow: 0 2px 6px rgba(0,0,0,.2); }
 .series-reaction-icon img { display: block; width: 76%; height: auto; aspect-ratio: 1; border-radius: 50%; object-fit: contain; pointer-events: none; user-select: none; transition: transform .2s ease, filter .2s ease; }
 .series-reaction:hover .series-reaction-icon img { transform: scale(1.08); }
@@ -349,6 +352,9 @@
 .series-page.theme-dark .series-reaction.is-selected small { color: var(--accent); }
 .series-reaction:active { transform: translateY(1px); }
 .series-reaction:focus-visible .series-reaction-icon { border-color: var(--accent); }
+@media (prefers-reduced-motion: reduce) {
+  .series-reaction-icon.is-loading::after { animation: none; border-top-color: var(--accent); }
+}
 @media (min-width: 1200px) and (max-width: 1399px) {
   .series-reaction-list { width: 100%; max-width: 354px; }
 }

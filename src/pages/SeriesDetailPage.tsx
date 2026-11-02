@@ -284,6 +284,7 @@ export default function SeriesDetailPage() {
   const [reactionCounts, setReactionCounts] = useState<ReactionCounts>(() => readReactionCounts(slug));
   const [sourceReactionCounts, setSourceReactionCounts] = useState<Record<string, number>>({});
   const [reactionBusy, setReactionBusy] = useState(false);
+  const [reactionLoadingKey, setReactionLoadingKey] = useState<ReactionKey | null>(null);
   const [sourceReactionBusy, setSourceReactionBusy] = useState<string[]>([]);
   const [bookmarkBusy, setBookmarkBusy] = useState(false);
   const [bookmarkNoticeDismissed, setBookmarkNoticeDismissed] = useState(false);
@@ -648,6 +649,7 @@ export default function SeriesDetailPage() {
   const share = () => setShareModalOpen(true);
   const chooseReaction = (key: ReactionKey) => {
     if (reactionBusy) return;
+    const startedAt = Date.now();
     const next = reaction === key ? null : key;
     const nextCounts = { ...reactionCounts };
     if (reaction) nextCounts[reaction] = Math.max(0, nextCounts[reaction] - 1);
@@ -662,6 +664,7 @@ export default function SeriesDetailPage() {
       else localStorage.removeItem(`vortex-reaction:${slug}`);
     } catch { /* local reaction remains available for this session */ }
     setReactionBusy(true);
+    setReactionLoadingKey(key);
     void toggleSeriesReaction(slug, key)
       .then((state) => {
         if (!state) return;
@@ -674,7 +677,13 @@ export default function SeriesDetailPage() {
         } catch { /* shared counts remain saved by Supabase */ }
       })
       .catch((error: unknown) => console.warn('Could not save shared reaction:', error))
-      .finally(() => setReactionBusy(false));
+      .finally(() => {
+        const remainingAnimation = Math.max(0, 400 - (Date.now() - startedAt));
+        window.setTimeout(() => {
+          setReactionBusy(false);
+          setReactionLoadingKey(null);
+        }, remainingAnimation);
+      });
   };
   const markSourceVisited = (sourceUrl: string) => {
     if (visitedSources.includes(sourceUrl)) return;
@@ -1150,8 +1159,9 @@ export default function SeriesDetailPage() {
           {seriesPageVisibility.reactions && <section className="series-reactions">
             <div className="series-reaction-list">{reactions.map((item) => {
               const selected = reaction === item.key;
-              return <button key={item.key} onClick={() => chooseReaction(item.key)} className={`series-reaction ${selected ? 'is-selected' : ''}`} aria-pressed={selected} aria-label={`${item.label}${selected ? ' (You)' : ''}: ${item.count ?? 0}`} disabled={reactionBusy} data-testid={`button-reaction-${item.key}`}>
-                <span className={`series-reaction-icon reaction-${item.key}`}><img src={item.icon} alt="" aria-hidden="true" draggable={false} /></span>
+              const loading = reactionLoadingKey === item.key;
+              return <button key={item.key} onClick={() => chooseReaction(item.key)} className={`series-reaction ${selected ? 'is-selected' : ''}`} aria-pressed={selected} aria-busy={loading} aria-label={`${item.label}${selected ? ' (You)' : ''}: ${item.count ?? 0}`} disabled={reactionBusy} data-testid={`button-reaction-${item.key}`}>
+                <span className={`series-reaction-icon reaction-${item.key}${loading ? ' is-loading' : ''}`}><img src={item.icon} alt="" aria-hidden="true" draggable={false} /></span>
                 <strong>{item.count ?? 0}</strong>
                 <small>{item.label}{selected ? ' (You)' : ''}</small>
               </button>;
