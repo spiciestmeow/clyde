@@ -1092,7 +1092,7 @@ export default function SeriesDetailPage() {
                       <span className="series-source-copy">
                         <span className="series-source-heading">
                           <strong className="series-source-name">{source.name}</strong>
-                          {isTopSource && <span className="series-source-priority">Most chapters</span>}
+                          {isTopSource && <span className="series-source-priority">Latest chapter</span>}
                           {isVisited && <span className="series-source-visited" title="You’ve visited this source" aria-label="Visited"><Eye size={13} aria-hidden="true" /></span>}
                         </span>
                         <span className="series-source-meta">
