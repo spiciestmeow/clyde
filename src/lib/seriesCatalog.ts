@@ -97,6 +97,7 @@ export type SeriesCatalogPageOptions = {
 };
 
 export type NewSeriesCatalogIndexItem = { id: number; createdAt: string };
+export type HomeNewSeriesIndexItem = { id: number; slug: string; title: string; createdAt: string; isNew: boolean };
 
 
 export const SERIES_CATALOG_QUERY_KEY = ['series-catalog'] as const;
@@ -442,6 +443,30 @@ export async function getNewSeriesCatalogIndex(): Promise<NewSeriesCatalogIndexI
   return (data ?? []).map((item) => ({ id: item.id, createdAt: item.created_at }));
 }
 
+export async function getHomeNewSeriesIndex(): Promise<HomeNewSeriesIndexItem[]> {
+  const client = requireSupabase();
+  const recentCutoff = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
+  const { data, error } = await client
+    .from('series')
+    .select('id, slug, title, created_at, facts')
+    .or([
+      'facts->>is_new.eq.true',
+      `and(facts->>is_new.neq.false,facts->>last_chapter_added_at.gte.${recentCutoff})`,
+      `and(facts->>is_new.is.null,facts->>last_chapter_added_at.gte.${recentCutoff})`,
+      `and(facts->>is_new.is.null,created_at.gte.${recentCutoff})`,
+    ].join(','))
+    .order('created_at', { ascending: false })
+    .order('id', { ascending: false });
+  if (error) throw error;
+  return (data ?? []).map((item) => ({
+    id: item.id,
+    slug: item.slug,
+    title: item.title,
+    createdAt: item.created_at,
+    isNew: String(item.facts?.is_new ?? '').toLowerCase() === 'true',
+  }));
+}
+
 export async function getSeriesCatalogByIds(ids: number[]): Promise<SeriesRecord[]> {
   if (ids.length === 0) return [];
   const client = requireSupabase();
@@ -481,6 +506,75 @@ export async function getSeriesCatalogCoverSamples(): Promise<string[]> {
     .limit(12);
   if (error) throw error;
   return (data ?? []).map((item) => item.cover).filter((cover): cover is string => !!cover);
+}
+
+export async function getHomeCatalogHighlights(limit = 60): Promise<SeriesRecord[]> {
+  const client = requireSupabase();
+  const { data, error } = await client
+    .from('series')
+    .select(
+      'id, slug, title, href, cover, category, rating, status, pinned, chapters, ' +
+      'alternate_titles, synopsis, author, artist, publishers, content_rating, year, ' +
+      'original_language, demographics, genres, formats, tags, trackers, sources, ' +
+      'facts, favorites, views, review_count, page_number, page_order, created_at, updated_at',
+    )
+    .order('pinned', { ascending: false })
+    .order('rating', { ascending: false, nullsFirst: false })
+    .order('created_at', { ascending: false })
+    .limit(limit);
+  if (error) throw error;
+  return (data ?? []).map(toSeriesRecord);
+}
+
+export async function getHomeLatestReleasePage(page: number, pageSize: number, search = ''): Promise<SeriesCatalogResponse> {
+  const client = requireSupabase();
+  const from = Math.max(0, page - 1) * pageSize;
+  const to = from + pageSize - 1;
+  let request = client
+    .from('series')
+    .select(
+      'id, slug, title, href, cover, category, rating, status, pinned, chapters, ' +
+      'alternate_titles, synopsis, author, artist, publishers, content_rating, year, ' +
+      'original_language, demographics, genres, formats, tags, trackers, sources, ' +
+      'facts, favorites, views, review_count, page_number, page_order, created_at, updated_at',
+      { count: 'exact' },
+    );
+  const normalizedSearch = search.trim();
+  if (normalizedSearch) {
+    const escaped = normalizedSearch.replace(/[\\%_,()]/g, (character) => `\\${character}`);
+    request = request.or(`title.ilike.%${escaped}%,slug.ilike.%${escaped}%`);
+  }
+  const { data, error, count } = await request
+    .order('facts->>last_chapter_added_at', { ascending: false, nullsFirst: false })
+    .order('created_at', { ascending: false })
+    .order('page_number', { ascending: true })
+    .order('page_order', { ascending: true })
+    .order('title', { ascending: true })
+    .range(from, to);
+  if (error) throw error;
+  return { totalCount: count ?? 0, items: (data ?? []).map(toSeriesRecord) };
+}
+
+export async function getSeriesBySlugs(slugs: string[]): Promise<SeriesRecord[]> {
+  const normalizedSlugs = [...new Set(slugs.map((slug) => slug.trim().toLocaleLowerCase()).filter(Boolean))];
+  if (normalizedSlugs.length === 0) return [];
+  const client = requireSupabase();
+  const { data, error } = await client
+    .from('series')
+    .select(
+      'id, slug, title, href, cover, category, rating, status, pinned, chapters, ' +
+      'alternate_titles, synopsis, author, artist, publishers, content_rating, year, ' +
+      'original_language, demographics, genres, formats, tags, trackers, sources, ' +
+      'facts, favorites, views, review_count, page_number, page_order, created_at, updated_at',
+    )
+    .in('slug', normalizedSlugs);
+  if (error) throw error;
+  const rows = (data ?? []) as unknown as SeriesDatabaseRow[];
+  const bySlug = new Map(rows.map((item) => [item.slug, toSeriesRecord(item)] as const));
+  return normalizedSlugs.flatMap((slug) => {
+    const series = bySlug.get(slug);
+    return series ? [series] : [];
+  });
 }
 
 export async function getSeriesBySlug(slug: string): Promise<SeriesRecord | null> {

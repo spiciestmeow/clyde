@@ -1,4 +1,5 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState, type PointerEvent as ReactPointerEvent, type SyntheticEvent } from 'react';
+import { keepPreviousData, useQuery } from '@tanstack/react-query';
 import { ArrowLeft, ArrowRight, ArrowUp, ArrowUpRight, ChevronDown, ChevronLeft, ChevronRight, Clock3, Flame, Megaphone, RefreshCw, WifiOff } from 'lucide-react';
 import { Route, Switch, Router as WouterRouter, useLocation } from 'wouter';
 import SiteSearch from './components/SiteSearch';
@@ -30,7 +31,6 @@ import { toSiteSearchItems, toTrendingSiteSearchItems } from './data/seriesSearc
 import { useThemeMode } from './hooks/useThemeMode';
 import { useSeriesCatalog } from './hooks/useSeriesCatalog';
 import { getWinningChapterSource } from './lib/sourcePriority';
-import { getNewSeriesReleases, sortLatestReleases } from './lib/latestReleases';
 import { getPaginationItems } from './lib/pagination';
 import {
   readRecentlyViewedSeries,
@@ -40,7 +40,14 @@ import {
 } from './lib/recentlyViewedSeries';
 import {
   DEFAULT_SERIES_COVER,
+  getHomeCatalogHighlights,
+  getHomeLatestReleasePage,
+  getHomeNewSeriesIndex,
+  getSeriesBySlugs,
+  getSeriesCatalogByIds,
+  getSeriesCatalogPage,
   getSeriesReleaseAgeMinutes,
+  SERIES_CATALOG_QUERY_KEY,
 } from './lib/seriesCatalog';
 import assets from '../clone-data/asset-references.json';
 import {
@@ -168,9 +175,13 @@ function HomePage() {
     setShareModalOpen(true);
   };
 
-  const catalogQuery = useSeriesCatalog();
-  const seriesItems = catalogQuery.items;
-  const catalogUnavailable = catalogQuery.isError && seriesItems.length === 0;
+  const homeHighlightsQuery = useQuery({
+    queryKey: [...SERIES_CATALOG_QUERY_KEY, 'home-highlights'],
+    queryFn: () => getHomeCatalogHighlights(60),
+    staleTime: 5 * 60 * 1000,
+  });
+  const seriesItems = homeHighlightsQuery.data ?? [];
+  const catalogUnavailable = homeHighlightsQuery.isError && seriesItems.length === 0;
   const searchItems = useMemo(() => toSiteSearchItems(seriesItems), [seriesItems]);
   const trendingSearchItems = useMemo(() => toTrendingSiteSearchItems(seriesItems), [seriesItems]);
 
@@ -255,10 +266,16 @@ function HomePage() {
   }, [seriesItems, popularPeriod]);
 
   // Section 2: Latest Releases (Sorted by newest chapter drop, preserving catalog order)
-  const latestReleases = useMemo(() => sortLatestReleases(seriesItems), [seriesItems]);
   const [recentlyViewedSeries, setRecentlyViewedSeries] = useState<RecentlyViewedSeries[]>(() => readRecentlyViewedSeries());
+  const recentlyViewedSlugs = recentlyViewedSeries.slice(0, 6).map((item) => item.slug);
+  const recentlyViewedQuery = useQuery({
+    queryKey: [...SERIES_CATALOG_QUERY_KEY, 'home-recently-viewed', recentlyViewedSlugs],
+    queryFn: () => getSeriesBySlugs(recentlyViewedSlugs),
+    enabled: recentlyViewedSlugs.length > 0,
+    staleTime: 5 * 60 * 1000,
+  });
   const continueReadingItems = useMemo<ContinueReadingItem[]>(() => {
-    const bySlug = new Map(seriesItems.map((item) => [item.slug.toLocaleLowerCase(), item]));
+    const bySlug = new Map((recentlyViewedQuery.data ?? []).map((item) => [item.slug.toLocaleLowerCase(), item]));
     return recentlyViewedSeries.flatMap((recent) => {
       const series = bySlug.get(recent.slug.toLocaleLowerCase());
       if (!series) return [];
@@ -274,13 +291,68 @@ function HomePage() {
         viewedAt: recent.viewedAt,
       }];
     }).slice(0, 6);
-  }, [recentlyViewedSeries, seriesItems]);
+  }, [recentlyViewedSeries, recentlyViewedQuery.data]);
   const { dark, toggleTheme } = useThemeMode();
   const [mobileMenu, setMobileMenu] = useState(false);
   const [siteSettings, setSiteSettings] = useState<SiteSettings>(() =>
     getCachedSiteSettings() ?? { ...DEFAULT_SITE_SETTINGS, heroSlides: [] },
   );
   const { header: headerVisibility, homepage: homepageVisibility } = siteSettings;
+  const newSeriesIndexQuery = useQuery({
+    queryKey: [...SERIES_CATALOG_QUERY_KEY, 'home-new-series-index'],
+    queryFn: getHomeNewSeriesIndex,
+    enabled: filter === 'New',
+    staleTime: 2 * 60 * 1000,
+  });
+  const orderedNewSeriesIds = useMemo(() => [...(newSeriesIndexQuery.data ?? [])]
+    .sort((left, right) => {
+      if (siteSettings.newSeriesOrder.length > 0 && left.isNew !== right.isNew) {
+        return left.isNew ? -1 : 1;
+      }
+      const leftRank = siteSettings.newSeriesOrder.indexOf(String(left.id));
+      const rightRank = siteSettings.newSeriesOrder.indexOf(String(right.id));
+      if (siteSettings.newSeriesOrder.length > 0 && left.isNew && right.isNew && leftRank !== rightRank) {
+        if (leftRank === -1) return -1;
+        if (rightRank === -1) return 1;
+        return leftRank - rightRank;
+      }
+      const leftCreated = left.createdAt ? new Date(left.createdAt).getTime() : left.id;
+      const rightCreated = right.createdAt ? new Date(right.createdAt).getTime() : right.id;
+      return rightCreated - leftCreated;
+    })
+    .map((item) => item.id), [newSeriesIndexQuery.data, siteSettings.newSeriesOrder]);
+  const newSeriesPageIds = orderedNewSeriesIds.slice(
+    (releasePage - 1) * RELEASES_PER_PAGE,
+    releasePage * RELEASES_PER_PAGE,
+  );
+  const newSeriesPageQuery = useQuery({
+    queryKey: [...SERIES_CATALOG_QUERY_KEY, 'home-new-release-page', releasePage, newSeriesPageIds],
+    queryFn: () => getSeriesCatalogByIds(newSeriesPageIds),
+    enabled: filter === 'New' && newSeriesIndexQuery.isSuccess && newSeriesPageIds.length > 0,
+    placeholderData: keepPreviousData,
+    staleTime: 2 * 60 * 1000,
+  });
+  const latestReleasePageQuery = useQuery({
+    queryKey: [...SERIES_CATALOG_QUERY_KEY, 'home-latest-release-page', releasePage],
+    queryFn: () => getHomeLatestReleasePage(releasePage, RELEASES_PER_PAGE),
+    enabled: filter === 'Latest',
+    placeholderData: keepPreviousData,
+    staleTime: 2 * 60 * 1000,
+  });
+  const visibleReleases = filter === 'Latest'
+    ? latestReleasePageQuery.data?.items ?? []
+    : newSeriesPageQuery.data ?? [];
+  const visibleReleaseCount = filter === 'Latest'
+    ? latestReleasePageQuery.data?.totalCount ?? 0
+    : orderedNewSeriesIds.length;
+  const releasePageCount = Math.max(1, Math.ceil(visibleReleaseCount / RELEASES_PER_PAGE));
+  const currentReleasePage = Math.min(releasePage, releasePageCount);
+  const pagedReleases = visibleReleases;
+  const releaseLoading = filter === 'Latest'
+    ? latestReleasePageQuery.isFetching
+    : newSeriesIndexQuery.isPending || newSeriesIndexQuery.isFetching || newSeriesPageQuery.isFetching;
+  const releaseError = filter === 'Latest' ? latestReleasePageQuery.isError : newSeriesIndexQuery.isError || newSeriesPageQuery.isError;
+  const paginationItems = getPaginationItems(releasePageCount, currentReleasePage);
   const railRef = useRef<HTMLDivElement>(null);
   const railGestureRef = useRef<RailGesture | null>(null);
   const suppressRailClickUntilRef = useRef(0);
@@ -330,20 +402,17 @@ function HomePage() {
     };
   }, []);
 
-  const visibleReleases = useMemo(() => {
-    if (filter === 'Latest') return latestReleases;
-    return getNewSeriesReleases(seriesItems, siteSettings.newSeriesOrder);
-  }, [filter, latestReleases, seriesItems, siteSettings.newSeriesOrder]);
-  const releasePageCount = Math.max(1, Math.ceil(visibleReleases.length / RELEASES_PER_PAGE));
-  const currentReleasePage = Math.min(releasePage, releasePageCount);
-  const pagedReleases = visibleReleases.slice(
-    (currentReleasePage - 1) * RELEASES_PER_PAGE,
-    currentReleasePage * RELEASES_PER_PAGE,
-  );
-  const paginationItems = getPaginationItems(releasePageCount, currentReleasePage);
   const slides = siteSettings.heroSlides;
+  const spotlightIds = siteSettings.featuredSpotlightItems.map(({ seriesId }) => seriesId);
+  const spotlightQuery = useQuery({
+    queryKey: [...SERIES_CATALOG_QUERY_KEY, 'home-spotlight', spotlightIds],
+    queryFn: () => getSeriesCatalogByIds(spotlightIds),
+    enabled: spotlightIds.length > 0,
+    staleTime: 5 * 60 * 1000,
+  });
+  const spotlightById = new Map((spotlightQuery.data ?? []).map((item) => [item.id, item]));
   const spotlightSeriesItems = siteSettings.featuredSpotlightItems.flatMap(({ seriesId, image }) => {
-    const series = seriesItems.find((item) => item.id === seriesId);
+    const series = spotlightById.get(seriesId);
     return series ? [{ ...series, spotlightImage: image }] : [];
   });
   const moveCarousel = (direction: number) => setSlide((current) => (current + direction + slides.length) % slides.length);
@@ -410,11 +479,15 @@ function HomePage() {
           <SiteSearch
             items={searchItems}
             trendingItems={trendingSearchItems}
+            searchFn={async (term) => {
+              const result = await getSeriesCatalogPage({ page: 1, pageSize: 4, search: term });
+              return { items: toSiteSearchItems(result.items), totalCount: result.totalCount };
+            }}
           />
         }
       />
       {/* Loading banner intentionally hidden — sections load progressively */}
-      {catalogQuery.isError && <CatalogErrorState compactMobile hasCachedData={catalogQuery.items.length > 0} onRetry={() => void catalogQuery.refetch()} />}
+      {homeHighlightsQuery.isError && <CatalogErrorState compactMobile hasCachedData={seriesItems.length > 0} onRetry={() => void homeHighlightsQuery.refetch()} />}
       <main>
         {homepageVisibility.featuredSpotlight && spotlightSeriesItems.length > 0 && <TryTheLookShowcase series={spotlightSeriesItems} />}
         {homepageVisibility.featuredSeries && slides.length > 0 && (
@@ -536,7 +609,7 @@ function HomePage() {
                 suppressRailClickUntilRef.current = 0;
               }
             }}
-          >{catalogQuery.isLoading && seriesItems.length === 0 ? (
+          >{homeHighlightsQuery.isLoading && seriesItems.length === 0 ? (
             <PopularTodaySkeleton />
           ) : (
             popularCards.map((card) => (
@@ -576,10 +649,10 @@ function HomePage() {
         {homepageVisibility.latestReleases && <section className="latest-section content-width">
           <div className="latest-heading"><div className="section-title"><h2>Latest Releases</h2></div><div className="latest-tabs"><button className={filter === 'Latest' ? 'on' : ''} onClick={() => { setFilter('Latest'); setReleasePage(1); }}><RefreshCw size={15} />Latest</button><button className={filter === 'New' ? 'on' : ''} onClick={() => { setFilter('New'); setReleasePage(1); }}><Clock3 size={15} />New</button></div><a className="view-all" href="/latest-updates" aria-label="View All Latest Updates"><ArrowUpRight /></a></div>
           <div className="release-grid">
-            {catalogUnavailable ? (
-              <CatalogSectionUnavailable>Latest releases will return when the catalog is available.</CatalogSectionUnavailable>
-            ) : catalogQuery.isLoading && seriesItems.length === 0 ? (
-              <LatestReleasesSkeleton />
+            {releaseError ? (
+              <CatalogSectionUnavailable>Latest releases are temporarily unavailable.</CatalogSectionUnavailable>
+            ) : releaseLoading ? (
+              <LatestReleasesSkeleton count={RELEASES_PER_PAGE} />
             ) : (
               pagedReleases.map((release) => (
                 <LatestReleaseCard
@@ -591,8 +664,8 @@ function HomePage() {
               ))
             )}
           </div>
-          {!catalogQuery.isLoading && !catalogQuery.isError && visibleReleases.length === 0 && <div className="series-data-status" role="status"><p>No series match this release filter yet.</p></div>}
-          {visibleReleases.length > 0 && <div className="release-pagination-wrap">
+          {!releaseLoading && !releaseError && visibleReleaseCount === 0 && <div className="series-data-status" role="status"><p>No series match this release filter yet.</p></div>}
+          {visibleReleaseCount > RELEASES_PER_PAGE && <div className="release-pagination-wrap">
             <nav className="release-pagination" aria-label={`${filter} release pages`}>
               <div className="release-pagination__controls">
                 <button
@@ -600,14 +673,14 @@ function HomePage() {
                   className="release-page-button release-page-button--edge"
                   aria-label="First page"
                   onClick={() => setReleasePage(1)}
-                  disabled={currentReleasePage === 1}
+                  disabled={currentReleasePage === 1 || releaseLoading}
                 >«</button>
                 <button
                   type="button"
                   className="release-page-button"
                   aria-label="Previous page"
                   onClick={() => setReleasePage(currentReleasePage - 1)}
-                  disabled={currentReleasePage === 1}
+                  disabled={currentReleasePage === 1 || releaseLoading}
                 >‹</button>
               </div>
               <ul className="release-pagination__pages">
@@ -619,6 +692,7 @@ function HomePage() {
                     aria-label={`Page ${item}`}
                     aria-current={item === currentReleasePage ? 'page' : undefined}
                     onClick={() => setReleasePage(item)}
+                    disabled={releaseLoading}
                   >{item}</button></li>)}
               </ul>
               <div className="release-pagination__controls">
@@ -627,14 +701,14 @@ function HomePage() {
                   className="release-page-button"
                   aria-label="Next page"
                   onClick={() => setReleasePage(currentReleasePage + 1)}
-                  disabled={currentReleasePage === releasePageCount}
+                  disabled={currentReleasePage === releasePageCount || releaseLoading}
                 >›</button>
                 <button
                   type="button"
                   className="release-page-button release-page-button--edge"
                   aria-label="Last page"
                   onClick={() => setReleasePage(releasePageCount)}
-                  disabled={currentReleasePage === releasePageCount}
+                  disabled={currentReleasePage === releasePageCount || releaseLoading}
                 >»</button>
               </div>
               <span className="release-pagination__status" aria-live="polite">
@@ -720,7 +794,7 @@ function HomePage() {
             <div className="popular-rank-grid">
               {catalogUnavailable ? (
                 <CatalogSectionUnavailable>Most popular titles will return when the catalog is available.</CatalogSectionUnavailable>
-              ) : catalogQuery.isLoading && seriesItems.length === 0 ? (
+              ) : homeHighlightsQuery.isLoading && seriesItems.length === 0 ? (
                 <MostPopularSkeleton />
               ) : (
                 mostPopularItems.map((item, i) => (

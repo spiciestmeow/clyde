@@ -1,15 +1,24 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import { keepPreviousData, useQuery } from '@tanstack/react-query';
 import { Clock3, Flame, Grid2X2, List, Search, X } from 'lucide-react';
 import SiteHeader from '../components/SiteHeader';
 import SiteFooter from '../components/SiteFooter';
 import SiteSearch from '../components/SiteSearch';
 import { CatalogErrorState } from '../components/CatalogErrorState';
 import { LatestReleaseCard } from '../components/LatestReleaseCard';
+import { LatestReleasesSkeleton } from '../components/HomeSectionSkeletons';
 import { useThemeMode } from '../hooks/useThemeMode';
-import { useSeriesCatalog } from '../hooks/useSeriesCatalog';
 import { toSiteSearchItems, toTrendingSiteSearchItems } from '../data/seriesSearchCatalog';
-import { DEFAULT_SERIES_COVER } from '../lib/seriesCatalog';
-import { getNewSeriesReleases, sortLatestReleases } from '../lib/latestReleases';
+import {
+  DEFAULT_SERIES_COVER,
+  getHomeCatalogHighlights,
+  getHomeLatestReleasePage,
+  getHomeNewSeriesIndex,
+  getSeriesCatalogByIds,
+  getSeriesCatalogPage,
+  SERIES_CATALOG_QUERY_KEY,
+  type SeriesRecord,
+} from '../lib/seriesCatalog';
 import { getPaginationItems } from '../lib/pagination';
 import {
   getCachedSiteSettings,
@@ -46,24 +55,80 @@ function LatestUpdatesPage() {
   const [activeTab, setActiveTab] = useState<ReleaseTab>('Hot');
   const [viewMode, setViewMode] = useState<ViewMode>('grid');
   const [search, setSearch] = useState('');
+  const [debouncedSearch, setDebouncedSearch] = useState('');
   const [page, setPage] = useState(1);
-  const catalogQuery = useSeriesCatalog();
   const [newSeriesOrder, setNewSeriesOrder] = useState<string[]>(() => getCachedSiteSettings()?.newSeriesOrder ?? []);
-
-  const searchItems = useMemo(() => toSiteSearchItems(catalogQuery.items), [catalogQuery.items]);
-  const trendingSearchItems = useMemo(() => toTrendingSiteSearchItems(catalogQuery.items), [catalogQuery.items]);
-  const latestReleases = useMemo(() => sortLatestReleases(catalogQuery.items), [catalogQuery.items]);
-  const newReleases = useMemo(
-    () => getNewSeriesReleases(catalogQuery.items, newSeriesOrder),
-    [catalogQuery.items, newSeriesOrder],
+  const highlightsQuery = useQuery({
+    queryKey: [...SERIES_CATALOG_QUERY_KEY, 'latest-updates-search-highlights'],
+    queryFn: () => getHomeCatalogHighlights(60),
+    staleTime: 5 * 60 * 1000,
+  });
+  const searchItems = useMemo(() => toSiteSearchItems(highlightsQuery.data ?? []), [highlightsQuery.data]);
+  const trendingSearchItems = useMemo(() => toTrendingSiteSearchItems(highlightsQuery.data ?? []), [highlightsQuery.data]);
+  const searchSeries = useCallback(async (query: string) => {
+    const result = await getSeriesCatalogPage({ page: 1, pageSize: 4, search: query });
+    return { items: toSiteSearchItems(result.items), totalCount: result.totalCount };
+  }, []);
+  const hotReleasesQuery = useQuery({
+    queryKey: [...SERIES_CATALOG_QUERY_KEY, 'latest-updates-hot-page', page, debouncedSearch],
+    queryFn: () => getHomeLatestReleasePage(page, PAGE_SIZE, debouncedSearch),
+    placeholderData: keepPreviousData,
+    staleTime: 2 * 60 * 1000,
+    enabled: activeTab === 'Hot',
+  });
+  const newSeriesIndexQuery = useQuery({
+    queryKey: [...SERIES_CATALOG_QUERY_KEY, 'latest-updates-new-index'],
+    queryFn: getHomeNewSeriesIndex,
+    staleTime: 2 * 60 * 1000,
+    enabled: activeTab === 'New',
+  });
+  const filteredNewSeries = useMemo(() => {
+    const normalizedSearch = debouncedSearch.trim().toLocaleLowerCase();
+    const filtered = (newSeriesIndexQuery.data ?? []).filter((release) =>
+      !normalizedSearch || release.title.toLocaleLowerCase().includes(normalizedSearch),
+    );
+    return filtered.sort((left, right) => {
+      if (newSeriesOrder.length > 0 && left.isNew !== right.isNew) return left.isNew ? -1 : 1;
+      if (left.isNew && right.isNew && newSeriesOrder.length > 0) {
+        const leftRank = newSeriesOrder.indexOf(String(left.id));
+        const rightRank = newSeriesOrder.indexOf(String(right.id));
+        if (leftRank !== rightRank) {
+          if (leftRank === -1) return -1;
+          if (rightRank === -1) return 1;
+          return leftRank - rightRank;
+        }
+      }
+      return Date.parse(right.createdAt) - Date.parse(left.createdAt) || right.id - left.id;
+    });
+  }, [debouncedSearch, newSeriesIndexQuery.data, newSeriesOrder]);
+  const pageCount = Math.max(1, Math.ceil((activeTab === 'Hot' ? hotReleasesQuery.data?.totalCount ?? 0 : filteredNewSeries.length) / PAGE_SIZE));
+  const currentPage = Math.min(page, pageCount);
+  const newPageIds = useMemo(
+    () => filteredNewSeries.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE).map((release) => release.id),
+    [currentPage, filteredNewSeries],
   );
-  const visibleReleases = useMemo(() => {
-    const source = activeTab === 'Hot' ? latestReleases : newReleases;
-    const normalizedSearch = search.trim().toLocaleLowerCase();
-    return normalizedSearch
-      ? source.filter((release) => release.title.toLocaleLowerCase().includes(normalizedSearch))
-      : source;
-  }, [activeTab, latestReleases, newReleases, search]);
+  const newReleasesQuery = useQuery({
+    queryKey: [...SERIES_CATALOG_QUERY_KEY, 'latest-updates-new-page', currentPage, newPageIds],
+    queryFn: () => getSeriesCatalogByIds(newPageIds),
+    placeholderData: keepPreviousData,
+    staleTime: 2 * 60 * 1000,
+    enabled: activeTab === 'New' && newSeriesIndexQuery.isSuccess && newPageIds.length > 0,
+  });
+  const visibleReleases: SeriesRecord[] = activeTab === 'Hot'
+    ? hotReleasesQuery.data?.items ?? []
+    : newReleasesQuery.data ?? [];
+  const visibleCount = activeTab === 'Hot' ? hotReleasesQuery.data?.totalCount ?? 0 : filteredNewSeries.length;
+  const isLoadingReleases = activeTab === 'Hot'
+    ? hotReleasesQuery.isFetching
+    : newSeriesIndexQuery.isFetching || (newPageIds.length > 0 && newReleasesQuery.isFetching);
+  const releaseError = activeTab === 'Hot'
+    ? hotReleasesQuery.isError
+    : newSeriesIndexQuery.isError || newReleasesQuery.isError;
+  const retryReleases = () => {
+    if (activeTab === 'Hot') void hotReleasesQuery.refetch();
+    else if (newSeriesIndexQuery.isError) void newSeriesIndexQuery.refetch();
+    else void newReleasesQuery.refetch();
+  };
 
   useEffect(() => {
     let active = true;
@@ -81,12 +146,14 @@ function LatestUpdatesPage() {
     };
   }, []);
 
-  const pageCount = Math.max(1, Math.ceil(visibleReleases.length / PAGE_SIZE));
-  const currentPage = Math.min(page, pageCount);
+  useEffect(() => {
+    const timeout = window.setTimeout(() => setDebouncedSearch(search.trim()), 250);
+    return () => window.clearTimeout(timeout);
+  }, [search]);
+
   const paginationItems = getPaginationItems(pageCount, currentPage);
-  const pagedReleases = visibleReleases.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
-  const firstResult = visibleReleases.length === 0 ? 0 : (currentPage - 1) * PAGE_SIZE + 1;
-  const lastResult = Math.min(currentPage * PAGE_SIZE, visibleReleases.length);
+  const firstResult = visibleCount === 0 ? 0 : (currentPage - 1) * PAGE_SIZE + 1;
+  const lastResult = Math.min(currentPage * PAGE_SIZE, visibleCount);
 
   const changeTab = (tab: ReleaseTab) => {
     setActiveTab(tab);
@@ -108,7 +175,7 @@ function LatestUpdatesPage() {
         onToggleMobileMenu={() => setMobileMenuOpen((open) => !open)}
         dark={dark}
         onToggleTheme={toggleTheme}
-        search={<SiteSearch items={searchItems} trendingItems={trendingSearchItems} />}
+        search={<SiteSearch items={searchItems} trendingItems={trendingSearchItems} searchFn={searchSeries} />}
       />
       <main className="latest-updates-main" aria-labelledby="latest-updates-title">
         <header className="latest-updates-intro">
@@ -145,24 +212,30 @@ function LatestUpdatesPage() {
 
         <section className="latest-updates-results" aria-label="Latest releases" aria-live="polite">
           <p className="latest-updates-count">
-            Showing {firstResult} to {lastResult} of {visibleReleases.length} results
+            Showing {firstResult} to {lastResult} of {visibleCount} results
           </p>
-          {catalogQuery.isError && catalogQuery.items.length > 0 && (
+          {releaseError && visibleReleases.length > 0 && (
             <div className="latest-updates-error">
-              <CatalogErrorState hasCachedData onRetry={() => void catalogQuery.refetch()} />
+              <CatalogErrorState hasCachedData onRetry={retryReleases} />
             </div>
           )}
-          {catalogQuery.isLoading && catalogQuery.items.length === 0 ? (
-            <div className="latest-updates-empty" role="status">Loading latest releases…</div>
-          ) : catalogQuery.isError && catalogQuery.items.length === 0 ? (
-            <div className="latest-updates-error"><CatalogErrorState onRetry={() => void catalogQuery.refetch()} /></div>
-          ) : pagedReleases.length === 0 ? (
+          {releaseError && visibleReleases.length === 0 ? (
+            <div className="latest-updates-error"><CatalogErrorState onRetry={retryReleases} /></div>
+          ) : isLoadingReleases && visibleReleases.length === 0 ? (
+            <div className={`latest-updates-grid${viewMode === 'list' ? ' is-list' : ''}`} aria-label="Loading releases">
+              <LatestReleasesSkeleton count={PAGE_SIZE} />
+            </div>
+          ) : visibleReleases.length === 0 ? (
             <div className="latest-updates-empty" role="status">
               {search.trim() ? 'No results found for your search.' : 'No releases found.'}
             </div>
+          ) : isLoadingReleases ? (
+            <div className={`latest-updates-grid${viewMode === 'list' ? ' is-list' : ''}`} aria-label="Loading releases">
+              <LatestReleasesSkeleton count={PAGE_SIZE} />
+            </div>
           ) : (
             <div className={`latest-updates-grid${viewMode === 'list' ? ' is-list' : ''}`}>
-              {pagedReleases.map((release) => (
+              {visibleReleases.map((release) => (
                 <LatestReleaseCard
                   key={release.slug}
                   release={release}
@@ -172,7 +245,7 @@ function LatestUpdatesPage() {
               ))}
             </div>
           )}
-          {visibleReleases.length > PAGE_SIZE && (
+          {visibleCount > PAGE_SIZE && (
             <div className="release-pagination-wrap">
               <nav className="release-pagination" aria-label={`${activeTab} updates pages`}>
                 <div className="release-pagination__controls">

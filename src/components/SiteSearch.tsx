@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
+import { keepPreviousData, useQuery } from '@tanstack/react-query';
 import { ChevronRight, Search, X } from 'lucide-react';
 import { useLocation } from 'wouter';
 
@@ -11,15 +12,19 @@ export type SiteSearchItem = {
   searchText?: string;
 };
 
+export type SiteSearchResponse = { items: SiteSearchItem[]; totalCount: number };
+
 type SiteSearchProps = {
   items: SiteSearchItem[];
   trendingItems: SiteSearchItem[];
+  searchFn?: (query: string) => Promise<SiteSearchResponse>;
   className?: string;
 };
 
 export default function SiteSearch({
   items,
   trendingItems,
+  searchFn,
   className = '',
 }: SiteSearchProps) {
   const [, navigate] = useLocation();
@@ -27,14 +32,23 @@ export default function SiteSearch({
   const [query, setQuery] = useState('');
   const searchInputRef = useRef<HTMLInputElement>(null);
   const normalizedQuery = query.trim().toLocaleLowerCase();
+  const remoteSearchQuery = useQuery({
+    queryKey: ['site-search-results', normalizedQuery],
+    queryFn: () => searchFn!(normalizedQuery),
+    enabled: open && Boolean(normalizedQuery) && Boolean(searchFn),
+    placeholderData: keepPreviousData,
+    staleTime: 60 * 1000,
+  });
 
-  const matchingItems = useMemo(() => {
-    if (!normalizedQuery) return [];
+  const localMatchingItems = useMemo(() => {
+    if (!normalizedQuery || searchFn) return [];
 
     return items.filter((item) =>
       (item.searchText ?? item.title).toLocaleLowerCase().includes(normalizedQuery),
     );
-  }, [items, normalizedQuery]);
+  }, [items, normalizedQuery, searchFn]);
+  const matchingItems = searchFn ? remoteSearchQuery.data?.items ?? [] : localMatchingItems;
+  const matchingCount = searchFn ? remoteSearchQuery.data?.totalCount ?? 0 : localMatchingItems.length;
   const visibleItems = useMemo(
     () => (normalizedQuery ? matchingItems : trendingItems).slice(0, 4),
     [matchingItems, normalizedQuery, trendingItems],
@@ -150,7 +164,7 @@ export default function SiteSearch({
               </div>
 
               <h2 className="site-search-dialog__heading">
-                {normalizedQuery ? `Results (${matchingItems.length})` : 'Trending'}
+                {normalizedQuery ? `Results (${matchingCount})` : 'Trending'}
               </h2>
 
               <div className="site-search-dialog__list">
@@ -195,20 +209,22 @@ export default function SiteSearch({
                     </a>
                     );
                   })
+                ) : remoteSearchQuery.isFetching && searchFn ? (
+                  <p className="site-search-dialog__empty" role="status">Searching…</p>
                 ) : (
                   <p className="site-search-dialog__empty">
                     No matching series found.
                   </p>
                 )}
               </div>
-              {normalizedQuery && matchingItems.length > 4 && (
+              {normalizedQuery && matchingCount > 4 && (
                 <button
                   className="site-search-dialog__more"
                   type="button"
                   onClick={showAllResults}
                   data-testid="button-show-more-search-results"
                 >
-                  Show More ({matchingItems.length - 4}+)
+                  Show More ({matchingCount - 4}+)
                 </button>
               )}
             </section>
