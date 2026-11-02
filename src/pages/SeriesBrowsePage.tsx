@@ -1,4 +1,5 @@
-import { useEffect, useMemo, useRef, useState, type KeyboardEvent as ReactKeyboardEvent, type SyntheticEvent } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState, type KeyboardEvent as ReactKeyboardEvent, type SyntheticEvent } from 'react';
+import { keepPreviousData, useQuery } from '@tanstack/react-query';
 import { Link, useLocation, useSearch } from 'wouter';
 import {
   ArrowDownAZ,
@@ -27,7 +28,6 @@ import { CatalogErrorState } from '../components/CatalogErrorState';
 import { toSiteSearchItems, toTrendingSiteSearchItems } from '../data/seriesSearchCatalog';
 import { seriesAvailability, seriesGenres, seriesStatuses, seriesTypes } from '../data/seriesFilterOptions';
 import { useThemeMode } from '../hooks/useThemeMode';
-import { useSeriesCatalog } from '../hooks/useSeriesCatalog';
 import {
   DEFAULT_SERIES_FILTER_VISIBILITY,
   getCachedSiteSettings,
@@ -44,12 +44,18 @@ import './series-browse.css';
 
 import {
   DEFAULT_SERIES_COVER,
+  getHomeCatalogHighlights,
+  getSeriesBrowseIndex,
+  getSeriesCatalogByIds,
+  getSeriesCatalogPage,
   getSeriesReleaseTimestamp,
   getSeriesCreatedTimestamp,
+  SERIES_CATALOG_QUERY_KEY,
+  type SeriesBrowseIndexItem,
   type SeriesRecord,
 } from '../lib/seriesCatalog';
 
-type CatalogItem = SeriesRecord;
+type CatalogItem = SeriesBrowseIndexItem;
 const assetList = assets as { src: string; alt: string }[];
 const PAGE_SIZE = 36;
 type SortMode = 'latest' | 'updated' | 'popular' | 'newest' | 'oldest' | 'chapters' | 'title';
@@ -154,10 +160,23 @@ function pageNumbers(pageCount: number, current: number) {
 
 export default function SeriesBrowsePage() {
   const { dark, toggleTheme } = useThemeMode();
-  const catalogQuery = useSeriesCatalog();
-  const catalogItems = catalogQuery.items;
-  const searchItems = useMemo(() => toSiteSearchItems(catalogItems), [catalogItems]);
-  const trendingSearchItems = useMemo(() => toTrendingSiteSearchItems(catalogItems), [catalogItems]);
+  const catalogQuery = useQuery({
+    queryKey: [...SERIES_CATALOG_QUERY_KEY, 'series-browse-index'],
+    queryFn: getSeriesBrowseIndex,
+    staleTime: 2 * 60 * 1000,
+  });
+  const catalogItems = catalogQuery.data ?? [];
+  const highlightsQuery = useQuery({
+    queryKey: [...SERIES_CATALOG_QUERY_KEY, 'series-browse-search-highlights'],
+    queryFn: () => getHomeCatalogHighlights(60),
+    staleTime: 5 * 60 * 1000,
+  });
+  const searchItems = useMemo(() => toSiteSearchItems(highlightsQuery.data ?? []), [highlightsQuery.data]);
+  const trendingSearchItems = useMemo(() => toTrendingSiteSearchItems(highlightsQuery.data ?? []), [highlightsQuery.data]);
+  const searchSeries = useCallback(async (searchTerm: string) => {
+    const result = await getSeriesCatalogPage({ page: 1, pageSize: 4, search: searchTerm });
+    return { items: toSiteSearchItems(result.items), totalCount: result.totalCount };
+  }, []);
   const catalogSourceRanks = useMemo(
     () => new Map(catalogItems.map((item, index) => [item.href, index])),
     [catalogItems],
@@ -392,7 +411,16 @@ export default function SeriesBrowsePage() {
   }, [catalogItems, catalogSourceRanks, query, status, availability, selectedTypes, genreModes, minChapters, maxChapters, createdAfter, createdBefore, sort, sortDirection, seriesFilterVisibility]);
   const pageCount = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
   const currentPage = Math.min(page, pageCount);
-  const visibleItems = filtered.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
+  const visibleIndexItems = filtered.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
+  const visibleIds = useMemo(() => visibleIndexItems.map((item) => item.id), [visibleIndexItems]);
+  const pageRecordsQuery = useQuery({
+    queryKey: [...SERIES_CATALOG_QUERY_KEY, 'series-browse-page', currentPage, visibleIds],
+    queryFn: () => getSeriesCatalogByIds(visibleIds),
+    placeholderData: keepPreviousData,
+    staleTime: 2 * 60 * 1000,
+    enabled: catalogQuery.isSuccess && visibleIds.length > 0,
+  });
+  const visibleItems: SeriesRecord[] = pageRecordsQuery.data ?? [];
   const pages = pageNumbers(pageCount, currentPage);
   const visibleGenres = [...new Set([...seriesGenres, ...catalogItems.flatMap((item) => item.genres)])]
     .filter((genre) => genre.toLocaleLowerCase().includes(genreSearch.trim().toLocaleLowerCase()));
@@ -452,14 +480,14 @@ export default function SeriesBrowsePage() {
       dark={dark}
       onToggleTheme={toggleTheme}
       communityHref="/community"
-      search={<SiteSearch items={searchItems} trendingItems={trendingSearchItems} />}
+      search={<SiteSearch items={searchItems} trendingItems={trendingSearchItems} searchFn={searchSeries} />}
     />
     <main className="catalog-main">
       <header className="catalog-intro">
         <h1><span aria-hidden="true" className="catalog-title-mark"><i /><i /><i /></span> Series</h1>
         <p>Explore a vast array of distinctive and exclusive works on our platform</p>
       </header>
-      {catalogQuery.isLoading && catalogItems.length === 0 && <BrowsePageSkeleton />}
+      {catalogQuery.isLoading && catalogItems.length === 0 && <BrowsePageSkeleton count={PAGE_SIZE} />}
       {catalogQuery.isError && <CatalogErrorState compactMobile hasCachedData={catalogItems.length > 0} onRetry={() => void catalogQuery.refetch()} />}
       {!catalogQuery.isLoading && (!catalogQuery.isError || catalogItems.length > 0) && <>
       <div className="catalog-search">
@@ -497,7 +525,7 @@ export default function SeriesBrowsePage() {
       </div>}
       <section className="catalog-results" aria-label="Series catalog">
         <div className="catalog-toolbar">
-          <p className="catalog-count" aria-live="polite" data-testid="text-series-result-count">{activeSearchTerm || activeFilterCount > 0 ? `Found ${filtered.length} series` : `Found ${catalogQuery.totalCount} series`}</p>
+          <p className="catalog-count" aria-live="polite" data-testid="text-series-result-count">{activeSearchTerm || activeFilterCount > 0 ? `Found ${filtered.length} series` : `Found ${catalogItems.length} series`}</p>
           <div className="catalog-controls">
             <div className="catalog-sort-wrap" ref={sortMenuRef}>
               <button
@@ -713,7 +741,9 @@ export default function SeriesBrowsePage() {
           </div>
           <div className="catalog-filter-apply"><button type="button" onClick={() => setFiltersOpen(false)}>Show {filtered.length} {filtered.length === 1 ? 'result' : 'results'}</button></div>
           </aside>
-          {visibleItems.length ? <div className="catalog-grid">
+          {pageRecordsQuery.isError && <div className="catalog-empty"><CatalogErrorState compactMobile onRetry={() => void pageRecordsQuery.refetch()} /></div>}
+          {pageRecordsQuery.isFetching && <BrowsePageSkeleton count={PAGE_SIZE} />}
+          {!pageRecordsQuery.isFetching && !pageRecordsQuery.isError && visibleItems.length > 0 ? <div className="catalog-grid">
             {visibleItems.map((item) => (
               <LatestReleaseCard
                 key={item.href}
@@ -722,7 +752,7 @@ export default function SeriesBrowsePage() {
                 variant="series"
               />
             ))}
-          </div> : <div className="catalog-empty">
+          </div> : !pageRecordsQuery.isFetching && !pageRecordsQuery.isError && <div className="catalog-empty">
             <span className="catalog-empty-icon"><Search size={21} /></span>
             <h2>No series found</h2>
             <p>Try another title or reset your filters to see more of the library.</p>

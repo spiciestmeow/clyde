@@ -98,6 +98,10 @@ export type SeriesCatalogPageOptions = {
 
 export type NewSeriesCatalogIndexItem = { id: number; createdAt: string };
 export type HomeNewSeriesIndexItem = { id: number; slug: string; title: string; createdAt: string; isNew: boolean };
+export type SeriesBrowseIndexItem = Pick<SeriesRecord,
+  'id' | 'slug' | 'title' | 'href' | 'cover' | 'category' | 'rating' | 'status' | 'pinned' |
+  'chapters' | 'genres' | 'sources' | 'facts' | 'year' | 'pageNumber' | 'pageOrder' | 'createdAt'
+>;
 
 
 export const SERIES_CATALOG_QUERY_KEY = ['series-catalog'] as const;
@@ -290,7 +294,7 @@ export function parseChapterAgeMinutes(status?: string | null): number | null {
   return null;
 }
 
-export function getSeriesReleaseTimestamp(item: SeriesRecord): number {
+export function getSeriesReleaseTimestamp(item: Pick<SeriesRecord, 'sources' | 'facts' | 'chapters' | 'createdAt'>): number {
   const winningSource = getWinningChapterSource(item.sources, item.facts?.latest_source_url || undefined);
   if (winningSource) {
     if (!winningSource.latestChapterAt) return 0;
@@ -334,7 +338,7 @@ export function getSeriesReleaseAgeMinutes(item: SeriesRecord): number {
   return Number.POSITIVE_INFINITY;
 }
 
-export function getSeriesCreatedTimestamp(item: SeriesRecord): number {
+export function getSeriesCreatedTimestamp(item: Pick<SeriesRecord, 'createdAt' | 'id'>): number {
   if (item.createdAt) {
     const t = Date.parse(item.createdAt);
     if (!Number.isNaN(t)) return t;
@@ -441,6 +445,36 @@ export async function getNewSeriesCatalogIndex(): Promise<NewSeriesCatalogIndexI
     .order('id', { ascending: false });
   if (error) throw error;
   return (data ?? []).map((item) => ({ id: item.id, createdAt: item.created_at }));
+}
+
+export async function getSeriesBrowseIndex(): Promise<SeriesBrowseIndexItem[]> {
+  const client = requireSupabase();
+  const { data, error } = await client
+    .from('series')
+    .select('id, slug, title, href, cover, category, rating, status, pinned, chapters, genres, sources, facts, year, page_number, page_order, created_at')
+    .order('page_number', { ascending: true })
+    .order('page_order', { ascending: true })
+    .order('title', { ascending: true });
+  if (error) throw error;
+  return (data ?? []).map((row) => ({
+    id: row.id,
+    slug: row.slug,
+    title: row.title,
+    href: row.href,
+    cover: row.cover ?? '',
+    category: row.category || (row.facts?.type as string | null | undefined) || 'Manhwa',
+    rating: getHighestSeriesRating(row.rating, row.sources),
+    status: row.status ?? 'Ongoing',
+    pinned: row.pinned ?? false,
+    chapters: row.chapters ?? [],
+    genres: row.genres ?? [],
+    sources: row.sources ?? [],
+    facts: row.facts ?? {},
+    year: row.year,
+    pageNumber: row.page_number,
+    pageOrder: row.page_order,
+    createdAt: row.created_at,
+  }));
 }
 
 export async function getHomeNewSeriesIndex(): Promise<HomeNewSeriesIndexItem[]> {
