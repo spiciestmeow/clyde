@@ -8,14 +8,13 @@ import { CatalogErrorState } from '../components/CatalogErrorState';
 import { LatestReleaseCard } from '../components/LatestReleaseCard';
 import { LatestReleasesSkeleton } from '../components/HomeSectionSkeletons';
 import { useThemeMode } from '../hooks/useThemeMode';
-import { toSiteSearchItems, toTrendingSiteSearchItems } from '../data/seriesSearchCatalog';
 import {
   DEFAULT_SERIES_COVER,
-  getHomeCatalogHighlights,
+  getSiteSearchHighlights,
   getHomeLatestReleasePage,
   getHomeNewSeriesIndex,
   getSeriesCatalogByIds,
-  getSeriesCatalogPage,
+  searchSiteCatalog,
   SERIES_CATALOG_QUERY_KEY,
   type SeriesRecord,
 } from '../lib/seriesCatalog';
@@ -60,14 +59,11 @@ function LatestUpdatesPage() {
   const [newSeriesOrder, setNewSeriesOrder] = useState<string[]>(() => getCachedSiteSettings()?.newSeriesOrder ?? []);
   const highlightsQuery = useQuery({
     queryKey: [...SERIES_CATALOG_QUERY_KEY, 'latest-updates-search-highlights'],
-    queryFn: () => getHomeCatalogHighlights(60),
+    queryFn: () => getSiteSearchHighlights(4),
     staleTime: 5 * 60 * 1000,
   });
-  const searchItems = useMemo(() => toSiteSearchItems(highlightsQuery.data ?? []), [highlightsQuery.data]);
-  const trendingSearchItems = useMemo(() => toTrendingSiteSearchItems(highlightsQuery.data ?? []), [highlightsQuery.data]);
   const searchSeries = useCallback(async (query: string) => {
-    const result = await getSeriesCatalogPage({ page: 1, pageSize: 4, search: query });
-    return { items: toSiteSearchItems(result.items), totalCount: result.totalCount };
+    return searchSiteCatalog(query, 4);
   }, []);
   const hotReleasesQuery = useQuery({
     queryKey: [...SERIES_CATALOG_QUERY_KEY, 'latest-updates-hot-page', page, debouncedSearch],
@@ -175,7 +171,7 @@ function LatestUpdatesPage() {
         onToggleMobileMenu={() => setMobileMenuOpen((open) => !open)}
         dark={dark}
         onToggleTheme={toggleTheme}
-        search={<SiteSearch items={searchItems} trendingItems={trendingSearchItems} searchFn={searchSeries} />}
+        search={<SiteSearch items={highlightsQuery.data ?? []} trendingItems={highlightsQuery.data ?? []} searchFn={searchSeries} />}
       />
       <main className="latest-updates-main" aria-labelledby="latest-updates-title">
         <header className="latest-updates-intro">

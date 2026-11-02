@@ -98,13 +98,26 @@ export type SeriesCatalogPageOptions = {
 
 export type NewSeriesCatalogIndexItem = { id: number; createdAt: string };
 export type HomeNewSeriesIndexItem = { id: number; slug: string; title: string; createdAt: string; isNew: boolean };
-export type SeriesBrowseIndexItem = Pick<SeriesRecord,
-  'id' | 'slug' | 'title' | 'href' | 'cover' | 'category' | 'rating' | 'status' | 'pinned' |
-  'chapters' | 'genres' | 'sources' | 'facts' | 'year' | 'pageNumber' | 'pageOrder' | 'createdAt'
->;
-export type SeriesRecommendation = Pick<SeriesRecord,
-  'title' | 'href' | 'cover' | 'rating' | 'chapters' | 'facts'
->;
+export type SeriesBrowseFacets = { genres: string[]; categories: string[] };
+export type SeriesBrowsePageOptions = {
+  page: number;
+  pageSize: number;
+  search?: string;
+  statuses?: string[];
+  categories?: string[];
+  includeGenres?: string[];
+  excludeGenres?: string[];
+  minChapters?: number | null;
+  maxChapters?: number | null;
+  createdAfter?: string | null;
+  createdBefore?: string | null;
+  availability?: string;
+  sort?: string;
+  direction?: 'asc' | 'desc';
+};
+export type SeriesRecommendation = Pick<SeriesRecord, 'title' | 'href' | 'cover' | 'rating'> & {
+  chapterCount: number | null;
+};
 
 
 export const SERIES_CATALOG_QUERY_KEY = ['series-catalog'] as const;
@@ -450,34 +463,77 @@ export async function getNewSeriesCatalogIndex(): Promise<NewSeriesCatalogIndexI
   return (data ?? []).map((item) => ({ id: item.id, createdAt: item.created_at }));
 }
 
-export async function getSeriesBrowseIndex(): Promise<SeriesBrowseIndexItem[]> {
+export async function getSeriesBrowseFacets(): Promise<SeriesBrowseFacets> {
   const client = requireSupabase();
-  const { data, error } = await client
-    .from('series')
-    .select('id, slug, title, href, cover, category, rating, status, pinned, chapters, genres, sources, facts, year, page_number, page_order, created_at')
-    .order('page_number', { ascending: true })
-    .order('page_order', { ascending: true })
-    .order('title', { ascending: true });
+  const { data, error } = await client.from('series').select('genres, category');
+  if (error) throw error;
+  const genres = new Set<string>();
+  const categories = new Set<string>();
+  for (const row of data ?? []) {
+    for (const genre of row.genres ?? []) if (typeof genre === 'string' && genre.trim()) genres.add(genre.trim());
+    const category = row.category;
+    if (typeof category === 'string' && category.trim()) categories.add(category.trim());
+  }
+  return { genres: [...genres].sort((a, b) => a.localeCompare(b)), categories: [...categories].sort((a, b) => a.localeCompare(b)) };
+}
+
+export async function getSeriesBrowsePage(options: SeriesBrowsePageOptions): Promise<{ totalCount: number; items: SeriesRecord[] }> {
+  const client = requireSupabase();
+  const { data, error } = await client.rpc('get_series_browse_page', {
+    p_options: {
+      ...options,
+      search: options.search?.trim() ?? '',
+      statuses: options.statuses ?? [],
+      categories: options.categories ?? [],
+      includeGenres: options.includeGenres ?? [],
+      excludeGenres: options.excludeGenres ?? [],
+    },
+  });
+  if (error) throw error;
+  const result = data as { totalCount?: number; items?: unknown[] } | null;
+  return {
+    totalCount: Number(result?.totalCount ?? 0),
+    items: (result?.items ?? []).map(toSeriesRecord),
+  };
+}
+
+export type SiteSearchCatalogItem = { title: string; href: string; cover: string; category: string; searchText?: string };
+
+export async function getSiteSearchHighlights(limit = 4): Promise<SiteSearchCatalogItem[]> {
+  const client = requireSupabase();
+  const { data, error } = await client.from('series')
+    .select('title, href, cover, category')
+    .order('pinned', { ascending: false })
+    .order('rating', { ascending: false, nullsFirst: false })
+    .order('created_at', { ascending: false })
+    .limit(limit);
   if (error) throw error;
   return (data ?? []).map((row) => ({
-    id: row.id,
-    slug: row.slug,
     title: row.title,
     href: row.href,
     cover: row.cover ?? '',
-    category: row.category || (row.facts?.type as string | null | undefined) || 'Manhwa',
-    rating: getHighestSeriesRating(row.rating, row.sources),
-    status: row.status ?? 'Ongoing',
-    pinned: row.pinned ?? false,
-    chapters: row.chapters ?? [],
-    genres: row.genres ?? [],
-    sources: row.sources ?? [],
-    facts: row.facts ?? {},
-    year: row.year,
-    pageNumber: row.page_number,
-    pageOrder: row.page_order,
-    createdAt: row.created_at,
+    category: row.category ?? 'Manhwa',
   }));
+}
+
+export async function searchSiteCatalog(search: string, limit = 4): Promise<{ items: SiteSearchCatalogItem[]; totalCount: number }> {
+  const client = requireSupabase();
+  const escaped = search.trim().replace(/[\\%_,()]/g, (character) => `\\${character}`);
+  const { data, error, count } = await client.from('series')
+    .select('title, href, cover, category', { count: 'exact' })
+    .or(`title.ilike.%${escaped}%,slug.ilike.%${escaped}%,category.ilike.%${escaped}%`)
+    .order('title', { ascending: true })
+    .limit(limit);
+  if (error) throw error;
+  return {
+    totalCount: count ?? 0,
+    items: (data ?? []).map((row) => ({
+      title: row.title,
+      href: row.href,
+      cover: row.cover ?? '',
+      category: row.category ?? 'Manhwa',
+    })),
+  };
 }
 
 export async function getHomeNewSeriesIndex(): Promise<HomeNewSeriesIndexItem[]> {
@@ -571,7 +627,7 @@ export async function getSeriesRecommendations(
   const client = requireSupabase();
   let request = client
     .from('series')
-    .select('id, title, href, cover, rating, chapters, facts, category, genres, tags, author, artist, pinned, created_at')
+    .select('id, title, href, cover, rating, facts, category, genres, tags, author, artist, pinned, created_at')
     .neq('id', currentSeries.id)
     .order('pinned', { ascending: false })
     .order('rating', { ascending: false, nullsFirst: false })
@@ -594,7 +650,9 @@ export async function getSeriesRecommendations(
     const rating = Number.parseFloat(String(getHighestSeriesRating(row.rating) ?? '0')) || 0;
     const similarityScore = sharedGenres * 4 + sharedTags * 2 + Number(sharesCategory) * 3
       + Number(sharesCreator) * 2 + rating / 10;
-    return { row, similarityScore, rating };
+    const latestChapter = row.facts?.latest_chapter_number || row.facts?.last_chapter_number;
+    const parsedChapter = Number.parseFloat(String(latestChapter ?? '').replace(/^ch(?:apter)?\.?\s*/i, ''));
+    return { row, similarityScore, rating, chapterCount: Number.isFinite(parsedChapter) ? parsedChapter : null };
   });
   return recommendations
     .sort((left, right) => right.similarityScore - left.similarityScore
@@ -602,13 +660,12 @@ export async function getSeriesRecommendations(
       || right.rating - left.rating
       || Date.parse(right.row.created_at) - Date.parse(left.row.created_at))
     .slice(0, limit)
-    .map(({ row }) => ({
+    .map(({ row, chapterCount }) => ({
       title: row.title,
       href: row.href,
       cover: row.cover ?? '',
       rating: getHighestSeriesRating(row.rating),
-      chapters: row.chapters ?? [],
-      facts: row.facts ?? {},
+      chapterCount,
     }));
 }
 

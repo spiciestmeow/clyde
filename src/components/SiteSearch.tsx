@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { keepPreviousData, useQuery } from '@tanstack/react-query';
+import { useQuery } from '@tanstack/react-query';
 import { ChevronRight, Search, X } from 'lucide-react';
 import { useLocation } from 'wouter';
 
@@ -30,13 +30,22 @@ export default function SiteSearch({
   const [, navigate] = useLocation();
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState('');
+  const [debouncedQuery, setDebouncedQuery] = useState('');
   const searchInputRef = useRef<HTMLInputElement>(null);
   const normalizedQuery = query.trim().toLocaleLowerCase();
+  const normalizedDebouncedQuery = debouncedQuery.trim().toLocaleLowerCase();
+  useEffect(() => {
+    if (!normalizedQuery) {
+      setDebouncedQuery('');
+      return;
+    }
+    const timeout = window.setTimeout(() => setDebouncedQuery(query.trim()), 250);
+    return () => window.clearTimeout(timeout);
+  }, [query, normalizedQuery]);
   const remoteSearchQuery = useQuery({
-    queryKey: ['site-search-results', normalizedQuery],
-    queryFn: () => searchFn!(normalizedQuery),
-    enabled: open && Boolean(normalizedQuery) && Boolean(searchFn),
-    placeholderData: keepPreviousData,
+    queryKey: ['site-search-results', normalizedDebouncedQuery],
+    queryFn: () => searchFn!(normalizedDebouncedQuery),
+    enabled: open && Boolean(normalizedDebouncedQuery) && Boolean(searchFn),
     staleTime: 60 * 1000,
   });
 
@@ -47,8 +56,9 @@ export default function SiteSearch({
       (item.searchText ?? item.title).toLocaleLowerCase().includes(normalizedQuery),
     );
   }, [items, normalizedQuery, searchFn]);
-  const matchingItems = searchFn ? remoteSearchQuery.data?.items ?? [] : localMatchingItems;
-  const matchingCount = searchFn ? remoteSearchQuery.data?.totalCount ?? 0 : localMatchingItems.length;
+  const isWaitingForDebounce = Boolean(searchFn && normalizedQuery && normalizedQuery !== normalizedDebouncedQuery);
+  const matchingItems = searchFn ? (isWaitingForDebounce ? [] : remoteSearchQuery.data?.items ?? []) : localMatchingItems;
+  const matchingCount = searchFn ? (isWaitingForDebounce ? 0 : remoteSearchQuery.data?.totalCount ?? 0) : localMatchingItems.length;
   const visibleItems = useMemo(
     () => (normalizedQuery ? matchingItems : trendingItems).slice(0, 4),
     [matchingItems, normalizedQuery, trendingItems],
@@ -209,7 +219,7 @@ export default function SiteSearch({
                     </a>
                     );
                   })
-                ) : remoteSearchQuery.isFetching && searchFn ? (
+                ) : (isWaitingForDebounce || remoteSearchQuery.isFetching) && searchFn ? (
                   <p className="site-search-dialog__empty" role="status">Searching…</p>
                 ) : (
                   <p className="site-search-dialog__empty">

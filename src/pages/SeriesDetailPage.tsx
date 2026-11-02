@@ -4,9 +4,9 @@ import { Activity, ArrowDownUp, ArrowLeft, ArrowUpRight, Bell, BookOpen, Bookmar
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   cacheSeriesCatalog,
-  getHomeCatalogHighlights,
   incrementSeriesViews,
-  getSeriesCatalogPage,
+  getSiteSearchHighlights,
+  searchSiteCatalog,
   getSeriesRecommendations,
   SERIES_CATALOG_QUERY_KEY,
   DEFAULT_SERIES_COVER,
@@ -27,7 +27,6 @@ import SiteSearch from '../components/SiteSearch';
 import SeriesNotFound from '../components/SeriesNotFound';
 import { SeriesReportIssue } from '../components/SeriesReportIssue';
 import { Shareable } from '../components/Shareable';
-import { toSiteSearchItems, toTrendingSiteSearchItems } from '../data/seriesSearchCatalog';
 import { useThemeMode } from '../hooks/useThemeMode';
 import { useSeriesDetail } from '../hooks/useSeriesDetail';
 import { DEFAULT_SERIES_PAGE_VISIBILITY, SITE_SETTINGS_UPDATED_EVENT, getCachedSiteSettings, getSiteSettings } from '../lib/siteSettings';
@@ -52,14 +51,6 @@ type ReactionKey = SeriesReactionKey;
 type ReactionCounts = SeriesReactionCounts;
 type RailPosition = { left: number; top: number; width: number; maxHeight: number };
 type FixedRailPositions = { left: RailPosition; right: RailPosition };
-
-function getDisplayedChapterCount(item: Pick<SeriesRecord, 'facts' | 'chapters'>): number {
-  const latestChapter = item.facts?.latest_chapter_number
-    || item.facts?.last_chapter_number
-    || item.chapters[0]?.title;
-  const parsedChapter = Number.parseFloat(String(latestChapter || '').replace(/^ch(?:apter)?\.?\s*/i, ''));
-  return Number.isFinite(parsedChapter) ? parsedChapter : item.chapters.length;
-}
 
 const assetList = assets as { src: string; alt: string }[];
 const reactionKeys: ReactionKey[] = ['like', 'love', 'happy', 'wow', 'sad', 'angry'];
@@ -272,14 +263,11 @@ export default function SeriesDetailPage() {
   const alternateTitleText = detail?.alternateTitles?.join(' / ') ?? '';
   const searchHighlightsQuery = useQuery({
     queryKey: [...SERIES_CATALOG_QUERY_KEY, 'series-detail-search-highlights'],
-    queryFn: () => getHomeCatalogHighlights(12),
+    queryFn: () => getSiteSearchHighlights(4),
     staleTime: 5 * 60 * 1000,
   });
-  const searchItems = useMemo(() => toSiteSearchItems(searchHighlightsQuery.data ?? []), [searchHighlightsQuery.data]);
-  const trendingSearchItems = useMemo(() => toTrendingSiteSearchItems(searchHighlightsQuery.data ?? []), [searchHighlightsQuery.data]);
   const searchSeries = useCallback(async (query: string) => {
-    const result = await getSeriesCatalogPage({ page: 1, pageSize: 4, search: query });
-    return { items: toSiteSearchItems(result.items), totalCount: result.totalCount };
+    return searchSiteCatalog(query, 4);
   }, []);
   const [bookmarks, setBookmarks] = useState<string[]>(() => readSet('vortex-series-bookmarks'));
   const [favoriteCount, setFavoriteCount] = useState<number>(() => {
@@ -307,11 +295,17 @@ export default function SeriesDetailPage() {
   const relatedQuery = useQuery({
     queryKey: [...SERIES_CATALOG_QUERY_KEY, 'series-detail-recommendations', series?.id, series?.category, series?.genres, series?.tags, series?.author, series?.artist],
     queryFn: ({ signal }) => series ? getSeriesRecommendations(series, 7, signal) : Promise.resolve([]),
-    enabled: Boolean(series?.id) && seriesPageVisibility.similarSeries,
+    enabled: Boolean(slug) && seriesPageVisibility.similarSeries,
     staleTime: 5 * 60 * 1000,
-    retry: true,
-    retryDelay: (attempt) => Math.min(1000 * (2 ** attempt), 30_000),
+    retry: 3,
+    retryDelay: (attempt) => Math.min(1000 * (2 ** attempt), 8_000),
+    refetchOnReconnect: true,
+    refetchOnWindowFocus: true,
   });
+  useEffect(() => {
+    if (!series || !seriesPageVisibility.similarSeries || !relatedQuery.isPending || relatedQuery.fetchStatus !== 'idle') return;
+    void relatedQuery.refetch();
+  }, [series?.id, seriesPageVisibility.similarSeries, relatedQuery.isPending, relatedQuery.fetchStatus, relatedQuery.refetch]);
   const [sourceReactions, setSourceReactions] = useState<string[]>([]);
   const [visitedSources, setVisitedSources] = useState<string[]>([]);
   const [sourceSearch, setSourceSearch] = useState('');
@@ -603,7 +597,7 @@ export default function SeriesDetailPage() {
     href: item.href,
     cover: item.cover,
     rating: item.rating,
-    chapterCount: getDisplayedChapterCount(item),
+    chapterCount: item.chapterCount,
   })), [relatedQuery.data]);
 
   const toggleBookmark = async () => {
@@ -734,8 +728,8 @@ export default function SeriesDetailPage() {
       communityHref="/community"
       search={
         <SiteSearch
-          items={searchItems}
-          trendingItems={trendingSearchItems}
+          items={searchHighlightsQuery.data ?? []}
+          trendingItems={searchHighlightsQuery.data ?? []}
           searchFn={searchSeries}
         />
       }
@@ -1183,7 +1177,7 @@ export default function SeriesDetailPage() {
               <strong>{item.title}</strong>
               <small className="series-related-meta">
                 <span className="series-related-rating"><span className="series-related-star" aria-hidden="true">★</span>{item.rating ?? '—'}</span>
-                <span>{item.chapterCount} ch</span>
+                <span>{item.chapterCount ?? '—'} ch</span>
               </small>
             </span>
           </Link>)}</div> : relatedQuery.isError ? <div className="series-empty" role="alert">Could not load similar series. <button type="button" onClick={() => void relatedQuery.refetch()}>Retry</button></div>

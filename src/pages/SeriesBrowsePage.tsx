@@ -25,7 +25,6 @@ import SiteHeader from '../components/SiteHeader';
 import SiteFooter from '../components/SiteFooter';
 import SiteSearch from '../components/SiteSearch';
 import { CatalogErrorState } from '../components/CatalogErrorState';
-import { toSiteSearchItems, toTrendingSiteSearchItems } from '../data/seriesSearchCatalog';
 import { seriesAvailability, seriesGenres, seriesStatuses, seriesTypes } from '../data/seriesFilterOptions';
 import { useThemeMode } from '../hooks/useThemeMode';
 import {
@@ -44,18 +43,13 @@ import './series-browse.css';
 
 import {
   DEFAULT_SERIES_COVER,
-  getHomeCatalogHighlights,
-  getSeriesBrowseIndex,
-  getSeriesCatalogByIds,
-  getSeriesCatalogPage,
-  getSeriesReleaseTimestamp,
-  getSeriesCreatedTimestamp,
+  getSeriesBrowseFacets,
+  getSeriesBrowsePage,
+  getSiteSearchHighlights,
+  searchSiteCatalog,
   SERIES_CATALOG_QUERY_KEY,
-  type SeriesBrowseIndexItem,
-  type SeriesRecord,
 } from '../lib/seriesCatalog';
 
-type CatalogItem = SeriesBrowseIndexItem;
 const assetList = assets as { src: string; alt: string }[];
 const PAGE_SIZE = 36;
 type SortMode = 'latest' | 'updated' | 'popular' | 'newest' | 'oldest' | 'chapters' | 'title';
@@ -83,29 +77,6 @@ const referenceLeadOrder = [
   '/series/reality-quest-2',
 ];
 const referenceLeadRanks = new Map(referenceLeadOrder.map((href, index) => [href, index]));
-
-function latestChapterAge(item: CatalogItem) {
-  const chapterStatus = item.chapters[0]?.status.trim().toLowerCase() ?? '';
-  if (chapterStatus === 'new') return 0;
-  const age = chapterStatus.match(/(\d+(?:\.\d+)?)\s+days?\s+ago/);
-  return age ? Number(age[1]) : Number.MAX_SAFE_INTEGER;
-}
-
-function latestChapterNumber(item: CatalogItem) {
-  const chapterTitle = item.chapters[0]?.title ?? '';
-  const number = chapterTitle.match(/(\d+(?:\.\d+)?)\s*$/);
-  return number ? Number(number[1]) : 0;
-}
-
-function normalizeSeriesDate(value?: string | null) {
-  if (!value) return null;
-  const trimmed = value.trim();
-  if (/^\d{4}$/.test(trimmed)) return `${trimmed}-01-01`;
-  if (/^\d{4}-\d{2}-\d{2}$/.test(trimmed)) return trimmed;
-  const parsed = new Date(trimmed);
-  if (Number.isNaN(parsed.getTime())) return null;
-  return `${parsed.getFullYear()}-${String(parsed.getMonth() + 1).padStart(2, '0')}-${String(parsed.getDate()).padStart(2, '0')}`;
-}
 
 function imageUrl(source: string, width = 400) {
   if (!source?.trim()) return DEFAULT_SERIES_COVER;
@@ -160,32 +131,25 @@ function pageNumbers(pageCount: number, current: number) {
 
 export default function SeriesBrowsePage() {
   const { dark, toggleTheme } = useThemeMode();
-  const catalogQuery = useQuery({
-    queryKey: [...SERIES_CATALOG_QUERY_KEY, 'series-browse-index'],
-    queryFn: getSeriesBrowseIndex,
+  const facetsQuery = useQuery({
+    queryKey: [...SERIES_CATALOG_QUERY_KEY, 'series-browse-facets'],
+    queryFn: getSeriesBrowseFacets,
     staleTime: 2 * 60 * 1000,
   });
-  const catalogItems = catalogQuery.data ?? [];
   const highlightsQuery = useQuery({
     queryKey: [...SERIES_CATALOG_QUERY_KEY, 'series-browse-search-highlights'],
-    queryFn: () => getHomeCatalogHighlights(60),
+    queryFn: () => getSiteSearchHighlights(4),
     staleTime: 5 * 60 * 1000,
   });
-  const searchItems = useMemo(() => toSiteSearchItems(highlightsQuery.data ?? []), [highlightsQuery.data]);
-  const trendingSearchItems = useMemo(() => toTrendingSiteSearchItems(highlightsQuery.data ?? []), [highlightsQuery.data]);
   const searchSeries = useCallback(async (searchTerm: string) => {
-    const result = await getSeriesCatalogPage({ page: 1, pageSize: 4, search: searchTerm });
-    return { items: toSiteSearchItems(result.items), totalCount: result.totalCount };
+    return searchSiteCatalog(searchTerm, 4);
   }, []);
-  const catalogSourceRanks = useMemo(
-    () => new Map(catalogItems.map((item, index) => [item.href, index])),
-    [catalogItems],
-  );
   const routeSearch = useSearch();
   const [location, setLocation] = useLocation();
   const queryFromUrl = new URLSearchParams(routeSearch).get('search') ?? '';
   const [mobileMenu, setMobileMenu] = useState(false);
   const [query, setQuery] = useState(queryFromUrl);
+  const [settledQuery, setSettledQuery] = useState(queryFromUrl);
   const [status, setStatus] = useState('All');
   const [availability, setAvailability] = useState<(typeof seriesAvailability)[number]>('Any');
   const [selectedTypes, setSelectedTypes] = useState<string[]>([]);
@@ -236,6 +200,15 @@ export default function SeriesBrowsePage() {
     setQuery((current) => current === nextQuery ? current : nextQuery);
     setPage(1);
   }, [routeSearch]);
+
+  useEffect(() => {
+    if (!query.trim()) {
+      setSettledQuery('');
+      return;
+    }
+    const timeout = window.setTimeout(() => setSettledQuery(query), 250);
+    return () => window.clearTimeout(timeout);
+  }, [query]);
 
   useEffect(() => {
     let active = true;
@@ -326,105 +299,43 @@ export default function SeriesBrowsePage() {
     };
   }, [filtersOpen]);
 
-  const filtered = useMemo(() => {
-    const term = query.trim().toLocaleLowerCase();
-    const includedGenres = Object.entries(genreModes)
-      .filter(([, mode]) => mode === 'include')
-      .map(([genre]) => genre.toLocaleLowerCase());
-    const excludedGenres = Object.entries(genreModes)
-      .filter(([, mode]) => mode === 'exclude')
-      .map(([genre]) => genre.toLocaleLowerCase());
-    const matches = catalogItems.filter((item) => {
-      const itemGenres = item.genres.map((genre) => genre.toLocaleLowerCase());
-      const hasLockedChapter = item.chapters.some((chapter) => chapter.locked);
-      const chapterNumber = latestChapterNumber(item);
-      const hasChapterRange = minChapters !== '' || maxChapters !== '';
-      const matchesChapterRange = !hasChapterRange || (
-        chapterNumber > 0 &&
-        (minChapters === '' || chapterNumber >= Number(minChapters)) &&
-        (maxChapters === '' || chapterNumber <= Number(maxChapters))
-      );
-      const seriesDate = normalizeSeriesDate(
-        item.year?.toString() ?? item.facts.createdAt ?? item.facts.createdDate ?? item.facts.releaseDate ?? item.facts.released,
-      );
-      const hasDateRange = createdAfter !== '' || createdBefore !== '';
-      const matchesDateRange = !hasDateRange || (
-        seriesDate !== null &&
-        (createdAfter === '' || seriesDate >= createdAfter) &&
-        (createdBefore === '' || seriesDate <= createdBefore)
-      );
-      // The captured catalog has chapter-lock data but no price flags, so this is the closest available proxy.
-      const hasOnlyUnlockedCapturedChapters = item.chapters.length > 0 && !hasLockedChapter;
-
-      const itemStatusNorm = (item.status || '').trim().toLowerCase();
-      const filterStatusNorm = status.trim().toLowerCase();
-      const matchesStatus =
-        !seriesFilterVisibility.status ||
-        status === 'All' ||
-        itemStatusNorm === filterStatusNorm ||
-        ((filterStatusNorm === 'ongoing' || filterStatusNorm === 'releasing') &&
-          (itemStatusNorm === 'ongoing' || itemStatusNorm === 'releasing'));
-
-      const itemType = (item.category || item.facts?.type || 'Manhwa').trim().toLowerCase();
-      const matchesType =
-        !seriesFilterVisibility.type ||
-        selectedTypes.length === 0 ||
-        selectedTypes.some((t) => t.trim().toLowerCase() === itemType);
-
-      return (!term || `${item.title} ${item.category} ${itemGenres.join(' ')}`.toLocaleLowerCase().includes(term)) &&
-        (!seriesFilterVisibility.genres || (
-          (includedGenres.length === 0 || includedGenres.some((genre) => itemGenres.includes(genre))) &&
-          excludedGenres.every((genre) => !itemGenres.includes(genre))
-        )) &&
-        matchesStatus &&
-        matchesType &&
-        (!seriesFilterVisibility.chapterCount || matchesChapterRange) &&
-        (!seriesFilterVisibility.releaseDate || matchesDateRange) &&
-        (!seriesFilterVisibility.availability || availability === 'Any' ||
-          (availability === 'On Sale' && hasLockedChapter) ||
-          (availability === 'Full Price' && hasOnlyUnlockedCapturedChapters));
-    });
-    matches.sort((a, b) => {
-      let result = 0;
-      if (sort === 'latest') {
-        const aTime = getSeriesReleaseTimestamp(a);
-        const bTime = getSeriesReleaseTimestamp(b);
-        result = bTime - aTime || (getSeriesCreatedTimestamp(b) - getSeriesCreatedTimestamp(a));
-      } else if (sort === 'updated') {
-        const aTime = getSeriesReleaseTimestamp(a);
-        const bTime = getSeriesReleaseTimestamp(b);
-        result = bTime - aTime;
-      } else if (sort === 'popular') {
-        result = Number(b.rating || 0) - Number(a.rating || 0);
-      } else if (sort === 'newest') {
-        result = getSeriesCreatedTimestamp(b) - getSeriesCreatedTimestamp(a);
-      } else if (sort === 'oldest') {
-        result = (catalogSourceRanks.get(b.href) ?? 0) - (catalogSourceRanks.get(a.href) ?? 0);
-      } else if (sort === 'chapters') {
-        result = latestChapterNumber(b) - latestChapterNumber(a);
-      } else if (sort === 'title') {
-        result = a.title.localeCompare(b.title);
-      }
-      return sortDirection === 'desc' ? result : -result;
-    });
-    return matches;
-  }, [catalogItems, catalogSourceRanks, query, status, availability, selectedTypes, genreModes, minChapters, maxChapters, createdAfter, createdBefore, sort, sortDirection, seriesFilterVisibility]);
-  const pageCount = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
-  const currentPage = Math.min(page, pageCount);
-  const visibleIndexItems = filtered.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
-  const visibleIds = useMemo(() => visibleIndexItems.map((item) => item.id), [visibleIndexItems]);
-  const pageRecordsQuery = useQuery({
-    queryKey: [...SERIES_CATALOG_QUERY_KEY, 'series-browse-page', currentPage, visibleIds],
-    queryFn: () => getSeriesCatalogByIds(visibleIds),
+  const includedGenres = Object.entries(genreModes).filter(([, mode]) => mode === 'include').map(([genre]) => genre);
+  const excludedGenres = Object.entries(genreModes).filter(([, mode]) => mode === 'exclude').map(([genre]) => genre);
+  const browseOptions = useMemo(() => ({
+    page: Math.max(1, page),
+    pageSize: PAGE_SIZE,
+    search: settledQuery.trim(),
+    statuses: !seriesFilterVisibility.status || status === 'All' ? [] :
+      ['ongoing', 'releasing'].includes(status.toLocaleLowerCase()) ? ['Ongoing', 'Releasing'] : [status],
+    categories: seriesFilterVisibility.type ? selectedTypes : [],
+    includeGenres: seriesFilterVisibility.genres ? includedGenres : [],
+    excludeGenres: seriesFilterVisibility.genres ? excludedGenres : [],
+    minChapters: seriesFilterVisibility.chapterCount && minChapters !== '' ? Number(minChapters) : null,
+    maxChapters: seriesFilterVisibility.chapterCount && maxChapters !== '' ? Number(maxChapters) : null,
+    createdAfter: seriesFilterVisibility.releaseDate ? createdAfter || null : null,
+    createdBefore: seriesFilterVisibility.releaseDate ? createdBefore || null : null,
+    availability: seriesFilterVisibility.availability ? availability : 'Any',
+    sort,
+    direction: sortDirection,
+  }), [page, settledQuery, status, selectedTypes, includedGenres.join('|'), excludedGenres.join('|'), minChapters, maxChapters, createdAfter, createdBefore, availability, sort, sortDirection, seriesFilterVisibility]);
+  const pageQuery = useQuery({
+    queryKey: [...SERIES_CATALOG_QUERY_KEY, 'series-browse-page', browseOptions],
+    queryFn: () => getSeriesBrowsePage(browseOptions),
     placeholderData: keepPreviousData,
     staleTime: 2 * 60 * 1000,
-    enabled: catalogQuery.isSuccess && visibleIds.length > 0,
   });
-  const visibleItems: SeriesRecord[] = pageRecordsQuery.data ?? [];
+  const totalCount = pageQuery.data?.totalCount ?? 0;
+  const pageCount = Math.max(1, Math.ceil(totalCount / PAGE_SIZE));
+  const currentPage = Math.min(page, pageCount);
+  useEffect(() => {
+    if (page > pageCount) setPage(pageCount);
+  }, [page, pageCount]);
+  const visibleItems = pageQuery.data?.items ?? [];
   const pages = pageNumbers(pageCount, currentPage);
-  const visibleGenres = [...new Set([...seriesGenres, ...catalogItems.flatMap((item) => item.genres)])]
+  const facets = facetsQuery.data;
+  const visibleGenres = [...new Set([...seriesGenres, ...(facets?.genres ?? [])])]
     .filter((genre) => genre.toLocaleLowerCase().includes(genreSearch.trim().toLocaleLowerCase()));
-  const visibleTypes = [...new Set([...seriesTypes, ...catalogItems.map((item) => item.category).filter(Boolean)])];
+  const visibleTypes = [...new Set([...seriesTypes, ...(facets?.categories ?? [])])];
   const toggleFilterSection = (section: FilterSection) => {
     setFilterSectionsOpen((current) => ({ ...current, [section]: !current[section] }));
   };
@@ -480,16 +391,16 @@ export default function SeriesBrowsePage() {
       dark={dark}
       onToggleTheme={toggleTheme}
       communityHref="/community"
-      search={<SiteSearch items={searchItems} trendingItems={trendingSearchItems} searchFn={searchSeries} />}
+      search={<SiteSearch items={highlightsQuery.data ?? []} trendingItems={highlightsQuery.data ?? []} searchFn={searchSeries} />}
     />
     <main className="catalog-main">
       <header className="catalog-intro">
         <h1><span aria-hidden="true" className="catalog-title-mark"><i /><i /><i /></span> Series</h1>
         <p>Explore a vast array of distinctive and exclusive works on our platform</p>
       </header>
-      {catalogQuery.isLoading && catalogItems.length === 0 && <BrowsePageSkeleton count={PAGE_SIZE} />}
-      {catalogQuery.isError && <CatalogErrorState compactMobile hasCachedData={catalogItems.length > 0} onRetry={() => void catalogQuery.refetch()} />}
-      {!catalogQuery.isLoading && (!catalogQuery.isError || catalogItems.length > 0) && <>
+      {pageQuery.isLoading && <BrowsePageSkeleton count={PAGE_SIZE} />}
+      {pageQuery.isError && <CatalogErrorState compactMobile onRetry={() => void pageQuery.refetch()} />}
+      {!pageQuery.isLoading && (!pageQuery.isError || pageQuery.data) && <>
       <div className="catalog-search">
         <Search size={17} aria-hidden="true" />
         <input
@@ -525,7 +436,7 @@ export default function SeriesBrowsePage() {
       </div>}
       <section className="catalog-results" aria-label="Series catalog">
         <div className="catalog-toolbar">
-          <p className="catalog-count" aria-live="polite" data-testid="text-series-result-count">{activeSearchTerm || activeFilterCount > 0 ? `Found ${filtered.length} series` : `Found ${catalogItems.length} series`}</p>
+          <p className="catalog-count" aria-live="polite" data-testid="text-series-result-count">Found {totalCount} series</p>
           <div className="catalog-controls">
             <div className="catalog-sort-wrap" ref={sortMenuRef}>
               <button
@@ -739,11 +650,11 @@ export default function SeriesBrowsePage() {
               </div>}
             </section>}
           </div>
-          <div className="catalog-filter-apply"><button type="button" onClick={() => setFiltersOpen(false)}>Show {filtered.length} {filtered.length === 1 ? 'result' : 'results'}</button></div>
+          <div className="catalog-filter-apply"><button type="button" onClick={() => setFiltersOpen(false)}>Show {totalCount} {totalCount === 1 ? 'result' : 'results'}</button></div>
           </aside>
-          {pageRecordsQuery.isError && <div className="catalog-empty"><CatalogErrorState compactMobile onRetry={() => void pageRecordsQuery.refetch()} /></div>}
-          {pageRecordsQuery.isFetching && <BrowsePageSkeleton count={PAGE_SIZE} />}
-          {!pageRecordsQuery.isFetching && !pageRecordsQuery.isError && visibleItems.length > 0 ? <div className="catalog-grid">
+          {pageQuery.isError && <div className="catalog-empty"><CatalogErrorState compactMobile onRetry={() => void pageQuery.refetch()} /></div>}
+          {pageQuery.isFetching && <BrowsePageSkeleton count={PAGE_SIZE} />}
+          {!pageQuery.isFetching && !pageQuery.isError && visibleItems.length > 0 ? <div className="catalog-grid">
             {visibleItems.map((item) => (
               <LatestReleaseCard
                 key={item.href}
@@ -752,14 +663,14 @@ export default function SeriesBrowsePage() {
                 variant="series"
               />
             ))}
-          </div> : !pageRecordsQuery.isFetching && !pageRecordsQuery.isError && <div className="catalog-empty">
+          </div> : !pageQuery.isFetching && !pageQuery.isError && <div className="catalog-empty">
             <span className="catalog-empty-icon"><Search size={21} /></span>
             <h2>No series found</h2>
             <p>Try another title or reset your filters to see more of the library.</p>
             <button type="button" onClick={clearAllSeriesSearchAndFilters} data-testid="button-reset-series-search">Reset search and filters</button>
           </div>}
         </div>
-        {filtered.length > PAGE_SIZE && <nav className="catalog-pagination" aria-label="Series pages">
+        {totalCount > PAGE_SIZE && <nav className="catalog-pagination" aria-label="Series pages">
           <button type="button" aria-label="First page" disabled={currentPage === 1} onClick={() => { setPage(1); document.querySelector('.catalog-results')?.scrollIntoView({ behavior: 'smooth', block: 'start' }); }} data-testid="button-series-page-first">«</button>
           <button type="button" aria-label="Previous page" disabled={currentPage === 1} onClick={() => { setPage(currentPage - 1); document.querySelector('.catalog-results')?.scrollIntoView({ behavior: 'smooth', block: 'start' }); }} data-testid="button-series-page-previous">‹</button>
           {pages.map((item, index) => typeof item === 'string'
