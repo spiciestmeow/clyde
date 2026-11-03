@@ -42,8 +42,8 @@ as $$
             (release_ages.source_release_at),
             (case when coalesce(s.facts->>'last_chapter_added_at', '') ~ '^[0-9]{4}-[0-9]{2}-[0-9]{2}' then (s.facts->>'last_chapter_added_at')::timestamptz end),
             (case when coalesce(s.facts->>'lastUpdate', s.facts->>'Last update', '') ~ '^[0-9]{4}-[0-9]{2}-[0-9]{2}' then (coalesce(s.facts->>'lastUpdate', s.facts->>'Last update'))::timestamptz end),
-            (select nullif(coalesce(s.chapters->0->>'createdAt', s.chapters->0->>'created_at', s.chapters->0->>'date', s.chapters->0->>'releasedAt'), '')::timestamptz
-              where coalesce(s.chapters->0->>'createdAt', s.chapters->0->>'created_at', s.chapters->0->>'date', s.chapters->0->>'releasedAt', '') ~ '^[0-9]{4}-[0-9]{2}-[0-9]{2}'),
+            (case when coalesce(s.chapters->0->>'createdAt', s.chapters->0->>'created_at', s.chapters->0->>'date', s.chapters->0->>'releasedAt', '') ~ '^[0-9]{4}-[0-9]{2}-[0-9]{2}'
+              then (coalesce(s.chapters->0->>'createdAt', s.chapters->0->>'created_at', s.chapters->0->>'date', s.chapters->0->>'releasedAt'))::timestamptz end),
             (release_ages.fact_release_at),
             (case when lower(trim(coalesce(s.chapters->0->>'status', ''))) not in ('new', 'just now') then release_ages.chapter_release_at end)
           ) as v(candidate_ts)
