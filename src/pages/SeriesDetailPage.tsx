@@ -877,6 +877,28 @@ export default function SeriesDetailPage() {
   const allSourcesRead = prioritizedSources.length > 0 && prioritizedSources.every((source) => visitedSources.includes(source.url));
   const winningChapterSource = getWinningChapterSource(prioritizedSources, latestChapterSourceUrl);
   const winningSourceUrl = winningChapterSource?.url?.trim() || latestChapterSourceUrl;
+
+  // Early Bird: among all sources sharing the top chapter number, find the earliest uploader.
+  const parseChapterNum = (value?: string) =>
+    Number.parseFloat(String(value || '').replace(/^ch(?:apter)?\.?\s*/i, ''));
+  const topChapterNumber = winningChapterSource?.latestChapterNumber;
+  const topChapterSources = topChapterNumber
+    ? prioritizedSources.filter((s) => {
+        const num = parseChapterNum(s.latestChapterNumber);
+        const topNum = parseChapterNum(topChapterNumber);
+        return Number.isFinite(num) && Number.isFinite(topNum) && num === topNum && s.latestChapterAt;
+      })
+    : [];
+  const earlyBirdSource =
+    topChapterSources.length >= 2
+      ? topChapterSources.reduce((earliest, s) => {
+          const t = Date.parse(s.latestChapterAt!);
+          const tEarliest = Date.parse(earliest.latestChapterAt!);
+          return t < tEarliest ? s : earliest;
+        })
+      : null;
+  const earlyBirdSourceUrl = earlyBirdSource?.url?.trim() || null;
+
   const firstSource = prioritizedSources.find((source) => source.url.trim());
   const readChapterSource = winningChapterSource?.url?.trim() ? winningChapterSource : firstSource;
   const readChapterHref = readChapterSource
@@ -1049,6 +1071,7 @@ export default function SeriesDetailPage() {
                 const logoUrl = source.logo || getSourceFavicon(source.url);
                 const targetUrl = formatScanlatorSeriesUrl(source.name, source.url, series.title);
                 const isTopSource = Boolean(winningSourceUrl && source.url.trim() === winningSourceUrl);
+                const isEarlyBird = Boolean(earlyBirdSourceUrl && source.url.trim() === earlyBirdSourceUrl);
                 const sourceReleaseTimestamp = source.latestChapterAt ? Date.parse(source.latestChapterAt) : NaN;
                 const sourceReleaseTime = !Number.isNaN(sourceReleaseTimestamp)
                   ? formatRelativeTime(sourceReleaseTimestamp, source.name)
@@ -1093,6 +1116,9 @@ export default function SeriesDetailPage() {
                         <span className="series-source-heading">
                           <strong className="series-source-name">{source.name}</strong>
                           {isTopSource && <span className="series-source-priority">Latest chapter</span>}
+                          {isEarlyBird && (
+                            <span className="series-source-early-bird" title="First to release this chapter">⚡ Early Bird</span>
+                          )}
                           {isVisited && <span className="series-source-visited" title="You’ve visited this source" aria-label="Visited"><Eye size={13} aria-hidden="true" /></span>}
                         </span>
                         <span className="series-source-meta">
