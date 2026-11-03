@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { Link } from 'wouter';
 import { Eye, Pin, Star } from 'lucide-react';
-import { parseChapterAgeMinutes, type SeriesRecord } from '../lib/seriesCatalog';
+import { getSeriesReleaseTimestamp, parseChapterAgeMinutes, type SeriesRecord } from '../lib/seriesCatalog';
 import { formatScanlatorSeriesUrl } from '../lib/scanlatorLinks';
 import { getWinningChapterSource } from '../lib/sourcePriority';
 
@@ -174,36 +174,7 @@ function formatViews(release: LatestRelease): string {
 
 function formatReleaseTime(release: LatestRelease): string | null {
   const latestChapter = release.chapters[0];
-  const winningSource = getWinningChapterSource(release.sources, release.facts?.latest_source_url || undefined);
-  const sourceDate = winningSource?.latestChapterAt;
-  const factDate = release.facts?.last_chapter_added_at || release.facts?.lastUpdate || release.facts?.['Last update'];
-
-  let timestamp = 0;
-  if (winningSource && !sourceDate && !latestChapter?.status) return 'Time unavailable';
-  const preferredDate = winningSource ? sourceDate : factDate;
-  if (preferredDate) {
-    const parsed = Date.parse(preferredDate);
-    if (!Number.isNaN(parsed)) {
-      timestamp = parsed;
-    } else {
-      const ageMinutes = parseChapterAgeMinutes(preferredDate);
-      if (ageMinutes !== null) timestamp = Date.now() - ageMinutes * 60 * 1000;
-    }
-  }
-
-  if (!timestamp && latestChapter?.status) {
-    const s = latestChapter.status.trim().toLowerCase();
-    if (s === 'new' || s === 'just now') return 'Just now';
-    if (s === 'today') return 'Today';
-    if (s === 'yesterday') return 'Yesterday';
-    if (/^\d+\s*(?:m|min|h|hr|hour|d|day|w|week|mo|month)s?(?:\s*ago)?$/i.test(s)) {
-      return s.includes('ago') ? s : `${s} ago`;
-    }
-    const parsed = Date.parse(latestChapter.status);
-    if (!Number.isNaN(parsed)) {
-      timestamp = parsed;
-    }
-  }
+  const timestamp = getSeriesReleaseTimestamp(release as any);
 
   if (timestamp > 0) {
     const diffMs = Date.now() - timestamp;
@@ -224,7 +195,18 @@ function formatReleaseTime(release: LatestRelease): string | null {
     return `${diffYears}y ago`;
   }
 
-  return null;
+  if (latestChapter?.status) {
+    const s = latestChapter.status.trim().toLowerCase();
+    if (s === 'new' || s === 'just now') return 'Just now';
+    if (s === 'today') return 'Today';
+    if (s === 'yesterday') return 'Yesterday';
+    if (/^\d+\s*(?:m|min|h|hr|hour|d|day|w|week|mo|month)s?(?:\s*ago)?$/i.test(s)) {
+      return s.includes('ago') ? s : `${s} ago`;
+    }
+    return latestChapter.status;
+  }
+
+  return 'Time unavailable';
 }
 
 export function LatestReleaseCard({

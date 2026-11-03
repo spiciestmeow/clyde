@@ -34,20 +34,27 @@ as $$
           else null
         end
       ) as chapter_number,
-      case when winning_source.latest_chapter_number is not null then coalesce(
-        case when coalesce(winning_source.latest_chapter_at, '') ~ '^[0-9]{4}-[0-9]{2}-[0-9]{2}' then winning_source.latest_chapter_at::timestamptz end,
-        release_ages.source_release_at,
-        release_ages.chapter_release_at,
-        to_timestamp(0)
-      ) else coalesce(
-        case when coalesce(s.facts->>'last_chapter_added_at', s.facts->>'lastUpdate', s.facts->>'Last update') ~ '^[0-9]{4}-[0-9]{2}-[0-9]{2}'
-          then (coalesce(s.facts->>'last_chapter_added_at', s.facts->>'lastUpdate', s.facts->>'Last update'))::timestamptz end,
-        release_ages.fact_release_at,
-        (select nullif(coalesce(s.chapters->0->>'createdAt', s.chapters->0->>'created_at', s.chapters->0->>'date', s.chapters->0->>'releasedAt'), '')::timestamptz
-          where coalesce(s.chapters->0->>'createdAt', s.chapters->0->>'created_at', s.chapters->0->>'date', s.chapters->0->>'releasedAt', '') ~ '^[0-9]{4}-[0-9]{2}-[0-9]{2}'),
-        release_ages.chapter_release_at,
-        s.created_at
-      ) end as release_at,
+      coalesce(
+        (
+          select max(candidate_ts)
+          from (values
+            (case when coalesce(winning_source.latest_chapter_at, '') ~ '^[0-9]{4}-[0-9]{2}-[0-9]{2}' then winning_source.latest_chapter_at::timestamptz end),
+            (release_ages.source_release_at),
+            (case when coalesce(s.facts->>'last_chapter_added_at', '') ~ '^[0-9]{4}-[0-9]{2}-[0-9]{2}' then (s.facts->>'last_chapter_added_at')::timestamptz end),
+            (case when coalesce(s.facts->>'lastUpdate', s.facts->>'Last update', '') ~ '^[0-9]{4}-[0-9]{2}-[0-9]{2}' then (coalesce(s.facts->>'lastUpdate', s.facts->>'Last update'))::timestamptz end),
+            (select nullif(coalesce(s.chapters->0->>'createdAt', s.chapters->0->>'created_at', s.chapters->0->>'date', s.chapters->0->>'releasedAt'), '')::timestamptz
+              where coalesce(s.chapters->0->>'createdAt', s.chapters->0->>'created_at', s.chapters->0->>'date', s.chapters->0->>'releasedAt', '') ~ '^[0-9]{4}-[0-9]{2}-[0-9]{2}'),
+            (release_ages.fact_release_at),
+            (case when lower(trim(coalesce(s.chapters->0->>'status', ''))) not in ('new', 'just now') then release_ages.chapter_release_at end)
+          ) as v(candidate_ts)
+        ),
+        case
+          when jsonb_array_length(case when jsonb_typeof(s.chapters) = 'array' then s.chapters else '[]'::jsonb end) > 0
+            or winning_source.latest_chapter_number is not null
+          then s.created_at
+          else to_timestamp(0)
+        end
+      ) as release_at,
       case
         when coalesce(s.facts->>'createdAt', s.facts->>'createdDate', s.facts->>'releaseDate', s.facts->>'released', s.year::text) ~ '^[0-9]{4}$'
           then to_date(coalesce(s.facts->>'createdAt', s.facts->>'createdDate', s.facts->>'releaseDate', s.facts->>'released', s.year::text) || '-01-01', 'YYYY-MM-DD')
@@ -79,7 +86,7 @@ as $$
       order by
         parsed_chapter_number desc,
         case when coalesce(source.value->>'latestChapterAt', '') ~ '^[0-9]{4}-[0-9]{2}-[0-9]{2}' then 0 else 1 end asc,
-        case when coalesce(source.value->>'latestChapterAt', '') ~ '^[0-9]{4}-[0-9]{2}-[0-9]{2}' then (source.value->>'latestChapterAt')::timestamptz end asc nulls last,
+        case when coalesce(source.value->>'latestChapterAt', '') ~ '^[0-9]{4}-[0-9]{2}-[0-9]{2}' then (source.value->>'latestChapterAt')::timestamptz end desc nulls last,
         (trim(coalesce(source.value->>'url', '')) = trim(coalesce(s.facts->>'latest_source_url', ''))) desc
       limit 1
     ) as winning_source on true

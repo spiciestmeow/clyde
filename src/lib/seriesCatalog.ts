@@ -310,44 +310,64 @@ export function parseChapterAgeMinutes(status?: string | null): number | null {
   return null;
 }
 
+function parseExplicitOrRelativeTimestamp(value?: string | null): number {
+  if (!value) return 0;
+  const raw = String(value).trim();
+  const parsed = Date.parse(raw);
+  if (!Number.isNaN(parsed)) return parsed;
+  const ageMinutes = parseChapterAgeMinutes(raw);
+  if (ageMinutes !== null) return Date.now() - ageMinutes * 60 * 1000;
+  return 0;
+}
+
 export function getSeriesReleaseTimestamp(item: Pick<SeriesRecord, 'sources' | 'facts' | 'chapters' | 'createdAt'>): number {
+  const timestamps: number[] = [];
+
+  // 1. Winning source latest chapter timestamp
   const winningSource = getWinningChapterSource(item.sources, item.facts?.latest_source_url || undefined);
-  if (winningSource) {
-    if (winningSource.latestChapterAt) {
-      const sourceTimestamp = Date.parse(winningSource.latestChapterAt);
-      if (!Number.isNaN(sourceTimestamp)) return sourceTimestamp;
-      const sourceAgeMinutes = parseChapterAgeMinutes(winningSource.latestChapterAt);
-      if (sourceAgeMinutes !== null) return Date.now() - sourceAgeMinutes * 60 * 1000;
-    }
-
-    const latestChapter = Array.isArray(item.chapters) ? item.chapters[0] : null;
-    const chapterAgeMinutes = parseChapterAgeMinutes(latestChapter?.status);
-    return chapterAgeMinutes === null ? 0 : Date.now() - chapterAgeMinutes * 60 * 1000;
+  if (winningSource?.latestChapterAt) {
+    const ts = parseExplicitOrRelativeTimestamp(winningSource.latestChapterAt);
+    if (ts > 0) timestamps.push(ts);
   }
 
-  const factDate = item.facts?.last_chapter_added_at || item.facts?.lastUpdate || item.facts?.['Last update'];
-  if (factDate) {
-    const t = Date.parse(factDate);
-    if (!Number.isNaN(t)) return t;
-    const factAgeMinutes = parseChapterAgeMinutes(factDate);
-    if (factAgeMinutes !== null) return Date.now() - factAgeMinutes * 60 * 1000;
+  // 2. Facts dates
+  if (item.facts?.last_chapter_added_at) {
+    const ts = parseExplicitOrRelativeTimestamp(item.facts.last_chapter_added_at);
+    if (ts > 0) timestamps.push(ts);
+  }
+  const factUpdate = item.facts?.lastUpdate || item.facts?.['Last update'];
+  if (factUpdate) {
+    const ts = parseExplicitOrRelativeTimestamp(factUpdate);
+    if (ts > 0) timestamps.push(ts);
   }
 
+  // 3. Chapter[0] createdAt / date
   const latestChapter = Array.isArray(item.chapters) ? item.chapters[0] : null;
   if (latestChapter) {
     const explicitDate = (latestChapter as any).createdAt || (latestChapter as any).created_at || (latestChapter as any).date || (latestChapter as any).releasedAt;
     if (explicitDate) {
-      const t = Date.parse(explicitDate);
-      if (!Number.isNaN(t)) return t;
-    }
-
-    const relMin = parseChapterAgeMinutes(latestChapter.status);
-    if (relMin !== null) {
-      return Date.now() - relMin * 60 * 1000;
+      const ts = parseExplicitOrRelativeTimestamp(explicitDate);
+      if (ts > 0) timestamps.push(ts);
     }
   }
 
-  if (item.createdAt) {
+  // If any confirmed timestamps exist, the latest confirmed release date wins
+  if (timestamps.length > 0) {
+    return Math.max(...timestamps);
+  }
+
+  // 4. Relative chapter status (e.g. "3d ago") if valid
+  if (latestChapter?.status) {
+    const s = latestChapter.status.trim().toLowerCase();
+    if (!['new', 'just now'].includes(s)) {
+      const relMin = parseChapterAgeMinutes(latestChapter.status);
+      if (relMin !== null) return Date.now() - relMin * 60 * 1000;
+    }
+  }
+
+  // 5. Fallback only if the series actually has chapters or chapter sources
+  const hasChapters = (Array.isArray(item.chapters) && item.chapters.length > 0) || Boolean(winningSource?.latestChapterNumber);
+  if (hasChapters && item.createdAt) {
     const t = Date.parse(item.createdAt);
     if (!Number.isNaN(t)) return t;
   }
@@ -679,6 +699,21 @@ export async function getSeriesRecommendations(
 }
 
 export async function getHomeLatestReleasePage(page: number, pageSize: number, search = ''): Promise<SeriesCatalogResponse> {
+  try {
+    const rpcResult = await getSeriesBrowsePage({
+      page,
+      pageSize,
+      search,
+      sort: 'latest',
+      direction: 'desc',
+    });
+    if (rpcResult && Array.isArray(rpcResult.items)) {
+      return rpcResult;
+    }
+  } catch (rpcErr) {
+    console.warn('get_series_browse_page RPC failed for home latest releases, falling back to direct query:', rpcErr);
+  }
+
   const client = requireSupabase();
   const from = Math.max(0, page - 1) * pageSize;
   const to = from + pageSize - 1;

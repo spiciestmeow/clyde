@@ -10,15 +10,41 @@ function chapterNumber(value?: string): number {
   return Number.isFinite(parsed) ? parsed : Number.NEGATIVE_INFINITY;
 }
 
+function parseRelativeAgeMinutes(value?: string): number | null {
+  if (!value) return null;
+  const raw = String(value).trim().toLowerCase();
+  if (['just now', 'new'].includes(raw)) return 0;
+  if (raw === 'today') return 12 * 60;
+  if (raw === 'yesterday') return 24 * 60;
+
+  const match = raw.match(
+    /^(\d+)\s*(m|min|mins|minute|minutes|h|hr|hrs|hour|hours|d|day|days|w|week|weeks|mo|month|months)(?:\s*ago)?$/i,
+  );
+  if (match) {
+    const count = Number.parseInt(match[1], 10);
+    const unit = match[2].toLowerCase();
+    if (unit.startsWith('m') && !unit.startsWith('mo')) return count;
+    if (unit.startsWith('h')) return count * 60;
+    if (unit.startsWith('d')) return count * 24 * 60;
+    if (unit.startsWith('w')) return count * 7 * 24 * 60;
+    if (unit.startsWith('mo')) return count * 30 * 24 * 60;
+  }
+  return null;
+}
+
 function releaseTimestamp(value?: string): number {
   if (!value) return Number.NaN;
-  const parsed = Date.parse(value);
-  return Number.isFinite(parsed) ? parsed : Number.NaN;
+  const raw = String(value).trim();
+  const parsed = Date.parse(raw);
+  if (Number.isFinite(parsed)) return parsed;
+  const ageMinutes = parseRelativeAgeMinutes(raw);
+  if (ageMinutes !== null) return Date.now() - ageMinutes * 60 * 1000;
+  return Number.NaN;
 }
 
 /**
  * Resolve the single source that should represent a series' latest release:
- * highest chapter first, then the earliest known posting time for that chapter.
+ * highest chapter first, then the most recent posting time for that chapter.
  */
 export function getWinningChapterSource<T extends ChapterSource>(
   sources: readonly T[] | null | undefined,
@@ -32,10 +58,22 @@ export function getWinningChapterSource<T extends ChapterSource>(
 
       const aTimestamp = releaseTimestamp(a.latestChapterAt);
       const bTimestamp = releaseTimestamp(b.latestChapterAt);
-      if (Number.isNaN(aTimestamp) !== Number.isNaN(bTimestamp)) return Number.isNaN(aTimestamp) ? 1 : -1;
-      if (!Number.isNaN(aTimestamp) && aTimestamp !== bTimestamp) return aTimestamp - bTimestamp;
+      const aHasTime = !Number.isNaN(aTimestamp);
+      const bHasTime = !Number.isNaN(bTimestamp);
+
+      if (aHasTime && bHasTime) {
+        if (aTimestamp !== bTimestamp) return bTimestamp - aTimestamp; // Most recent release wins
+      } else if (aHasTime !== bHasTime) {
+        return aHasTime ? -1 : 1;
+      }
 
       const normalizedPreferredUrl = preferredUrl?.trim();
-      return Number(b.url?.trim() === normalizedPreferredUrl) - Number(a.url?.trim() === normalizedPreferredUrl);
+      const aIsPreferred = Boolean(normalizedPreferredUrl && a.url?.trim() === normalizedPreferredUrl);
+      const bIsPreferred = Boolean(normalizedPreferredUrl && b.url?.trim() === normalizedPreferredUrl);
+      if (aIsPreferred !== bIsPreferred) {
+        return bIsPreferred ? 1 : -1;
+      }
+
+      return 0;
     })[0];
 }
