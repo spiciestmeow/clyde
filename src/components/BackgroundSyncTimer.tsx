@@ -197,7 +197,7 @@ export function BackgroundSyncTimer({ onManualTriggerSuccess }: BackgroundSyncTi
 
       <div className="bg-sync-footer-time">
         {isTriggeringNow ? (
-          <span style={{ color: '#38bdf8' }}>⚡ Manual background sync is running</span>
+          <span className="bg-sync-running-note">⚡ Manual background sync is running</span>
         ) : (
           <>
             <span>📅 Approx. next 15-minute run: <strong>{formattedNextTime}</strong></span>
