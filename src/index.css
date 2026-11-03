@@ -863,6 +863,7 @@ html[data-accent-theme="default"] .hero-spider { display: none; }
 .view-all svg { width: 16px; }.view-all:hover,.round-more:hover { color: var(--red); border-color: var(--red); }
 .latest-heading .view-all:hover { color: var(--accent); border-color: var(--accent); }
 .release-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
+.latest-section .release-grid { scroll-margin-top: 72px; }
 @media (min-width: 1400px) {
   .release-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
 }

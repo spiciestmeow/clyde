@@ -36,29 +36,16 @@ as $$
       ) as chapter_number,
       case when winning_source.latest_chapter_number is not null then coalesce(
         case when coalesce(winning_source.latest_chapter_at, '') ~ '^[0-9]{4}-[0-9]{2}-[0-9]{2}' then winning_source.latest_chapter_at::timestamptz end,
+        release_ages.source_release_at,
+        release_ages.chapter_release_at,
         to_timestamp(0)
       ) else coalesce(
         case when coalesce(s.facts->>'last_chapter_added_at', s.facts->>'lastUpdate', s.facts->>'Last update') ~ '^[0-9]{4}-[0-9]{2}-[0-9]{2}'
           then (coalesce(s.facts->>'last_chapter_added_at', s.facts->>'lastUpdate', s.facts->>'Last update'))::timestamptz end,
+        release_ages.fact_release_at,
         (select nullif(coalesce(s.chapters->0->>'createdAt', s.chapters->0->>'created_at', s.chapters->0->>'date', s.chapters->0->>'releasedAt'), '')::timestamptz
           where coalesce(s.chapters->0->>'createdAt', s.chapters->0->>'created_at', s.chapters->0->>'date', s.chapters->0->>'releasedAt', '') ~ '^[0-9]{4}-[0-9]{2}-[0-9]{2}'),
-        case lower(trim(coalesce(s.chapters->0->>'status', '')))
-          when 'today' then now() - interval '12 hours'
-          when 'yesterday' then now() - interval '1 day'
-          else case
-            when lower(trim(coalesce(s.chapters->0->>'status', ''))) ~ '^[0-9]+ *(m|min|mins|minute|minutes)( *ago)?$'
-              then now() - substring(lower(trim(s.chapters->0->>'status')) from '^[0-9]+')::numeric * interval '1 minute'
-            when lower(trim(coalesce(s.chapters->0->>'status', ''))) ~ '^[0-9]+ *(h|hr|hrs|hour|hours)( *ago)?$'
-              then now() - substring(lower(trim(s.chapters->0->>'status')) from '^[0-9]+')::numeric * interval '1 hour'
-            when lower(trim(coalesce(s.chapters->0->>'status', ''))) ~ '^[0-9]+ *(d|day|days)( *ago)?$'
-              then now() - substring(lower(trim(s.chapters->0->>'status')) from '^[0-9]+')::numeric * interval '1 day'
-            when lower(trim(coalesce(s.chapters->0->>'status', ''))) ~ '^[0-9]+ *(w|week|weeks)( *ago)?$'
-              then now() - substring(lower(trim(s.chapters->0->>'status')) from '^[0-9]+')::numeric * interval '1 week'
-            when lower(trim(coalesce(s.chapters->0->>'status', ''))) ~ '^[0-9]+ *(mo|month|months)( *ago)?$'
-              then now() - substring(lower(trim(s.chapters->0->>'status')) from '^[0-9]+')::numeric * interval '30 days'
-            else null
-          end
-        end,
+        release_ages.chapter_release_at,
         s.created_at
       ) end as release_at,
       case
@@ -96,6 +83,39 @@ as $$
         (trim(coalesce(source.value->>'url', '')) = trim(coalesce(s.facts->>'latest_source_url', ''))) desc
       limit 1
     ) as winning_source on true
+    left join lateral (
+      select
+        max(parsed.age_at) filter (where parsed.kind = 'source') as source_release_at,
+        max(parsed.age_at) filter (where parsed.kind = 'chapter') as chapter_release_at,
+        max(parsed.age_at) filter (where parsed.kind = 'fact') as fact_release_at
+      from (
+        select age.kind,
+          case lower(trim(coalesce(age.value, '')))
+            when 'just now' then now()
+            when 'new' then now()
+            when 'today' then now() - interval '12 hours'
+            when 'yesterday' then now() - interval '1 day'
+            else case
+              when lower(trim(coalesce(age.value, ''))) ~ '^[0-9]+ *(m|min|mins|minute|minutes)( *ago)?$'
+                then now() - substring(lower(trim(age.value)) from '^[0-9]+')::numeric * interval '1 minute'
+              when lower(trim(coalesce(age.value, ''))) ~ '^[0-9]+ *(h|hr|hrs|hour|hours)( *ago)?$'
+                then now() - substring(lower(trim(age.value)) from '^[0-9]+')::numeric * interval '1 hour'
+              when lower(trim(coalesce(age.value, ''))) ~ '^[0-9]+ *(d|day|days)( *ago)?$'
+                then now() - substring(lower(trim(age.value)) from '^[0-9]+')::numeric * interval '1 day'
+              when lower(trim(coalesce(age.value, ''))) ~ '^[0-9]+ *(w|week|weeks)( *ago)?$'
+                then now() - substring(lower(trim(age.value)) from '^[0-9]+')::numeric * interval '1 week'
+              when lower(trim(coalesce(age.value, ''))) ~ '^[0-9]+ *(mo|month|months)( *ago)?$'
+                then now() - substring(lower(trim(age.value)) from '^[0-9]+')::numeric * interval '30 days'
+              else null
+            end
+          end as age_at
+        from (values
+          ('source', winning_source.latest_chapter_at),
+          ('chapter', s.chapters->0->>'status'),
+          ('fact', coalesce(s.facts->>'last_chapter_added_at', s.facts->>'lastUpdate', s.facts->>'Last update'))
+        ) as age(kind, value)
+      ) as parsed
+    ) as release_ages on true
   ), filtered as (
     select e.* from enriched e cross join options o
     where (o.search_term = '' or

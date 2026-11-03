@@ -163,6 +163,11 @@ function LatestUpdatesPage() {
     setPage(1);
   };
 
+  const changePage = (nextPage: number) => {
+    setPage(nextPage);
+    document.querySelector('.latest-updates-grid')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  };
+
   return (
     <div className={`vortex-page latest-updates-route ${dark ? 'theme-dark' : 'theme-light'}`}>
       <SiteHeader
@@ -247,18 +252,18 @@ function LatestUpdatesPage() {
             <div className="release-pagination-wrap">
               <nav className="release-pagination" aria-label={`${activeTab} updates pages`}>
                 <div className="release-pagination__controls">
-                  <button type="button" className="release-page-button release-page-button--edge" aria-label="First page" onClick={() => setPage(1)} disabled={currentPage === 1}>«</button>
-                  <button type="button" className="release-page-button" aria-label="Previous page" onClick={() => setPage(currentPage - 1)} disabled={currentPage === 1}>‹</button>
+                  <button type="button" className="release-page-button release-page-button--edge" aria-label="First page" onClick={() => changePage(1)} disabled={currentPage === 1}>«</button>
+                  <button type="button" className="release-page-button" aria-label="Previous page" onClick={() => changePage(currentPage - 1)} disabled={currentPage === 1}>‹</button>
                 </div>
                 <ResponsivePaginationPages
                   items={paginationItems}
                   mobileItems={mobilePaginationItems}
                   currentPage={currentPage}
-                  onSelect={setPage}
+                  onSelect={changePage}
                 />
                 <div className="release-pagination__controls">
-                  <button type="button" className="release-page-button" aria-label="Next page" onClick={() => setPage(currentPage + 1)} disabled={currentPage === pageCount}>›</button>
-                  <button type="button" className="release-page-button release-page-button--edge" aria-label="Last page" onClick={() => setPage(pageCount)} disabled={currentPage === pageCount}>»</button>
+                  <button type="button" className="release-page-button" aria-label="Next page" onClick={() => changePage(currentPage + 1)} disabled={currentPage === pageCount}>›</button>
+                  <button type="button" className="release-page-button release-page-button--edge" aria-label="Last page" onClick={() => changePage(pageCount)} disabled={currentPage === pageCount}>»</button>
                 </div>
                 <span className="release-pagination__status" aria-live="polite">Page <b>{currentPage}</b> of <b>{pageCount}</b></span>
               </nav>

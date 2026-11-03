@@ -355,6 +355,10 @@ function HomePage() {
   const releaseError = filter === 'Latest' ? latestReleasePageQuery.isError : newSeriesIndexQuery.isError || newSeriesPageQuery.isError;
   const paginationItems = getPaginationItems(releasePageCount, currentReleasePage);
   const mobilePaginationItems = getMobilePaginationItems(releasePageCount, currentReleasePage);
+  const goToReleasePage = (nextPage: number) => {
+    setReleasePage(nextPage);
+    document.querySelector('.latest-section .release-grid')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  };
   const railRef = useRef<HTMLDivElement>(null);
   const railGestureRef = useRef<RailGesture | null>(null);
   const suppressRailClickUntilRef = useRef(0);
@@ -674,14 +678,14 @@ function HomePage() {
                   type="button"
                   className="release-page-button release-page-button--edge"
                   aria-label="First page"
-                  onClick={() => setReleasePage(1)}
+                  onClick={() => goToReleasePage(1)}
                   disabled={currentReleasePage === 1 || releaseLoading}
                 >«</button>
                 <button
                   type="button"
                   className="release-page-button"
                   aria-label="Previous page"
-                  onClick={() => setReleasePage(currentReleasePage - 1)}
+                  onClick={() => goToReleasePage(currentReleasePage - 1)}
                   disabled={currentReleasePage === 1 || releaseLoading}
                 >‹</button>
               </div>
@@ -689,7 +693,7 @@ function HomePage() {
                 items={paginationItems}
                 mobileItems={mobilePaginationItems}
                 currentPage={currentReleasePage}
-                onSelect={setReleasePage}
+                onSelect={goToReleasePage}
                 disabled={releaseLoading}
               />
               <div className="release-pagination__controls">
@@ -697,14 +701,14 @@ function HomePage() {
                   type="button"
                   className="release-page-button"
                   aria-label="Next page"
-                  onClick={() => setReleasePage(currentReleasePage + 1)}
+                  onClick={() => goToReleasePage(currentReleasePage + 1)}
                   disabled={currentReleasePage === releasePageCount || releaseLoading}
                 >›</button>
                 <button
                   type="button"
                   className="release-page-button release-page-button--edge"
                   aria-label="Last page"
-                  onClick={() => setReleasePage(releasePageCount)}
+                  onClick={() => goToReleasePage(releasePageCount)}
                   disabled={currentReleasePage === releasePageCount || releaseLoading}
                 >»</button>
               </div>

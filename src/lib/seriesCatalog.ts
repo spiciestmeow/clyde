@@ -282,23 +282,23 @@ function arrayValue(value: unknown): string[] {
 export function parseChapterAgeMinutes(status?: string | null): number | null {
   const s = (status || '').trim().toLowerCase();
   if (!s) return null;
-  if (s === 'just now') return 0;
+  if (s === 'just now' || s === 'new') return 0;
   if (s === 'today') return 720;
   if (s === 'yesterday') return 1440;
 
-  const minMatch = s.match(/(\d+)\s*min(?:ute)?s?(?:\s*ago)?/);
+  const minMatch = s.match(/(\d+)\s*(?:m|min(?:ute)?s?)(?:\s*ago)?/);
   if (minMatch) return Number(minMatch[1]);
 
-  const hourMatch = s.match(/(\d+)\s*(?:hour|hr)s?(?:\s*ago)?/);
+  const hourMatch = s.match(/(\d+)\s*(?:h|hour|hr)s?(?:\s*ago)?/);
   if (hourMatch) return Number(hourMatch[1]) * 60;
 
-  const dayMatch = s.match(/(\d+)\s*days?(?:\s*ago)?/);
+  const dayMatch = s.match(/(\d+)\s*(?:d|days?)(?:\s*ago)?/);
   if (dayMatch) return Number(dayMatch[1]) * 1440;
 
-  const weekMatch = s.match(/(\d+)\s*weeks?(?:\s*ago)?/);
+  const weekMatch = s.match(/(\d+)\s*(?:w|weeks?)(?:\s*ago)?/);
   if (weekMatch) return Number(weekMatch[1]) * 1440 * 7;
 
-  const monthMatch = s.match(/(\d+)\s*months?(?:\s*ago)?/);
+  const monthMatch = s.match(/(\d+)\s*(?:mo|months?)(?:\s*ago)?/);
   if (monthMatch) return Number(monthMatch[1]) * 1440 * 30;
 
   const parsedDate = Date.parse(s);
@@ -313,15 +313,24 @@ export function parseChapterAgeMinutes(status?: string | null): number | null {
 export function getSeriesReleaseTimestamp(item: Pick<SeriesRecord, 'sources' | 'facts' | 'chapters' | 'createdAt'>): number {
   const winningSource = getWinningChapterSource(item.sources, item.facts?.latest_source_url || undefined);
   if (winningSource) {
-    if (!winningSource.latestChapterAt) return 0;
-    const sourceTimestamp = Date.parse(winningSource.latestChapterAt);
-    return Number.isNaN(sourceTimestamp) ? 0 : sourceTimestamp;
+    if (winningSource.latestChapterAt) {
+      const sourceTimestamp = Date.parse(winningSource.latestChapterAt);
+      if (!Number.isNaN(sourceTimestamp)) return sourceTimestamp;
+      const sourceAgeMinutes = parseChapterAgeMinutes(winningSource.latestChapterAt);
+      if (sourceAgeMinutes !== null) return Date.now() - sourceAgeMinutes * 60 * 1000;
+    }
+
+    const latestChapter = Array.isArray(item.chapters) ? item.chapters[0] : null;
+    const chapterAgeMinutes = parseChapterAgeMinutes(latestChapter?.status);
+    return chapterAgeMinutes === null ? 0 : Date.now() - chapterAgeMinutes * 60 * 1000;
   }
 
   const factDate = item.facts?.last_chapter_added_at || item.facts?.lastUpdate || item.facts?.['Last update'];
   if (factDate) {
     const t = Date.parse(factDate);
     if (!Number.isNaN(t)) return t;
+    const factAgeMinutes = parseChapterAgeMinutes(factDate);
+    if (factAgeMinutes !== null) return Date.now() - factAgeMinutes * 60 * 1000;
   }
 
   const latestChapter = Array.isArray(item.chapters) ? item.chapters[0] : null;
@@ -333,7 +342,7 @@ export function getSeriesReleaseTimestamp(item: Pick<SeriesRecord, 'sources' | '
     }
 
     const relMin = parseChapterAgeMinutes(latestChapter.status);
-    if (relMin !== null && relMin > 0) {
+    if (relMin !== null) {
       return Date.now() - relMin * 60 * 1000;
     }
   }

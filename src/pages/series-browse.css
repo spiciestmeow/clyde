@@ -154,7 +154,7 @@ html.series-document-scrollbar::-webkit-scrollbar-button, body.series-document-s
 .catalog-filter-field input:focus-visible { outline: 2px solid var(--catalog-accent); outline-offset: 1px; }
 .catalog-filter-field input[type="date"] { color-scheme: light; }
 .theme-dark .catalog-filter-field input[type="date"] { color-scheme: dark; }
-.catalog-grid { grid-column: 1; grid-row: 1; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; padding-top: 7px; }
+.catalog-grid { grid-column: 1; grid-row: 1; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; padding-top: 7px; scroll-margin-top: 72px; }
 .catalog-results-layout.has-filters .catalog-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 .catalog-empty { grid-column: 1; grid-row: 1; }
 .catalog-results-layout.has-filters .catalog-empty { grid-column: 1; grid-row: 1; }

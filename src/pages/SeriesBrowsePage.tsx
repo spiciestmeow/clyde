@@ -328,6 +328,10 @@ export default function SeriesBrowsePage() {
   const totalCount = pageQuery.data?.totalCount ?? 0;
   const pageCount = Math.max(1, Math.ceil(totalCount / PAGE_SIZE));
   const currentPage = Math.min(page, pageCount);
+  const goToPage = (nextPage: number) => {
+    setPage(nextPage);
+    document.querySelector('.catalog-grid')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  };
   useEffect(() => {
     if (page > pageCount) setPage(pageCount);
   }, [page, pageCount]);
@@ -673,20 +677,20 @@ export default function SeriesBrowsePage() {
           </div>}
         </div>
         {totalCount > PAGE_SIZE && <nav className="catalog-pagination" aria-label="Series pages">
-          <button className="catalog-pagination__edge" type="button" aria-label="First page" disabled={currentPage === 1} onClick={() => { setPage(1); document.querySelector('.catalog-results')?.scrollIntoView({ behavior: 'smooth', block: 'start' }); }} data-testid="button-series-page-first">«</button>
-          <button type="button" aria-label="Previous page" disabled={currentPage === 1} onClick={() => { setPage(currentPage - 1); document.querySelector('.catalog-results')?.scrollIntoView({ behavior: 'smooth', block: 'start' }); }} data-testid="button-series-page-previous">‹</button>
+          <button className="catalog-pagination__edge" type="button" aria-label="First page" disabled={currentPage === 1} onClick={() => goToPage(1)} data-testid="button-series-page-first">«</button>
+          <button type="button" aria-label="Previous page" disabled={currentPage === 1} onClick={() => goToPage(currentPage - 1)} data-testid="button-series-page-previous">‹</button>
           <span className="catalog-pagination__numbers catalog-pagination__numbers--desktop">
             {pages.map((item, index) => typeof item === 'string'
               ? <span className="catalog-ellipsis" key={`desktop-dots-${index}`}>…</span>
-              : <button type="button" key={item} className={currentPage === item ? 'is-current' : ''} aria-current={currentPage === item ? 'page' : undefined} onClick={() => { setPage(item); document.querySelector('.catalog-results')?.scrollIntoView({ behavior: 'smooth', block: 'start' }); }} data-testid={`button-series-page-${item}`}>{item}</button>)}
+              : <button type="button" key={item} className={currentPage === item ? 'is-current' : ''} aria-current={currentPage === item ? 'page' : undefined} onClick={() => goToPage(item)} data-testid={`button-series-page-${item}`}>{item}</button>)}
           </span>
           <span className="catalog-pagination__numbers catalog-pagination__numbers--mobile">
             {mobilePages.map((item, index) => item === 'ellipsis'
               ? <span className="catalog-ellipsis" key={`mobile-dots-${index}`}>…</span>
-              : <button type="button" key={`mobile-${item}`} className={currentPage === item ? 'is-current' : ''} aria-current={currentPage === item ? 'page' : undefined} onClick={() => { setPage(item); document.querySelector('.catalog-results')?.scrollIntoView({ behavior: 'smooth', block: 'start' }); }} data-testid={`button-series-page-mobile-${item}`}>{item}</button>)}
+              : <button type="button" key={`mobile-${item}`} className={currentPage === item ? 'is-current' : ''} aria-current={currentPage === item ? 'page' : undefined} onClick={() => goToPage(item)} data-testid={`button-series-page-mobile-${item}`}>{item}</button>)}
           </span>
-          <button type="button" aria-label="Next page" disabled={currentPage === pageCount} onClick={() => { setPage(currentPage + 1); document.querySelector('.catalog-results')?.scrollIntoView({ behavior: 'smooth', block: 'start' }); }} data-testid="button-series-page-next">›</button>
-          <button className="catalog-pagination__edge" type="button" aria-label="Last page" disabled={currentPage === pageCount} onClick={() => { setPage(pageCount); document.querySelector('.catalog-results')?.scrollIntoView({ behavior: 'smooth', block: 'start' }); }} data-testid="button-series-page-last">»</button>
+          <button type="button" aria-label="Next page" disabled={currentPage === pageCount} onClick={() => goToPage(currentPage + 1)} data-testid="button-series-page-next">›</button>
+          <button className="catalog-pagination__edge" type="button" aria-label="Last page" disabled={currentPage === pageCount} onClick={() => goToPage(pageCount)} data-testid="button-series-page-last">»</button>
           <span className="catalog-page-status">Page <b>{currentPage}</b> of <b>{pageCount}</b></span>
         </nav>}
       </section>

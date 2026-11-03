@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { Link } from 'wouter';
 import { Eye, Pin, Star } from 'lucide-react';
-import type { SeriesRecord } from '../lib/seriesCatalog';
+import { parseChapterAgeMinutes, type SeriesRecord } from '../lib/seriesCatalog';
 import { formatScanlatorSeriesUrl } from '../lib/scanlatorLinks';
 import { getWinningChapterSource } from '../lib/sourcePriority';
 
@@ -179,12 +179,15 @@ function formatReleaseTime(release: LatestRelease): string | null {
   const factDate = release.facts?.last_chapter_added_at || release.facts?.lastUpdate || release.facts?.['Last update'];
 
   let timestamp = 0;
-  if (winningSource && !sourceDate) return 'Time unavailable';
+  if (winningSource && !sourceDate && !latestChapter?.status) return 'Time unavailable';
   const preferredDate = winningSource ? sourceDate : factDate;
   if (preferredDate) {
     const parsed = Date.parse(preferredDate);
     if (!Number.isNaN(parsed)) {
       timestamp = parsed;
+    } else {
+      const ageMinutes = parseChapterAgeMinutes(preferredDate);
+      if (ageMinutes !== null) timestamp = Date.now() - ageMinutes * 60 * 1000;
     }
   }
 
