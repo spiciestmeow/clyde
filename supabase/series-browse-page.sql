@@ -34,16 +34,33 @@ as $$
           else null
         end
       ) as chapter_number,
-      coalesce(
+      case when winning_source.latest_chapter_number is not null then coalesce(
+        case when coalesce(winning_source.latest_chapter_at, '') ~ '^[0-9]{4}-[0-9]{2}-[0-9]{2}' then winning_source.latest_chapter_at::timestamptz end,
+        to_timestamp(0)
+      ) else coalesce(
         case when coalesce(s.facts->>'last_chapter_added_at', s.facts->>'lastUpdate', s.facts->>'Last update') ~ '^[0-9]{4}-[0-9]{2}-[0-9]{2}'
           then (coalesce(s.facts->>'last_chapter_added_at', s.facts->>'lastUpdate', s.facts->>'Last update'))::timestamptz end,
-        (select max(nullif(source->>'latestChapterAt', '')::timestamptz)
-          from jsonb_array_elements(case when jsonb_typeof(s.sources) = 'array' then s.sources else '[]'::jsonb end) source
-          where coalesce(source->>'latestChapterAt', '') ~ '^[0-9]{4}-[0-9]{2}-[0-9]{2}'),
         (select nullif(coalesce(s.chapters->0->>'createdAt', s.chapters->0->>'created_at', s.chapters->0->>'date', s.chapters->0->>'releasedAt'), '')::timestamptz
           where coalesce(s.chapters->0->>'createdAt', s.chapters->0->>'created_at', s.chapters->0->>'date', s.chapters->0->>'releasedAt', '') ~ '^[0-9]{4}-[0-9]{2}-[0-9]{2}'),
+        case lower(trim(coalesce(s.chapters->0->>'status', '')))
+          when 'today' then now() - interval '12 hours'
+          when 'yesterday' then now() - interval '1 day'
+          else case
+            when lower(trim(coalesce(s.chapters->0->>'status', ''))) ~ '^[0-9]+ *(m|min|mins|minute|minutes)( *ago)?$'
+              then now() - substring(lower(trim(s.chapters->0->>'status')) from '^[0-9]+')::numeric * interval '1 minute'
+            when lower(trim(coalesce(s.chapters->0->>'status', ''))) ~ '^[0-9]+ *(h|hr|hrs|hour|hours)( *ago)?$'
+              then now() - substring(lower(trim(s.chapters->0->>'status')) from '^[0-9]+')::numeric * interval '1 hour'
+            when lower(trim(coalesce(s.chapters->0->>'status', ''))) ~ '^[0-9]+ *(d|day|days)( *ago)?$'
+              then now() - substring(lower(trim(s.chapters->0->>'status')) from '^[0-9]+')::numeric * interval '1 day'
+            when lower(trim(coalesce(s.chapters->0->>'status', ''))) ~ '^[0-9]+ *(w|week|weeks)( *ago)?$'
+              then now() - substring(lower(trim(s.chapters->0->>'status')) from '^[0-9]+')::numeric * interval '1 week'
+            when lower(trim(coalesce(s.chapters->0->>'status', ''))) ~ '^[0-9]+ *(mo|month|months)( *ago)?$'
+              then now() - substring(lower(trim(s.chapters->0->>'status')) from '^[0-9]+')::numeric * interval '30 days'
+            else null
+          end
+        end,
         s.created_at
-      ) as release_at,
+      ) end as release_at,
       case
         when coalesce(s.facts->>'createdAt', s.facts->>'createdDate', s.facts->>'releaseDate', s.facts->>'released', s.year::text) ~ '^[0-9]{4}$'
           then to_date(coalesce(s.facts->>'createdAt', s.facts->>'createdDate', s.facts->>'releaseDate', s.facts->>'released', s.year::text) || '-01-01', 'YYYY-MM-DD')
@@ -61,6 +78,24 @@ as $$
           where coalesce(tracker->>'rating', '') ~ '^[[:space:]]*[0-9]+([.][0-9]+)?'), 0)
       ) as numeric_rating
     from public.series s
+    left join lateral (
+      select
+        source.value->>'latestChapterNumber' as latest_chapter_number,
+        source.value->>'latestChapterAt' as latest_chapter_at,
+        nullif(substring(
+          regexp_replace(trim(coalesce(source.value->>'latestChapterNumber', '')), '^[[:space:]]*ch(apter)?[.]?[[:space:]]*', '', 'i')
+          from '^[+-]?([0-9]+([.][0-9]*)?|[.][0-9]+)'
+        ), '')::numeric as parsed_chapter_number
+      from jsonb_array_elements(case when jsonb_typeof(s.sources) = 'array' then s.sources else '[]'::jsonb end) as source(value)
+      where regexp_replace(trim(coalesce(source.value->>'latestChapterNumber', '')), '^[[:space:]]*ch(apter)?[.]?[[:space:]]*', '', 'i')
+        ~ '^[+-]?([0-9]+([.][0-9]*)?|[.][0-9]+)'
+      order by
+        parsed_chapter_number desc,
+        case when coalesce(source.value->>'latestChapterAt', '') ~ '^[0-9]{4}-[0-9]{2}-[0-9]{2}' then 0 else 1 end asc,
+        case when coalesce(source.value->>'latestChapterAt', '') ~ '^[0-9]{4}-[0-9]{2}-[0-9]{2}' then (source.value->>'latestChapterAt')::timestamptz end asc nulls last,
+        (trim(coalesce(source.value->>'url', '')) = trim(coalesce(s.facts->>'latest_source_url', ''))) desc
+      limit 1
+    ) as winning_source on true
   ), filtered as (
     select e.* from enriched e cross join options o
     where (o.search_term = '' or

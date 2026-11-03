@@ -18,7 +18,8 @@ import {
   SERIES_CATALOG_QUERY_KEY,
   type SeriesRecord,
 } from '../lib/seriesCatalog';
-import { getPaginationItems } from '../lib/pagination';
+import { getMobilePaginationItems, getPaginationItems } from '../lib/pagination';
+import ResponsivePaginationPages from '../components/ResponsivePaginationPages';
 import {
   getCachedSiteSettings,
   getSiteSettings,
@@ -148,6 +149,7 @@ function LatestUpdatesPage() {
   }, [search]);
 
   const paginationItems = getPaginationItems(pageCount, currentPage);
+  const mobilePaginationItems = getMobilePaginationItems(pageCount, currentPage);
   const firstResult = visibleCount === 0 ? 0 : (currentPage - 1) * PAGE_SIZE + 1;
   const lastResult = Math.min(currentPage * PAGE_SIZE, visibleCount);
 
@@ -248,17 +250,12 @@ function LatestUpdatesPage() {
                   <button type="button" className="release-page-button release-page-button--edge" aria-label="First page" onClick={() => setPage(1)} disabled={currentPage === 1}>«</button>
                   <button type="button" className="release-page-button" aria-label="Previous page" onClick={() => setPage(currentPage - 1)} disabled={currentPage === 1}>‹</button>
                 </div>
-                <ul className="release-pagination__pages">
-                  {paginationItems.map((item, index) => item === 'ellipsis'
-                    ? <li key={`ellipsis-${index}`}><span className="release-page-button release-page-button--ellipsis" aria-hidden="true">…</span></li>
-                    : <li key={item}><button
-                      type="button"
-                      className={`release-page-button release-page-button--number${item === currentPage ? ' is-current' : ''}`}
-                      aria-label={`Page ${item}`}
-                      aria-current={item === currentPage ? 'page' : undefined}
-                      onClick={() => setPage(item)}
-                    >{item}</button></li>)}
-                </ul>
+                <ResponsivePaginationPages
+                  items={paginationItems}
+                  mobileItems={mobilePaginationItems}
+                  currentPage={currentPage}
+                  onSelect={setPage}
+                />
                 <div className="release-pagination__controls">
                   <button type="button" className="release-page-button" aria-label="Next page" onClick={() => setPage(currentPage + 1)} disabled={currentPage === pageCount}>›</button>
                   <button type="button" className="release-page-button release-page-button--edge" aria-label="Last page" onClick={() => setPage(pageCount)} disabled={currentPage === pageCount}>»</button>

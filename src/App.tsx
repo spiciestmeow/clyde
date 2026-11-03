@@ -31,7 +31,8 @@ import { toSiteSearchItems, toTrendingSiteSearchItems } from './data/seriesSearc
 import { useThemeMode } from './hooks/useThemeMode';
 import { useSeriesCatalog } from './hooks/useSeriesCatalog';
 import { getWinningChapterSource } from './lib/sourcePriority';
-import { getPaginationItems } from './lib/pagination';
+import { getMobilePaginationItems, getPaginationItems } from './lib/pagination';
+import ResponsivePaginationPages from './components/ResponsivePaginationPages';
 import {
   readRecentlyViewedSeries,
   RECENTLY_VIEWED_SERIES_KEY,
@@ -353,6 +354,7 @@ function HomePage() {
     : newSeriesIndexQuery.isPending || newSeriesIndexQuery.isFetching || newSeriesPageQuery.isFetching;
   const releaseError = filter === 'Latest' ? latestReleasePageQuery.isError : newSeriesIndexQuery.isError || newSeriesPageQuery.isError;
   const paginationItems = getPaginationItems(releasePageCount, currentReleasePage);
+  const mobilePaginationItems = getMobilePaginationItems(releasePageCount, currentReleasePage);
   const railRef = useRef<HTMLDivElement>(null);
   const railGestureRef = useRef<RailGesture | null>(null);
   const suppressRailClickUntilRef = useRef(0);
@@ -683,18 +685,13 @@ function HomePage() {
                   disabled={currentReleasePage === 1 || releaseLoading}
                 >‹</button>
               </div>
-              <ul className="release-pagination__pages">
-                {paginationItems.map((item, index) => item === 'ellipsis'
-                  ? <li key={`ellipsis-${index}`}><span className="release-page-button release-page-button--ellipsis" aria-hidden="true">…</span></li>
-                  : <li key={item}><button
-                    type="button"
-                    className={`release-page-button release-page-button--number${item === currentReleasePage ? ' is-current' : ''}`}
-                    aria-label={`Page ${item}`}
-                    aria-current={item === currentReleasePage ? 'page' : undefined}
-                    onClick={() => setReleasePage(item)}
-                    disabled={releaseLoading}
-                  >{item}</button></li>)}
-              </ul>
+              <ResponsivePaginationPages
+                items={paginationItems}
+                mobileItems={mobilePaginationItems}
+                currentPage={currentReleasePage}
+                onSelect={setReleasePage}
+                disabled={releaseLoading}
+              />
               <div className="release-pagination__controls">
                 <button
                   type="button"

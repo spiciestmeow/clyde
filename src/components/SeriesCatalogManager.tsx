@@ -52,7 +52,8 @@ import {
 import { fetchMangaDexDetails } from '../lib/mangadex';
 import { uploadOrCompressCover } from '../lib/imageUpload';
 import { getWinningChapterSource } from '../lib/sourcePriority';
-import { getPaginationItems } from '../lib/pagination';
+import { getMobilePaginationItems, getPaginationItems } from '../lib/pagination';
+import ResponsivePaginationPages from './ResponsivePaginationPages';
 import './series-catalog-manager.css';
 import { BackgroundSyncTimer } from './BackgroundSyncTimer';
 import { SyncActivityLogs } from './SyncActivityLogs';
@@ -2995,18 +2996,13 @@ export default function SeriesCatalogManager({
                   <button type="button" className="release-page-button release-page-button--edge" aria-label="First page" onClick={() => changeTitlePage(1)} disabled={currentTitlePage === 1 || isTitleTransitioning}>«</button>
                   <button type="button" className="release-page-button" aria-label="Previous page" onClick={() => changeTitlePage(currentTitlePage - 1)} disabled={currentTitlePage === 1 || isTitleTransitioning}>‹</button>
                 </div>
-                <ul className="release-pagination__pages">
-                  {titlePaginationItems.map((item, index) => item === 'ellipsis'
-                    ? <li key={`ellipsis-${index}`}><span className="release-page-button release-page-button--ellipsis" aria-hidden="true">…</span></li>
-                    : <li key={item}><button
-                      type="button"
-                      className={`release-page-button release-page-button--number${item === currentTitlePage ? ' is-current' : ''}`}
-                      aria-label={`Page ${item}`}
-                      aria-current={item === currentTitlePage ? 'page' : undefined}
-                      onClick={() => changeTitlePage(item)}
-                      disabled={isTitleTransitioning}
-                    >{item}</button></li>)}
-                </ul>
+                <ResponsivePaginationPages
+                  items={titlePaginationItems}
+                  mobileItems={getMobilePaginationItems(titlePageCount, currentTitlePage)}
+                  currentPage={currentTitlePage}
+                  onSelect={changeTitlePage}
+                  disabled={isTitleTransitioning}
+                />
                 <div className="release-pagination__controls">
                   <button type="button" className="release-page-button" aria-label="Next page" onClick={() => changeTitlePage(currentTitlePage + 1)} disabled={currentTitlePage === titlePageCount || isTitleTransitioning}>›</button>
                   <button type="button" className="release-page-button release-page-button--edge" aria-label="Last page" onClick={() => changeTitlePage(titlePageCount)} disabled={currentTitlePage === titlePageCount || isTitleTransitioning}>»</button>
@@ -3106,18 +3102,13 @@ export default function SeriesCatalogManager({
                       <button type="button" className="release-page-button release-page-button--edge" aria-label="First page" onClick={() => setNewSeriesPage(1)} disabled={currentNewSeriesPage === 1 || isNewSeriesPageLoading}>«</button>
                       <button type="button" className="release-page-button" aria-label="Previous page" onClick={() => setNewSeriesPage(currentNewSeriesPage - 1)} disabled={currentNewSeriesPage === 1 || isNewSeriesPageLoading}>‹</button>
                     </div>
-                    <ul className="release-pagination__pages">
-                      {getPaginationItems(newSeriesPageCount, currentNewSeriesPage).map((item, index) => item === 'ellipsis'
-                        ? <li key={`new-order-ellipsis-${index}`}><span className="release-page-button release-page-button--ellipsis" aria-hidden="true">…</span></li>
-                        : <li key={item}><button
-                          type="button"
-                          className={`release-page-button release-page-button--number${item === currentNewSeriesPage ? ' is-current' : ''}`}
-                          aria-label={`Page ${item}`}
-                          aria-current={item === currentNewSeriesPage ? 'page' : undefined}
-                          onClick={() => setNewSeriesPage(item)}
-                          disabled={isNewSeriesPageLoading}
-                        >{item}</button></li>)}
-                    </ul>
+                    <ResponsivePaginationPages
+                      items={getPaginationItems(newSeriesPageCount, currentNewSeriesPage)}
+                      mobileItems={getMobilePaginationItems(newSeriesPageCount, currentNewSeriesPage)}
+                      currentPage={currentNewSeriesPage}
+                      onSelect={setNewSeriesPage}
+                      disabled={isNewSeriesPageLoading}
+                    />
                     <div className="release-pagination__controls">
                       <button type="button" className="release-page-button" aria-label="Next page" onClick={() => setNewSeriesPage(currentNewSeriesPage + 1)} disabled={currentNewSeriesPage === newSeriesPageCount || isNewSeriesPageLoading}>›</button>
                       <button type="button" className="release-page-button release-page-button--edge" aria-label="Last page" onClick={() => setNewSeriesPage(newSeriesPageCount)} disabled={currentNewSeriesPage === newSeriesPageCount || isNewSeriesPageLoading}>»</button>

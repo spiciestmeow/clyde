@@ -565,16 +565,24 @@
   flex: 0 0 auto;
   overflow: hidden;
   border-radius: 5px;
-  background: color-mix(in srgb, var(--up-text) 7%, var(--up-input-bg));
+  background: #19191e;
 }
 
 .title-skeleton::after {
   content: '';
   position: absolute;
   inset: 0;
-  background: linear-gradient(105deg, transparent 20%, color-mix(in srgb, var(--up-text) 13%, transparent) 45%, color-mix(in srgb, var(--up-teal) 18%, transparent) 52%, transparent 78%);
+  background: linear-gradient(90deg, transparent 0%, rgba(255, 255, 255, .08) 50%, transparent 100%);
   transform: translateX(-100%);
-  animation: uploads-title-skeleton-shimmer 680ms ease-in-out infinite;
+  animation: uploads-title-skeleton-shimmer 1.5s ease-in-out infinite;
+}
+
+.comix-admin-wrapper.theme-light .title-skeleton {
+  background: #ece8e3;
+}
+
+.comix-admin-wrapper.theme-light .title-skeleton::after {
+  background: linear-gradient(90deg, transparent 0%, rgba(255, 255, 255, .65) 50%, transparent 100%);
 }
 
 .title-skeleton-cover { width: 100%; height: 100%; border-radius: inherit; }
@@ -604,7 +612,7 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .title-skeleton::after { animation-duration: 1800ms; }
+  .title-skeleton::after { animation: none; }
 }
 
 .title-item-card:hover {

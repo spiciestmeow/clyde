@@ -1232,6 +1232,7 @@ html[data-accent-theme="default"] .hero-spider { display: none; }
 .release-pagination { display: flex; width: 100%; flex-wrap: wrap; align-items: center; justify-content: center; column-gap: 8px; row-gap: 8px; }
 .release-pagination__controls { display: flex; align-items: center; gap: 4px; }
 .release-pagination__pages { display: flex; align-items: center; gap: 4px; margin: 0; padding: 0; list-style: none; }
+.release-pagination__pages--mobile { display: none; }
 .release-page-button { display: inline-flex; min-width: 32px; height: 32px; align-items: center; justify-content: center; padding: 0 8px; border: 1px solid rgba(255,255,255,.1); border-radius: 8px; background: rgba(255,255,255,.05); color: color-mix(in srgb, var(--text) 80%, transparent); font: inherit; font-size: 14px; font-weight: 500; line-height: 1; transition: border-color .15s, color .15s, background-color .15s; cursor: pointer; }
 .release-page-button svg { width: 16px; height: 16px; }
 .release-page-button--edge { display: none; }
@@ -1247,6 +1248,10 @@ html[data-accent-theme="default"] .hero-spider { display: none; }
 .theme-light .release-page-button:not(.is-current) { border-color: rgba(25,25,29,.12); background: rgba(25,25,29,.04); }
 .theme-light .release-page-button:not(.is-current):hover:not(:disabled) { border-color: rgba(25,25,29,.25); background: rgba(25,25,29,.08); }
 .theme-light .release-page-button:disabled:hover { border-color: rgba(25,25,29,.12); background: rgba(25,25,29,.04); }
+@media (max-width: 639px) {
+  .release-pagination__pages--desktop { display: none; }
+  .release-pagination__pages--mobile { display: flex; }
+}
 @media (min-width: 640px) {
   .release-pagination { column-gap: 12px; }
   .release-pagination__controls, .release-pagination__pages { gap: 6px; }
@@ -2021,7 +2026,7 @@ html[data-accent-theme="default"] .release-card--series::after { display: none; 
     --series-cover-width: clamp(140px, 42%, 164px);
   }
   .release-card--series .release-cover { align-self: flex-start; height: auto; aspect-ratio: auto; }
-  .release-card--series .release-cover { background: transparent; }
+  .release-card--series:not(.release-card--skeleton) .release-cover { background: transparent; }
   .release-card--series .release-cover img { width: 100%; height: auto; object-fit: contain; object-position: top center; }
 }
 @media (max-width: 360px) {
@@ -2098,6 +2103,13 @@ html[data-accent-theme="default"] .release-card--series::after { display: none; 
 .release-card--skeleton {
   pointer-events: none;
   user-select: none;
+}
+
+@media (max-width: 600px) {
+  .release-card--series.release-card--skeleton .release-cover {
+    height: auto;
+    aspect-ratio: 2 / 3;
+  }
 }
 
 .rank-card--skeleton {
