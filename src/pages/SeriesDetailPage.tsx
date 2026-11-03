@@ -899,6 +899,55 @@ export default function SeriesDetailPage() {
       : null;
   const earlyBirdSourceUrl = earlyBirdSource?.url?.trim() || null;
 
+  // Official source: known official/publisher domains.
+  const OFFICIAL_DOMAINS = [
+    'webtoons.com', 'tapas.io', 'tappytoon.com', 'lehzin.com',
+    'mangaplus.shueisha.co.jp', 'pocket.shonenmagazine.com',
+    'comic-action.com', 'comic-days.com', 'comic-gardo.com',
+    'tonarinoyj.jp', 'sunday-webry.com', 'shonenjumpplus.com',
+    'comico.jp', 'zebrack-comic.com', 'urasunday.com',
+    'k-manga.jp', 'piccoma.com', 'corocoro.tv',
+    'viz.com', 'crunchyroll.com', 'funimation.com',
+    'yen.press', 'sevenseasentertainment.com',
+    'global.webtoons.com', 'canvas.webtoons.com',
+  ];
+  const isOfficialSource = (url: string) => {
+    try {
+      const host = new URL(url.trim()).hostname.replace(/^www\./, '');
+      return OFFICIAL_DOMAINS.some((d) => host === d || host.endsWith(`.${d}`));
+    } catch {
+      return false;
+    }
+  };
+
+  // Behind: how many chapters behind the leading source number a source is.
+  const topChapterNum = parseChapterNum(topChapterNumber);
+
+  // Full Series: source has chapters covering Ch.1 through top chapter with ≥90% coverage.
+  // We use series.chapters grouped by sourceName for the count.
+  const chaptersBySource = new Map<string, Set<number>>();
+  for (const ch of series.chapters) {
+    if (!ch.sourceName) continue;
+    const key = ch.sourceName.trim().toLowerCase();
+    if (!chaptersBySource.has(key)) chaptersBySource.set(key, new Set());
+    const num = parseChapterNum(ch.title);
+    if (Number.isFinite(num) && num > 0) chaptersBySource.get(key)!.add(Math.round(num));
+  }
+  const isFullSeriesSource = (source: { name: string; latestChapterNumber?: string }) => {
+    if (!Number.isFinite(topChapterNum) || topChapterNum < 2) return false;
+    const sourceNum = parseChapterNum(source.latestChapterNumber);
+    if (!Number.isFinite(sourceNum) || sourceNum < topChapterNum) return false;
+    const key = source.name.trim().toLowerCase();
+    const chNums = chaptersBySource.get(key);
+    if (!chNums || chNums.size < 2) return false;
+    // Check coverage: at least 90% of chapters 1..topChapterNum are present.
+    let covered = 0;
+    for (let i = 1; i <= Math.round(topChapterNum); i++) {
+      if (chNums.has(i)) covered++;
+    }
+    return covered / Math.round(topChapterNum) >= 0.9;
+  };
+
   const firstSource = prioritizedSources.find((source) => source.url.trim());
   const readChapterSource = winningChapterSource?.url?.trim() ? winningChapterSource : firstSource;
   const readChapterHref = readChapterSource
@@ -1072,6 +1121,13 @@ export default function SeriesDetailPage() {
                 const targetUrl = formatScanlatorSeriesUrl(source.name, source.url, series.title);
                 const isTopSource = Boolean(winningSourceUrl && source.url.trim() === winningSourceUrl);
                 const isEarlyBird = Boolean(earlyBirdSourceUrl && source.url.trim() === earlyBirdSourceUrl);
+                const isOfficial = isOfficialSource(source.url);
+                const isFullSeries = isFullSeriesSource(source);
+                const sourceChapterNum = parseChapterNum(source.latestChapterNumber);
+                const chapsBehind =
+                  Number.isFinite(topChapterNum) && Number.isFinite(sourceChapterNum) && !isTopSource
+                    ? Math.round(topChapterNum - sourceChapterNum)
+                    : 0;
                 const sourceReleaseTimestamp = source.latestChapterAt ? Date.parse(source.latestChapterAt) : NaN;
                 const sourceReleaseTime = !Number.isNaN(sourceReleaseTimestamp)
                   ? formatRelativeTime(sourceReleaseTimestamp, source.name)
@@ -1118,6 +1174,15 @@ export default function SeriesDetailPage() {
                           {isTopSource && <span className="series-source-priority">Latest chapter</span>}
                           {isEarlyBird && (
                             <span className="series-source-early-bird" title="First to release this chapter">⚡ Early Bird</span>
+                          )}
+                          {isOfficial && (
+                            <span className="series-source-official" title="Official publisher source">👑 Official</span>
+                          )}
+                          {isFullSeries && (
+                            <span className="series-source-full-series" title="Has full chapter library from Ch.1">📦 Full Series</span>
+                          )}
+                          {chapsBehind > 0 && (
+                            <span className="series-source-behind" title={`${chapsBehind} chapter${chapsBehind > 1 ? 's' : ''} behind the leading source`}>🐢 {chapsBehind} ch behind</span>
                           )}
                           {isVisited && <span className="series-source-visited" title="You’ve visited this source" aria-label="Visited"><Eye size={13} aria-hidden="true" /></span>}
                         </span>
