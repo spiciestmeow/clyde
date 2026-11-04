@@ -11,6 +11,7 @@ export type HeaderVisibility = {
   theme: boolean;
   account: boolean;
   facebook: boolean;
+  donate: boolean;
 };
 
 export type HomepageVisibility = {
@@ -150,6 +151,7 @@ export const DEFAULT_HEADER_VISIBILITY: HeaderVisibility = {
   theme: true,
   account: true,
   facebook: true,
+  donate: false,
 };
 
 export const DEFAULT_HOMEPAGE_VISIBILITY: HomepageVisibility = {

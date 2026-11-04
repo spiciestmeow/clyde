@@ -133,6 +133,7 @@ const headerVisibilityOptions: { key: keyof HeaderVisibility; label: string; des
   { key: 'home', label: 'Home', description: 'Primary route back to the Clydee homepage.', group: 'Navigation' },
   { key: 'series', label: 'Series', description: 'Browse the full catalogue of manga and comics.', group: 'Navigation' },
   { key: 'shop', label: 'Shop', description: 'Link to the Clydee shop.', group: 'Navigation' },
+  { key: 'donate', label: 'Donate / Support', description: 'Donate button in header and Support Us in footer.', group: 'Navigation' },
   { key: 'community', label: 'Community', description: 'Community hub and discussion entry point.', group: 'Navigation' },
   { key: 'search', label: 'Search', description: 'Quick search field in the site header.', group: 'Reader tools' },
   { key: 'bookmarks', label: 'Bookmarks', description: 'A reader’s saved series and reading list.', group: 'Reader tools' },

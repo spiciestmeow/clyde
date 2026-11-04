@@ -123,7 +123,8 @@ export default function SiteHeader({
     headerVisibility.home ||
     headerVisibility.series ||
     headerVisibility.shop ||
-    headerVisibility.community;
+    headerVisibility.community ||
+    headerVisibility.donate;
 
   const closeMenu = () => {
     if (mobileMenuOpen) {
@@ -226,10 +227,12 @@ export default function SiteHeader({
               </Link>
             )}
 
-            <Link className="donate-header-btn desktop-only" href="/donate" aria-label="Support us">
-              <Heart size={13} fill="currentColor" />
-              <span>Donate</span>
-            </Link>
+            {headerVisibility.donate && (
+              <Link className="donate-header-btn desktop-only" href="/donate" aria-label="Support us">
+                <Heart size={13} fill="currentColor" />
+                <span>Donate</span>
+              </Link>
+            )}
 
             {showMenu && (
               <button
@@ -292,6 +295,19 @@ export default function SiteHeader({
                   <div className="mobile-nav-card__left">
                     <ShoppingBag size={19} />
                     <span>Shop</span>
+                  </div>
+                </Link>
+              )}
+
+              {headerVisibility.donate && (
+                <Link
+                  className="mobile-nav-card"
+                  href="/donate"
+                  onClick={closeMenu}
+                >
+                  <div className="mobile-nav-card__left">
+                    <Heart size={19} style={{ color: '#ec4899' }} />
+                    <span>Donate</span>
                   </div>
                 </Link>
               )}
