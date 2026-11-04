@@ -1266,6 +1266,21 @@ body:has(.comix-admin-wrapper.theme-dark) .title-actions-menu-item::after {
   color: var(--up-text);
 }
 
+.section-count-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--accent) 15%, transparent);
+  color: var(--accent);
+  border: 1px solid color-mix(in srgb, var(--accent) 30%, transparent);
+  font-variant-numeric: tabular-nums;
+}
+
 .section-description {
   font-size: 13px;
   color: var(--up-text-muted);

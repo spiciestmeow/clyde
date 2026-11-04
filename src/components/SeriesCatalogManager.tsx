@@ -2396,7 +2396,10 @@ export default function SeriesCatalogManager({
           <section className="form-card-section">
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 10, marginBottom: 8 }}>
               <div>
-                <h2 className="section-title" style={{ margin: 0 }}>Sources</h2>
+                <h2 className="section-title" style={{ margin: 0, display: 'inline-flex', alignItems: 'center', gap: 8 }}>
+                  Sources
+                  <span className="section-count-badge">{draft.sources.length}</span>
+                </h2>
                 <p className="section-description" style={{ margin: 0 }}>Scanlator teams, translation groups, and official platforms</p>
               </div>
               <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>

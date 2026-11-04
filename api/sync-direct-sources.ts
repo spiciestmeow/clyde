@@ -340,10 +340,10 @@ export default async function handler(
       return;
     }
 
-    if (sources.length > 10 || sources.some((source) => typeof source?.url !== 'string' || source.url.length > 2048)) {
+    if (sources.some((source) => typeof source?.url !== 'string' || source.url.length > 2048)) {
       response.status(400).json({
         success: false,
-        message: 'Provide at most 10 source URLs, each no longer than 2048 characters.',
+        message: 'Each source URL must be a string no longer than 2048 characters.',
       });
       return;
     }
