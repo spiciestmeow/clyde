@@ -196,6 +196,17 @@ export default function AdminPage() {
   };
 
   useEffect(() => {
+    const isLight = theme === 'light';
+    document.documentElement.classList.toggle('theme-light', isLight);
+    document.documentElement.classList.toggle('theme-dark', !isLight);
+    return () => {
+      const mainTheme = localStorage.getItem('vortex-theme-mode') === 'dark';
+      document.documentElement.classList.toggle('theme-light', !mainTheme);
+      document.documentElement.classList.toggle('theme-dark', mainTheme);
+    };
+  }, [theme]);
+
+  useEffect(() => {
     if (!supabase) {
       setCheckingSession(false);
       return;

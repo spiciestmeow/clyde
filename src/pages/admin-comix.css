@@ -20,6 +20,14 @@
   --cx-input-border: #212c38;
   --cx-active-item: #1c242e;
 
+  /* Standard theme variables for child components */
+  --panel: #151b22;
+  --panel-soft: #0e1217;
+  --line: #1f2833;
+  --text: #f1f5f9;
+  --muted: #8b98a5;
+  --faint: #64748b;
+
   min-height: 100vh;
   background-color: var(--cx-bg);
   color: var(--cx-text);
@@ -44,6 +52,14 @@
   --cx-input-bg: #f1f5f9;
   --cx-input-border: #cbd5e1;
   --cx-active-item: #f1f5f9;
+
+  /* Standard theme variables for child components in light mode */
+  --panel: #ffffff;
+  --panel-soft: #f1f5f9;
+  --line: #e2e8f0;
+  --text: #0f172a;
+  --muted: #475569;
+  --faint: #94a3b8;
 }
 
 .comix-admin-wrapper * {
