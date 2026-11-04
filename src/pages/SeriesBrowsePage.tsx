@@ -439,27 +439,102 @@ export default function SeriesBrowsePage() {
         />
         {query && <button type="button" onClick={() => { setQuery(''); updateSearchUrl(''); setPage(1); }} aria-label="Clear search" data-testid="button-clear-series-search"><X size={16} /></button>}
       </div>
-      {activeSearchTerm && <div className="catalog-active-search" aria-label="Active search">
-        <span className="catalog-active-search-label">ACTIVE:</span>
-        <button
-          className="catalog-active-search-chip"
-          type="button"
-          onClick={() => { setQuery(''); updateSearchUrl(''); setPage(1); }}
-          aria-label={`Remove search term ${activeSearchTerm}`}
-          data-testid="button-clear-active-series-search"
-        >
-          <span>“{activeSearchTerm}”</span>
-          <X size={11} aria-hidden="true" />
-        </button>
-        <button
-          className="catalog-active-search-clear"
-          type="button"
-          onClick={clearAllSeriesSearchAndFilters}
-          data-testid="button-clear-all-series-filters"
-        >
-          Clear all
-        </button>
-      </div>}
+      {(activeSearchTerm || activeFilterCount > 0) && (
+        <div className="catalog-active-search" aria-label="Active filters and search">
+          <span className="catalog-active-search-label">ACTIVE:</span>
+          {activeSearchTerm && (
+            <button
+              className="catalog-active-search-chip"
+              type="button"
+              onClick={() => { setQuery(''); updateSearchUrl(''); setPage(1); }}
+              aria-label={`Remove search term ${activeSearchTerm}`}
+              data-testid="button-clear-active-series-search"
+            >
+              <span>"{activeSearchTerm}"</span>
+              <X size={10} aria-hidden="true" />
+            </button>
+          )}
+          {seriesFilterVisibility.genres && Object.entries(genreModes).map(([genre, mode]) => (
+            <button
+              key={genre}
+              className={`catalog-active-search-chip is-genre-${mode}`}
+              type="button"
+              onClick={() => cycleGenreMode(genre)}
+              aria-label={`Remove genre ${genre}`}
+              data-testid={`chip-active-genre-${genre.toLowerCase().replaceAll(' ', '-')}`}
+            >
+              <span>{genre}</span>
+              <X size={10} aria-hidden="true" />
+            </button>
+          ))}
+          {seriesFilterVisibility.status && status !== 'All' && (
+            <button
+              className="catalog-active-search-chip"
+              type="button"
+              onClick={() => { setStatus('All'); setPage(1); }}
+              aria-label={`Remove status filter ${status}`}
+              data-testid={`chip-active-status-${status.toLowerCase()}`}
+            >
+              <span>{status}</span>
+              <X size={10} aria-hidden="true" />
+            </button>
+          )}
+          {seriesFilterVisibility.availability && availability !== 'Any' && (
+            <button
+              className="catalog-active-search-chip"
+              type="button"
+              onClick={() => { setAvailability('Any'); setPage(1); }}
+              aria-label={`Remove availability filter ${availability}`}
+            >
+              <span>{availability}</span>
+              <X size={10} aria-hidden="true" />
+            </button>
+          )}
+          {seriesFilterVisibility.type && selectedTypes.map((t) => (
+            <button
+              key={t}
+              className="catalog-active-search-chip"
+              type="button"
+              onClick={() => toggleSeriesType(t)}
+              aria-label={`Remove type filter ${t}`}
+              data-testid={`chip-active-type-${t.toLowerCase()}`}
+            >
+              <span>{t}</span>
+              <X size={10} aria-hidden="true" />
+            </button>
+          ))}
+          {seriesFilterVisibility.chapterCount && (minChapters !== '' || maxChapters !== '') && (
+            <button
+              className="catalog-active-search-chip"
+              type="button"
+              onClick={() => { setMinChapters(''); setMaxChapters(''); setPage(1); }}
+              aria-label="Remove chapter count filter"
+            >
+              <span>Ch: {minChapters || '0'}-{maxChapters || 'any'}</span>
+              <X size={10} aria-hidden="true" />
+            </button>
+          )}
+          {seriesFilterVisibility.releaseDate && (createdAfter !== '' || createdBefore !== '') && (
+            <button
+              className="catalog-active-search-chip"
+              type="button"
+              onClick={() => { setCreatedAfter(''); setCreatedBefore(''); setPage(1); }}
+              aria-label="Remove release date filter"
+            >
+              <span>Date: {createdAfter || 'start'} to {createdBefore || 'now'}</span>
+              <X size={10} aria-hidden="true" />
+            </button>
+          )}
+          <button
+            className="catalog-active-search-clear"
+            type="button"
+            onClick={clearAllSeriesSearchAndFilters}
+            data-testid="button-clear-all-series-filters"
+          >
+            Clear all
+          </button>
+        </div>
+      )}
       <section className="catalog-results" aria-label="Series catalog">
         <div className="catalog-toolbar">
           <p className="catalog-count" aria-live="polite" data-testid="text-series-result-count">Found {totalCount} series</p>
