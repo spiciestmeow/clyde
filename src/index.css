@@ -1023,11 +1023,63 @@ html[data-accent-theme="default"] .hero-spider { display: none; }
   font-weight: 600;
   color: var(--text);
 }
-.release-status i {
-  width: 7px;
-  height: 7px;
+.release-status i,
+.series-status-dot,
+.series-status-indicator {
+  width: var(--series-status-dot, 7px);
+  height: var(--series-status-dot, 7px);
   border-radius: 50%;
+  flex: 0 0 auto;
+  display: inline-block;
   background: #22c55e;
+}
+/* Completed - Blue */
+.release-status[data-status="completed"] i,
+.release-status[data-status="complete"] i,
+.series-status-indicator.status-completed,
+.series-status-indicator[data-status="completed"],
+.series-status-dot.status-completed {
+  background: #3b82f6 !important;
+}
+/* Releasing - Green */
+.release-status[data-status="releasing"] i,
+.release-status[data-status="ongoing"] i,
+.series-status-indicator.status-releasing,
+.series-status-indicator.status-ongoing,
+.series-status-indicator[data-status="releasing"],
+.series-status-indicator[data-status="ongoing"],
+.series-status-dot.status-releasing,
+.series-status-dot.status-ongoing {
+  background: #22c55e !important;
+}
+/* Cancelled - Red */
+.release-status[data-status="cancelled"] i,
+.release-status[data-status="canceled"] i,
+.series-status-indicator.status-cancelled,
+.series-status-indicator.status-canceled,
+.series-status-indicator[data-status="cancelled"],
+.series-status-indicator[data-status="canceled"],
+.series-status-dot.status-cancelled,
+.series-status-dot.status-canceled {
+  background: #ef4444 !important;
+}
+/* Dropped - Yellow */
+.release-status[data-status="dropped"] i,
+.series-status-indicator.status-dropped,
+.series-status-indicator[data-status="dropped"],
+.series-status-dot.status-dropped {
+  background: #eab308 !important;
+}
+/* Hiatus - Grey */
+.release-status[data-status="hiatus"] i,
+.release-status[data-status="on-hiatus"] i,
+.series-status-indicator.status-hiatus,
+.series-status-indicator.status-on-hiatus,
+.series-status-indicator[data-status="hiatus"],
+.series-status-indicator[data-status="on-hiatus"],
+.series-status-dot.status-hiatus,
+.series-status-dot.status-on-hiatus {
+  background: #9ca3af !important;
 }
 .release-boxes {
   display: flex;

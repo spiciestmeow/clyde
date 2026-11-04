@@ -268,8 +268,8 @@ export function LatestReleaseCard({
             <span className="release-rating-num">{release.rating ?? '9.16'}</span>
             <Star size={14} fill="#f59e0b" color="#f59e0b" />
           </div>
-          <div className="release-status">
-            <i />
+          <div className="release-status" data-status={(release.status || 'Ongoing').trim().toLowerCase()}>
+            <i className={`series-status-dot status-`} />
             <span>{release.status || 'Ongoing'}</span>
           </div>
         </div>

@@ -1105,7 +1105,7 @@ export default function SeriesDetailPage() {
                       </strong>
                     ) : (
                       <strong className={value === 'Not provided' ? 'is-missing' : ''} data-fact={label}>
-                        {label === 'Status' && value !== 'Not provided' && <i className="series-status-indicator" aria-hidden="true" />}
+                        {label === 'Status' && value !== 'Not provided' && <i className={`series-status-indicator status-`} data-status={value.trim().toLowerCase()} aria-hidden="true" />}
                         {value}
                       </strong>
                     )}

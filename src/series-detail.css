@@ -201,7 +201,7 @@
 .series-chapter-fact-link:hover { text-decoration: underline; }
 .series-fact strong.is-missing { color: #a8a2a8; }
 .series-fact strong[data-fact="Status"] { display: inline-flex; align-items: center; justify-content: flex-end; gap: 4px; text-transform: uppercase; }
-.series-status-indicator { width: 5px; height: 5px; flex: 0 0 auto; border-radius: 50%; background: #20c978; }
+.series-status-indicator { width: 6px; height: 6px; flex: 0 0 auto; border-radius: 50%; background: #22c55e; }
 .series-fact strong[data-fact="Type"] { max-width: 70px; padding: 3px 6px; border: 1px solid #dedbd8; border-radius: 4px; background: #ffffffa6; color: var(--series-muted); font-weight: 500; text-transform: capitalize; }
 .series-page.theme-dark .series-fact strong[data-fact="Type"] { border-color: #45454b; background: #202024; color: #f4f4f5; }
 
