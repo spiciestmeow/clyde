@@ -4,6 +4,7 @@ import {
   Bookmark,
   ChevronDown,
   ChevronRight,
+  Heart,
   Menu,
   ShoppingBag,
   Trophy,
@@ -224,6 +225,11 @@ export default function SiteHeader({
                 <UserRound size={18} />
               </Link>
             )}
+
+            <Link className="donate-header-btn desktop-only" href="/donate" aria-label="Support us">
+              <Heart size={13} fill="currentColor" />
+              <span>Donate</span>
+            </Link>
 
             {showMenu && (
               <button

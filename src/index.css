@@ -2117,3 +2117,32 @@ html[data-accent-theme="default"] .release-card--series::after { display: none; 
   pointer-events: none;
   user-select: none;
 }
+
+
+/* ── Global Header Donate Button (matches Miyomi) ────────────────── */
+.donate-header-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background-color: #ec4899;
+  color: #ffffff !important;
+  font-size: 13px;
+  font-weight: 600;
+  padding: 6px 14px;
+  border-radius: 9999px;
+  text-decoration: none;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  box-shadow: 0 2px 8px rgba(236, 72, 153, 0.25);
+  margin-left: 2px;
+}
+
+.donate-header-btn:hover {
+  background-color: #db2777;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(236, 72, 153, 0.35);
+  color: #ffffff !important;
+}
+
+.donate-header-btn svg {
+  color: #ffffff;
+}
