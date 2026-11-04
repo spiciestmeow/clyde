@@ -31,7 +31,7 @@ import { useThemeMode } from '../hooks/useThemeMode';
 import { useSeriesDetail } from '../hooks/useSeriesDetail';
 import { DEFAULT_SERIES_PAGE_VISIBILITY, SITE_SETTINGS_UPDATED_EVENT, getCachedSiteSettings, getSiteSettings } from '../lib/siteSettings';
 import { formatScanlatorSeriesUrl } from '../lib/scanlatorLinks';
-import { getWinningChapterSource } from '../lib/sourcePriority';
+import { getWinningChapterSource, releaseTimestamp } from '../lib/sourcePriority';
 import { recordRecentlyViewedSeries } from '../lib/recentlyViewedSeries';
 import { recordBookmarkEvent } from '../lib/bookmarkNotifications';
 import {
@@ -843,8 +843,8 @@ export default function SeriesDetailPage() {
     const chapterDifference = parseChapter(b.latestChapterNumber) - parseChapter(a.latestChapterNumber);
     if (chapterDifference !== 0) return chapterDifference;
 
-    const aTimestamp = a.latestChapterAt ? Date.parse(a.latestChapterAt) : Number.NaN;
-    const bTimestamp = b.latestChapterAt ? Date.parse(b.latestChapterAt) : Number.NaN;
+    const aTimestamp = releaseTimestamp(a.latestChapterAt);
+    const bTimestamp = releaseTimestamp(b.latestChapterAt);
     if (!Number.isNaN(aTimestamp) && !Number.isNaN(bTimestamp) && aTimestamp !== bTimestamp) {
       // Equal chapter counts: older upload first, matching manual-sync results.
       return aTimestamp - bTimestamp;
@@ -869,8 +869,8 @@ export default function SeriesDetailPage() {
       return sourceMatches || chapterMatches;
     })
     .sort((a, b) => {
-      const aTime = a.latestChapterAt ? Date.parse(a.latestChapterAt) : Number.NaN;
-      const bTime = b.latestChapterAt ? Date.parse(b.latestChapterAt) : Number.NaN;
+      const aTime = releaseTimestamp(a.latestChapterAt);
+      const bTime = releaseTimestamp(b.latestChapterAt);
       if (Number.isNaN(aTime) || Number.isNaN(bTime) || aTime === bTime) return 0;
       return sourcesNewestFirst ? bTime - aTime : aTime - bTime;
     });
@@ -878,22 +878,32 @@ export default function SeriesDetailPage() {
   const winningChapterSource = getWinningChapterSource(prioritizedSources, latestChapterSourceUrl);
   const winningSourceUrl = winningChapterSource?.url?.trim() || latestChapterSourceUrl;
 
-  // Early Bird: among all sources sharing the top chapter number, find the earliest uploader.
-  const parseChapterNum = (value?: string) =>
-    Number.parseFloat(String(value || '').replace(/^ch(?:apter)?\.?\s*/i, ''));
+  // Robust chapter parser
+  const parseChapterNum = (value?: string): number => {
+    if (!value) return Number.NEGATIVE_INFINITY;
+    const cleaned = String(value).trim().replace(/^ch(?:apter)?\.?\s*/i, '').replace(/^ep(?:isode)?\.?\s*/i, '');
+    const num = Number.parseFloat(cleaned);
+    if (Number.isFinite(num)) return num;
+    const match = String(value).match(/(\d+(?:\.\d+)?)/);
+    return match ? Number.parseFloat(match[1]) : Number.NEGATIVE_INFINITY;
+  };
+
+  // Early Bird: the source that was first/earliest to release the highest chapter across sources.
+  // Requires at least 2 sources on the series to be meaningful.
   const topChapterNumber = winningChapterSource?.latestChapterNumber;
-  const topChapterSources = topChapterNumber
-    ? prioritizedSources.filter((s) => {
-        const num = parseChapterNum(s.latestChapterNumber);
-        const topNum = parseChapterNum(topChapterNumber);
-        return Number.isFinite(num) && Number.isFinite(topNum) && num === topNum && s.latestChapterAt;
-      })
+  const topChapterNum = parseChapterNum(topChapterNumber);
+  const topChapterSources = Number.isFinite(topChapterNum)
+    ? prioritizedSources.filter((s) => parseChapterNum(s.latestChapterNumber) === topChapterNum)
     : [];
+
   const earlyBirdSource =
-    topChapterSources.length >= 2
+    topChapterSources.length > 0 && prioritizedSources.length >= 2
       ? topChapterSources.reduce((earliest, s) => {
-          const t = Date.parse(s.latestChapterAt!);
-          const tEarliest = Date.parse(earliest.latestChapterAt!);
+          const t = releaseTimestamp(s.latestChapterAt);
+          const tEarliest = releaseTimestamp(earliest.latestChapterAt);
+          if (Number.isNaN(t)) return earliest;
+          if (Number.isNaN(tEarliest)) return s;
+          // Smaller timestamp = released earlier in time = Early Bird
           return t < tEarliest ? s : earliest;
         })
       : null;
@@ -920,8 +930,7 @@ export default function SeriesDetailPage() {
     }
   };
 
-  // Behind: how many chapters behind the leading source number a source is.
-  const topChapterNum = parseChapterNum(topChapterNumber);
+  // Behind: how many chapters behind the leading source number a source is (using topChapterNum above).
 
   // Full Series: source has chapters covering Ch.1 through top chapter with ≥90% coverage.
   // We use series.chapters grouped by sourceName for the count.
@@ -1128,7 +1137,7 @@ export default function SeriesDetailPage() {
                   Number.isFinite(topChapterNum) && Number.isFinite(sourceChapterNum) && !isTopSource
                     ? Math.round(topChapterNum - sourceChapterNum)
                     : 0;
-                const sourceReleaseTimestamp = source.latestChapterAt ? Date.parse(source.latestChapterAt) : NaN;
+                const sourceReleaseTimestamp = source.latestChapterAt ? releaseTimestamp(source.latestChapterAt) : NaN;
                 const sourceReleaseTime = !Number.isNaN(sourceReleaseTimestamp)
                   ? formatRelativeTime(sourceReleaseTimestamp, source.name)
                   : '';

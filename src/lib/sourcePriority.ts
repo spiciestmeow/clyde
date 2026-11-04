@@ -32,7 +32,7 @@ function parseRelativeAgeMinutes(value?: string): number | null {
   return null;
 }
 
-function releaseTimestamp(value?: string): number {
+export function releaseTimestamp(value?: string): number {
   if (!value) return Number.NaN;
   const raw = String(value).trim();
   const parsed = Date.parse(raw);
