@@ -1,8 +1,8 @@
 /* ── Theme-aware custom properties ─────────────────────────────────────── */
 .bg-sync-timer-card {
-  --sync-accent:        var(--accent, #e87936);
-  --sync-accent-strong: var(--accent-strong, #ea580c);
-  --sync-accent-rgb:    var(--accent-rgb, 232, 121, 54);
+  --sync-accent:        var(--accent, #dc2626);
+  --sync-accent-strong: var(--accent-strong, #dc2626);
+  --sync-accent-rgb:    var(--accent-rgb, 220, 38, 38);
   --sync-blue:          #38bdf8;
   --sync-blue-rgb:      56, 189, 248;
   --sync-card-bg:       var(--up-card-bg, var(--cx-surface, var(--panel, #151b22)));

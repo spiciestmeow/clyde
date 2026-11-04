@@ -21,7 +21,15 @@
         if (localStorage.getItem('vortex-theme-mode') !== 'dark') {
           document.documentElement.classList.add('theme-light');
         }
-      } catch {
+        var rawSettings = localStorage.getItem('vortex-site-settings');
+        if (rawSettings) {
+          var parsed = JSON.parse(rawSettings);
+          var theme = parsed && (parsed.accentTheme || parsed.accent_theme);
+          if (theme) {
+            document.documentElement.dataset.accentTheme = theme;
+          }
+        }
+      } catch (e) {
         document.documentElement.classList.add('theme-light');
       }
     </script>
@@ -39,9 +47,17 @@
         opacity: 0;
         transform: scaleX(0);
         transform-origin: left center;
+        background: var(--accent, #dc2626);
+        box-shadow: 0 0 16px rgba(220, 38, 38, 0.65);
+        transition: transform 180ms cubic-bezier(0.1, 0.7, 0.1, 1), opacity 150ms ease;
+      }
+      html[data-accent-theme="halloween"] #vcomics-navigation-progress {
         background: #f78745;
         box-shadow: 0 0 16px rgba(247, 135, 69, 0.65);
-        transition: transform 180ms cubic-bezier(0.1, 0.7, 0.1, 1), opacity 150ms ease;
+      }
+      html[data-accent-theme="default"] #vcomics-navigation-progress {
+        background: #dc2626;
+        box-shadow: 0 0 16px rgba(220, 38, 38, 0.65);
       }
       [dir="rtl"] #vcomics-navigation-progress { transform-origin: right center; }
       @media (prefers-reduced-motion: reduce) {

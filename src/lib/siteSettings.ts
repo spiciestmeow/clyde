@@ -203,12 +203,12 @@ export const DEFAULT_SITE_SETTINGS: SiteSettings = {
   newSeriesOrder: [],
   customSourceNames: [...DEFAULT_CUSTOM_SOURCE_NAMES],
   facebookUrl: 'https://facebook.com',
-  accentTheme: 'halloween',
+  accentTheme: 'default',
   announcement: DEFAULT_ANNOUNCEMENT,
 };
 
 function parseAccentTheme(value: unknown): AccentTheme {
-  return value === 'default' ? 'default' : 'halloween';
+  return value === 'halloween' ? 'halloween' : 'default';
 }
 
 function applyAccentTheme(theme: AccentTheme): void {
@@ -418,7 +418,7 @@ export async function getSiteSettings(forceRefresh = false): Promise<SiteSetting
           featuredSpotlightItems: [...DEFAULT_FEATURED_SPOTLIGHT_ITEMS],
           newSeriesOrder: [],
           customSourceNames: [...DEFAULT_CUSTOM_SOURCE_NAMES],
-          accentTheme: 'halloween',
+          accentTheme: 'default',
           announcement: DEFAULT_ANNOUNCEMENT,
         };
         inMemorySettings = cached;

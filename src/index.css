@@ -27,6 +27,19 @@
   --text: #f4f4f5;
   --muted: #a1a1aa;
   --faint: #77777f;
+  --red: #dc2626;
+  --accent: #dc2626;
+  --accent-strong: #dc2626;
+  --accent-hover: #b91c1c;
+  --accent-rgb: 220, 38, 38;
+  --accent-gradient: linear-gradient(135deg, #ef4444, #b91c1c);
+  --accent-gradient-hover: linear-gradient(135deg, #dc2626, #991b1b);
+  --blue: #2163f4;
+  --scrollbar-thumb: var(--accent);
+  --scrollbar-track: transparent;
+  --radius: 12px;
+}
+html[data-accent-theme="halloween"] {
   --red: #ff5656;
   --accent: #e87936;
   --accent-strong: #ea580c;
@@ -34,10 +47,7 @@
   --accent-rgb: 232, 121, 54;
   --accent-gradient: linear-gradient(135deg, #fb923c, #ea580c);
   --accent-gradient-hover: linear-gradient(135deg, #f97316, #c2410c);
-  --blue: #2163f4;
   --scrollbar-thumb: var(--accent);
-  --scrollbar-track: transparent;
-  --radius: 12px;
 }
 html[data-accent-theme="default"] {
   --red: #dc2626;
@@ -48,6 +58,10 @@ html[data-accent-theme="default"] {
   --accent-gradient: linear-gradient(135deg, #ef4444, #b91c1c);
   --accent-gradient-hover: linear-gradient(135deg, #dc2626, #991b1b);
   --scrollbar-thumb: var(--accent);
+}
+html[data-accent-theme="default"] .pumpkin-icon,
+html[data-accent-theme="default"] .series-source-helmet {
+  display: none !important;
 }
 * { box-sizing: border-box; }
 html { scroll-behavior: smooth; background: var(--page); }
