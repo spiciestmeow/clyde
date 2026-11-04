@@ -27,6 +27,7 @@ import SeriesDetailPage from './pages/SeriesDetailPage';
 import SeriesBrowsePage from './pages/SeriesBrowsePage';
 import CreditsPage from './pages/CreditsPage';
 import LatestUpdatesPage from './pages/LatestUpdatesPage';
+import DonationPage from './pages/DonationPage';
 import { toSiteSearchItems, toTrendingSiteSearchItems } from './data/seriesSearchCatalog';
 import { useThemeMode } from './hooks/useThemeMode';
 import { useSeriesCatalog } from './hooks/useSeriesCatalog';
@@ -963,6 +964,8 @@ function App() {
         <Route path={ADMIN_ROUTE} component={AdminPage} />
         <Route path="/credits" component={CreditsPage} />
         <Route path="/dmca-policy" component={CreditsPage} />
+        <Route path="/donate" component={DonationPage} />
+        <Route path="/support" component={DonationPage} />
         <Route path="/series" component={SeriesBrowsePage} />
         <Route path="/series/:slug" component={SeriesDetailPage} />
         <Route path="/notifications" component={NotificationsPage} />

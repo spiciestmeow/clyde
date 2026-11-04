@@ -35,7 +35,8 @@ export default function SiteFooter({
         </div>
         <div className="footer-tagline"><p>{tagline}</p></div>
         <ul className="footer-links">
-          <li><a href="/credits">Credits</a></li>
+          <li><Link href="/credits">Credits</Link></li>
+          <li><Link href="/donate">Support Us</Link></li>
           <li><a href={facebookUrl} target="_blank" rel="noopener noreferrer">Facebook</a></li>
         </ul>
         <hr />
