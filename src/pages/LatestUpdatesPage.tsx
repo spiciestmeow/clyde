@@ -20,6 +20,7 @@ import {
 } from '../lib/seriesCatalog';
 import { getMobilePaginationItems, getPaginationItems } from '../lib/pagination';
 import ResponsivePaginationPages from '../components/ResponsivePaginationPages';
+import { triggerNavigationProgress } from '../components/NavigationProgress';
 import {
   getCachedSiteSettings,
   getSiteSettings,
@@ -154,6 +155,7 @@ function LatestUpdatesPage() {
   const lastResult = Math.min(currentPage * PAGE_SIZE, visibleCount);
 
   const changeTab = (tab: ReleaseTab) => {
+    triggerNavigationProgress();
     setActiveTab(tab);
     setPage(1);
   };
@@ -164,6 +166,7 @@ function LatestUpdatesPage() {
   };
 
   const changePage = (nextPage: number) => {
+    triggerNavigationProgress();
     setPage(nextPage);
     document.querySelector('.latest-updates-grid')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
   };

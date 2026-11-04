@@ -8,7 +8,7 @@ import SiteHeader from './components/SiteHeader';
 import NotificationPopover from './components/NotificationPopover';
 import { Shareable } from './components/Shareable';
 import { ReportIssue } from './components/ReportIssue';
-import NavigationProgress from './components/NavigationProgress';
+import NavigationProgress, { triggerNavigationProgress } from './components/NavigationProgress';
 import { Toaster } from './components/ui/toaster';
 import HeroSlider from './components/HeroSlider';
 import TryTheLookShowcase from './components/TryTheLookShowcase';
@@ -357,6 +357,7 @@ function HomePage() {
   const paginationItems = getPaginationItems(releasePageCount, currentReleasePage);
   const mobilePaginationItems = getMobilePaginationItems(releasePageCount, currentReleasePage);
   const goToReleasePage = (nextPage: number) => {
+    triggerNavigationProgress();
     setReleasePage(nextPage);
     document.querySelector('.latest-section .release-grid')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
   };
@@ -654,7 +655,34 @@ function HomePage() {
         )}
 
         {homepageVisibility.latestReleases && <section className="latest-section content-width">
-          <div className="latest-heading"><div className="section-title"><h2>Latest Releases</h2></div><div className="latest-tabs"><button className={filter === 'Latest' ? 'on' : ''} onClick={() => { setFilter('Latest'); setReleasePage(1); }}><RefreshCw size={15} />Latest</button><button className={filter === 'New' ? 'on' : ''} onClick={() => { setFilter('New'); setReleasePage(1); }}><Clock3 size={15} />New</button></div><a className="view-all" href="/latest-updates" aria-label="View All Latest Updates"><ArrowUpRight /></a></div>
+          <div className="latest-heading">
+            <div className="section-title">
+              <h2>Latest Releases</h2>
+            </div>
+            <div className="latest-tabs">
+              <button
+                className={filter === 'Latest' ? 'on' : ''}
+                onClick={() => {
+                  triggerNavigationProgress();
+                  setFilter('Latest');
+                  setReleasePage(1);
+                }}
+              >
+                <RefreshCw size={15} />Latest
+              </button>
+              <button
+                className={filter === 'New' ? 'on' : ''}
+                onClick={() => {
+                  triggerNavigationProgress();
+                  setFilter('New');
+                  setReleasePage(1);
+                }}
+              >
+                <Clock3 size={15} />New
+              </button>
+            </div>
+            <a className="view-all" href="/latest-updates" aria-label="View All Latest Updates"><ArrowUpRight /></a>
+          </div>
           <div className="release-grid">
             {releaseError ? (
               <CatalogSectionUnavailable>Latest releases are temporarily unavailable.</CatalogSectionUnavailable>
