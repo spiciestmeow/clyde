@@ -8,6 +8,7 @@ import {
   BookOpen,
   CalendarPlus,
   Check,
+  CheckCircle2,
   ChevronDown,
   CircleDot,
   Clock3,
@@ -20,6 +21,7 @@ import {
   Star,
   Tag,
   X,
+  XCircle,
 } from 'lucide-react';
 import SiteHeader from '../components/SiteHeader';
 import SiteFooter from '../components/SiteFooter';
@@ -339,8 +341,26 @@ export default function SeriesBrowsePage() {
   const pages = pageNumbers(pageCount, currentPage);
   const mobilePages = getMobilePaginationItems(pageCount, currentPage);
   const facets = facetsQuery.data;
-  const visibleGenres = [...new Set([...seriesGenres, ...(facets?.genres ?? [])])]
-    .filter((genre) => genre.toLocaleLowerCase().includes(genreSearch.trim().toLocaleLowerCase()));
+  const visibleGenres = useMemo(() => {
+    const list = [...new Set([...seriesGenres, ...(facets?.genres ?? [])])]
+      .filter((genre) => genre.toLocaleLowerCase().includes(genreSearch.trim().toLocaleLowerCase()));
+
+    return list.sort((a, b) => {
+      const aMode = genreModes[a];
+      const bMode = genreModes[b];
+      const aRank = aMode === 'include' ? 2 : aMode === 'exclude' ? 1 : 0;
+      const bRank = bMode === 'include' ? 2 : bMode === 'exclude' ? 1 : 0;
+      if (aRank !== bRank) return bRank - aRank;
+      return a.localeCompare(b);
+    });
+  }, [facets?.genres, genreSearch, genreModes]);
+
+  const genresFilterCount = seriesFilterVisibility.genres ? Object.keys(genreModes).length : 0;
+  const statusFilterCount = seriesFilterVisibility.status && status !== 'All' ? 1 : 0;
+  const availabilityFilterCount = seriesFilterVisibility.availability && availability !== 'Any' ? 1 : 0;
+  const typeFilterCount = seriesFilterVisibility.type ? selectedTypes.length : 0;
+  const chapterCountFilterCount = seriesFilterVisibility.chapterCount ? Number(minChapters !== '') + Number(maxChapters !== '') : 0;
+  const releaseDateFilterCount = seriesFilterVisibility.releaseDate ? Number(createdAfter !== '') + Number(createdBefore !== '') : 0;
   const visibleTypes = [...new Set([...seriesTypes, ...(facets?.categories ?? [])])];
   const toggleFilterSection = (section: FilterSection) => {
     setFilterSectionsOpen((current) => ({ ...current, [section]: !current[section] }));
@@ -514,7 +534,7 @@ export default function SeriesBrowsePage() {
               </div>}
             </div>
             <button className={`catalog-filter-toggle${filtersOpen ? ' is-open' : ''}`} onClick={() => setFiltersOpen((open) => !open)} aria-expanded={filtersOpen} aria-controls="series-filters-panel" type="button" data-testid="button-series-filters">
-              <Filter size={14} /> Filters <span className="catalog-filter-count">{activeFilterCount || ''}</span>
+              <Filter size={14} /> Filters {activeFilterCount > 0 && <span className="catalog-filter-count">{activeFilterCount}</span>}
             </button>
           </div>
         </div>
@@ -539,7 +559,7 @@ export default function SeriesBrowsePage() {
             {!hasVisibleSeriesFilters && <p className="catalog-filter-empty">Filters are currently disabled.</p>}
             {seriesFilterVisibility.genres && <section className="catalog-filter-group">
               <button className="catalog-filter-section-toggle" type="button" aria-expanded={filterSectionsOpen.genres} aria-controls="series-filter-genres" onClick={() => toggleFilterSection('genres')}>
-                <span><Tag size={14} aria-hidden="true" />Genres</span>
+                <span><Tag size={14} aria-hidden="true" />Genres{genresFilterCount > 0 && <span className="catalog-filter-section-badge">{genresFilterCount}</span>}</span>
                 <ChevronDown className={filterSectionsOpen.genres ? 'is-expanded' : ''} size={14} aria-hidden="true" />
               </button>
               {filterSectionsOpen.genres && <div className="catalog-filter-section-body" id="series-filter-genres">
@@ -560,7 +580,7 @@ export default function SeriesBrowsePage() {
                       onClick={() => cycleGenreMode(genre)}
                       data-testid={`button-genre-${genre.toLowerCase().replaceAll(' ', '-')}`}
                     >
-                      <span className="catalog-genre-check">{mode === 'include' ? <Check size={11} /> : mode === 'exclude' ? <X size={11} /> : null}</span>
+                      <span className="catalog-genre-check">{mode === 'include' ? <CheckCircle2 size={16} fill="#10b981" color="#ffffff" /> : mode === 'exclude' ? <XCircle size={16} fill="#ef4444" color="#ffffff" /> : <span className="catalog-genre-empty-circle" aria-hidden="true" />}</span>
                       <span>{genre}</span>
                     </button>;
                   })}
@@ -570,7 +590,7 @@ export default function SeriesBrowsePage() {
             </section>}
             {seriesFilterVisibility.status && <section className="catalog-filter-group">
               <button className="catalog-filter-section-toggle" type="button" aria-expanded={filterSectionsOpen.status} aria-controls="series-filter-status" onClick={() => toggleFilterSection('status')}>
-                <span><CircleDot size={14} aria-hidden="true" />Status</span>
+                <span><CircleDot size={14} aria-hidden="true" />Status{statusFilterCount > 0 && <span className="catalog-filter-section-badge">{statusFilterCount}</span>}</span>
                 <ChevronDown className={filterSectionsOpen.status ? 'is-expanded' : ''} size={14} aria-hidden="true" />
               </button>
               {filterSectionsOpen.status && <div className="catalog-filter-section-body catalog-filter-chips" id="series-filter-status" role="group" aria-label="Status">
@@ -587,7 +607,7 @@ export default function SeriesBrowsePage() {
             </section>}
             {seriesFilterVisibility.availability && <section className="catalog-filter-group">
               <button className="catalog-filter-section-toggle" type="button" aria-expanded={filterSectionsOpen.availability} aria-controls="series-filter-availability" onClick={() => toggleFilterSection('availability')}>
-                <span><Percent size={14} aria-hidden="true" />Availability</span>
+                <span><Percent size={14} aria-hidden="true" />Availability{availabilityFilterCount > 0 && <span className="catalog-filter-section-badge">{availabilityFilterCount}</span>}</span>
                 <ChevronDown className={filterSectionsOpen.availability ? 'is-expanded' : ''} size={14} aria-hidden="true" />
               </button>
               {filterSectionsOpen.availability && <div className="catalog-filter-section-body catalog-filter-chips" id="series-filter-availability" role="group" aria-label="Availability">
@@ -603,7 +623,7 @@ export default function SeriesBrowsePage() {
             </section>}
             {seriesFilterVisibility.type && <section className="catalog-filter-group">
               <button className="catalog-filter-section-toggle" type="button" aria-expanded={filterSectionsOpen.type} aria-controls="series-filter-type" onClick={() => toggleFilterSection('type')}>
-                <span><BookOpen size={14} aria-hidden="true" />Type</span>
+                <span><BookOpen size={14} aria-hidden="true" />Type{typeFilterCount > 0 && <span className="catalog-filter-section-badge">{typeFilterCount}</span>}</span>
                 <ChevronDown className={filterSectionsOpen.type ? 'is-expanded' : ''} size={14} aria-hidden="true" />
               </button>
               {filterSectionsOpen.type && <div className="catalog-filter-section-body catalog-filter-chips" id="series-filter-type" role="group" aria-label="Type">
@@ -619,7 +639,7 @@ export default function SeriesBrowsePage() {
             </section>}
             {seriesFilterVisibility.chapterCount && <section className="catalog-filter-group">
               <button className="catalog-filter-section-toggle" type="button" aria-expanded={filterSectionsOpen.chapterCount} aria-controls="series-filter-chapter-count" onClick={() => toggleFilterSection('chapterCount')}>
-                <span><BookOpen size={14} aria-hidden="true" />Chapter Count</span>
+                <span><BookOpen size={14} aria-hidden="true" />Chapter Count{chapterCountFilterCount > 0 && <span className="catalog-filter-section-badge">{chapterCountFilterCount}</span>}</span>
                 <ChevronDown className={filterSectionsOpen.chapterCount ? 'is-expanded' : ''} size={14} aria-hidden="true" />
               </button>
               {filterSectionsOpen.chapterCount && <div className="catalog-filter-section-body" id="series-filter-chapter-count">
@@ -638,7 +658,7 @@ export default function SeriesBrowsePage() {
             </section>}
             {seriesFilterVisibility.releaseDate && <section className="catalog-filter-group">
               <button className="catalog-filter-section-toggle" type="button" aria-expanded={filterSectionsOpen.releaseDate} aria-controls="series-filter-release-date" onClick={() => toggleFilterSection('releaseDate')}>
-                <span><CalendarPlus size={14} aria-hidden="true" />Release Date</span>
+                <span><CalendarPlus size={14} aria-hidden="true" />Release Date{releaseDateFilterCount > 0 && <span className="catalog-filter-section-badge">{releaseDateFilterCount}</span>}</span>
                 <ChevronDown className={filterSectionsOpen.releaseDate ? 'is-expanded' : ''} size={14} aria-hidden="true" />
               </button>
               {filterSectionsOpen.releaseDate && <div className="catalog-filter-section-body" id="series-filter-release-date">
