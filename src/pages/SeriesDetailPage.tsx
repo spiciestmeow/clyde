@@ -4,6 +4,7 @@ import { Activity, ArrowDownUp, ArrowLeft, ArrowUpRight, Bell, BookOpen, Bookmar
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   cacheSeriesCatalog,
+  getCachedSeriesCatalog,
   incrementSeriesViews,
   getSiteSearchHighlights,
   searchSiteCatalog,
@@ -249,7 +250,7 @@ function getLatestSeriesUpdate(series: SeriesRecord): string {
   return 'Recently';
 }
 
-const VIEW_COOLDOWN_MS = 15 * 60 * 1000; // 15-minute cooldown per series (standard for scanlation sites like Asura)
+const VIEW_COOLDOWN_MS = 60 * 1000; // 1-minute cooldown per series to prevent duplicate rapid clicks while allowing natural views
 
 export default function SeriesDetailPage() {
   const params = useParams<{ slug: string }>();
@@ -421,54 +422,101 @@ export default function SeriesDetailPage() {
     setSynopsisExpanded(false);
     setAlternateTitlesExpanded(false);
     setReactionCounts(readReactionCounts(slug));
-    if (series) {
-      try {
-        const savedReaction = localStorage.getItem(`vortex-reaction:${slug}`);
-        setReaction(isReactionKey(savedReaction) ? savedReaction : null);
-      } catch {
-        setReaction(null);
-      }
-
-      try {
-        const cooldownKey = `vortex-view-cooldown:${series.id}`;
-        const lastViewTime = Number(localStorage.getItem(cooldownKey) || 0);
-        const now = Date.now();
-        if (
-          lastIncrementedSeriesIdRef.current !== series.id &&
-          (!lastViewTime || now - lastViewTime > VIEW_COOLDOWN_MS)
-        ) {
-          lastIncrementedSeriesIdRef.current = series.id;
-          localStorage.setItem(cooldownKey, String(now));
-          const updateCachedViews = (views: number) => {
-            queryClient.setQueryData<SeriesCatalogResponse>(SERIES_CATALOG_QUERY_KEY, (old) => {
-              if (!old) return old;
-              const nextResponse = {
-                ...old,
-                items: old.items.map((item) =>
-                  item.id === series.id ? { ...item, views } : item,
-                ),
-              };
-              cacheSeriesCatalog(nextResponse);
-              return nextResponse;
-            });
-          };
-
-          // Update the visible count immediately; reconcile it with the server response afterward.
-          void queryClient.cancelQueries({ queryKey: SERIES_CATALOG_QUERY_KEY });
-          updateCachedViews((series.views ?? 0) + 1);
-          void incrementSeriesViews(series.id).then((newViews) => {
-            if (typeof newViews === 'number') {
-              updateCachedViews(newViews);
-            } else {
-              void queryClient.invalidateQueries({ queryKey: SERIES_CATALOG_QUERY_KEY });
-            }
-          });
-        }
-      } catch {
-        // Continue if localStorage is unavailable
-      }
+    try {
+      const savedReaction = localStorage.getItem(`vortex-reaction:${slug}`);
+      setReaction(isReactionKey(savedReaction) ? savedReaction : null);
+    } catch {
+      setReaction(null);
     }
-  }, [slug, series, queryClient]);
+  }, [slug]);
+
+  useEffect(() => {
+    if (!series?.id) return;
+
+    try {
+      const cooldownKey = `vortex-view-cooldown:${series.id}`;
+      const lastViewTime = Number(localStorage.getItem(cooldownKey) || 0);
+      const now = Date.now();
+      if (
+        lastIncrementedSeriesIdRef.current !== series.id &&
+        (!lastViewTime || now - lastViewTime > VIEW_COOLDOWN_MS)
+      ) {
+        lastIncrementedSeriesIdRef.current = series.id;
+        localStorage.setItem(cooldownKey, String(now));
+
+        const targetId = series.id;
+        const updateCachedViews = (views: number) => {
+          // 1. Update all React Query queries under SERIES_CATALOG_QUERY_KEY (home, browse, updates)
+          queryClient.setQueriesData<any>(
+            { queryKey: SERIES_CATALOG_QUERY_KEY },
+            (old: any) => {
+              if (!old) return old;
+              // Format A: Object with items array (e.g. getHomeLatestReleasePage, getSeriesBrowsePage, SeriesCatalogResponse)
+              if (Array.isArray(old.items)) {
+                return {
+                  ...old,
+                  items: old.items.map((item: any) =>
+                    item && item.id === targetId ? { ...item, views } : item,
+                  ),
+                };
+              }
+              // Format B: Array of series directly (e.g. getHomeCatalogHighlights, getSeriesCatalogByIds)
+              if (Array.isArray(old)) {
+                return old.map((item: any) =>
+                  item && item.id === targetId ? { ...item, views } : item,
+                );
+              }
+              return old;
+            },
+          );
+
+          // 2. Update series-detail queries
+          queryClient.setQueriesData<any>(
+            { queryKey: ['series-detail'] },
+            (old: any) => {
+              if (old && typeof old === 'object' && old.id === targetId) {
+                return { ...old, views };
+              }
+              return old;
+            },
+          );
+
+          // 3. Update localStorage cached catalog if present
+          const cached = getCachedSeriesCatalog();
+          if (cached?.items) {
+            cacheSeriesCatalog({
+              ...cached,
+              items: cached.items.map((item: SeriesRecord) =>
+                item.id === targetId ? { ...item, views } : item,
+              ),
+            });
+          }
+        };
+
+        // Update the visible count immediately for instant responsiveness
+        const optimisticViews = (series.views ?? 0) + 1;
+        updateCachedViews(optimisticViews);
+
+        // Reconcile with server response
+        void incrementSeriesViews(series.id).then((newViews) => {
+          if (typeof newViews === 'number') {
+            updateCachedViews(newViews);
+          }
+          // Mark queries stale in the background so future fetches stay in sync
+          void queryClient.invalidateQueries({
+            queryKey: SERIES_CATALOG_QUERY_KEY,
+            refetchType: 'none',
+          });
+          void queryClient.invalidateQueries({
+            queryKey: ['series-detail'],
+            refetchType: 'none',
+          });
+        });
+      }
+    } catch {
+      // Continue if localStorage is unavailable
+    }
+  }, [series?.id, queryClient]);
 
   useLayoutEffect(() => {
     const layout = seriesLayoutRef.current;
