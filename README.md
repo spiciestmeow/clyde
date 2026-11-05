@@ -144,6 +144,38 @@ select * from public.site_settings;
 
 ---
 
+## Cloudflare R2 Storage (Covers Bucket)
+
+All series cover images are hosted on Cloudflare R2 to eliminate egress costs and avoid storage limits.
+
+### 1. Environment Variables
+
+Configure these in **Vercel** → **Project Settings** → **Environment Variables**:
+
+| Variable | Description | Example |
+|---|---|---|
+| `R2_ACCOUNT_ID` | Cloudflare Account ID | `f4199af4b1d6201...` |
+| `R2_ACCESS_KEY_ID` | R2 API Token Access Key | `bb31...` |
+| `R2_SECRET_ACCESS_KEY` | R2 API Token Secret Key | `299c...` |
+| `R2_BUCKET_NAME` | R2 Bucket Name | `covers` |
+| `R2_PUBLIC_URL` | Public access domain for bucket | `https://pub-xxxx.r2.dev` |
+
+> Keep `R2_ACCOUNT_ID`, `R2_ACCESS_KEY_ID`, and `R2_SECRET_ACCESS_KEY` strictly server-side (do not prefix with `VITE_`).
+
+### 2. How Cover Uploads Work
+
+- Cover uploads trigger `/api/upload-cover`, a protected serverless route.
+- The route authenticates the admin session cookie and securely streams the image to R2 using the AWS S3 SDK.
+- The returned public URL is saved directly into the database.
+
+### 3. Migrating Old Supabase Covers to R2
+
+If you ever need to copy images from a Supabase bucket to Cloudflare R2 without deleting old files:
+- Use the endpoint `POST /api/admin/run-migration?limit=35` with an `Authorization: Bearer <CRON_SECRET>` header.
+- The endpoint lists objects, checks if they already exist in R2, downloads via signed Supabase URLs, and uploads to R2 with zero Supabase file deletions.
+
+---
+
 ## Scope and external assets
 
 This package contains the current homepage front end and its captured content data. It does not include the original site's backend, accounts, catalog API, or other server-side services. Many cover images and decorative assets are served from the Vortex Scans public image host, so their availability is controlled by that host.
