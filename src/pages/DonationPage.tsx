@@ -27,6 +27,8 @@ import {
   getSiteSettings,
   SITE_SETTINGS_UPDATED_EVENT,
   DEFAULT_SITE_SETTINGS,
+  DEFAULT_SUPPORTERS,
+  type DonationSupporter,
   type SiteSettings,
 } from '../lib/siteSettings';
 import assets from '../../clone-data/asset-references.json';
@@ -158,68 +160,6 @@ const PAYMENT_METHODS: PaymentMethod[] = [
   },
 ];
 
-// Top 3 Podium Supporters
-const PODIUM_SUPPORTERS = [
-  {
-    rank: 2,
-    name: 'Anonymous #20',
-    amount: '$48.56',
-    meta: '1 donation · 5mo ago',
-    rankColor: '#9AA6B2', // Silver
-  },
-  {
-    rank: 1,
-    name: 'Anonymous #25',
-    amount: '$48.56',
-    meta: '1 donation · 5mo ago',
-    rankColor: '#D4A017', // Gold
-  },
-  {
-    rank: 3,
-    name: 'grazzhella Vicente',
-    amount: '$45.54',
-    meta: '1 donation · 5mo ago',
-    rankColor: '#B87333', // Bronze
-  },
-];
-
-// 20 Initial Recent Donors
-const INITIAL_SUPPORTERS = [
-  { name: 'Abdul Rahmann', amount: '$1.32', count: 1, time: '2mo ago' },
-  { name: 'Ali alromaihi', amount: '$0.76', count: 1, time: '3mo ago' },
-  { name: 'Anna domi', amount: '$13.15', count: 1, time: '4mo ago' },
-  { name: 'Anonymous #1', amount: '$4.06', count: 1, time: '4mo ago' },
-  { name: 'Anonymous #10', amount: '$2.11', count: 1, time: '4mo ago' },
-  { name: 'Anonymous #11', amount: '$1.62', count: 1, time: '4mo ago' },
-  { name: 'Anonymous #12', amount: '$2.43', count: 1, time: '4mo ago' },
-  { name: 'Anonymous #13', amount: '$1.85', count: 1, time: '4mo ago' },
-  { name: 'Anonymous #14', amount: '$3.24', count: 1, time: '5mo ago' },
-  { name: 'Anonymous #15', amount: '$0.81', count: 1, time: '5mo ago' },
-  { name: 'Anonymous #16', amount: '$3.24', count: 1, time: '5mo ago' },
-  { name: 'Anonymous #17', amount: '$0.88', count: 1, time: '5mo ago' },
-  { name: 'Anonymous #18', amount: '$1.62', count: 1, time: '5mo ago' },
-  { name: 'Anonymous #19', amount: '$0.59', count: 1, time: '5mo ago' },
-  { name: 'Anonymous #2', amount: '$0.81', count: 1, time: '5mo ago' },
-  { name: 'Anonymous #21', amount: '$0.08', count: 1, time: '5mo ago' },
-  { name: 'Anonymous #22', amount: '$4.35', count: 1, time: '5mo ago' },
-  { name: 'Anonymous #23', amount: '$0.16', count: 1, time: '5mo ago' },
-  { name: 'Anonymous #24', amount: '$3.24', count: 1, time: '5mo ago' },
-  { name: 'Anonymous #26', amount: '$1.62', count: 1, time: '5mo ago' },
-];
-
-const MORE_SUPPORTERS = [
-  { name: 'Marcus Sterling', amount: '$10.00', count: 1, time: '5mo ago' },
-  { name: 'Elena Rostova', amount: '$8.50', count: 2, time: '5mo ago' },
-  { name: 'Kaito Tanaka', amount: '$5.00', count: 1, time: '6mo ago' },
-  { name: 'Anonymous #28', amount: '$3.00', count: 1, time: '6mo ago' },
-  { name: 'ZeroTwo Fan', amount: '$12.00', count: 3, time: '6mo ago' },
-  { name: 'Lucas Silva', amount: '$2.50', count: 1, time: '6mo ago' },
-  { name: 'Anonymous #31', amount: '$1.50', count: 1, time: '7mo ago' },
-  { name: 'MangaCollector99', amount: '$20.00', count: 4, time: '7mo ago' },
-  { name: 'Sora Cloud', amount: '$4.20', count: 1, time: '7mo ago' },
-  { name: 'Anonymous #35', amount: '$1.00', count: 1, time: '7mo ago' },
-];
-
 // DiceBear avatar generator matching Miyomi exactly
 function getDiceBearAvatar(name: string): string {
   const seed = encodeURIComponent(name.trim().toLowerCase());
@@ -267,12 +207,61 @@ export default function DonationPage() {
 
   const [activeModalMethod, setActiveModalMethod] = useState<PaymentMethod | null>(null);
   const [copied, setCopied] = useState(false);
-  const [supportersList, setSupportersList] = useState(INITIAL_SUPPORTERS);
-  const [hasLoadedMore, setHasLoadedMore] = useState(false);
+  const [displayCount, setDisplayCount] = useState(20);
 
-  const currentRaised = 405.6;
+  const allSupporters = siteSettings.supporters && siteSettings.supporters.length > 0
+    ? siteSettings.supporters
+    : DEFAULT_SUPPORTERS;
+
+  const currentRaised = allSupporters.reduce((sum, s) => {
+    const val = parseFloat(s.amount.replace(/[^0-9.]/g, '')) || 0;
+    return sum + val;
+  }, 0);
   const targetGoal = 662;
   const progressPercent = Math.min(100, Math.round((currentRaised / targetGoal) * 100));
+
+  // Extract Top 3 Podium
+  const ranked1 = allSupporters.find((s) => s.rank === 1);
+  const ranked2 = allSupporters.find((s) => s.rank === 2);
+  const ranked3 = allSupporters.find((s) => s.rank === 3);
+
+  const sortedByAmount = [...allSupporters].sort((a, b) => {
+    const valA = parseFloat(a.amount.replace(/[^0-9.]/g, '')) || 0;
+    const valB = parseFloat(b.amount.replace(/[^0-9.]/g, '')) || 0;
+    return valB - valA;
+  });
+
+  const podium1 = ranked1 || sortedByAmount[0];
+  const podium2 = ranked2 || sortedByAmount.find((s) => s.id !== podium1?.id);
+  const podium3 = ranked3 || sortedByAmount.find((s) => s.id !== podium1?.id && s.id !== podium2?.id);
+
+  const podiumSupporters = [
+    {
+      rank: 2,
+      name: podium2?.name || 'Anonymous #20',
+      amount: podium2?.amount || '$48.56',
+      meta: `${podium2?.count || 1} donation${(podium2?.count || 1) > 1 ? 's' : ''} · ${podium2?.time || '5mo ago'}`,
+      rankColor: '#9AA6B2',
+    },
+    {
+      rank: 1,
+      name: podium1?.name || 'Anonymous #25',
+      amount: podium1?.amount || '$48.56',
+      meta: `${podium1?.count || 1} donation${(podium1?.count || 1) > 1 ? 's' : ''} · ${podium1?.time || '5mo ago'}`,
+      rankColor: '#D4A017',
+    },
+    {
+      rank: 3,
+      name: podium3?.name || 'grazzhella Vicente',
+      amount: podium3?.amount || '$45.54',
+      meta: `${podium3?.count || 1} donation${(podium3?.count || 1) > 1 ? 's' : ''} · ${podium3?.time || '5mo ago'}`,
+      rankColor: '#B87333',
+    },
+  ];
+
+  const podiumIds = new Set([podium1?.id, podium2?.id, podium3?.id].filter(Boolean));
+  const recentDonors = allSupporters.filter((s) => !podiumIds.has(s.id));
+  const visibleRecentDonors = recentDonors.slice(0, displayCount);
 
   const handleCopy = (text: string) => {
     void navigator.clipboard.writeText(text);
@@ -281,10 +270,7 @@ export default function DonationPage() {
   };
 
   const handleLoadMore = () => {
-    if (!hasLoadedMore) {
-      setSupportersList((prev) => [...prev, ...MORE_SUPPORTERS]);
-      setHasLoadedMore(true);
-    }
+    setDisplayCount((prev) => prev + 20);
   };
 
   if (checkingAuth || isBlocked) {
@@ -585,7 +571,7 @@ export default function DonationPage() {
                 </div>
                 <h2 className="card-heading">Supporters</h2>
               </div>
-              <span className="progress-badge">116 supporters</span>
+              <span className="progress-badge">{allSupporters.length} supporters</span>
             </div>
             <p className="card-header-desc">
               Top 3 by lifetime support, followed by the latest donations.
@@ -593,7 +579,7 @@ export default function DonationPage() {
 
             {/* Top 3 Podium */}
             <div className="supporters-podium-grid">
-              {PODIUM_SUPPORTERS.map((p) => {
+              {podiumSupporters.map((p) => {
                 const slotClass =
                   p.rank === 2
                     ? 'podium-slot-1'
@@ -626,8 +612,8 @@ export default function DonationPage() {
 
             {/* Recent 5-Col Donors Grid */}
             <div className="supporters-5col-grid">
-              {supportersList.map((supporter, idx) => (
-                <div key={`${supporter.name}-${idx}`} className="donor-item-card">
+              {visibleRecentDonors.map((supporter, idx) => (
+                <div key={supporter.id || `${supporter.name}-${idx}`} className="donor-item-card">
                   <div className="donor-top-row">
                     <img
                       src={getDiceBearAvatar(supporter.name)}
@@ -651,14 +637,14 @@ export default function DonationPage() {
               ))}
             </div>
 
-            {!hasLoadedMore && (
+            {displayCount < recentDonors.length && (
               <button
                 type="button"
                 className="load-more-btn"
                 onClick={handleLoadMore}
               >
                 <ChevronDown size={16} />
-                <span>Load more supporters</span>
+                <span>Load more supporters ({recentDonors.length - displayCount} remaining)</span>
               </button>
             )}
           </section>

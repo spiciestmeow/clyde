@@ -16,6 +16,7 @@ import {
   FileText,
   FolderKanban,
   Globe,
+  Heart,
   History,
   Image as ImageIcon,
   LayoutDashboard,
@@ -27,15 +28,19 @@ import {
   MessageSquare,
   Moon,
   Palette,
+  Pencil,
   Plus,
   Radio,
   RefreshCw,
+  RotateCcw,
   Rss,
   Search,
   Settings,
   ShieldAlert,
   ShieldCheck,
+  Star,
   Sun,
+  Trash2,
   Upload,
   UserCheck,
   UserX,
@@ -51,6 +56,7 @@ import {
   DEFAULT_ANNOUNCEMENT,
   DEFAULT_CUSTOM_SOURCE_NAMES,
   DEFAULT_SITE_SETTINGS,
+  DEFAULT_SUPPORTERS,
   getSiteSettings,
   saveSiteSettings,
   type HeaderVisibility,
@@ -60,6 +66,7 @@ import {
   type SeriesFilterVisibility,
   type SeriesPageVisibility,
   type SiteSettings,
+  type DonationSupporter,
 } from '../lib/siteSettings';
 import { supabase, supabaseConfigReady } from '../lib/supabase';
 import { getSeriesCatalog, getSeriesCatalogCount, getSeriesCatalogCoverSamples, SERIES_CATALOG_QUERY_KEY } from '../lib/seriesCatalog';
@@ -77,6 +84,11 @@ function AdminBrand({ href }: { href?: string }) {
   ) : (
     <div className="comix-logo">{contents}</div>
   );
+}
+
+function getDiceBearAvatar(name: string): string {
+  const seed = encodeURIComponent((name || 'anonymous').trim().toLowerCase());
+  return `https://api.dicebear.com/9.x/adventurer-neutral/svg?seed=${seed}&backgroundColor=b6e3f4,c0aede,d1d4f9,ffd5dc,ffdfbf`;
 }
 
 type SidebarTab =
@@ -463,7 +475,7 @@ function ComixDashboard({
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const [profileMenuOpen, setProfileMenuOpen] = useState(false);
   const profileMenuRef = useRef<HTMLDivElement>(null);
-  const [settingsSubTab, setSettingsSubTab] = useState<'homepage' | 'announcement' | 'header' | 'series' | 'filters' | 'socials' | 'sources' | 'theme'>('homepage');
+  const [settingsSubTab, setSettingsSubTab] = useState<'homepage' | 'announcement' | 'header' | 'series' | 'filters' | 'socials' | 'sources' | 'theme' | 'supporters'>('homepage');
   const [topSearch, setTopSearch] = useState('');
 
   // Series catalog stats
@@ -502,6 +514,31 @@ function ComixDashboard({
   const [customSourceNamesDraft, setCustomSourceNamesDraft] = useState<string[]>(DEFAULT_CUSTOM_SOURCE_NAMES);
   const [customSourceNamesSearch, setCustomSourceNamesSearch] = useState('');
   const [customSourceNameInput, setCustomSourceNameInput] = useState('');
+
+  // Donation supporters state
+  const [supportersDraft, setSupportersDraft] = useState<DonationSupporter[]>(DEFAULT_SUPPORTERS);
+  const [supporterSearch, setSupporterSearch] = useState('');
+  const [supporterFilter, setSupporterFilter] = useState<'all' | 'anonymous' | 'named' | 'podium'>('all');
+  const [editingSupporterId, setEditingSupporterId] = useState<string | null>(null);
+  const [showSupporterModal, setShowSupporterModal] = useState(false);
+
+  const [supporterForm, setSupporterForm] = useState<{
+    isAnonymous: boolean;
+    anonymousNumber: number;
+    actualName: string;
+    amount: string;
+    count: number;
+    time: string;
+    rank: 0 | 1 | 2 | 3;
+  }>({
+    isAnonymous: true,
+    anonymousNumber: 1,
+    actualName: '',
+    amount: '5.00',
+    count: 1,
+    time: 'Just now',
+    rank: 0,
+  });
   const groupedCustomSourceNames = useMemo(() => {
     const groups = new Map<string, string[]>();
     [...customSourceNamesDraft]
@@ -542,6 +579,7 @@ function ComixDashboard({
         setAnnouncementTagsInput(s.announcement.tags.join(', '));
         setCustomSourceNamesDraft(s.customSourceNames);
         if (s?.facebookUrl) setFacebookUrlInput(s.facebookUrl);
+        if (s?.supporters) setSupportersDraft(s.supporters);
       }
     });
     return () => {
@@ -654,6 +692,117 @@ function ComixDashboard({
     } finally {
       setSavingSettings(false);
     }
+  };
+
+  const getNextAnonymousNumber = (list: DonationSupporter[] = supportersDraft) => {
+    let max = 0;
+    for (const s of list) {
+      if (typeof s.anonymousNumber === 'number' && s.anonymousNumber > max) {
+        max = s.anonymousNumber;
+      } else {
+        const match = s.name.match(/Anonymous\s*#?(\d+)/i);
+        if (match) {
+          const num = parseInt(match[1], 10);
+          if (num > max) max = num;
+        }
+      }
+    }
+    return max + 1;
+  };
+
+  const saveSupporters = async (newList: DonationSupporter[]) => {
+    if (!settings || savingSettings) return;
+    setSavingSettings(true);
+    setSaveMessage('Saving supporters...');
+    try {
+      const nextSettings: SiteSettings = { ...settings, supporters: newList };
+      const saved = await saveSiteSettings(nextSettings);
+      setSettings(saved);
+      setSupportersDraft(saved.supporters);
+      setSaveMessage('Supporters saved');
+    } catch (err) {
+      console.error('Failed to save supporters:', err);
+      alert('Failed to save supporters to database.');
+    } finally {
+      setSavingSettings(false);
+    }
+  };
+
+  const openNewSupporterModal = () => {
+    const nextNum = getNextAnonymousNumber();
+    setSupporterForm({
+      isAnonymous: true,
+      anonymousNumber: nextNum,
+      actualName: '',
+      amount: '5.00',
+      count: 1,
+      time: 'Just now',
+      rank: 0,
+    });
+    setEditingSupporterId('new');
+    setShowSupporterModal(true);
+  };
+
+  const openEditSupporterModal = (s: DonationSupporter) => {
+    setSupporterForm({
+      isAnonymous: s.isAnonymous,
+      anonymousNumber: s.anonymousNumber || (s.name.match(/Anonymous\s*#?(\d+)/i)?.[1] ? parseInt(RegExp.$1, 10) : 1),
+      actualName: s.actualName || (s.isAnonymous ? '' : s.name),
+      amount: s.amount.replace(/^\$/, ''),
+      count: s.count || 1,
+      time: s.time || 'Just now',
+      rank: (s.rank || 0) as 0 | 1 | 2 | 3,
+    });
+    setEditingSupporterId(s.id);
+    setShowSupporterModal(true);
+  };
+
+  const handleSaveSupporterForm = () => {
+    const isAnon = supporterForm.isAnonymous;
+    const name = isAnon
+      ? `Anonymous #${supporterForm.anonymousNumber}`
+      : supporterForm.actualName.trim() || 'Generous Supporter';
+
+    let amtStr = supporterForm.amount.trim();
+    if (!amtStr) amtStr = '5.00';
+    if (!amtStr.startsWith('$')) amtStr = `$${amtStr}`;
+
+    const newOrUpdated: DonationSupporter = {
+      id: editingSupporterId === 'new' ? `supporter_${Date.now()}` : editingSupporterId!,
+      name,
+      isAnonymous: isAnon,
+      anonymousNumber: isAnon ? supporterForm.anonymousNumber : undefined,
+      actualName: !isAnon ? supporterForm.actualName.trim() : undefined,
+      amount: amtStr,
+      count: Math.max(1, Number(supporterForm.count) || 1),
+      time: supporterForm.time.trim() || 'Just now',
+      rank: supporterForm.rank > 0 ? (supporterForm.rank as 1 | 2 | 3) : undefined,
+    };
+
+    let updatedList: DonationSupporter[];
+    if (editingSupporterId === 'new') {
+      updatedList = [newOrUpdated, ...supportersDraft];
+    } else {
+      updatedList = supportersDraft.map((item) => (item.id === editingSupporterId ? newOrUpdated : item));
+    }
+
+    setSupportersDraft(updatedList);
+    void saveSupporters(updatedList);
+    setShowSupporterModal(false);
+    setEditingSupporterId(null);
+  };
+
+  const handleDeleteSupporter = (id: string, name: string) => {
+    if (!confirm(`Are you sure you want to remove supporter "${name}"?`)) return;
+    const updatedList = supportersDraft.filter((s) => s.id !== id);
+    setSupportersDraft(updatedList);
+    void saveSupporters(updatedList);
+  };
+
+  const handleResetSupporters = () => {
+    if (!confirm('Reset supporters list back to the default list? This replaces your current custom list.')) return;
+    setSupportersDraft(DEFAULT_SUPPORTERS);
+    void saveSupporters(DEFAULT_SUPPORTERS);
   };
 
   const handleToggle = async (
@@ -1118,6 +1267,13 @@ function ComixDashboard({
                   >
                     Theme
                   </button>
+                  <button
+                    type="button"
+                    className={`comix-sub-tab ${settingsSubTab === 'supporters' ? 'is-active' : ''}`}
+                    onClick={() => setSettingsSubTab('supporters')}
+                  >
+                    Donation Supporters ({supportersDraft.length})
+                  </button>
                 </div>
 
                 {settings && settingsSubTab === 'homepage' && (
@@ -1472,6 +1628,510 @@ function ComixDashboard({
                         <span>{settings.accentTheme === 'halloween' ? 'Halloween · orange accent palette' : 'Default · red accent palette'}</span>
                       </div>
                     </div>
+                  </div>
+                )}
+
+                {settings && settingsSubTab === 'supporters' && (
+                  <div className="comix-setting-group">
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 12, marginBottom: 16 }}>
+                      <div>
+                        <div className="comix-group-title" style={{ marginBottom: 4 }}>Donation Supporters Manager</div>
+                        <p className="comix-theme-description" style={{ margin: 0 }}>
+                          Add, customize, and manage donors shown on the /donate page. Auto-increment anonymous supporters or showcase their actual names.
+                        </p>
+                      </div>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                        <button
+                          type="button"
+                          className="btn-secondary"
+                          style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '8px 12px', fontSize: 13, borderRadius: 8, cursor: 'pointer' }}
+                          onClick={handleResetSupporters}
+                          disabled={savingSettings}
+                          title="Restore default 30+ supporters"
+                        >
+                          <RotateCcw size={14} />
+                          <span>Reset Defaults</span>
+                        </button>
+                        <button
+                          type="button"
+                          className="btn-teal"
+                          style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '8px 16px', fontSize: 13, borderRadius: 8, cursor: 'pointer' }}
+                          onClick={openNewSupporterModal}
+                          disabled={savingSettings}
+                        >
+                          <Plus size={16} />
+                          <span>Add Supporter</span>
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* Stats Highlights */}
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 12, marginBottom: 20 }}>
+                      <div style={{ background: 'var(--cx-surface)', border: '1px solid var(--cx-border)', borderRadius: 10, padding: '12px 16px' }}>
+                        <div style={{ fontSize: 11, textTransform: 'uppercase', color: 'var(--cx-text-muted)', fontWeight: 600 }}>Total Supporters</div>
+                        <div style={{ fontSize: 22, fontWeight: 700, color: 'var(--cx-text)', marginTop: 2 }}>{supportersDraft.length}</div>
+                      </div>
+                      <div style={{ background: 'var(--cx-surface)', border: '1px solid var(--cx-border)', borderRadius: 10, padding: '12px 16px' }}>
+                        <div style={{ fontSize: 11, textTransform: 'uppercase', color: 'var(--cx-text-muted)', fontWeight: 600 }}>Total Raised</div>
+                        <div style={{ fontSize: 22, fontWeight: 700, color: 'var(--cx-teal)', marginTop: 2 }}>
+                          ${supportersDraft.reduce((acc, s) => acc + (parseFloat(s.amount.replace(/[^0-9.]/g, '')) || 0), 0).toFixed(2)}
+                        </div>
+                      </div>
+                      <div style={{ background: 'var(--cx-surface)', border: '1px solid var(--cx-border)', borderRadius: 10, padding: '12px 16px' }}>
+                        <div style={{ fontSize: 11, textTransform: 'uppercase', color: 'var(--cx-text-muted)', fontWeight: 600 }}>Next Anonymous Count</div>
+                        <div style={{ fontSize: 22, fontWeight: 700, color: '#3b82f6', marginTop: 2 }}>
+                          #{getNextAnonymousNumber()}
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Filter & Search Bar */}
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap', marginBottom: 16 }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                        {(['all', 'anonymous', 'named', 'podium'] as const).map((filter) => (
+                          <button
+                            key={filter}
+                            type="button"
+                            className={`comix-sub-tab ${supporterFilter === filter ? 'is-active' : ''}`}
+                            style={{ padding: '4px 10px', fontSize: 12, height: 'auto', textTransform: 'capitalize' }}
+                            onClick={() => setSupporterFilter(filter)}
+                          >
+                            {filter}
+                          </button>
+                        ))}
+                      </div>
+                      <div style={{ position: 'relative', minWidth: 220 }}>
+                        <Search size={14} style={{ position: 'absolute', left: 10, top: '50%', transform: 'translateY(-50%)', color: 'var(--cx-text-muted)' }} />
+                        <input
+                          type="search"
+                          placeholder="Search supporters..."
+                          value={supporterSearch}
+                          onChange={(e) => setSupporterSearch(e.target.value)}
+                          style={{
+                            width: '100%',
+                            padding: '6px 10px 6px 30px',
+                            borderRadius: 8,
+                            border: '1px solid var(--cx-border)',
+                            background: 'var(--cx-surface)',
+                            color: 'var(--cx-text)',
+                            fontSize: 13,
+                          }}
+                        />
+                      </div>
+                    </div>
+
+                    {/* Supporters List Grid */}
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 12 }}>
+                      {supportersDraft
+                        .filter((s) => {
+                          if (supporterFilter === 'anonymous' && !s.isAnonymous) return false;
+                          if (supporterFilter === 'named' && s.isAnonymous) return false;
+                          if (supporterFilter === 'podium' && !s.rank) return false;
+                          if (supporterSearch.trim()) {
+                            const q = supporterSearch.toLowerCase();
+                            return s.name.toLowerCase().includes(q) || (s.actualName && s.actualName.toLowerCase().includes(q));
+                          }
+                          return true;
+                        })
+                        .map((s) => {
+                          const isPodium = Boolean(s.rank);
+                          const rankColor = s.rank === 1 ? '#D4A017' : s.rank === 2 ? '#9AA6B2' : s.rank === 3 ? '#B87333' : 'transparent';
+                          return (
+                            <div
+                              key={s.id}
+                              style={{
+                                background: 'var(--cx-surface)',
+                                border: isPodium ? `1.5px solid ${rankColor}` : '1px solid var(--cx-border)',
+                                borderRadius: 12,
+                                padding: '12px 14px',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'space-between',
+                                gap: 12,
+                                transition: 'all 0.15s ease',
+                              }}
+                            >
+                              <div style={{ display: 'flex', alignItems: 'center', gap: 10, minWidth: 0 }}>
+                                <div style={{ position: 'relative', width: 38, height: 38, flexShrink: 0 }}>
+                                  <img
+                                    src={getDiceBearAvatar(s.name)}
+                                    alt={s.name}
+                                    style={{ width: '100%', height: '100%', borderRadius: '50%', objectFit: 'cover', background: '#e2e8f0' }}
+                                  />
+                                  {isPodium && (
+                                    <div
+                                      style={{
+                                        position: 'absolute',
+                                        top: -3,
+                                        right: -3,
+                                        width: 16,
+                                        height: 16,
+                                        borderRadius: '50%',
+                                        background: rankColor,
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'center',
+                                        color: '#fff',
+                                        fontSize: 9,
+                                        fontWeight: 800,
+                                      }}
+                                    >
+                                      {s.rank}
+                                    </div>
+                                  )}
+                                </div>
+                                <div style={{ minWidth: 0 }}>
+                                  <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                                    <span style={{ fontWeight: 600, fontSize: 13, color: 'var(--cx-text)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={s.name}>
+                                      {s.name}
+                                    </span>
+                                  </div>
+                                  <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 11, color: 'var(--cx-text-muted)', marginTop: 2 }}>
+                                    <span style={{ color: s.isAnonymous ? '#3b82f6' : '#10b981', fontWeight: 600 }}>
+                                      {s.isAnonymous ? 'Anonymous' : 'Actual Name'}
+                                    </span>
+                                    <span>·</span>
+                                    <span>{s.count} donation{s.count > 1 ? 's' : ''}</span>
+                                    <span>·</span>
+                                    <span>{s.time}</span>
+                                  </div>
+                                </div>
+                              </div>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
+                                <span style={{ fontWeight: 700, fontSize: 13, color: 'var(--cx-text)' }}>{s.amount}</span>
+                                <button
+                                  type="button"
+                                  onClick={() => openEditSupporterModal(s)}
+                                  disabled={savingSettings}
+                                  style={{ background: 'transparent', border: 'none', color: 'var(--cx-text-muted)', cursor: 'pointer', padding: 4, borderRadius: 4 }}
+                                  title="Edit supporter"
+                                >
+                                  <Pencil size={15} />
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => handleDeleteSupporter(s.id, s.name)}
+                                  disabled={savingSettings}
+                                  style={{ background: 'transparent', border: 'none', color: '#ef4444', cursor: 'pointer', padding: 4, borderRadius: 4 }}
+                                  title="Delete supporter"
+                                >
+                                  <Trash2 size={15} />
+                                </button>
+                              </div>
+                            </div>
+                          );
+                        })}
+                    </div>
+
+                    {/* Add / Edit Supporter Modal */}
+                    {showSupporterModal && (
+                      <div
+                        style={{
+                          position: 'fixed',
+                          inset: 0,
+                          background: 'rgba(0,0,0,0.65)',
+                          backdropFilter: 'blur(4px)',
+                          zIndex: 9999,
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          padding: 16,
+                        }}
+                        onClick={() => setShowSupporterModal(false)}
+                      >
+                        <div
+                          style={{
+                            background: 'var(--cx-card, #18181b)',
+                            border: '1px solid var(--cx-border, #27272a)',
+                            borderRadius: 16,
+                            width: '100%',
+                            maxWidth: 480,
+                            padding: 24,
+                            boxShadow: '0 20px 40px rgba(0,0,0,0.5)',
+                            color: 'var(--cx-text)',
+                          }}
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20 }}>
+                            <h3 style={{ margin: 0, fontSize: 18, fontWeight: 700 }}>
+                              {editingSupporterId === 'new' ? 'Add Supporter' : 'Edit Supporter'}
+                            </h3>
+                            <button
+                              type="button"
+                              onClick={() => setShowSupporterModal(false)}
+                              style={{ background: 'transparent', border: 'none', color: 'var(--cx-text-muted)', cursor: 'pointer' }}
+                            >
+                              <X size={18} />
+                            </button>
+                          </div>
+
+                          {/* Identity Mode Switch: Anonymous vs Actual Name */}
+                          <div style={{ marginBottom: 16 }}>
+                            <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: 'var(--cx-text-muted)', marginBottom: 8 }}>
+                              Supporter Identity Mode
+                            </label>
+                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
+                              <button
+                                type="button"
+                                style={{
+                                  padding: '10px 12px',
+                                  borderRadius: 8,
+                                  border: supporterForm.isAnonymous ? '2px solid #3b82f6' : '1px solid var(--cx-border)',
+                                  background: supporterForm.isAnonymous ? 'rgba(59, 130, 246, 0.12)' : 'var(--cx-surface)',
+                                  color: supporterForm.isAnonymous ? '#60a5fa' : 'var(--cx-text)',
+                                  fontWeight: 600,
+                                  fontSize: 13,
+                                  cursor: 'pointer',
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  justifyContent: 'center',
+                                  gap: 6,
+                                }}
+                                onClick={() => {
+                                  const num = supporterForm.anonymousNumber || getNextAnonymousNumber();
+                                  setSupporterForm({ ...supporterForm, isAnonymous: true, anonymousNumber: num });
+                                }}
+                              >
+                                {supporterForm.isAnonymous && <Check size={14} />}
+                                <span>Anonymous (Auto #)</span>
+                              </button>
+                              <button
+                                type="button"
+                                style={{
+                                  padding: '10px 12px',
+                                  borderRadius: 8,
+                                  border: !supporterForm.isAnonymous ? '2px solid #10b981' : '1px solid var(--cx-border)',
+                                  background: !supporterForm.isAnonymous ? 'rgba(16, 185, 129, 0.12)' : 'var(--cx-surface)',
+                                  color: !supporterForm.isAnonymous ? '#34d399' : 'var(--cx-text)',
+                                  fontWeight: 600,
+                                  fontSize: 13,
+                                  cursor: 'pointer',
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  justifyContent: 'center',
+                                  gap: 6,
+                                }}
+                                onClick={() => setSupporterForm({ ...supporterForm, isAnonymous: false })}
+                              >
+                                {!supporterForm.isAnonymous && <Check size={14} />}
+                                <span>Show Actual Name</span>
+                              </button>
+                            </div>
+                          </div>
+
+                          {/* Dynamic Name Input */}
+                          {supporterForm.isAnonymous ? (
+                            <div style={{ marginBottom: 16 }}>
+                              <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: 'var(--cx-text-muted)', marginBottom: 6 }}>
+                                Anonymous Number (Auto-Incremented)
+                              </label>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                                <span style={{ fontSize: 14, fontWeight: 600, color: 'var(--cx-text-muted)' }}>Anonymous #</span>
+                                <input
+                                  type="number"
+                                  min={1}
+                                  value={supporterForm.anonymousNumber}
+                                  onChange={(e) => setSupporterForm({ ...supporterForm, anonymousNumber: parseInt(e.target.value, 10) || 1 })}
+                                  style={{
+                                    flex: 1,
+                                    padding: '8px 12px',
+                                    borderRadius: 8,
+                                    border: '1px solid var(--cx-border)',
+                                    background: 'var(--cx-surface)',
+                                    color: 'var(--cx-text)',
+                                    fontSize: 14,
+                                    fontWeight: 600,
+                                  }}
+                                />
+                              </div>
+                              <small style={{ display: 'block', color: 'var(--cx-text-muted)', fontSize: 11, marginTop: 4 }}>
+                                Next available number automatically calculated. You can also adjust manually.
+                              </small>
+                            </div>
+                          ) : (
+                            <div style={{ marginBottom: 16 }}>
+                              <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: 'var(--cx-text-muted)', marginBottom: 6 }}>
+                                Actual Supporter Name
+                              </label>
+                              <input
+                                type="text"
+                                placeholder="e.g. grazzhella Vicente, Anna domi"
+                                value={supporterForm.actualName}
+                                onChange={(e) => setSupporterForm({ ...supporterForm, actualName: e.target.value })}
+                                style={{
+                                  width: '100%',
+                                  padding: '8px 12px',
+                                  borderRadius: 8,
+                                  border: '1px solid var(--cx-border)',
+                                  background: 'var(--cx-surface)',
+                                  color: 'var(--cx-text)',
+                                  fontSize: 14,
+                                }}
+                              />
+                            </div>
+                          )}
+
+                          {/* Live Avatar Preview */}
+                          <div
+                            style={{
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: 12,
+                              padding: '10px 14px',
+                              background: 'var(--cx-surface)',
+                              borderRadius: 10,
+                              border: '1px solid var(--cx-border)',
+                              marginBottom: 16,
+                            }}
+                          >
+                            <img
+                              src={getDiceBearAvatar(supporterForm.isAnonymous ? `Anonymous #${supporterForm.anonymousNumber}` : supporterForm.actualName || 'Supporter')}
+                              alt="Preview Avatar"
+                              style={{ width: 36, height: 36, borderRadius: '50%', background: '#e2e8f0', flexShrink: 0 }}
+                            />
+                            <div>
+                              <div style={{ fontSize: 11, textTransform: 'uppercase', color: 'var(--cx-text-muted)', fontWeight: 600 }}>Card Preview Name</div>
+                              <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--cx-text)' }}>
+                                {supporterForm.isAnonymous ? `Anonymous #${supporterForm.anonymousNumber}` : supporterForm.actualName || '(Enter Name Above)'}
+                              </div>
+                            </div>
+                          </div>
+
+                          {/* Amount & Count */}
+                          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 16 }}>
+                            <div>
+                              <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: 'var(--cx-text-muted)', marginBottom: 6 }}>
+                                Amount ($ USD)
+                              </label>
+                              <input
+                                type="text"
+                                placeholder="48.56"
+                                value={supporterForm.amount}
+                                onChange={(e) => setSupporterForm({ ...supporterForm, amount: e.target.value })}
+                                style={{
+                                  width: '100%',
+                                  padding: '8px 12px',
+                                  borderRadius: 8,
+                                  border: '1px solid var(--cx-border)',
+                                  background: 'var(--cx-surface)',
+                                  color: 'var(--cx-text)',
+                                  fontSize: 14,
+                                }}
+                              />
+                            </div>
+                            <div>
+                              <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: 'var(--cx-text-muted)', marginBottom: 6 }}>
+                                Donation Count
+                              </label>
+                              <input
+                                type="number"
+                                min={1}
+                                value={supporterForm.count}
+                                onChange={(e) => setSupporterForm({ ...supporterForm, count: parseInt(e.target.value, 10) || 1 })}
+                                style={{
+                                  width: '100%',
+                                  padding: '8px 12px',
+                                  borderRadius: 8,
+                                  border: '1px solid var(--cx-border)',
+                                  background: 'var(--cx-surface)',
+                                  color: 'var(--cx-text)',
+                                  fontSize: 14,
+                                }}
+                              />
+                            </div>
+                          </div>
+
+                          {/* Time Ago & Preset chips */}
+                          <div style={{ marginBottom: 16 }}>
+                            <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: 'var(--cx-text-muted)', marginBottom: 6 }}>
+                              Time Ago / Display Date
+                            </label>
+                            <input
+                              type="text"
+                              placeholder="e.g. Just now, 2d ago, 5mo ago"
+                              value={supporterForm.time}
+                              onChange={(e) => setSupporterForm({ ...supporterForm, time: e.target.value })}
+                              style={{
+                                width: '100%',
+                                padding: '8px 12px',
+                                borderRadius: 8,
+                                border: '1px solid var(--cx-border)',
+                                background: 'var(--cx-surface)',
+                                color: 'var(--cx-text)',
+                                fontSize: 14,
+                                marginBottom: 6,
+                              }}
+                            />
+                            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
+                              {['Just now', 'Today', '2d ago', '1w ago', '1mo ago', '3mo ago', '5mo ago'].map((preset) => (
+                                <button
+                                  key={preset}
+                                  type="button"
+                                  onClick={() => setSupporterForm({ ...supporterForm, time: preset })}
+                                  style={{
+                                    padding: '2px 8px',
+                                    fontSize: 11,
+                                    borderRadius: 6,
+                                    border: '1px solid var(--cx-border)',
+                                    background: 'transparent',
+                                    color: 'var(--cx-text-muted)',
+                                    cursor: 'pointer',
+                                  }}
+                                >
+                                  {preset}
+                                </button>
+                              ))}
+                            </div>
+                          </div>
+
+                          {/* Podium Rank */}
+                          <div style={{ marginBottom: 24 }}>
+                            <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: 'var(--cx-text-muted)', marginBottom: 6 }}>
+                              Podium Placement (Top 3)
+                            </label>
+                            <select
+                              value={supporterForm.rank}
+                              onChange={(e) => setSupporterForm({ ...supporterForm, rank: parseInt(e.target.value, 10) as 0 | 1 | 2 | 3 })}
+                              style={{
+                                width: '100%',
+                                padding: '8px 12px',
+                                borderRadius: 8,
+                                border: '1px solid var(--cx-border)',
+                                background: 'var(--cx-surface)',
+                                color: 'var(--cx-text)',
+                                fontSize: 14,
+                              }}
+                            >
+                              <option value={0}>Auto / Standard List (by amount)</option>
+                              <option value={1}>Rank 1 - Gold Star (Center)</option>
+                              <option value={2}>Rank 2 - Silver Star (Left)</option>
+                              <option value={3}>Rank 3 - Bronze Star (Right)</option>
+                            </select>
+                          </div>
+
+                          {/* Dialog Buttons */}
+                          <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 10 }}>
+                            <button
+                              type="button"
+                              className="btn-secondary"
+                              onClick={() => setShowSupporterModal(false)}
+                              style={{ padding: '8px 16px', borderRadius: 8, cursor: 'pointer' }}
+                            >
+                              Cancel
+                            </button>
+                            <button
+                              type="button"
+                              className="btn-teal"
+                              onClick={handleSaveSupporterForm}
+                              disabled={savingSettings}
+                              style={{ padding: '8px 20px', borderRadius: 8, cursor: 'pointer' }}
+                            >
+                              {savingSettings ? 'Saving...' : 'Save Supporter'}
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    )}
                   </div>
                 )}
 

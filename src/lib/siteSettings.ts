@@ -99,6 +99,92 @@ export const DEFAULT_HERO_SLIDES: HeroSlide[] = [
 
 export const DEFAULT_FEATURED_SPOTLIGHT_ITEMS: FeaturedSpotlightItem[] = [];
 
+export type DonationSupporter = {
+  id: string;
+  name: string;
+  isAnonymous: boolean;
+  actualName?: string;
+  anonymousNumber?: number;
+  amount: string;
+  count: number;
+  time: string;
+  rank?: 1 | 2 | 3;
+};
+
+export const DEFAULT_SUPPORTERS: DonationSupporter[] = [
+  // Top 3 Podium
+  { id: 'podium-2', name: 'Anonymous #20', isAnonymous: true, anonymousNumber: 20, amount: '$48.56', count: 1, time: '5mo ago', rank: 2 },
+  { id: 'podium-1', name: 'Anonymous #25', isAnonymous: true, anonymousNumber: 25, amount: '$48.56', count: 1, time: '5mo ago', rank: 1 },
+  { id: 'podium-3', name: 'grazzhella Vicente', isAnonymous: false, actualName: 'grazzhella Vicente', amount: '$45.54', count: 1, time: '5mo ago', rank: 3 },
+
+  // Recent Donors
+  { id: 'donor-1', name: 'Abdul Rahmann', isAnonymous: false, actualName: 'Abdul Rahmann', amount: '$1.32', count: 1, time: '2mo ago' },
+  { id: 'donor-2', name: 'Ali alromaihi', isAnonymous: false, actualName: 'Ali alromaihi', amount: '$0.76', count: 1, time: '3mo ago' },
+  { id: 'donor-3', name: 'Anna domi', isAnonymous: false, actualName: 'Anna domi', amount: '$13.15', count: 1, time: '4mo ago' },
+  { id: 'donor-4', name: 'Anonymous #1', isAnonymous: true, anonymousNumber: 1, amount: '$4.06', count: 1, time: '4mo ago' },
+  { id: 'donor-5', name: 'Anonymous #10', isAnonymous: true, anonymousNumber: 10, amount: '$2.11', count: 1, time: '4mo ago' },
+  { id: 'donor-6', name: 'Anonymous #11', isAnonymous: true, anonymousNumber: 11, amount: '$1.62', count: 1, time: '4mo ago' },
+  { id: 'donor-7', name: 'Anonymous #12', isAnonymous: true, anonymousNumber: 12, amount: '$2.43', count: 1, time: '4mo ago' },
+  { id: 'donor-8', name: 'Anonymous #13', isAnonymous: true, anonymousNumber: 13, amount: '$1.85', count: 1, time: '4mo ago' },
+  { id: 'donor-9', name: 'Anonymous #14', isAnonymous: true, anonymousNumber: 14, amount: '$3.24', count: 1, time: '5mo ago' },
+  { id: 'donor-10', name: 'Anonymous #15', isAnonymous: true, anonymousNumber: 15, amount: '$0.81', count: 1, time: '5mo ago' },
+  { id: 'donor-11', name: 'Anonymous #16', isAnonymous: true, anonymousNumber: 16, amount: '$3.24', count: 1, time: '5mo ago' },
+  { id: 'donor-12', name: 'Anonymous #17', isAnonymous: true, anonymousNumber: 17, amount: '$0.88', count: 1, time: '5mo ago' },
+  { id: 'donor-13', name: 'Anonymous #18', isAnonymous: true, anonymousNumber: 18, amount: '$1.62', count: 1, time: '5mo ago' },
+  { id: 'donor-14', name: 'Anonymous #19', isAnonymous: true, anonymousNumber: 19, amount: '$0.59', count: 1, time: '5mo ago' },
+  { id: 'donor-15', name: 'Anonymous #2', isAnonymous: true, anonymousNumber: 2, amount: '$0.81', count: 1, time: '5mo ago' },
+  { id: 'donor-16', name: 'Anonymous #21', isAnonymous: true, anonymousNumber: 21, amount: '$0.08', count: 1, time: '5mo ago' },
+  { id: 'donor-17', name: 'Anonymous #22', isAnonymous: true, anonymousNumber: 22, amount: '$4.35', count: 1, time: '5mo ago' },
+  { id: 'donor-18', name: 'Anonymous #23', isAnonymous: true, anonymousNumber: 23, amount: '$0.16', count: 1, time: '5mo ago' },
+  { id: 'donor-19', name: 'Anonymous #24', isAnonymous: true, anonymousNumber: 24, amount: '$3.24', count: 1, time: '5mo ago' },
+  { id: 'donor-20', name: 'Anonymous #26', isAnonymous: true, anonymousNumber: 26, amount: '$1.62', count: 1, time: '5mo ago' },
+  { id: 'donor-21', name: 'Marcus Sterling', isAnonymous: false, actualName: 'Marcus Sterling', amount: '$10.00', count: 1, time: '5mo ago' },
+  { id: 'donor-22', name: 'Elena Rostova', isAnonymous: false, actualName: 'Elena Rostova', amount: '$8.50', count: 2, time: '5mo ago' },
+  { id: 'donor-23', name: 'Kaito Tanaka', isAnonymous: false, actualName: 'Kaito Tanaka', amount: '$5.00', count: 1, time: '6mo ago' },
+  { id: 'donor-24', name: 'Anonymous #28', isAnonymous: true, anonymousNumber: 28, amount: '$3.00', count: 1, time: '6mo ago' },
+  { id: 'donor-25', name: 'ZeroTwo Fan', isAnonymous: false, actualName: 'ZeroTwo Fan', amount: '$12.00', count: 3, time: '6mo ago' },
+  { id: 'donor-26', name: 'Lucas Silva', isAnonymous: false, actualName: 'Lucas Silva', amount: '$2.50', count: 1, time: '6mo ago' },
+  { id: 'donor-27', name: 'Anonymous #31', isAnonymous: true, anonymousNumber: 31, amount: '$1.50', count: 1, time: '7mo ago' },
+  { id: 'donor-28', name: 'MangaCollector99', isAnonymous: false, actualName: 'MangaCollector99', amount: '$20.00', count: 4, time: '7mo ago' },
+  { id: 'donor-29', name: 'Sora Cloud', isAnonymous: false, actualName: 'Sora Cloud', amount: '$4.20', count: 1, time: '7mo ago' },
+  { id: 'donor-30', name: 'Anonymous #35', isAnonymous: true, anonymousNumber: 35, amount: '$1.00', count: 1, time: '7mo ago' },
+];
+
+export function parseSupporters(value: unknown): DonationSupporter[] {
+  if (!Array.isArray(value)) return [...DEFAULT_SUPPORTERS];
+  const list: DonationSupporter[] = [];
+  for (let idx = 0; idx < value.length; idx++) {
+    const item = value[idx];
+    if (!item || typeof item !== 'object') continue;
+    const raw = item as Record<string, unknown>;
+    const isAnon = Boolean(raw.isAnonymous);
+    let anonNum = typeof raw.anonymousNumber === 'number' ? raw.anonymousNumber : undefined;
+    let rawName = typeof raw.name === 'string' && raw.name.trim() ? raw.name.trim() : '';
+    if (isAnon && !anonNum && rawName) {
+      const match = rawName.match(/Anonymous\s*#?(\d+)/i);
+      if (match) anonNum = parseInt(match[1], 10);
+    }
+    const name = rawName || (isAnon && anonNum ? `Anonymous #${anonNum}` : isAnon ? 'Anonymous' : 'Generous Supporter');
+    const amountStr = typeof raw.amount === 'string' ? raw.amount.trim() : typeof raw.amount === 'number' ? `$${raw.amount}` : '$1.00';
+    const amount = amountStr.startsWith('$') ? amountStr : `$${amountStr}`;
+    const count = typeof raw.count === 'number' && raw.count > 0 ? Math.round(raw.count) : 1;
+    const time = typeof raw.time === 'string' && raw.time.trim() ? raw.time.trim() : 'Just now';
+    const rank = raw.rank === 1 || raw.rank === 2 || raw.rank === 3 ? (raw.rank as 1 | 2 | 3) : undefined;
+    list.push({
+      id: typeof raw.id === 'string' && raw.id ? raw.id : `supporter_${Date.now()}_${idx}`,
+      name,
+      isAnonymous: isAnon,
+      actualName: typeof raw.actualName === 'string' ? raw.actualName : undefined,
+      anonymousNumber: anonNum,
+      amount,
+      count,
+      time,
+      rank,
+    });
+  }
+  return list;
+}
+
 export type SiteSettings = {
   header: HeaderVisibility;
   homepage: HomepageVisibility;
@@ -111,6 +197,7 @@ export type SiteSettings = {
   facebookUrl?: string;
   accentTheme: AccentTheme;
   announcement: AnnouncementSettings;
+  supporters: DonationSupporter[];
 };
 
 export const DEFAULT_CUSTOM_SOURCE_NAMES = [
@@ -207,6 +294,7 @@ export const DEFAULT_SITE_SETTINGS: SiteSettings = {
   facebookUrl: 'https://facebook.com',
   accentTheme: 'default',
   announcement: DEFAULT_ANNOUNCEMENT,
+  supporters: [...DEFAULT_SUPPORTERS],
 };
 
 function parseAccentTheme(value: unknown): AccentTheme {
@@ -314,8 +402,9 @@ function parseSiteSettings(value: unknown): SiteSettings | null {
   };
 
   const customSourceNames = parseCustomSourceNames(stored.custom_source_names);
+  const supporters = parseSupporters(stored.supporters);
 
-  return { header, homepage, seriesPage, seriesFilters, heroSlides, featuredSpotlightItems, newSeriesOrder, customSourceNames, facebookUrl, accentTheme: parseAccentTheme(stored.accent_theme), announcement };
+  return { header, homepage, seriesPage, seriesFilters, heroSlides, featuredSpotlightItems, newSeriesOrder, customSourceNames, facebookUrl, accentTheme: parseAccentTheme(stored.accent_theme), announcement, supporters };
 }
 
 export const SITE_SETTINGS_CACHE_KEY = 'vortex-site-settings';
@@ -359,7 +448,9 @@ export function getCachedSiteSettings(): SiteSettings | null {
         : DEFAULT_ANNOUNCEMENT.publishedAt,
     };
 
-    const settings = { header, homepage, seriesPage, seriesFilters, heroSlides, featuredSpotlightItems, newSeriesOrder, customSourceNames, facebookUrl, accentTheme: parseAccentTheme(cached.accentTheme), announcement };
+    const supporters = parseSupporters(cached.supporters);
+
+    const settings = { header, homepage, seriesPage, seriesFilters, heroSlides, featuredSpotlightItems, newSeriesOrder, customSourceNames, facebookUrl, accentTheme: parseAccentTheme(cached.accentTheme), announcement, supporters };
     applyAccentTheme(settings.accentTheme);
     return settings;
   } catch {
@@ -422,6 +513,7 @@ export async function getSiteSettings(forceRefresh = false): Promise<SiteSetting
           customSourceNames: [...DEFAULT_CUSTOM_SOURCE_NAMES],
           accentTheme: 'default',
           announcement: DEFAULT_ANNOUNCEMENT,
+          supporters: [...DEFAULT_SUPPORTERS],
         };
         inMemorySettings = cached;
         lastSettingsFetchedAt = Date.now();
@@ -469,6 +561,7 @@ export async function saveSiteSettings(settings: SiteSettings): Promise<SiteSett
         facebook_url: settings.facebookUrl || 'https://facebook.com',
         accent_theme: settings.accentTheme,
         announcement: settings.announcement,
+        supporters: settings.supporters,
       },
       updated_at: new Date().toISOString(),
     })
