@@ -28,6 +28,7 @@ import SeriesBrowsePage from './pages/SeriesBrowsePage';
 import CreditsPage from './pages/CreditsPage';
 import LatestUpdatesPage from './pages/LatestUpdatesPage';
 import DonationPage from './pages/DonationPage';
+import SecurityVerification from './components/SecurityVerification';
 import { toSiteSearchItems, toTrendingSiteSearchItems } from './data/seriesSearchCatalog';
 import { useThemeMode } from './hooks/useThemeMode';
 import { useSeriesCatalog } from './hooks/useSeriesCatalog';
@@ -1003,6 +1004,7 @@ function App() {
 
   return (
     <WouterRouter base={import.meta.env.BASE_URL.replace(/\/$/, '')}>
+      <SecurityVerification />
       <ScrollToTop />
       <ScrollUpActivityButton />
       <NavigationProgress />

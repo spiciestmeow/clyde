@@ -46,6 +46,7 @@ import SeriesCatalogManager from '../components/SeriesCatalogManager';
 import HeroSlidesManager from '../components/HeroSlidesManager';
 import FeaturedSpotlightManager from '../components/FeaturedSpotlightManager';
 import AdminGuideModal from '../components/AdminGuideModal';
+import CloudflareTurnstile from '../components/CloudflareTurnstile';
 import {
   DEFAULT_ANNOUNCEMENT,
   DEFAULT_CUSTOM_SOURCE_NAMES,
@@ -298,6 +299,7 @@ function ComixLoginScreen({
 }) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [formError, setFormError] = useState('');
   const [lockoutSeconds, setLockoutSeconds] = useState(0);
@@ -414,7 +416,16 @@ function ComixLoginScreen({
               />
             </div>
 
-            <button type="submit" className="btn-teal comix-login-btn" disabled={busy || lockoutSeconds > 0 || !email || !password}>
+            <div style={{ margin: '14px 0 6px', display: 'flex', justifyContent: 'center' }}>
+              <CloudflareTurnstile
+                onSuccess={(token) => setTurnstileToken(token)}
+                onExpire={() => setTurnstileToken(null)}
+                onError={() => setTurnstileToken(null)}
+                theme="dark"
+              />
+            </div>
+
+            <button type="submit" className="btn-teal comix-login-btn" disabled={busy || lockoutSeconds > 0 || !email || !password || !turnstileToken}>
               {busy ? <LoaderCircle className="spin-icon" size={16} /> : <ShieldCheck size={16} />}
               {busy ? 'Signing in...' : lockoutSeconds > 0 ? `Locked · ${lockoutTime}` : 'Log in'}
             </button>
