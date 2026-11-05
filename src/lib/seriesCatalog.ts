@@ -873,10 +873,9 @@ export async function getHomeCatalogHighlights(limit = 60): Promise<SeriesRecord
   const { data, error } = await client
     .from('series')
     .select(
-      'id, slug, title, href, cover, category, rating, status, pinned, chapters, ' +
-      'alternate_titles, synopsis, author, artist, publishers, content_rating, year, ' +
-      'original_language, demographics, genres, formats, tags, trackers, sources, ' +
-      'facts, favorites, views, review_count, page_number, page_order, created_at, updated_at',
+      'id, slug, title, href, cover, category, rating, status, pinned, ' +
+      'alternate_titles, author, artist, genres, formats, tags, sources, ' +
+      'facts, favorites, views, page_number, page_order, created_at, updated_at',
     )
     .order('pinned', { ascending: false })
     .order('rating', { ascending: false, nullsFirst: false })

@@ -49,6 +49,7 @@ import {
   getSeriesBySlugs,
   getSeriesCatalogByIds,
   getSeriesCatalogPage,
+  getSeriesChapterCount,
   getSeriesReleaseAgeMinutes,
   SERIES_CATALOG_QUERY_KEY,
 } from './lib/seriesCatalog';
@@ -229,7 +230,7 @@ function HomePage() {
       const leftRating = parseFloat(left.rating ?? '0') || 0;
       if (rightRating !== leftRating) return rightRating - leftRating;
 
-      const chapDiff = right.chapters.length - left.chapters.length;
+      const chapDiff = getSeriesChapterCount(right) - getSeriesChapterCount(left);
       if (chapDiff !== 0) return chapDiff;
 
       return left.title.localeCompare(right.title);
@@ -261,7 +262,7 @@ function HomePage() {
         const rightBonus = rightAge <= 1440 ? 1.5 : 0;
         return (Number(Boolean(right.pinned)) - Number(Boolean(left.pinned))) ||
           (rightRating + rightBonus) - (leftRating + leftBonus) ||
-          right.chapters.length - left.chapters.length ||
+          getSeriesChapterCount(right) - getSeriesChapterCount(left) ||
           left.title.localeCompare(right.title);
       }
 
@@ -272,14 +273,14 @@ function HomePage() {
         const rightBonus = rightAge <= 7 * 1440 ? 0.75 : 0;
         return (Number(Boolean(right.pinned)) - Number(Boolean(left.pinned))) ||
           (rightRating + rightBonus) - (leftRating + leftBonus) ||
-          right.chapters.length - left.chapters.length ||
+          getSeriesChapterCount(right) - getSeriesChapterCount(left) ||
           left.title.localeCompare(right.title);
       }
 
       // 'All time'
       return (Number(Boolean(right.pinned)) - Number(Boolean(left.pinned))) ||
         rightRating - leftRating ||
-        right.chapters.length - left.chapters.length ||
+        getSeriesChapterCount(right) - getSeriesChapterCount(left) ||
         left.title.localeCompare(right.title);
     });
 
