@@ -596,9 +596,28 @@ export default function DonationPage() {
             </p>
 
             {allSupporters.length === 0 ? (
-              <div style={{ textAlign: 'center', padding: '32px 16px', color: 'var(--muted, #888)', fontSize: 14 }}>
-                <Users size={32} style={{ marginBottom: 8, opacity: 0.3 }} />
-                <p style={{ margin: 0 }}>No supporters yet. Be the first to contribute!</p>
+              <div className="supporters-empty-state">
+                <div className="supporters-empty-icon-wrap">
+                  <Heart size={28} className="supporters-empty-icon" />
+                </div>
+                <h3 className="supporters-empty-title">Be the first to support!</h3>
+                <p className="supporters-empty-desc">
+                  No donations have been recorded yet. Every contribution — big or small — helps keep this project free and independent.
+                </p>
+                <div className="supporters-empty-steps">
+                  <div className="supporters-empty-step">
+                    <span className="supporters-empty-step-num">1</span>
+                    <span>Pick a support method above</span>
+                  </div>
+                  <div className="supporters-empty-step">
+                    <span className="supporters-empty-step-num">2</span>
+                    <span>Send any amount you're comfortable with</span>
+                  </div>
+                  <div className="supporters-empty-step">
+                    <span className="supporters-empty-step-num">3</span>
+                    <span>Your name appears here on the supporters wall</span>
+                  </div>
+                </div>
               </div>
             ) : (
               <>

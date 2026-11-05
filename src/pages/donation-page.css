@@ -1058,3 +1058,86 @@ html[data-accent-theme="halloween"] .theme-dark .donation-page-wrapper,
   from { opacity: 0; transform: scale(0.95); }
   to { opacity: 1; transform: scale(1); }
 }
+
+
+/* ── Supporters empty state ────────────────────────────── */
+.supporters-empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  padding: 48px 24px 36px;
+  gap: 0;
+}
+
+.supporters-empty-icon-wrap {
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  background: var(--chip-bg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 20px;
+  animation: supporters-pulse 2.4s ease-in-out infinite;
+}
+
+.supporters-empty-icon {
+  color: var(--brand);
+  opacity: 0.85;
+}
+
+@keyframes supporters-pulse {
+  0%, 100% { transform: scale(1); box-shadow: 0 0 0 0 var(--chip-bg); }
+  50% { transform: scale(1.06); box-shadow: 0 0 0 8px transparent; }
+}
+
+.supporters-empty-title {
+  margin: 0 0 10px;
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.supporters-empty-desc {
+  margin: 0 0 28px;
+  font-size: 14px;
+  color: var(--text-secondary);
+  max-width: 400px;
+  line-height: 1.6;
+}
+
+.supporters-empty-steps {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  width: 100%;
+  max-width: 380px;
+  text-align: left;
+}
+
+.supporters-empty-step {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  background: var(--chip-bg);
+  border-radius: 10px;
+  font-size: 13px;
+  color: var(--text-secondary);
+  line-height: 1.4;
+}
+
+.supporters-empty-step-num {
+  flex-shrink: 0;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: var(--brand);
+  color: #fff;
+  font-size: 11px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
