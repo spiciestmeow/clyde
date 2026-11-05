@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useEffect, useState, useCallback, useId } from 'react';
 import CloudflareTurnstile from './CloudflareTurnstile';
 
 const CLEARANCE_STORAGE_KEY = 'clydee_cf_clearance_ts';
@@ -26,19 +26,29 @@ export function refreshSecurityClearance(): void {
   }
 }
 
+function generateRayId(): string {
+  const chars = '0123456789abcdef';
+  let result = '';
+  for (let i = 0; i < 16; i++) {
+    result += chars[Math.floor(Math.random() * chars.length)];
+  }
+  return result;
+}
+
 export default function SecurityVerification() {
   const [isVerified, setIsVerified] = useState<boolean>(() => hasValidSecurityClearance());
   const [verificationSuccess, setVerificationSuccess] = useState(false);
   const [fadingOut, setFadingOut] = useState(false);
-  const [hostname, setHostname] = useState('clydee');
+  const [hostname, setHostname] = useState('clyde-s1lk.vercel.app');
+  const [rayId] = useState(() => generateRayId());
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
-      setHostname(window.location.hostname || 'clydee');
+      setHostname(window.location.hostname || 'clyde-s1lk.vercel.app');
     }
   }, []);
 
-  // Check clearance on visibility / focus or idle return
+  // Check clearance on tab return or idle
   useEffect(() => {
     const checkClearance = () => {
       if (!hasValidSecurityClearance()) {
@@ -49,7 +59,7 @@ export default function SecurityVerification() {
     };
 
     window.addEventListener('focus', checkClearance);
-    const interval = setInterval(checkClearance, 60 * 1000); // Check once a minute
+    const interval = setInterval(checkClearance, 60 * 1000);
 
     return () => {
       window.removeEventListener('focus', checkClearance);
@@ -62,13 +72,12 @@ export default function SecurityVerification() {
     refreshSecurityClearance();
     setVerificationSuccess(true);
 
-    // Give a brief moment to show "Verification successful" before smoothly dismissing
     setTimeout(() => {
       setFadingOut(true);
       setTimeout(() => {
         setIsVerified(true);
-      }, 350);
-    }, 700);
+      }, 300);
+    }, 600);
   }, []);
 
   if (isVerified) {
@@ -81,38 +90,38 @@ export default function SecurityVerification() {
       style={{
         position: 'fixed',
         inset: 0,
-        zIndex: 999999,
-        background: 'var(--bg, #0d0d11)',
-        color: 'var(--text, #f4f4f5)',
+        zIndex: 9999999,
+        backgroundColor: '#ffffff',
+        color: '#111827',
         display: 'flex',
         flexDirection: 'column',
-        alignItems: 'center',
-        justifyContent: 'center',
-        padding: '24px',
-        textAlign: 'center',
-        transition: 'opacity 0.35s ease, visibility 0.35s ease',
+        justifyContent: 'space-between',
+        padding: 'clamp(24px, 5vw, 64px) clamp(20px, 6vw, 80px)',
+        transition: 'opacity 0.3s ease',
         opacity: fadingOut ? 0 : 1,
-        fontFamily: "'Gotham Pro', system-ui, -apple-system, sans-serif",
+        fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif",
       }}
     >
+      {/* Main Content matching Cloudflare / Mistscans */}
       <div
-        className="security-verification-card"
         style={{
-          maxWidth: '540px',
+          maxWidth: '680px',
           width: '100%',
+          margin: '40px auto 0',
           display: 'flex',
           flexDirection: 'column',
-          alignItems: 'center',
-          gap: '16px',
+          alignItems: 'flex-start',
+          textAlign: 'left',
         }}
       >
         <h1
           style={{
-            fontSize: 'clamp(24px, 4vw, 32px)',
-            fontWeight: 800,
-            margin: 0,
-            color: 'var(--text, #ffffff)',
-            letterSpacing: '-0.5px',
+            fontSize: 'clamp(26px, 3.5vw, 36px)',
+            fontWeight: 700,
+            color: '#111827',
+            margin: '0 0 16px',
+            lineHeight: 1.2,
+            letterSpacing: '-0.3px',
           }}
         >
           {hostname}
@@ -120,10 +129,11 @@ export default function SecurityVerification() {
 
         <h2
           style={{
-            fontSize: 'clamp(18px, 2.5vw, 22px)',
-            fontWeight: 650,
-            margin: '4px 0 0',
-            color: 'var(--text, #ffffff)',
+            fontSize: 'clamp(18px, 2.2vw, 22px)',
+            fontWeight: 600,
+            color: '#1f2937',
+            margin: '0 0 12px',
+            lineHeight: 1.3,
           }}
         >
           Performing security verification
@@ -131,49 +141,72 @@ export default function SecurityVerification() {
 
         <p
           style={{
-            fontSize: '14px',
-            lineHeight: 1.5,
-            color: 'var(--muted, #94a3b8)',
-            margin: '0 0 12px',
-            maxWidth: '460px',
+            fontSize: '14.5px',
+            lineHeight: 1.6,
+            color: '#4b5563',
+            margin: '0 0 24px',
+            maxWidth: '560px',
           }}
         >
           This website uses a security service to protect against malicious bots. This page is displayed while the website verifies you are not a bot.
         </p>
 
-        <div style={{ minHeight: '65px', margin: '8px 0' }}>
+        {/* Turnstile Widget */}
+        <div style={{ margin: '8px 0 20px', minHeight: '65px' }}>
           <CloudflareTurnstile
             onSuccess={handleSuccess}
-            theme="auto"
+            theme="light"
+            size="normal"
           />
         </div>
 
         {verificationSuccess && (
           <p
             style={{
-              fontSize: '14px',
-              fontWeight: 600,
-              color: '#22c55e',
-              margin: '6px 0 0',
-              animation: 'fadeIn 0.2s ease',
+              fontSize: '15px',
+              fontWeight: 500,
+              color: '#111827',
+              margin: '8px 0 0',
             }}
           >
             Verification successful. Waiting for {hostname} to respond..
           </p>
         )}
+      </div>
 
-        <div
-          style={{
-            marginTop: '32px',
-            fontSize: '11px',
-            color: 'var(--muted, #64748b)',
-            display: 'flex',
-            flexDirection: 'column',
-            gap: '4px',
-            alignItems: 'center',
-          }}
-        >
-          <span>Performance and Security by Cloudflare</span>
+      {/* Cloudflare Footer matching Mistscans */}
+      <div
+        style={{
+          width: '100%',
+          textAlign: 'center',
+          fontSize: '12px',
+          color: '#6b7280',
+          lineHeight: 1.6,
+          marginTop: 'auto',
+          paddingTop: '32px',
+          borderTop: '1px solid #f3f4f6',
+        }}
+      >
+        <div>Ray ID: {rayId}</div>
+        <div style={{ marginTop: '2px' }}>
+          Performance and Security by{' '}
+          <a
+            href="https://www.cloudflare.com"
+            target="_blank"
+            rel="noopener noreferrer"
+            style={{ color: '#2563eb', textDecoration: 'none' }}
+          >
+            Cloudflare
+          </a>{' '}
+          •{' '}
+          <a
+            href="https://www.cloudflare.com/privacypolicy/"
+            target="_blank"
+            rel="noopener noreferrer"
+            style={{ color: '#2563eb', textDecoration: 'none' }}
+          >
+            Privacy
+          </a>
         </div>
       </div>
     </div>
