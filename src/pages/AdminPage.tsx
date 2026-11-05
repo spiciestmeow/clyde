@@ -1743,80 +1743,78 @@ function ComixDashboard({
                                 background: 'var(--cx-surface)',
                                 border: isPodium ? `1.5px solid ${rankColor}` : '1px solid var(--cx-border)',
                                 borderRadius: 12,
-                                padding: '12px 14px',
+                                padding: '10px 12px',
                                 display: 'flex',
                                 alignItems: 'center',
-                                justifyContent: 'space-between',
-                                gap: 12,
+                                gap: 10,
                                 transition: 'all 0.15s ease',
                               }}
                             >
-                              <div style={{ display: 'flex', alignItems: 'center', gap: 10, minWidth: 0 }}>
-                                <div style={{ position: 'relative', width: 38, height: 38, flexShrink: 0 }}>
-                                  <img
-                                    src={getDiceBearAvatar(s.name)}
-                                    alt={s.name}
-                                    style={{ width: '100%', height: '100%', borderRadius: '50%', objectFit: 'cover', background: '#e2e8f0' }}
-                                  />
-                                  {isPodium && (
-                                    <div
-                                      style={{
-                                        position: 'absolute',
-                                        top: -3,
-                                        right: -3,
-                                        width: 16,
-                                        height: 16,
-                                        borderRadius: '50%',
-                                        background: rankColor,
-                                        display: 'flex',
-                                        alignItems: 'center',
-                                        justifyContent: 'center',
-                                        color: '#fff',
-                                        fontSize: 9,
-                                        fontWeight: 800,
-                                      }}
-                                    >
-                                      {s.rank}
-                                    </div>
-                                  )}
+                              {/* Avatar */}
+                              <div style={{ position: 'relative', width: 40, height: 40, flexShrink: 0 }}>
+                                <img
+                                  src={getDiceBearAvatar(s.name)}
+                                  alt={s.name}
+                                  style={{ width: '100%', height: '100%', borderRadius: '50%', objectFit: 'cover', background: '#e2e8f0' }}
+                                />
+                                {isPodium && (
+                                  <div
+                                    style={{
+                                      position: 'absolute',
+                                      top: -3,
+                                      right: -3,
+                                      width: 16,
+                                      height: 16,
+                                      borderRadius: '50%',
+                                      background: rankColor,
+                                      display: 'flex',
+                                      alignItems: 'center',
+                                      justifyContent: 'center',
+                                      color: '#fff',
+                                      fontSize: 9,
+                                      fontWeight: 800,
+                                    }}
+                                  >
+                                    {s.rank}
+                                  </div>
+                                )}
+                              </div>
+                              {/* Name + meta */}
+                              <div style={{ flex: 1, minWidth: 0 }}>
+                                <div style={{ fontWeight: 600, fontSize: 13, color: 'var(--cx-text)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={s.name}>
+                                  {s.name}
                                 </div>
-                                <div style={{ minWidth: 0 }}>
-                                  <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                                    <span style={{ fontWeight: 600, fontSize: 13, color: 'var(--cx-text)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={s.name}>
-                                      {s.name}
-                                    </span>
-                                  </div>
-                                  <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 11, color: 'var(--cx-text-muted)', marginTop: 2 }}>
-                                    <span style={{ color: s.isAnonymous ? '#3b82f6' : '#10b981', fontWeight: 600 }}>
-                                      {s.isAnonymous ? 'Anonymous' : 'Actual Name'}
-                                    </span>
-                                    <span>·</span>
-                                    <span>{s.count} donation{s.count > 1 ? 's' : ''}</span>
-                                    <span>·</span>
-                                    <span>{s.time}</span>
-                                  </div>
+                                <div style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: '2px 5px', marginTop: 3 }}>
+                                  <span style={{ fontSize: 10, fontWeight: 700, color: s.isAnonymous ? '#3b82f6' : '#10b981', background: s.isAnonymous ? '#eff6ff' : '#f0fdf4', borderRadius: 4, padding: '1px 5px', whiteSpace: 'nowrap' }}>
+                                    {s.isAnonymous ? 'Anonymous' : 'Actual Name'}
+                                  </span>
+                                  <span style={{ fontSize: 11, color: 'var(--cx-text-muted)', whiteSpace: 'nowrap' }}>{s.count} donation{s.count > 1 ? 's' : ''}</span>
+                                  <span style={{ fontSize: 11, color: 'var(--cx-text-muted)', whiteSpace: 'nowrap' }}>· {s.time}</span>
                                 </div>
                               </div>
-                              <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
-                                <span style={{ fontWeight: 700, fontSize: 13, color: 'var(--cx-text)' }}>{s.amount}</span>
-                                <button
-                                  type="button"
-                                  onClick={() => openEditSupporterModal(s)}
-                                  disabled={savingSettings}
-                                  style={{ background: 'transparent', border: 'none', color: 'var(--cx-text-muted)', cursor: 'pointer', padding: 4, borderRadius: 4 }}
-                                  title="Edit supporter"
-                                >
-                                  <Pencil size={15} />
-                                </button>
-                                <button
-                                  type="button"
-                                  onClick={() => handleDeleteSupporter(s.id, s.name)}
-                                  disabled={savingSettings}
-                                  style={{ background: 'transparent', border: 'none', color: '#ef4444', cursor: 'pointer', padding: 4, borderRadius: 4 }}
-                                  title="Delete supporter"
-                                >
-                                  <Trash2 size={15} />
-                                </button>
+                              {/* Amount + actions */}
+                              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 4, flexShrink: 0 }}>
+                                <span style={{ fontWeight: 700, fontSize: 13, color: 'var(--cx-text)', whiteSpace: 'nowrap' }}>{s.amount}</span>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                                  <button
+                                    type="button"
+                                    onClick={() => openEditSupporterModal(s)}
+                                    disabled={savingSettings}
+                                    style={{ background: 'transparent', border: 'none', color: 'var(--cx-text-muted)', cursor: 'pointer', padding: '3px 5px', borderRadius: 4, lineHeight: 1 }}
+                                    title="Edit supporter"
+                                  >
+                                    <Pencil size={14} />
+                                  </button>
+                                  <button
+                                    type="button"
+                                    onClick={() => handleDeleteSupporter(s.id, s.name)}
+                                    disabled={savingSettings}
+                                    style={{ background: 'transparent', border: 'none', color: '#ef4444', cursor: 'pointer', padding: '3px 5px', borderRadius: 4, lineHeight: 1 }}
+                                    title="Delete supporter"
+                                  >
+                                    <Trash2 size={14} />
+                                  </button>
+                                </div>
                               </div>
                             </div>
                           );
