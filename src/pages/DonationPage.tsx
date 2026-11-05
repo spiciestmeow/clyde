@@ -285,59 +285,10 @@ export default function DonationPage() {
           communityHref="/#community"
           search={<SiteSearch items={searchItems} trendingItems={trendingItems} />}
         />
-        <div
-          style={{
-            minHeight: 'calc(100vh - 64px)',
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'center',
-            justifyContent: 'center',
-            gap: 16,
-            padding: '40px 20px',
-            background: 'var(--cx-bg)',
-            textAlign: 'center',
-          }}
-        >
-          <div
-            style={{
-              fontSize: 80,
-              fontWeight: 900,
-              lineHeight: 1,
-              background: 'linear-gradient(135deg, #ef4444 0%, #f97316 100%)',
-              WebkitBackgroundClip: 'text',
-              WebkitTextFillColor: 'transparent',
-              backgroundClip: 'text',
-            }}
-          >
-            404
-          </div>
-          <h1 style={{ fontSize: 24, fontWeight: 700, color: 'var(--cx-text)', margin: 0 }}>
-            Page Not Found
-          </h1>
-          <p style={{ fontSize: 15, color: 'var(--cx-text-muted)', maxWidth: 380, margin: 0, lineHeight: 1.6 }}>
-            This page doesn't exist or you don't have permission to view it.
-          </p>
-          <a
-            href="/"
-            style={{
-              marginTop: 8,
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: 8,
-              padding: '10px 24px',
-              background: 'linear-gradient(135deg, #ef4444 0%, #f97316 100%)',
-              color: '#fff',
-              borderRadius: 10,
-              fontWeight: 600,
-              fontSize: 14,
-              textDecoration: 'none',
-              boxShadow: '0 2px 12px rgba(239,68,68,0.3)',
-              transition: 'opacity 0.15s',
-            }}
-          >
-            ← Back to Home
-          </a>
-        </div>
+        <main className="not-found-page" aria-labelledby="not-found-title">
+          <h1 id="not-found-title">Page Not Found</h1>
+          <p>The page you are looking for does not exist.</p>
+        </main>
       </div>
     );
   }
