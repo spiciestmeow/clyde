@@ -1,6 +1,6 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState, type PointerEvent as ReactPointerEvent, type SyntheticEvent } from 'react';
 import { keepPreviousData, useQuery } from '@tanstack/react-query';
-import { ArrowLeft, ArrowRight, ArrowUp, ArrowUpRight, ChevronDown, ChevronLeft, ChevronRight, Clock3, Flame, Megaphone, RefreshCw, WifiOff } from 'lucide-react';
+import { ArrowLeft, ArrowRight, ArrowUp, ArrowUpRight, ChevronDown, ChevronLeft, ChevronRight, Clock3, Megaphone, RefreshCw, WifiOff } from 'lucide-react';
 import { Route, Switch, Router as WouterRouter, useLocation } from 'wouter';
 import SiteSearch from './components/SiteSearch';
 import SiteFooter from './components/SiteFooter';
@@ -147,7 +147,29 @@ function recoverImage(event: SyntheticEvent<HTMLDivElement>) {
   else image.src = DEFAULT_SERIES_COVER;
 }
 function SectionTitle({ children, icon }: { children: string; icon?: boolean }) {
-  return <div className="section-title">{icon && <Flame size={17} fill="currentColor" />}<h2>{children}</h2></div>;
+  return (
+    <div className="section-title">
+      {icon && (
+        <span className="section-title-icon">
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            viewBox="0 0 24 24"
+            fill="currentColor"
+            aria-hidden="true"
+            data-slot="icon"
+            className="w-5 h-5"
+          >
+            <path
+              fillRule="evenodd"
+              d="M12.963 2.286a.75.75 0 0 0-1.071-.136 9.742 9.742 0 0 0-3.539 6.176 7.547 7.547 0 0 1-1.705-1.715.75.75 0 0 0-1.152-.082A9 9 0 1 0 15.68 4.534a7.46 7.46 0 0 1-2.717-2.248ZM15.75 14.25a3.75 3.75 0 1 1-7.313-1.172c.628.465 1.35.81 2.133 1a5.99 5.99 0 0 1 1.925-3.546 3.75 3.75 0 0 1 3.255 3.718Z"
+              clipRule="evenodd"
+            />
+          </svg>
+        </span>
+      )}
+      <h2>{children}</h2>
+    </div>
+  );
 }
 
 function CatalogSectionUnavailable({ children }: { children: string }) {
