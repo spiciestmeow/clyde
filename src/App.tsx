@@ -107,19 +107,17 @@ function assetUrl(src?: string | null, width = 400) {
   if (!src || !src.trim()) return DEFAULT_SERIES_COVER;
   if (src.startsWith('data:')) return src;
   if (src.startsWith('/theme/')) return `https://vortexscans.org${src}`;
+  
+  // If it's wrapped in i0.wp.com proxy, strip it to point directly to clean source if desired
   if (src.startsWith('https://i0.wp.com/')) {
     try {
+      const stripped = src.slice('https://i0.wp.com/'.length).split('?')[0];
+      // If it points to an R2 or storage domain, return direct clean URL
+      if (stripped.includes('.r2.dev') || stripped.includes('storage.vortexscans.org')) {
+        return `https://${stripped}`;
+      }
       const url = new URL(src);
       if (url.searchParams.has('w')) url.searchParams.set('w', String(width));
-      return url.toString();
-    } catch {
-      return src;
-    }
-  }
-  if (src.startsWith('https://storage.vortexscans.org/')) {
-    try {
-      const url = new URL(src);
-      url.searchParams.set('w', String(width));
       return url.toString();
     } catch {
       return src;
