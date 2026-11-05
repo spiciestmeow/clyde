@@ -188,28 +188,85 @@ export function parseSupporters(value: unknown): DonationSupporter[] {
   return list;
 }
 
-export function getSupporterDisplayTime(supporter?: { time?: string; createdAt?: string } | null): string {
-  if (!supporter) return '';
-  const timestampStr = supporter.createdAt || (supporter.time && supporter.time.includes('T') ? supporter.time : undefined);
-  if (timestampStr) {
-    const createdTime = new Date(timestampStr).getTime();
-    if (!isNaN(createdTime)) {
-      const diffMs = Math.max(0, Date.now() - createdTime);
-      const diffSecs = Math.floor(diffMs / 1000);
-      const diffMins = Math.floor(diffSecs / 60);
-      const diffHours = Math.floor(diffMins / 60);
-      const diffDays = Math.floor(diffHours / 24);
-      const diffMonths = Math.floor(diffDays / 30);
-      const diffYears = Math.floor(diffDays / 365);
+export function parseRelativeTimeToDate(value: string): Date {
+  const trimmed = (value || '').trim().toLowerCase();
+  const now = Date.now();
 
-      if (diffSecs < 60) return 'Just now';
-      if (diffMins < 60) return `${diffMins}m ago`;
-      if (diffHours < 24) return `${diffHours}h ago`;
-      if (diffDays < 30) return `${diffDays}d ago`;
-      if (diffMonths < 12) return `${diffMonths}mo ago`;
-      return `${diffYears}y ago`;
-    }
+  if (!trimmed || trimmed === 'just now' || trimmed === 'now') {
+    return new Date(now);
   }
+  if (trimmed === 'today') {
+    const d = new Date(now);
+    d.setHours(d.getHours() - 2);
+    return d;
+  }
+  if (trimmed === 'yesterday') {
+    return new Date(now - 24 * 3600 * 1000);
+  }
+
+  // Check for ISO timestamp
+  if (trimmed.includes('t') && !isNaN(Date.parse(value))) {
+    return new Date(value);
+  }
+
+  // Regex matching e.g. "2d ago", "5mo ago", "1w ago", "3 hours ago", "10m", "1y ago"
+  const match = trimmed.match(/^(\d+(?:\.\d+)?)\s*(s|sec|secs|seconds?|m|min|mins|minutes?|h|hr|hrs|hours?|d|days?|w|wk|wks|weeks?|mo|mos|months?|y|yr|yrs|years?)\s*(?:ago)?$/i);
+  if (match) {
+    const amount = parseFloat(match[1]);
+    const unit = match[2].toLowerCase();
+    let unitMs = 60 * 1000;
+    if (unit.startsWith('s')) unitMs = 1000;
+    else if (unit.startsWith('m') && !unit.startsWith('mo')) unitMs = 60 * 1000;
+    else if (unit.startsWith('h')) unitMs = 3600 * 1000;
+    else if (unit.startsWith('d')) unitMs = 24 * 3600 * 1000;
+    else if (unit.startsWith('w')) unitMs = 7 * 24 * 3600 * 1000;
+    else if (unit.startsWith('mo')) unitMs = 30 * 24 * 3600 * 1000;
+    else if (unit.startsWith('y')) unitMs = 365 * 24 * 3600 * 1000;
+
+    return new Date(now - amount * unitMs);
+  }
+
+  return new Date(now);
+}
+
+export function getSupporterDisplayTime(
+  supporter?: { time?: string; createdAt?: string } | null,
+  currentTimestamp?: number
+): string {
+  if (!supporter) return '';
+  const now = typeof currentTimestamp === 'number' ? currentTimestamp : Date.now();
+
+  let createdTime: number | undefined;
+
+  if (supporter.createdAt) {
+    const parsed = new Date(supporter.createdAt).getTime();
+    if (!isNaN(parsed)) createdTime = parsed;
+  }
+
+  // If no createdAt is saved, dynamically parse supporter.time into a relative timestamp so it ages
+  if (!createdTime && supporter.time) {
+    const parsedDate = parseRelativeTimeToDate(supporter.time);
+    const parsed = parsedDate.getTime();
+    if (!isNaN(parsed)) createdTime = parsed;
+  }
+
+  if (createdTime) {
+    const diffMs = Math.max(0, now - createdTime);
+    const diffSecs = Math.floor(diffMs / 1000);
+    const diffMins = Math.floor(diffSecs / 60);
+    const diffHours = Math.floor(diffMins / 60);
+    const diffDays = Math.floor(diffHours / 24);
+    const diffMonths = Math.floor(diffDays / 30);
+    const diffYears = Math.floor(diffDays / 365);
+
+    if (diffSecs < 60) return 'Just now';
+    if (diffMins < 60) return `${diffMins}m ago`;
+    if (diffHours < 24) return `${diffHours}h ago`;
+    if (diffDays < 30) return `${diffDays}d ago`;
+    if (diffMonths < 12) return `${diffMonths}mo ago`;
+    return `${diffYears}y ago`;
+  }
+
   return supporter.time || 'Just now';
 }
 

@@ -58,6 +58,7 @@ import {
   DEFAULT_SITE_SETTINGS,
   DEFAULT_SUPPORTERS,
   getSupporterDisplayTime,
+  parseRelativeTimeToDate,
   getSiteSettings,
   saveSiteSettings,
   type HeaderVisibility,
@@ -526,6 +527,16 @@ function ComixDashboard({
   const [showSupporterModal, setShowSupporterModal] = useState(false);
   const [showSaveConfirm, setShowSaveConfirm] = useState(false);
   const [supporterToDelete, setSupporterToDelete] = useState<DonationSupporter | null>(null);
+  const [amountError, setAmountError] = useState('');
+  const [nowTick, setNowTick] = useState(() => Date.now());
+
+  // Dynamic live clock ticker so all relative timers advance and move in real time
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setNowTick(Date.now());
+    }, 15000);
+    return () => clearInterval(timer);
+  }, []);
 
   // Auto-computed top 3 podium based on highest donation amount
   const podiumRankMap = useMemo(() => {
@@ -556,7 +567,7 @@ function ComixDashboard({
     isAnonymous: true,
     anonymousNumber: 1,
     actualName: '',
-    amount: '5.00',
+    amount: '', // Empty value at first as required
     count: 1,
     timeMode: 'auto',
     customAmount: 5,
@@ -575,8 +586,9 @@ function ComixDashboard({
       const unitShort = unit === 'minutes' ? 'm' : unit === 'hours' ? 'h' : unit === 'days' ? 'd' : unit === 'months' ? 'mo' : 'y';
       return `${amt}${unitShort} ago (Auto Timer)`;
     }
-    return supporterForm.manualTime.trim() || 'Just now';
-  }, [supporterForm.timeMode, supporterForm.customAmount, supporterForm.customUnit, supporterForm.manualTime]);
+    const parsedDate = parseRelativeTimeToDate(supporterForm.manualTime);
+    return `${getSupporterDisplayTime({ createdAt: parsedDate.toISOString() }, nowTick)} (Auto Timer)`;
+  }, [supporterForm.timeMode, supporterForm.customAmount, supporterForm.customUnit, supporterForm.manualTime, nowTick]);
   const groupedCustomSourceNames = useMemo(() => {
     const groups = new Map<string, string[]>();
     [...customSourceNamesDraft]
@@ -784,25 +796,29 @@ function ComixDashboard({
         unit === 'months' ? 30 * 24 * 60 * 60 * 1000 :
         365 * 24 * 60 * 60 * 1000;
       const pastTime = new Date(Date.now() - amt * unitMs);
-      const unitShort = unit === 'minutes' ? 'm' : unit === 'hours' ? 'h' : unit === 'days' ? 'd' : unit === 'months' ? 'mo' : 'y';
+      const pastIso = pastTime.toISOString();
       return {
-        time: `${amt}${unitShort} ago`,
-        createdAt: pastTime.toISOString(),
+        time: getSupporterDisplayTime({ createdAt: pastIso }),
+        createdAt: pastIso,
       };
     }
+    // Preset timer mode: dynamically anchor to relative timestamp so it ages
+    const parsedDate = parseRelativeTimeToDate(supporterForm.manualTime);
+    const parsedIso = parsedDate.toISOString();
     return {
-      time: supporterForm.manualTime.trim() || 'Just now',
-      createdAt: undefined,
+      time: getSupporterDisplayTime({ createdAt: parsedIso }),
+      createdAt: parsedIso,
     };
   };
 
   const openNewSupporterModal = () => {
     const nextNum = getNextAnonymousNumber();
+    setAmountError('');
     setSupporterForm({
       isAnonymous: true,
       anonymousNumber: nextNum,
       actualName: '',
-      amount: '5.00',
+      amount: '', // Starts as empty value and is required
       count: 1,
       timeMode: 'auto',
       customAmount: 5,
@@ -816,6 +832,7 @@ function ComixDashboard({
   };
 
   const openEditSupporterModal = (s: DonationSupporter) => {
+    setAmountError('');
     let timeMode: 'auto' | 'custom' | 'manual' = 'manual';
     let customAmount = 5;
     let customUnit: 'minutes' | 'hours' | 'days' | 'months' | 'years' = 'minutes';
@@ -884,7 +901,14 @@ function ComixDashboard({
   };
 
   const handleSaveSupporterForm = () => {
-    // Open confirmation step instead of immediately saving
+    // Validate required donation amount
+    const rawAmt = supporterForm.amount.replace(/[^0-9.]/g, '').trim();
+    const numAmt = parseFloat(rawAmt);
+    if (!rawAmt || isNaN(numAmt) || numAmt <= 0) {
+      setAmountError('Donation amount is required and must be greater than $0.00.');
+      return;
+    }
+    setAmountError('');
     setShowSaveConfirm(true);
   };
 
@@ -1934,7 +1958,7 @@ function ComixDashboard({
                                     {s.isAnonymous ? 'Anonymous' : 'Actual Name'}
                                   </span>
                                   <span style={{ fontSize: 11, color: 'var(--cx-text-muted)', whiteSpace: 'nowrap' }}>{s.count} donation{s.count > 1 ? 's' : ''}</span>
-                                  <span style={{ fontSize: 11, color: 'var(--cx-text-muted)', whiteSpace: 'nowrap' }}>· {getSupporterDisplayTime(s)}</span>
+                                  <span style={{ fontSize: 11, color: 'var(--cx-text-muted)', whiteSpace: 'nowrap' }}>· {getSupporterDisplayTime(s, nowTick)}</span>
                                 </div>
                               </div>
                               {/* Amount + actions */}
@@ -2066,7 +2090,7 @@ function ComixDashboard({
                                 {supporterForm.isAnonymous ? `Anonymous #${supporterForm.anonymousNumber}` : supporterForm.actualName || '(Enter Name Above)'}
                               </div>
                               <div style={{ fontSize: 11, color: 'var(--cx-text-muted)', marginTop: 2 }}>
-                                ${supporterForm.amount.replace(/^\$/, '') || '5.00'} · {livePreviewTime} · {supporterForm.count} donation{supporterForm.count > 1 ? 's' : ''}
+                                {supporterForm.amount.trim() ? `$${supporterForm.amount.replace(/^\$/, '')}` : '$0.00'} · {livePreviewTime} · {supporterForm.count} donation{supporterForm.count > 1 ? 's' : ''}
                               </div>
                             </div>
                           </div>
@@ -2075,15 +2099,25 @@ function ComixDashboard({
                           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 16 }}>
                             <div>
                               <label className="supporter-modal-label-sm">
-                                Amount ($ USD)
+                                Amount ($ USD) <span style={{ color: '#ef4444' }}>*</span>
                               </label>
                               <input
                                 type="text"
-                                placeholder="48.56"
+                                placeholder="e.g. 5.00"
+                                required
                                 value={supporterForm.amount}
-                                onChange={(e) => setSupporterForm({ ...supporterForm, amount: e.target.value })}
+                                onChange={(e) => {
+                                  setSupporterForm({ ...supporterForm, amount: e.target.value });
+                                  if (amountError) setAmountError('');
+                                }}
                                 className="supporter-modal-input"
+                                style={{ borderColor: amountError ? '#ef4444' : undefined }}
                               />
+                              {amountError && (
+                                <div style={{ color: '#ef4444', fontSize: 11, marginTop: 4 }}>
+                                  {amountError}
+                                </div>
+                              )}
                             </div>
                             <div>
                               <label className="supporter-modal-label-sm">
@@ -2109,8 +2143,8 @@ function ComixDashboard({
                                 {supporterForm.timeMode === 'auto'
                                   ? 'Auto-updates from save'
                                   : supporterForm.timeMode === 'custom'
-                                  ? 'Relative auto-timer'
-                                  : 'Fixed text'}
+                                  ? 'Custom relative auto-timer'
+                                  : 'Preset relative auto-timer'}
                               </span>
                             </div>
 
@@ -2137,8 +2171,8 @@ function ComixDashboard({
                                 className={`supporter-time-mode-btn ${supporterForm.timeMode === 'manual' ? 'is-active' : ''}`}
                                 onClick={() => setSupporterForm({ ...supporterForm, timeMode: 'manual' })}
                               >
-                                <Pencil size={13} />
-                                <span>Fixed Text</span>
+                                <History size={13} />
+                                <span>Preset Timer</span>
                               </button>
                             </div>
 
@@ -2241,18 +2275,10 @@ function ComixDashboard({
                               </div>
                             )}
 
-                            {/* 3. Fixed Text Mode */}
+                            {/* 3. Preset Timer Mode */}
                             {supporterForm.timeMode === 'manual' && (
                               <div>
-                                <input
-                                  type="text"
-                                  placeholder="e.g. Just now, 2d ago, 5mo ago"
-                                  value={supporterForm.manualTime}
-                                  onChange={(e) => setSupporterForm({ ...supporterForm, manualTime: e.target.value })}
-                                  className="supporter-modal-input"
-                                  style={{ marginBottom: 6 }}
-                                />
-                                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
+                                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4, marginBottom: 8 }}>
                                   {['Just now', 'Today', '2d ago', '1w ago', '1mo ago', '3mo ago', '5mo ago'].map((preset) => (
                                     <button
                                       key={preset}
@@ -2264,6 +2290,17 @@ function ComixDashboard({
                                     </button>
                                   ))}
                                 </div>
+                                <input
+                                  type="text"
+                                  placeholder="e.g. Just now, 2d ago, 5mo ago"
+                                  value={supporterForm.manualTime}
+                                  onChange={(e) => setSupporterForm({ ...supporterForm, manualTime: e.target.value })}
+                                  className="supporter-modal-input"
+                                  style={{ marginBottom: 4 }}
+                                />
+                                <small style={{ display: 'block', color: 'var(--cx-text-muted)', fontSize: 11 }}>
+                                  Dynamic anchor: sets relative time in the past and dynamically moves forward after saving.
+                                </small>
                               </div>
                             )}
                           </div>

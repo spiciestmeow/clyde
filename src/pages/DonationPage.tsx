@@ -203,6 +203,14 @@ export default function DonationPage() {
   const [activeModalMethod, setActiveModalMethod] = useState<PaymentMethod | null>(null);
   const [copied, setCopied] = useState(false);
   const [displayCount, setDisplayCount] = useState(20);
+  const [nowTick, setNowTick] = useState(() => Date.now());
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setNowTick(Date.now());
+    }, 15000);
+    return () => clearInterval(timer);
+  }, []);
 
   const allSupporters = siteSettings.supporters && siteSettings.supporters.length > 0
     ? siteSettings.supporters
@@ -231,21 +239,21 @@ export default function DonationPage() {
       rank: 2,
       name: podium2?.name || 'Anonymous #20',
       amount: podium2?.amount || '$48.56',
-      meta: `${podium2?.count || 1} donation${(podium2?.count || 1) > 1 ? 's' : ''} · ${getSupporterDisplayTime(podium2) || '5mo ago'}`,
+      meta: `${podium2?.count || 1} donation${(podium2?.count || 1) > 1 ? 's' : ''} · ${getSupporterDisplayTime(podium2, nowTick) || '5mo ago'}`,
       rankColor: '#9AA6B2',
     },
     {
       rank: 1,
       name: podium1?.name || 'Anonymous #25',
       amount: podium1?.amount || '$48.56',
-      meta: `${podium1?.count || 1} donation${(podium1?.count || 1) > 1 ? 's' : ''} · ${getSupporterDisplayTime(podium1) || '5mo ago'}`,
+      meta: `${podium1?.count || 1} donation${(podium1?.count || 1) > 1 ? 's' : ''} · ${getSupporterDisplayTime(podium1, nowTick) || '5mo ago'}`,
       rankColor: '#D4A017',
     },
     {
       rank: 3,
       name: podium3?.name || 'grazzhella Vicente',
       amount: podium3?.amount || '$45.54',
-      meta: `${podium3?.count || 1} donation${(podium3?.count || 1) > 1 ? 's' : ''} · ${getSupporterDisplayTime(podium3) || '5mo ago'}`,
+      meta: `${podium3?.count || 1} donation${(podium3?.count || 1) > 1 ? 's' : ''} · ${getSupporterDisplayTime(podium3, nowTick) || '5mo ago'}`,
       rankColor: '#B87333',
     },
   ];
@@ -643,7 +651,7 @@ export default function DonationPage() {
                     </div>
                   </div>
                   <div className="donor-bottom-row">
-                    <span className="donor-time-text">{getSupporterDisplayTime(supporter)}</span>
+                    <span className="donor-time-text">{getSupporterDisplayTime(supporter, nowTick)}</span>
                     <span className="donor-amount-val">{supporter.amount}</span>
                   </div>
                 </div>
