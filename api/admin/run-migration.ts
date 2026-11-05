@@ -74,8 +74,15 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   setNoStore(res);
 
   // ── Auth guard ─────────────────────────────────────────────────────────────
-  if (!isAdminAuthenticated(req as Parameters<typeof isAdminAuthenticated>[0])) {
-    return res.status(401).json({ error: 'Unauthorized. Log in as admin first.' });
+  const authHeader = req.headers.authorization;
+  const cronSecret = process.env.CRON_SECRET;
+  const isSecretBearer =
+    cronSecret &&
+    authHeader &&
+    (authHeader === `Bearer ${cronSecret}` || authHeader === cronSecret);
+
+  if (!isSecretBearer && !isAdminAuthenticated(req as Parameters<typeof isAdminAuthenticated>[0])) {
+    return res.status(401).json({ error: 'Unauthorized. Provide valid Authorization header or log in as admin.' });
   }
 
   // ── GET: show instructions ─────────────────────────────────────────────────
