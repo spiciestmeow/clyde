@@ -2261,8 +2261,8 @@ html[data-accent-theme="default"] .release-card--series::after { display: none; 
   position: absolute;
   top: -2px;
   right: -2px;
-  width: 10px;
-  height: 10px;
+  width: 9px;
+  height: 9px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -2272,22 +2272,22 @@ html[data-accent-theme="default"] .release-card--series::after { display: none; 
 
 .donate-pulse-ring {
   position: absolute;
-  inset: -4px;
+  inset: -1.5px;
   border-radius: 50%;
   background-color: var(--accent, #ef4444);
-  opacity: 0.65;
-  animation: donatePulsePing 2s cubic-bezier(0, 0, 0.2, 1) infinite;
+  opacity: 0.75;
+  animation: donatePulsePing 1.15s cubic-bezier(0.16, 1, 0.3, 1) infinite;
   pointer-events: none;
 }
 
 .donate-pulse-dot {
   position: relative;
-  width: 7.5px;
-  height: 7.5px;
+  width: 7px;
+  height: 7px;
   border-radius: 50%;
   background-color: #ffffff;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.25), 0 0 6px rgba(255, 255, 255, 0.8);
-  animation: donateDotPulse 2s ease-in-out infinite;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.25), 0 0 5px rgba(255, 255, 255, 0.85);
+  animation: donateDotPulse 1.15s ease-in-out infinite;
 }
 
 .mobile-nav-card .donate-pulse-badge.is-mobile {
@@ -2300,14 +2300,14 @@ html[data-accent-theme="default"] .release-card--series::after { display: none; 
 
 @keyframes donatePulsePing {
   0% {
-    transform: scale(0.6);
-    opacity: 0.85;
+    transform: scale(0.95);
+    opacity: 0.8;
   }
   50% {
-    opacity: 0.45;
+    opacity: 0.35;
   }
-  75%, 100% {
-    transform: scale(2.4);
+  100% {
+    transform: scale(1.5);
     opacity: 0;
   }
 }
@@ -2317,6 +2317,6 @@ html[data-accent-theme="default"] .release-card--series::after { display: none; 
     transform: scale(1);
   }
   50% {
-    transform: scale(1.15);
+    transform: scale(1.08);
   }
 }
