@@ -168,8 +168,8 @@ img { display: block; max-width: 100%; }
 .facebook-short svg { color: #fff; fill: currentColor; }
 .theme-light .facebook-short svg { color: rgba(25,25,29,.76); }
 .theme-light .nav-pill, .theme-light .bookmark-pill, .theme-light .icon-pill { background: rgba(0,0,0,.035); color: rgba(25,25,29,.76); }
-.theme-light .nav-pill:hover, .theme-light .bookmark-pill:hover, .theme-light .icon-pill:hover { color: var(--text); background: rgba(0,0,0,.075); border-color: var(--line); }
-.theme-light .nav-pill.selected { color: var(--text); background: rgba(0,0,0,.08); }
+.theme-light .nav-pill:hover, .theme-light .bookmark-pill:hover, .theme-light .icon-pill:hover { background: rgba(0,0,0,.075); border-color: var(--line); }
+.theme-light .nav-pill.selected { color: rgba(25,25,29,.76); background: rgba(0,0,0,.08); }
 .theme-light .nav-search { border-color: var(--line); background: rgba(0,0,0,.025); color: var(--muted); }
 .theme-light .nav-search input::placeholder { color: var(--muted); }
 .topbar-actions { display: flex; align-items: center; gap: 8px; margin-left: auto; }
