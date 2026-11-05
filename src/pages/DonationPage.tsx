@@ -26,7 +26,6 @@ import {
   getSiteSettings,
   SITE_SETTINGS_UPDATED_EVENT,
   DEFAULT_SITE_SETTINGS,
-  DEFAULT_SUPPORTERS,
   getSupporterDisplayTime,
   type DonationSupporter,
   type SiteSettings,
@@ -212,9 +211,7 @@ export default function DonationPage() {
     return () => clearInterval(timer);
   }, []);
 
-  const allSupporters = siteSettings.supporters && siteSettings.supporters.length > 0
-    ? siteSettings.supporters
-    : DEFAULT_SUPPORTERS;
+  const allSupporters = siteSettings.supporters ?? [];
 
   const currentRaised = allSupporters.reduce((sum, s) => {
     const val = parseFloat(s.amount.replace(/[^0-9.]/g, '')) || 0;
@@ -598,7 +595,14 @@ export default function DonationPage() {
               Top 3 by lifetime support, followed by the latest donations.
             </p>
 
-            {/* Top 3 Podium */}
+            {allSupporters.length === 0 ? (
+              <div style={{ textAlign: 'center', padding: '32px 16px', color: 'var(--muted, #888)', fontSize: 14 }}>
+                <Users size={32} style={{ marginBottom: 8, opacity: 0.3 }} />
+                <p style={{ margin: 0 }}>No supporters yet. Be the first to contribute!</p>
+              </div>
+            ) : (
+              <>
+                {/* Top 3 Podium */}
             <div className="supporters-podium-grid">
               {podiumSupporters.map((p) => {
                 const slotClass =
@@ -667,6 +671,8 @@ export default function DonationPage() {
                 <ChevronDown size={16} />
                 <span>Load more supporters ({recentDonors.length - displayCount} remaining)</span>
               </button>
+            )}
+              </>
             )}
           </section>
 
