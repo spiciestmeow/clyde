@@ -99,6 +99,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   // ── POST: run migration ────────────────────────────────────────────────────
   const bucket = process.env.R2_BUCKET_NAME ?? 'covers';
 
+  // Read optional batch limit from query or body (e.g. ?limit=30)
+  const limitParam = Number(req.query.limit) || 35;
+
   // Stream JSON-lines progress back to the client
   res.setHeader('Content-Type', 'application/x-ndjson');
   res.setHeader('Transfer-Encoding', 'chunked');
@@ -112,18 +115,30 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     log({ status: 'listing', message: 'Listing files in Supabase bucket…' });
     const files = await listAllFiles(supabase);
-    log({ status: 'listed', total: files.length, message: `Found ${files.length} file(s).` });
+    log({ status: 'listed', total: files.length, message: `Found ${files.length} total file(s).` });
 
     let copied = 0, skipped = 0, failed = 0;
+    let processedThisBatch = 0;
 
     for (let i = 0; i < files.length; i++) {
       const filePath = files[i];
       const index    = i + 1;
 
       if (SKIP_EXISTING && await existsInR2(r2, bucket, filePath)) {
-        log({ status: 'skipped', index, total: files.length, file: filePath });
         skipped++;
         continue;
+      }
+
+      // Check if batch limit reached for active uploads
+      if (processedThisBatch >= limitParam) {
+        log({
+          status: 'batch_limit',
+          message: `Reached batch limit of ${limitParam}. Continue in next iteration.`,
+          copiedSoFar: copied,
+          skippedSoFar: skipped,
+          remaining: files.length - (copied + skipped),
+        });
+        break;
       }
 
       // Signed URL download from Supabase
@@ -155,16 +170,19 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         CacheControl: 'public, max-age=31536000',
       }));
 
-      log({ status: 'copied', index, total: files.length, file: filePath, sizeKb: Math.round(buffer.length / 1024 * 10) / 10 });
+      processedThisBatch++;
       copied++;
+      log({ status: 'copied', index, total: files.length, file: filePath, sizeKb: Math.round(buffer.length / 1024 * 10) / 10 });
     }
 
+    const remaining = files.length - (copied + skipped);
     log({
-      status: 'done',
+      status: remaining <= 0 ? 'all_done' : 'batch_done',
       copied,
       skipped,
       failed,
-      message: '🎉 Migration complete! Supabase files were NOT deleted.',
+      remaining: Math.max(0, remaining),
+      message: remaining <= 0 ? '🎉 All files migrated successfully!' : `Batch complete. ${remaining} files remaining.`,
     });
 
   } catch (err) {
