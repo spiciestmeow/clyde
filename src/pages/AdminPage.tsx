@@ -464,6 +464,80 @@ function ComixLoginScreen({
 // ====================================================
 // COMIX DASHBOARD (MATCHING IMAGE b295b4a2.png)
 // ====================================================
+const VALID_TABS = new Set<SidebarTab>([
+  'edit-profile',
+  'followed-titles',
+  'followed-users',
+  'followed-groups',
+  'read-history',
+  'collections',
+  'feed',
+  'notifications',
+  'comments',
+  'posts',
+  'uploads',
+  'hero-slides',
+  'featured-series',
+  'import-export',
+  'blocked-users',
+  'donation-supporters',
+  'settings',
+]);
+
+type SettingsSubTab =
+  | 'homepage'
+  | 'announcement'
+  | 'header'
+  | 'series'
+  | 'filters'
+  | 'socials'
+  | 'sources'
+  | 'theme'
+  | 'supporters';
+
+const VALID_SETTINGS_SUBTABS = new Set<SettingsSubTab>([
+  'homepage',
+  'announcement',
+  'header',
+  'series',
+  'filters',
+  'socials',
+  'sources',
+  'theme',
+]);
+
+function getInitialActiveTab(): SidebarTab {
+  if (typeof window === 'undefined') return 'uploads';
+  try {
+    const params = new URLSearchParams(window.location.search);
+    const paramTab = params.get('tab') as SidebarTab;
+    if (paramTab && VALID_TABS.has(paramTab)) return paramTab;
+  } catch {}
+  try {
+    const hash = window.location.hash.replace(/^#/, '') as SidebarTab;
+    if (VALID_TABS.has(hash)) return hash;
+  } catch {}
+  try {
+    const stored = localStorage.getItem('comix_admin_active_tab') as SidebarTab;
+    if (stored && VALID_TABS.has(stored)) return stored;
+  } catch {}
+  return 'uploads';
+}
+
+function getInitialSettingsSubTab(): SettingsSubTab {
+  if (typeof window === 'undefined') return 'homepage';
+  try {
+    const params = new URLSearchParams(window.location.search);
+    const sub = params.get('subtab') as SettingsSubTab;
+    if (sub && VALID_SETTINGS_SUBTABS.has(sub)) return sub;
+  } catch {}
+  try {
+    const stored = localStorage.getItem('comix_admin_settings_subtab') as SettingsSubTab;
+    if (stored && VALID_SETTINGS_SUBTABS.has(stored)) return stored;
+  } catch {}
+  return 'homepage';
+}
+
 function ComixDashboard({
   session,
   theme,
@@ -475,12 +549,60 @@ function ComixDashboard({
   onToggleTheme: () => void;
   onLogout: () => void;
 }) {
-  const [activeTab, setActiveTab] = useState<SidebarTab>('uploads');
+  const [activeTab, setActiveTab] = useState<SidebarTab>(getInitialActiveTab);
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const [profileMenuOpen, setProfileMenuOpen] = useState(false);
   const profileMenuRef = useRef<HTMLDivElement>(null);
-  const [settingsSubTab, setSettingsSubTab] = useState<'homepage' | 'announcement' | 'header' | 'series' | 'filters' | 'socials' | 'sources' | 'theme' | 'supporters'>('homepage');
+  const [settingsSubTab, setSettingsSubTab] = useState<SettingsSubTab>(getInitialSettingsSubTab);
   const [topSearch, setTopSearch] = useState('');
+
+  const isFirstSyncRef = useRef(true);
+
+  // Sync activeTab & settingsSubTab with URL and localStorage
+  useEffect(() => {
+    try {
+      localStorage.setItem('comix_admin_active_tab', activeTab);
+      localStorage.setItem('comix_admin_settings_subtab', settingsSubTab);
+
+      const url = new URL(window.location.href);
+      const currentParamTab = url.searchParams.get('tab');
+      const currentParamSub = url.searchParams.get('subtab');
+
+      const tabNeedsUpdate = currentParamTab !== activeTab;
+      const subNeedsUpdate =
+        activeTab === 'settings'
+          ? currentParamSub !== settingsSubTab
+          : currentParamSub !== null;
+
+      if (tabNeedsUpdate || subNeedsUpdate) {
+        url.searchParams.set('tab', activeTab);
+        if (activeTab === 'settings') {
+          url.searchParams.set('subtab', settingsSubTab);
+        } else {
+          url.searchParams.delete('subtab');
+        }
+
+        if (isFirstSyncRef.current) {
+          window.history.replaceState(null, '', url.toString());
+        } else {
+          window.history.pushState(null, '', url.toString());
+        }
+      }
+    } catch {
+      // ignore
+    } finally {
+      isFirstSyncRef.current = false;
+    }
+  }, [activeTab, settingsSubTab]);
+
+  useEffect(() => {
+    const onPopState = () => {
+      setActiveTab(getInitialActiveTab());
+      setSettingsSubTab(getInitialSettingsSubTab());
+    };
+    window.addEventListener('popstate', onPopState);
+    return () => window.removeEventListener('popstate', onPopState);
+  }, []);
 
   // Series catalog stats
   const catalogCountQuery = useQuery({
