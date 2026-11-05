@@ -1181,11 +1181,23 @@ export default function SeriesCatalogManager({
       .slice(0, 6);
   }, [catalogItems, modalSearch]);
 
+  // Scoped invalidation helper: refreshes visible admin table immediately,
+  // marks heavy full-catalog queries stale without forcing immediate ~20MB refetches.
+  const invalidateSeriesData = async () => {
+    await Promise.all([
+      queryClient.invalidateQueries({ queryKey: [...SERIES_CATALOG_QUERY_KEY, 'admin-page'] }),
+      queryClient.invalidateQueries({ queryKey: [...SERIES_CATALOG_QUERY_KEY, 'admin-count'] }),
+      queryClient.invalidateQueries({ queryKey: [...SERIES_CATALOG_QUERY_KEY, 'admin-full'], refetchType: 'none' }),
+      queryClient.invalidateQueries({ queryKey: [...SERIES_CATALOG_QUERY_KEY, 'home-highlights'], refetchType: 'none' }),
+      queryClient.invalidateQueries({ queryKey: [...SERIES_CATALOG_QUERY_KEY, 'home-latest-release-page'], refetchType: 'none' }),
+    ]);
+  };
+
   // Create series mutation
   const createSeriesMutation = useMutation({
     mutationFn: createSeriesRecord,
     onSuccess: async () => {
-      await queryClient.invalidateQueries({ queryKey: SERIES_CATALOG_QUERY_KEY });
+      await invalidateSeriesData();
       setView('list');
       setEditingSeriesId(null);
       setDraft(initialFormDraft());
@@ -1205,7 +1217,7 @@ export default function SeriesCatalogManager({
   const updateSeriesMutation = useMutation({
     mutationFn: updateSeriesRecord,
     onSuccess: async () => {
-      await queryClient.invalidateQueries({ queryKey: SERIES_CATALOG_QUERY_KEY });
+      await invalidateSeriesData();
       setView('list');
       setEditingSeriesId(null);
       setDraft(initialFormDraft());
@@ -1225,7 +1237,7 @@ export default function SeriesCatalogManager({
   const deleteSeriesMutation = useMutation({
     mutationFn: deleteSeriesRecord,
     onSuccess: async () => {
-      await queryClient.invalidateQueries({ queryKey: SERIES_CATALOG_QUERY_KEY });
+      await invalidateSeriesData();
       setSeriesPendingDelete(null);
     },
     onError: (err: any) => {
@@ -1237,7 +1249,7 @@ export default function SeriesCatalogManager({
   const addChapterMutation = useMutation({
     mutationFn: addSeriesChapter,
     onSuccess: async () => {
-      await queryClient.invalidateQueries({ queryKey: SERIES_CATALOG_QUERY_KEY });
+      await invalidateSeriesData();
       setSelectedSeriesForChapter(null);
       setChapterTitleInput('');
       setChapterError(null);
@@ -2717,7 +2729,7 @@ export default function SeriesCatalogManager({
   return (
     <div className="uploads-theme-container">
       {/* Top Header Row (Image 1) */}
-      <BackgroundSyncTimer onManualTriggerSuccess={() => queryClient.invalidateQueries({ queryKey: SERIES_CATALOG_QUERY_KEY })} />
+      <BackgroundSyncTimer onManualTriggerSuccess={() => void invalidateSeriesData()} />
 
       <div className="uploads-header-row">
         <div>

@@ -686,7 +686,10 @@ export default function SeriesDetailPage() {
         if (typeof data.favorites === 'number') {
           setFavoriteCount(data.favorites);
         }
-        void queryClient.invalidateQueries({ queryKey: ['series-catalog'] });
+        void queryClient.invalidateQueries({
+          queryKey: [...SERIES_CATALOG_QUERY_KEY, 'home-highlights'],
+          refetchType: 'none',
+        });
       }
     } catch (err) {
       console.warn('Could not sync favorite count:', err);

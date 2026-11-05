@@ -14,7 +14,7 @@ export async function refreshActiveData(): Promise<void> {
       await Promise.allSettled([
         queryClient.invalidateQueries({
           queryKey: SERIES_CATALOG_QUERY_KEY,
-          refetchType: 'all',
+          refetchType: 'active',
         }),
         getSiteSettings().then((settings) => {
           window.dispatchEvent(
