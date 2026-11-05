@@ -57,6 +57,7 @@ import {
   DEFAULT_CUSTOM_SOURCE_NAMES,
   DEFAULT_SITE_SETTINGS,
   DEFAULT_SUPPORTERS,
+  getSupporterDisplayTime,
   getSiteSettings,
   saveSiteSettings,
   type HeaderVisibility,
@@ -107,6 +108,7 @@ type SidebarTab =
   | 'featured-series'
   | 'import-export'
   | 'blocked-users'
+  | 'donation-supporters'
   | 'settings';
 
 const mobileSidebarItems = [
@@ -125,6 +127,7 @@ const mobileSidebarItems = [
   { id: 'featured-series', label: 'Featured Series', Icon: ImageIcon },
   { id: 'import-export', label: 'Import / Export', Icon: Database },
   { id: 'blocked-users', label: 'Blocked Users', Icon: UserX },
+  { id: 'donation-supporters', label: 'Donation Supporters', Icon: Heart },
   { id: 'settings', label: 'Settings', Icon: Settings },
 ] satisfies { id: SidebarTab; label: string; Icon: typeof UserCheck }[];
 
@@ -521,6 +524,22 @@ function ComixDashboard({
   const [supporterFilter, setSupporterFilter] = useState<'all' | 'anonymous' | 'named' | 'podium'>('all');
   const [editingSupporterId, setEditingSupporterId] = useState<string | null>(null);
   const [showSupporterModal, setShowSupporterModal] = useState(false);
+  const [showSaveConfirm, setShowSaveConfirm] = useState(false);
+  const [supporterToDelete, setSupporterToDelete] = useState<DonationSupporter | null>(null);
+
+  // Auto-computed top 3 podium based on highest donation amount
+  const podiumRankMap = useMemo(() => {
+    const sorted = [...supportersDraft].sort((a, b) => {
+      const valA = parseFloat(a.amount.replace(/[^0-9.]/g, '')) || 0;
+      const valB = parseFloat(b.amount.replace(/[^0-9.]/g, '')) || 0;
+      return valB - valA;
+    });
+    const map = new Map<string, 1 | 2 | 3>();
+    if (sorted[0]) map.set(sorted[0].id, 1);
+    if (sorted[1]) map.set(sorted[1].id, 2);
+    if (sorted[2]) map.set(sorted[2].id, 3);
+    return map;
+  }, [supportersDraft]);
 
   const [supporterForm, setSupporterForm] = useState<{
     isAnonymous: boolean;
@@ -528,17 +547,36 @@ function ComixDashboard({
     actualName: string;
     amount: string;
     count: number;
-    time: string;
-    rank: 0 | 1 | 2 | 3;
+    timeMode: 'auto' | 'custom' | 'manual';
+    customAmount: number;
+    customUnit: 'minutes' | 'hours' | 'days' | 'months' | 'years';
+    manualTime: string;
+    createdAt?: string;
   }>({
     isAnonymous: true,
     anonymousNumber: 1,
     actualName: '',
     amount: '5.00',
     count: 1,
-    time: 'Just now',
-    rank: 0,
+    timeMode: 'auto',
+    customAmount: 5,
+    customUnit: 'minutes',
+    manualTime: 'Just now',
+    createdAt: undefined,
   });
+
+  const livePreviewTime = useMemo(() => {
+    if (supporterForm.timeMode === 'auto') {
+      return 'Just now (Auto Timer)';
+    }
+    if (supporterForm.timeMode === 'custom') {
+      const amt = Math.max(1, Number(supporterForm.customAmount) || 1);
+      const unit = supporterForm.customUnit;
+      const unitShort = unit === 'minutes' ? 'm' : unit === 'hours' ? 'h' : unit === 'days' ? 'd' : unit === 'months' ? 'mo' : 'y';
+      return `${amt}${unitShort} ago (Auto Timer)`;
+    }
+    return supporterForm.manualTime.trim() || 'Just now';
+  }, [supporterForm.timeMode, supporterForm.customAmount, supporterForm.customUnit, supporterForm.manualTime]);
   const groupedCustomSourceNames = useMemo(() => {
     const groups = new Map<string, string[]>();
     [...customSourceNamesDraft]
@@ -728,6 +766,36 @@ function ComixDashboard({
     }
   };
 
+  const calculateFinalTimeAndCreatedAt = () => {
+    if (supporterForm.timeMode === 'auto') {
+      const nowIso = new Date().toISOString();
+      return {
+        time: 'Just now',
+        createdAt: nowIso,
+      };
+    }
+    if (supporterForm.timeMode === 'custom') {
+      const amt = Math.max(1, Number(supporterForm.customAmount) || 1);
+      const unit = supporterForm.customUnit;
+      const unitMs =
+        unit === 'minutes' ? 60 * 1000 :
+        unit === 'hours' ? 60 * 60 * 1000 :
+        unit === 'days' ? 24 * 60 * 60 * 1000 :
+        unit === 'months' ? 30 * 24 * 60 * 60 * 1000 :
+        365 * 24 * 60 * 60 * 1000;
+      const pastTime = new Date(Date.now() - amt * unitMs);
+      const unitShort = unit === 'minutes' ? 'm' : unit === 'hours' ? 'h' : unit === 'days' ? 'd' : unit === 'months' ? 'mo' : 'y';
+      return {
+        time: `${amt}${unitShort} ago`,
+        createdAt: pastTime.toISOString(),
+      };
+    }
+    return {
+      time: supporterForm.manualTime.trim() || 'Just now',
+      createdAt: undefined,
+    };
+  };
+
   const openNewSupporterModal = () => {
     const nextNum = getNextAnonymousNumber();
     setSupporterForm({
@@ -736,28 +804,91 @@ function ComixDashboard({
       actualName: '',
       amount: '5.00',
       count: 1,
-      time: 'Just now',
-      rank: 0,
+      timeMode: 'auto',
+      customAmount: 5,
+      customUnit: 'minutes',
+      manualTime: 'Just now',
+      createdAt: undefined,
     });
     setEditingSupporterId('new');
+    setShowSaveConfirm(false);
     setShowSupporterModal(true);
   };
 
   const openEditSupporterModal = (s: DonationSupporter) => {
+    let timeMode: 'auto' | 'custom' | 'manual' = 'manual';
+    let customAmount = 5;
+    let customUnit: 'minutes' | 'hours' | 'days' | 'months' | 'years' = 'minutes';
+    let manualTime = s.time || 'Just now';
+
+    if (s.createdAt) {
+      const createdMs = new Date(s.createdAt).getTime();
+      const diffMs = Math.max(0, Date.now() - createdMs);
+      if (diffMs < 2 * 60 * 1000) {
+        timeMode = 'auto';
+      } else {
+        timeMode = 'custom';
+        const mins = Math.round(diffMs / (60 * 1000));
+        const hours = Math.round(diffMs / (60 * 60 * 1000));
+        const days = Math.round(diffMs / (24 * 60 * 60 * 1000));
+        const months = Math.round(diffMs / (30 * 24 * 60 * 60 * 1000));
+        const years = Math.round(diffMs / (365 * 24 * 60 * 60 * 1000));
+        if (years >= 1) {
+          customAmount = years;
+          customUnit = 'years';
+        } else if (months >= 1) {
+          customAmount = months;
+          customUnit = 'months';
+        } else if (days >= 1) {
+          customAmount = days;
+          customUnit = 'days';
+        } else if (hours >= 1) {
+          customAmount = hours;
+          customUnit = 'hours';
+        } else {
+          customAmount = Math.max(1, mins);
+          customUnit = 'minutes';
+        }
+      }
+    } else if (s.time) {
+      const match = s.time.match(/^(\d+)\s*(m|min|mins|h|hr|hrs|d|days?|mo|mos|months?|y|yr|years?)\s*(?:ago)?$/i);
+      if (match) {
+        timeMode = 'custom';
+        customAmount = parseInt(match[1], 10) || 1;
+        const u = match[2].toLowerCase();
+        if (u.startsWith('y')) customUnit = 'years';
+        else if (u.startsWith('mo')) customUnit = 'months';
+        else if (u.startsWith('d')) customUnit = 'days';
+        else if (u.startsWith('h')) customUnit = 'hours';
+        else customUnit = 'minutes';
+      } else if (s.time.toLowerCase() === 'just now') {
+        timeMode = 'auto';
+      }
+    }
+
     setSupporterForm({
       isAnonymous: s.isAnonymous,
       anonymousNumber: s.anonymousNumber || (s.name.match(/Anonymous\s*#?(\d+)/i)?.[1] ? parseInt(RegExp.$1, 10) : 1),
       actualName: s.actualName || (s.isAnonymous ? '' : s.name),
       amount: s.amount.replace(/^\$/, ''),
       count: s.count || 1,
-      time: s.time || 'Just now',
-      rank: (s.rank || 0) as 0 | 1 | 2 | 3,
+      timeMode,
+      customAmount,
+      customUnit,
+      manualTime,
+      createdAt: s.createdAt,
     });
     setEditingSupporterId(s.id);
+    setShowSaveConfirm(false);
     setShowSupporterModal(true);
   };
 
   const handleSaveSupporterForm = () => {
+    // Open confirmation step instead of immediately saving
+    setShowSaveConfirm(true);
+  };
+
+  const handleExecuteSave = () => {
     const isAnon = supporterForm.isAnonymous;
     const name = isAnon
       ? `Anonymous #${supporterForm.anonymousNumber}`
@@ -767,6 +898,8 @@ function ComixDashboard({
     if (!amtStr) amtStr = '5.00';
     if (!amtStr.startsWith('$')) amtStr = `$${amtStr}`;
 
+    const { time, createdAt } = calculateFinalTimeAndCreatedAt();
+
     const newOrUpdated: DonationSupporter = {
       id: editingSupporterId === 'new' ? `supporter_${Date.now()}` : editingSupporterId!,
       name,
@@ -775,8 +908,8 @@ function ComixDashboard({
       actualName: !isAnon ? supporterForm.actualName.trim() : undefined,
       amount: amtStr,
       count: Math.max(1, Number(supporterForm.count) || 1),
-      time: supporterForm.time.trim() || 'Just now',
-      rank: supporterForm.rank > 0 ? (supporterForm.rank as 1 | 2 | 3) : undefined,
+      time,
+      createdAt,
     };
 
     let updatedList: DonationSupporter[];
@@ -788,15 +921,17 @@ function ComixDashboard({
 
     setSupportersDraft(updatedList);
     void saveSupporters(updatedList);
+    setShowSaveConfirm(false);
     setShowSupporterModal(false);
     setEditingSupporterId(null);
   };
 
-  const handleDeleteSupporter = (id: string, name: string) => {
-    if (!confirm(`Are you sure you want to remove supporter "${name}"?`)) return;
-    const updatedList = supportersDraft.filter((s) => s.id !== id);
+  const handleConfirmDelete = () => {
+    if (!supporterToDelete) return;
+    const updatedList = supportersDraft.filter((s) => s.id !== supporterToDelete.id);
     setSupportersDraft(updatedList);
     void saveSupporters(updatedList);
+    setSupporterToDelete(null);
   };
 
   const handleResetSupporters = () => {
@@ -1165,6 +1300,16 @@ function ComixDashboard({
 
             <button
               type="button"
+              className={`comix-nav-item ${activeTab === 'donation-supporters' ? 'is-active' : ''}`}
+              onClick={() => setActiveTab('donation-supporters')}
+            >
+              <Heart size={16} className="nav-icon" />
+              <span>Donation Supporters</span>
+              <span className="nav-badge">{supportersDraft.length}</span>
+            </button>
+
+            <button
+              type="button"
               className={`comix-nav-item ${activeTab === 'settings' ? 'is-active' : ''}`}
               onClick={() => setActiveTab('settings')}
             >
@@ -1266,13 +1411,6 @@ function ComixDashboard({
                     onClick={() => setSettingsSubTab('theme')}
                   >
                     Theme
-                  </button>
-                  <button
-                    type="button"
-                    className={`comix-sub-tab ${settingsSubTab === 'supporters' ? 'is-active' : ''}`}
-                    onClick={() => setSettingsSubTab('supporters')}
-                  >
-                    Donation Supporters ({supportersDraft.length})
                   </button>
                 </div>
 
@@ -1631,8 +1769,13 @@ function ComixDashboard({
                   </div>
                 )}
 
-                {settings && settingsSubTab === 'supporters' && (
-                  <div className="comix-setting-group">
+              </div>
+            )}
+
+            {/* DONATION SUPPORTERS */}
+            {activeTab === 'donation-supporters' && (
+              <div className="comix-settings-card">
+                <div className="comix-setting-group">
                     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 12, marginBottom: 16 }}>
                       <div>
                         <div className="comix-group-title" style={{ marginBottom: 4 }}>Donation Supporters Manager</div>
@@ -1724,9 +1867,10 @@ function ComixDashboard({
                     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 12 }}>
                       {supportersDraft
                         .filter((s) => {
+                          const computedRank = podiumRankMap.get(s.id);
                           if (supporterFilter === 'anonymous' && !s.isAnonymous) return false;
                           if (supporterFilter === 'named' && s.isAnonymous) return false;
-                          if (supporterFilter === 'podium' && !s.rank) return false;
+                          if (supporterFilter === 'podium' && !computedRank) return false;
                           if (supporterSearch.trim()) {
                             const q = supporterSearch.toLowerCase();
                             return s.name.toLowerCase().includes(q) || (s.actualName && s.actualName.toLowerCase().includes(q));
@@ -1734,8 +1878,9 @@ function ComixDashboard({
                           return true;
                         })
                         .map((s) => {
-                          const isPodium = Boolean(s.rank);
-                          const rankColor = s.rank === 1 ? '#D4A017' : s.rank === 2 ? '#9AA6B2' : s.rank === 3 ? '#B87333' : 'transparent';
+                          const computedRank = podiumRankMap.get(s.id);
+                          const isPodium = Boolean(computedRank);
+                          const rankColor = computedRank === 1 ? '#D4A017' : computedRank === 2 ? '#9AA6B2' : computedRank === 3 ? '#B87333' : 'transparent';
                           return (
                             <div
                               key={s.id}
@@ -1775,7 +1920,7 @@ function ComixDashboard({
                                       fontWeight: 800,
                                     }}
                                   >
-                                    {s.rank}
+                                    {computedRank}
                                   </div>
                                 )}
                               </div>
@@ -1789,7 +1934,7 @@ function ComixDashboard({
                                     {s.isAnonymous ? 'Anonymous' : 'Actual Name'}
                                   </span>
                                   <span style={{ fontSize: 11, color: 'var(--cx-text-muted)', whiteSpace: 'nowrap' }}>{s.count} donation{s.count > 1 ? 's' : ''}</span>
-                                  <span style={{ fontSize: 11, color: 'var(--cx-text-muted)', whiteSpace: 'nowrap' }}>· {s.time}</span>
+                                  <span style={{ fontSize: 11, color: 'var(--cx-text-muted)', whiteSpace: 'nowrap' }}>· {getSupporterDisplayTime(s)}</span>
                                 </div>
                               </div>
                               {/* Amount + actions */}
@@ -1807,7 +1952,7 @@ function ComixDashboard({
                                   </button>
                                   <button
                                     type="button"
-                                    onClick={() => handleDeleteSupporter(s.id, s.name)}
+                                    onClick={() => setSupporterToDelete(s)}
                                     disabled={savingSettings}
                                     style={{ background: 'transparent', border: 'none', color: '#ef4444', cursor: 'pointer', padding: '3px 5px', borderRadius: 4, lineHeight: 1 }}
                                     title="Delete supporter"
@@ -1824,40 +1969,21 @@ function ComixDashboard({
                     {/* Add / Edit Supporter Modal */}
                     {showSupporterModal && (
                       <div
-                        style={{
-                          position: 'fixed',
-                          inset: 0,
-                          background: 'rgba(0,0,0,0.65)',
-                          backdropFilter: 'blur(4px)',
-                          zIndex: 9999,
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          padding: 16,
-                        }}
+                        className="supporter-modal-backdrop"
                         onClick={() => setShowSupporterModal(false)}
                       >
                         <div
-                          style={{
-                            background: 'var(--cx-card, #18181b)',
-                            border: '1px solid var(--cx-border, #27272a)',
-                            borderRadius: 16,
-                            width: '100%',
-                            maxWidth: 480,
-                            padding: 24,
-                            boxShadow: '0 20px 40px rgba(0,0,0,0.5)',
-                            color: 'var(--cx-text)',
-                          }}
+                          className="supporter-modal"
                           onClick={(e) => e.stopPropagation()}
                         >
-                          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20 }}>
-                            <h3 style={{ margin: 0, fontSize: 18, fontWeight: 700 }}>
+                          <div className="supporter-modal-header">
+                            <h3>
                               {editingSupporterId === 'new' ? 'Add Supporter' : 'Edit Supporter'}
                             </h3>
                             <button
                               type="button"
+                              className="supporter-modal-close"
                               onClick={() => setShowSupporterModal(false)}
-                              style={{ background: 'transparent', border: 'none', color: 'var(--cx-text-muted)', cursor: 'pointer' }}
                             >
                               <X size={18} />
                             </button>
@@ -1865,26 +1991,13 @@ function ComixDashboard({
 
                           {/* Identity Mode Switch: Anonymous vs Actual Name */}
                           <div style={{ marginBottom: 16 }}>
-                            <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: 'var(--cx-text-muted)', marginBottom: 8 }}>
+                            <label className="supporter-modal-label">
                               Supporter Identity Mode
                             </label>
-                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
+                            <div className="supporter-identity-grid">
                               <button
                                 type="button"
-                                style={{
-                                  padding: '10px 12px',
-                                  borderRadius: 8,
-                                  border: supporterForm.isAnonymous ? '2px solid #3b82f6' : '1px solid var(--cx-border)',
-                                  background: supporterForm.isAnonymous ? 'rgba(59, 130, 246, 0.12)' : 'var(--cx-surface)',
-                                  color: supporterForm.isAnonymous ? '#60a5fa' : 'var(--cx-text)',
-                                  fontWeight: 600,
-                                  fontSize: 13,
-                                  cursor: 'pointer',
-                                  display: 'flex',
-                                  alignItems: 'center',
-                                  justifyContent: 'center',
-                                  gap: 6,
-                                }}
+                                className={`supporter-identity-btn ${supporterForm.isAnonymous ? 'is-anonymous' : 'is-anonymous-inactive'}`}
                                 onClick={() => {
                                   const num = supporterForm.anonymousNumber || getNextAnonymousNumber();
                                   setSupporterForm({ ...supporterForm, isAnonymous: true, anonymousNumber: num });
@@ -1895,20 +2008,7 @@ function ComixDashboard({
                               </button>
                               <button
                                 type="button"
-                                style={{
-                                  padding: '10px 12px',
-                                  borderRadius: 8,
-                                  border: !supporterForm.isAnonymous ? '2px solid #10b981' : '1px solid var(--cx-border)',
-                                  background: !supporterForm.isAnonymous ? 'rgba(16, 185, 129, 0.12)' : 'var(--cx-surface)',
-                                  color: !supporterForm.isAnonymous ? '#34d399' : 'var(--cx-text)',
-                                  fontWeight: 600,
-                                  fontSize: 13,
-                                  cursor: 'pointer',
-                                  display: 'flex',
-                                  alignItems: 'center',
-                                  justifyContent: 'center',
-                                  gap: 6,
-                                }}
+                                className={`supporter-identity-btn ${!supporterForm.isAnonymous ? 'is-named' : 'is-named-inactive'}`}
                                 onClick={() => setSupporterForm({ ...supporterForm, isAnonymous: false })}
                               >
                                 {!supporterForm.isAnonymous && <Check size={14} />}
@@ -1920,7 +2020,7 @@ function ComixDashboard({
                           {/* Dynamic Name Input */}
                           {supporterForm.isAnonymous ? (
                             <div style={{ marginBottom: 16 }}>
-                              <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: 'var(--cx-text-muted)', marginBottom: 6 }}>
+                              <label className="supporter-modal-label-sm">
                                 Anonymous Number (Auto-Incremented)
                               </label>
                               <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
@@ -1930,16 +2030,8 @@ function ComixDashboard({
                                   min={1}
                                   value={supporterForm.anonymousNumber}
                                   onChange={(e) => setSupporterForm({ ...supporterForm, anonymousNumber: parseInt(e.target.value, 10) || 1 })}
-                                  style={{
-                                    flex: 1,
-                                    padding: '8px 12px',
-                                    borderRadius: 8,
-                                    border: '1px solid var(--cx-border)',
-                                    background: 'var(--cx-surface)',
-                                    color: 'var(--cx-text)',
-                                    fontSize: 14,
-                                    fontWeight: 600,
-                                  }}
+                                  className="supporter-modal-input"
+                                  style={{ flex: 1, fontWeight: 600 }}
                                 />
                               </div>
                               <small style={{ display: 'block', color: 'var(--cx-text-muted)', fontSize: 11, marginTop: 4 }}>
@@ -1948,7 +2040,7 @@ function ComixDashboard({
                             </div>
                           ) : (
                             <div style={{ marginBottom: 16 }}>
-                              <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: 'var(--cx-text-muted)', marginBottom: 6 }}>
+                              <label className="supporter-modal-label-sm">
                                 Actual Supporter Name
                               </label>
                               <input
@@ -1956,41 +2048,25 @@ function ComixDashboard({
                                 placeholder="e.g. grazzhella Vicente, Anna domi"
                                 value={supporterForm.actualName}
                                 onChange={(e) => setSupporterForm({ ...supporterForm, actualName: e.target.value })}
-                                style={{
-                                  width: '100%',
-                                  padding: '8px 12px',
-                                  borderRadius: 8,
-                                  border: '1px solid var(--cx-border)',
-                                  background: 'var(--cx-surface)',
-                                  color: 'var(--cx-text)',
-                                  fontSize: 14,
-                                }}
+                                className="supporter-modal-input"
                               />
                             </div>
                           )}
 
                           {/* Live Avatar Preview */}
-                          <div
-                            style={{
-                              display: 'flex',
-                              alignItems: 'center',
-                              gap: 12,
-                              padding: '10px 14px',
-                              background: 'var(--cx-surface)',
-                              borderRadius: 10,
-                              border: '1px solid var(--cx-border)',
-                              marginBottom: 16,
-                            }}
-                          >
+                          <div className="supporter-preview-box">
                             <img
                               src={getDiceBearAvatar(supporterForm.isAnonymous ? `Anonymous #${supporterForm.anonymousNumber}` : supporterForm.actualName || 'Supporter')}
                               alt="Preview Avatar"
-                              style={{ width: 36, height: 36, borderRadius: '50%', background: '#e2e8f0', flexShrink: 0 }}
+                              style={{ width: 40, height: 40, borderRadius: '50%', background: '#e2e8f0', flexShrink: 0 }}
                             />
-                            <div>
+                            <div style={{ flex: 1, minWidth: 0 }}>
                               <div style={{ fontSize: 11, textTransform: 'uppercase', color: 'var(--cx-text-muted)', fontWeight: 600 }}>Card Preview Name</div>
-                              <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--cx-text)' }}>
+                              <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--cx-text)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                                 {supporterForm.isAnonymous ? `Anonymous #${supporterForm.anonymousNumber}` : supporterForm.actualName || '(Enter Name Above)'}
+                              </div>
+                              <div style={{ fontSize: 11, color: 'var(--cx-text-muted)', marginTop: 2 }}>
+                                ${supporterForm.amount.replace(/^\$/, '') || '5.00'} · {livePreviewTime} · {supporterForm.count} donation{supporterForm.count > 1 ? 's' : ''}
                               </div>
                             </div>
                           </div>
@@ -1998,7 +2074,7 @@ function ComixDashboard({
                           {/* Amount & Count */}
                           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 16 }}>
                             <div>
-                              <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: 'var(--cx-text-muted)', marginBottom: 6 }}>
+                              <label className="supporter-modal-label-sm">
                                 Amount ($ USD)
                               </label>
                               <input
@@ -2006,19 +2082,11 @@ function ComixDashboard({
                                 placeholder="48.56"
                                 value={supporterForm.amount}
                                 onChange={(e) => setSupporterForm({ ...supporterForm, amount: e.target.value })}
-                                style={{
-                                  width: '100%',
-                                  padding: '8px 12px',
-                                  borderRadius: 8,
-                                  border: '1px solid var(--cx-border)',
-                                  background: 'var(--cx-surface)',
-                                  color: 'var(--cx-text)',
-                                  fontSize: 14,
-                                }}
+                                className="supporter-modal-input"
                               />
                             </div>
                             <div>
-                              <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: 'var(--cx-text-muted)', marginBottom: 6 }}>
+                              <label className="supporter-modal-label-sm">
                                 Donation Count
                               </label>
                               <input
@@ -2026,86 +2094,183 @@ function ComixDashboard({
                                 min={1}
                                 value={supporterForm.count}
                                 onChange={(e) => setSupporterForm({ ...supporterForm, count: parseInt(e.target.value, 10) || 1 })}
-                                style={{
-                                  width: '100%',
-                                  padding: '8px 12px',
-                                  borderRadius: 8,
-                                  border: '1px solid var(--cx-border)',
-                                  background: 'var(--cx-surface)',
-                                  color: 'var(--cx-text)',
-                                  fontSize: 14,
-                                }}
+                                className="supporter-modal-input"
                               />
                             </div>
                           </div>
 
                           {/* Time Ago & Preset chips */}
-                          <div style={{ marginBottom: 16 }}>
-                            <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: 'var(--cx-text-muted)', marginBottom: 6 }}>
-                              Time Ago / Display Date
-                            </label>
-                            <input
-                              type="text"
-                              placeholder="e.g. Just now, 2d ago, 5mo ago"
-                              value={supporterForm.time}
-                              onChange={(e) => setSupporterForm({ ...supporterForm, time: e.target.value })}
-                              style={{
-                                width: '100%',
-                                padding: '8px 12px',
-                                borderRadius: 8,
-                                border: '1px solid var(--cx-border)',
-                                background: 'var(--cx-surface)',
-                                color: 'var(--cx-text)',
-                                fontSize: 14,
-                                marginBottom: 6,
-                              }}
-                            />
-                            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
-                              {['Just now', 'Today', '2d ago', '1w ago', '1mo ago', '3mo ago', '5mo ago'].map((preset) => (
-                                <button
-                                  key={preset}
-                                  type="button"
-                                  onClick={() => setSupporterForm({ ...supporterForm, time: preset })}
-                                  style={{
-                                    padding: '2px 8px',
-                                    fontSize: 11,
-                                    borderRadius: 6,
-                                    border: '1px solid var(--cx-border)',
-                                    background: 'transparent',
-                                    color: 'var(--cx-text-muted)',
-                                    cursor: 'pointer',
-                                  }}
-                                >
-                                  {preset}
-                                </button>
-                              ))}
+                          <div style={{ marginBottom: 20 }}>
+                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
+                              <label className="supporter-modal-label-sm" style={{ margin: 0 }}>
+                                Time Ago / Display Date
+                              </label>
+                              <span style={{ fontSize: 11, color: 'var(--cx-text-muted)' }}>
+                                {supporterForm.timeMode === 'auto'
+                                  ? 'Auto-updates from save'
+                                  : supporterForm.timeMode === 'custom'
+                                  ? 'Relative auto-timer'
+                                  : 'Fixed text'}
+                              </span>
                             </div>
+
+                            {/* Mode Toggle */}
+                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 6, marginBottom: 10 }}>
+                              <button
+                                type="button"
+                                className={`supporter-time-mode-btn ${supporterForm.timeMode === 'auto' ? 'is-active' : ''}`}
+                                onClick={() => setSupporterForm({ ...supporterForm, timeMode: 'auto' })}
+                              >
+                                <Clock size={13} />
+                                <span>Auto (Now)</span>
+                              </button>
+                              <button
+                                type="button"
+                                className={`supporter-time-mode-btn ${supporterForm.timeMode === 'custom' ? 'is-active' : ''}`}
+                                onClick={() => setSupporterForm({ ...supporterForm, timeMode: 'custom' })}
+                              >
+                                <History size={13} />
+                                <span>Custom Time</span>
+                              </button>
+                              <button
+                                type="button"
+                                className={`supporter-time-mode-btn ${supporterForm.timeMode === 'manual' ? 'is-active' : ''}`}
+                                onClick={() => setSupporterForm({ ...supporterForm, timeMode: 'manual' })}
+                              >
+                                <Pencil size={13} />
+                                <span>Fixed Text</span>
+                              </button>
+                            </div>
+
+                            {/* 1. Auto Timer Mode */}
+                            {supporterForm.timeMode === 'auto' && (
+                              <div style={{
+                                background: 'var(--cx-surface)',
+                                border: '1px solid var(--cx-border)',
+                                borderRadius: 10,
+                                padding: '12px 14px',
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: 10,
+                              }}>
+                                <div style={{
+                                  width: 32,
+                                  height: 32,
+                                  borderRadius: 8,
+                                  background: 'rgba(59, 130, 246, 0.12)',
+                                  color: '#3b82f6',
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  justifyContent: 'center',
+                                  flexShrink: 0,
+                                }}>
+                                  <Clock size={16} />
+                                </div>
+                                <div>
+                                  <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--cx-text)' }}>
+                                    Live Auto Timer Active
+                                  </div>
+                                  <div style={{ fontSize: 12, color: 'var(--cx-text-muted)', marginTop: 2 }}>
+                                    Will save with current timestamp and auto-progress (<strong>Just now</strong> → <strong>1m ago</strong> → <strong>2h ago</strong>).
+                                  </div>
+                                </div>
+                              </div>
+                            )}
+
+                            {/* 2. Custom Time Mode */}
+                            {supporterForm.timeMode === 'custom' && (
+                              <div>
+                                <div style={{ display: 'grid', gridTemplateColumns: '110px 1fr', gap: 10, marginBottom: 8 }}>
+                                  <div>
+                                    <label style={{ display: 'block', fontSize: 11, fontWeight: 600, color: 'var(--cx-text-muted)', marginBottom: 4 }}>
+                                      Count
+                                    </label>
+                                    <input
+                                      type="number"
+                                      min={1}
+                                      max={999}
+                                      value={supporterForm.customAmount}
+                                      onChange={(e) => setSupporterForm({ ...supporterForm, customAmount: Math.max(1, parseInt(e.target.value, 10) || 1) })}
+                                      className="supporter-modal-input"
+                                      style={{ fontWeight: 600 }}
+                                    />
+                                  </div>
+                                  <div>
+                                    <label style={{ display: 'block', fontSize: 11, fontWeight: 600, color: 'var(--cx-text-muted)', marginBottom: 4 }}>
+                                      Unit
+                                    </label>
+                                    <select
+                                      value={supporterForm.customUnit}
+                                      onChange={(e) => setSupporterForm({ ...supporterForm, customUnit: e.target.value as any })}
+                                      className="supporter-modal-select"
+                                    >
+                                      <option value="minutes">Minutes ago</option>
+                                      <option value="hours">Hours ago</option>
+                                      <option value="days">Days ago</option>
+                                      <option value="months">Months ago</option>
+                                      <option value="years">Years ago</option>
+                                    </select>
+                                  </div>
+                                </div>
+
+                                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4, alignItems: 'center' }}>
+                                  <span style={{ fontSize: 11, color: 'var(--cx-text-muted)', marginRight: 2 }}>Presets:</span>
+                                  {[
+                                    { label: '5m', amount: 5, unit: 'minutes' as const },
+                                    { label: '30m', amount: 30, unit: 'minutes' as const },
+                                    { label: '2h', amount: 2, unit: 'hours' as const },
+                                    { label: '12h', amount: 12, unit: 'hours' as const },
+                                    { label: '1d', amount: 1, unit: 'days' as const },
+                                    { label: '3d', amount: 3, unit: 'days' as const },
+                                    { label: '1mo', amount: 1, unit: 'months' as const },
+                                    { label: '1y', amount: 1, unit: 'years' as const },
+                                  ].map((p) => {
+                                    const isActive = supporterForm.customAmount === p.amount && supporterForm.customUnit === p.unit;
+                                    return (
+                                      <button
+                                        key={p.label}
+                                        type="button"
+                                        className={`supporter-time-chip ${isActive ? 'is-active' : ''}`}
+                                        onClick={() => setSupporterForm({ ...supporterForm, customAmount: p.amount, customUnit: p.unit })}
+                                      >
+                                        {p.label}
+                                      </button>
+                                    );
+                                  })}
+                                </div>
+                              </div>
+                            )}
+
+                            {/* 3. Fixed Text Mode */}
+                            {supporterForm.timeMode === 'manual' && (
+                              <div>
+                                <input
+                                  type="text"
+                                  placeholder="e.g. Just now, 2d ago, 5mo ago"
+                                  value={supporterForm.manualTime}
+                                  onChange={(e) => setSupporterForm({ ...supporterForm, manualTime: e.target.value })}
+                                  className="supporter-modal-input"
+                                  style={{ marginBottom: 6 }}
+                                />
+                                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
+                                  {['Just now', 'Today', '2d ago', '1w ago', '1mo ago', '3mo ago', '5mo ago'].map((preset) => (
+                                    <button
+                                      key={preset}
+                                      type="button"
+                                      className={`supporter-time-chip ${supporterForm.manualTime === preset ? 'is-active' : ''}`}
+                                      onClick={() => setSupporterForm({ ...supporterForm, manualTime: preset })}
+                                    >
+                                      {preset}
+                                    </button>
+                                  ))}
+                                </div>
+                              </div>
+                            )}
                           </div>
 
-                          {/* Podium Rank */}
-                          <div style={{ marginBottom: 24 }}>
-                            <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: 'var(--cx-text-muted)', marginBottom: 6 }}>
-                              Podium Placement (Top 3)
-                            </label>
-                            <select
-                              value={supporterForm.rank}
-                              onChange={(e) => setSupporterForm({ ...supporterForm, rank: parseInt(e.target.value, 10) as 0 | 1 | 2 | 3 })}
-                              style={{
-                                width: '100%',
-                                padding: '8px 12px',
-                                borderRadius: 8,
-                                border: '1px solid var(--cx-border)',
-                                background: 'var(--cx-surface)',
-                                color: 'var(--cx-text)',
-                                fontSize: 14,
-                              }}
-                            >
-                              <option value={0}>Auto / Standard List (by amount)</option>
-                              <option value={1}>Rank 1 - Gold Star (Center)</option>
-                              <option value={2}>Rank 2 - Silver Star (Left)</option>
-                              <option value={3}>Rank 3 - Bronze Star (Right)</option>
-                            </select>
-                          </div>
+                          <p style={{ margin: '0 0 20px', fontSize: 12, color: 'var(--cx-text-muted)' }}>
+                            ★ <strong>Podium Top 3:</strong> Automatically ranked 1st, 2nd, and 3rd based on the highest donation amount.
+                          </p>
 
                           {/* Dialog Buttons */}
                           <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 10 }}>
@@ -2130,10 +2295,188 @@ function ComixDashboard({
                         </div>
                       </div>
                     )}
-                  </div>
-                )}
 
-              </div>
+                    {/* Save Confirmation Modal */}
+                    {showSaveConfirm && (
+                      <div
+                        className="supporter-modal-backdrop"
+                        style={{ zIndex: 10001 }}
+                        onClick={() => setShowSaveConfirm(false)}
+                      >
+                        <div
+                          className="supporter-modal"
+                          style={{ maxWidth: 440 }}
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          <div style={{ textAlign: 'center', padding: '6px 0 16px' }}>
+                            <div style={{
+                              width: 48,
+                              height: 48,
+                              borderRadius: '50%',
+                              background: 'rgba(59, 130, 246, 0.12)',
+                              color: '#3b82f6',
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              margin: '0 auto 12px',
+                            }}>
+                              <Check size={24} />
+                            </div>
+                            <h3 style={{ margin: '0 0 6px', fontSize: 18, fontWeight: 700, color: 'var(--cx-text)' }}>
+                              {editingSupporterId === 'new' ? 'Confirm Add Supporter' : 'Confirm Save Changes'}
+                            </h3>
+                            <p style={{ margin: 0, fontSize: 13, color: 'var(--cx-text-muted)', lineHeight: 1.45 }}>
+                              {editingSupporterId === 'new'
+                                ? 'Are you sure you want to add this supporter to the database?'
+                                : 'Are you sure you want to save your edits to this supporter?'}
+                            </p>
+                          </div>
+
+                          {/* Summary Box */}
+                          <div style={{
+                            background: 'var(--cx-surface)',
+                            border: '1px solid var(--cx-border)',
+                            borderRadius: 10,
+                            padding: '12px 16px',
+                            marginBottom: 20,
+                            fontSize: 13,
+                          }}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6 }}>
+                              <span style={{ color: 'var(--cx-text-muted)' }}>Supporter:</span>
+                              <strong style={{ color: 'var(--cx-text)' }}>
+                                {supporterForm.isAnonymous ? `Anonymous #${supporterForm.anonymousNumber}` : supporterForm.actualName || 'Generous Supporter'}
+                              </strong>
+                            </div>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6 }}>
+                              <span style={{ color: 'var(--cx-text-muted)' }}>Amount:</span>
+                              <strong style={{ color: 'var(--cx-teal)' }}>
+                                ${supporterForm.amount.replace(/^\$/, '') || '5.00'}
+                              </strong>
+                            </div>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6 }}>
+                              <span style={{ color: 'var(--cx-text-muted)' }}>Donations:</span>
+                              <strong style={{ color: 'var(--cx-text)' }}>
+                                {supporterForm.count} donation{supporterForm.count > 1 ? 's' : ''}
+                              </strong>
+                            </div>
+                            <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                              <span style={{ color: 'var(--cx-text-muted)' }}>Display Time:</span>
+                              <strong style={{ color: 'var(--cx-text)' }}>
+                                {livePreviewTime}
+                              </strong>
+                            </div>
+                          </div>
+
+                          <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 10 }}>
+                            <button
+                              type="button"
+                              className="btn-secondary"
+                              onClick={() => setShowSaveConfirm(false)}
+                              disabled={savingSettings}
+                              style={{ padding: '8px 16px', borderRadius: 8, cursor: 'pointer' }}
+                            >
+                              Go Back & Review
+                            </button>
+                            <button
+                              type="button"
+                              className="btn-teal"
+                              onClick={handleExecuteSave}
+                              disabled={savingSettings}
+                              style={{ padding: '8px 20px', borderRadius: 8, cursor: 'pointer' }}
+                            >
+                              {savingSettings ? 'Saving...' : 'Yes, Confirm & Save'}
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Delete Confirmation Modal */}
+                    {supporterToDelete && (
+                      <div
+                        className="supporter-modal-backdrop"
+                        style={{ zIndex: 10001 }}
+                        onClick={() => setSupporterToDelete(null)}
+                      >
+                        <div
+                          className="supporter-modal"
+                          style={{ maxWidth: 440 }}
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          <div style={{ textAlign: 'center', padding: '6px 0 16px' }}>
+                            <div style={{
+                              width: 50,
+                              height: 50,
+                              borderRadius: '50%',
+                              background: 'rgba(239, 68, 68, 0.12)',
+                              color: '#ef4444',
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              margin: '0 auto 12px',
+                            }}>
+                              <Trash2 size={24} />
+                            </div>
+                            <h3 style={{ margin: '0 0 6px', fontSize: 18, fontWeight: 700, color: 'var(--cx-text)' }}>
+                              Delete Supporter
+                            </h3>
+                            <p style={{ margin: 0, fontSize: 13, color: 'var(--cx-text-muted)', lineHeight: 1.45 }}>
+                              Are you sure you want to permanently delete{' '}
+                              <strong style={{ color: 'var(--cx-text)' }}>{supporterToDelete.name}</strong>?
+                            </p>
+                          </div>
+
+                          <div style={{
+                            background: 'var(--cx-surface)',
+                            border: '1px solid var(--cx-border)',
+                            borderRadius: 10,
+                            padding: '12px 16px',
+                            marginBottom: 20,
+                            fontSize: 13,
+                          }}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6 }}>
+                              <span style={{ color: 'var(--cx-text-muted)' }}>Amount:</span>
+                              <strong style={{ color: 'var(--cx-text)' }}>{supporterToDelete.amount}</strong>
+                            </div>
+                            <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                              <span style={{ color: 'var(--cx-text-muted)' }}>Donations:</span>
+                              <strong style={{ color: 'var(--cx-text)' }}>{supporterToDelete.count} donation{supporterToDelete.count > 1 ? 's' : ''}</strong>
+                            </div>
+                          </div>
+
+                          <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 10 }}>
+                            <button
+                              type="button"
+                              className="btn-secondary"
+                              onClick={() => setSupporterToDelete(null)}
+                              disabled={savingSettings}
+                              style={{ padding: '8px 16px', borderRadius: 8, cursor: 'pointer' }}
+                            >
+                              Cancel
+                            </button>
+                            <button
+                              type="button"
+                              style={{
+                                background: '#ef4444',
+                                color: '#ffffff',
+                                border: 'none',
+                                borderRadius: 8,
+                                padding: '8px 18px',
+                                fontWeight: 600,
+                                fontSize: 13,
+                                cursor: 'pointer',
+                              }}
+                              onClick={handleConfirmDelete}
+                              disabled={savingSettings}
+                            >
+                              {savingSettings ? 'Deleting...' : 'Delete Supporter'}
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
             )}
 
             {/* 3. IMPORT / EXPORT */}
@@ -2221,7 +2564,8 @@ function ComixDashboard({
               activeTab !== 'featured-series' &&
               activeTab !== 'settings' &&
               activeTab !== 'import-export' &&
-              activeTab !== 'edit-profile' && (
+              activeTab !== 'edit-profile' &&
+              activeTab !== 'donation-supporters' && (
                 <div className="comix-placeholder-card">
                   <div className="comix-placeholder-icon">
                     <FolderKanban size={26} />

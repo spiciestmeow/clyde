@@ -108,6 +108,7 @@ export type DonationSupporter = {
   amount: string;
   count: number;
   time: string;
+  createdAt?: string;
   rank?: 1 | 2 | 3;
 };
 
@@ -169,6 +170,7 @@ export function parseSupporters(value: unknown): DonationSupporter[] {
     const amount = amountStr.startsWith('$') ? amountStr : `$${amountStr}`;
     const count = typeof raw.count === 'number' && raw.count > 0 ? Math.round(raw.count) : 1;
     const time = typeof raw.time === 'string' && raw.time.trim() ? raw.time.trim() : 'Just now';
+    const createdAt = typeof raw.createdAt === 'string' && raw.createdAt.trim() ? raw.createdAt.trim() : undefined;
     const rank = raw.rank === 1 || raw.rank === 2 || raw.rank === 3 ? (raw.rank as 1 | 2 | 3) : undefined;
     list.push({
       id: typeof raw.id === 'string' && raw.id ? raw.id : `supporter_${Date.now()}_${idx}`,
@@ -179,10 +181,36 @@ export function parseSupporters(value: unknown): DonationSupporter[] {
       amount,
       count,
       time,
+      createdAt,
       rank,
     });
   }
   return list;
+}
+
+export function getSupporterDisplayTime(supporter?: { time?: string; createdAt?: string } | null): string {
+  if (!supporter) return '';
+  const timestampStr = supporter.createdAt || (supporter.time && supporter.time.includes('T') ? supporter.time : undefined);
+  if (timestampStr) {
+    const createdTime = new Date(timestampStr).getTime();
+    if (!isNaN(createdTime)) {
+      const diffMs = Math.max(0, Date.now() - createdTime);
+      const diffSecs = Math.floor(diffMs / 1000);
+      const diffMins = Math.floor(diffSecs / 60);
+      const diffHours = Math.floor(diffMins / 60);
+      const diffDays = Math.floor(diffHours / 24);
+      const diffMonths = Math.floor(diffDays / 30);
+      const diffYears = Math.floor(diffDays / 365);
+
+      if (diffSecs < 60) return 'Just now';
+      if (diffMins < 60) return `${diffMins}m ago`;
+      if (diffHours < 24) return `${diffHours}h ago`;
+      if (diffDays < 30) return `${diffDays}d ago`;
+      if (diffMonths < 12) return `${diffMonths}mo ago`;
+      return `${diffYears}y ago`;
+    }
+  }
+  return supporter.time || 'Just now';
 }
 
 export type SiteSettings = {

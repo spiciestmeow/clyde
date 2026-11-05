@@ -27,6 +27,7 @@ import {
   SITE_SETTINGS_UPDATED_EVENT,
   DEFAULT_SITE_SETTINGS,
   DEFAULT_SUPPORTERS,
+  getSupporterDisplayTime,
   type DonationSupporter,
   type SiteSettings,
 } from '../lib/siteSettings';
@@ -214,41 +215,37 @@ export default function DonationPage() {
   const targetGoal = 662;
   const progressPercent = Math.min(100, Math.round((currentRaised / targetGoal) * 100));
 
-  // Extract Top 3 Podium
-  const ranked1 = allSupporters.find((s) => s.rank === 1);
-  const ranked2 = allSupporters.find((s) => s.rank === 2);
-  const ranked3 = allSupporters.find((s) => s.rank === 3);
-
+  // Extract Top 3 Podium (automatically ranked by highest donation amount)
   const sortedByAmount = [...allSupporters].sort((a, b) => {
     const valA = parseFloat(a.amount.replace(/[^0-9.]/g, '')) || 0;
     const valB = parseFloat(b.amount.replace(/[^0-9.]/g, '')) || 0;
     return valB - valA;
   });
 
-  const podium1 = ranked1 || sortedByAmount[0];
-  const podium2 = ranked2 || sortedByAmount.find((s) => s.id !== podium1?.id);
-  const podium3 = ranked3 || sortedByAmount.find((s) => s.id !== podium1?.id && s.id !== podium2?.id);
+  const podium1 = sortedByAmount[0];
+  const podium2 = sortedByAmount[1];
+  const podium3 = sortedByAmount[2];
 
   const podiumSupporters = [
     {
       rank: 2,
       name: podium2?.name || 'Anonymous #20',
       amount: podium2?.amount || '$48.56',
-      meta: `${podium2?.count || 1} donation${(podium2?.count || 1) > 1 ? 's' : ''} · ${podium2?.time || '5mo ago'}`,
+      meta: `${podium2?.count || 1} donation${(podium2?.count || 1) > 1 ? 's' : ''} · ${getSupporterDisplayTime(podium2) || '5mo ago'}`,
       rankColor: '#9AA6B2',
     },
     {
       rank: 1,
       name: podium1?.name || 'Anonymous #25',
       amount: podium1?.amount || '$48.56',
-      meta: `${podium1?.count || 1} donation${(podium1?.count || 1) > 1 ? 's' : ''} · ${podium1?.time || '5mo ago'}`,
+      meta: `${podium1?.count || 1} donation${(podium1?.count || 1) > 1 ? 's' : ''} · ${getSupporterDisplayTime(podium1) || '5mo ago'}`,
       rankColor: '#D4A017',
     },
     {
       rank: 3,
       name: podium3?.name || 'grazzhella Vicente',
       amount: podium3?.amount || '$45.54',
-      meta: `${podium3?.count || 1} donation${(podium3?.count || 1) > 1 ? 's' : ''} · ${podium3?.time || '5mo ago'}`,
+      meta: `${podium3?.count || 1} donation${(podium3?.count || 1) > 1 ? 's' : ''} · ${getSupporterDisplayTime(podium3) || '5mo ago'}`,
       rankColor: '#B87333',
     },
   ];
@@ -646,7 +643,7 @@ export default function DonationPage() {
                     </div>
                   </div>
                   <div className="donor-bottom-row">
-                    <span className="donor-time-text">{supporter.time}</span>
+                    <span className="donor-time-text">{getSupporterDisplayTime(supporter)}</span>
                     <span className="donor-amount-val">{supporter.amount}</span>
                   </div>
                 </div>
