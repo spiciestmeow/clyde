@@ -57,8 +57,32 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   }
 
   // ── Auth guard ─────────────────────────────────────────────────────────────
-  if (!isAdminAuthenticated(req as Parameters<typeof isAdminAuthenticated>[0])) {
-    return res.status(401).json({ error: 'Unauthorized.' });
+  // Accepts admin cookie or Supabase JWT token from Authorization header
+  const authHeader = req.headers.authorization;
+  const token = authHeader?.replace(/^Bearer\s+/i, '').trim();
+
+  let isAuthorized = isAdminAuthenticated(req as Parameters<typeof isAdminAuthenticated>[0]);
+
+  if (!isAuthorized && token) {
+    const adminEmail = (process.env.ADMIN_EMAIL || 'clydhex@gmail.com').trim().toLowerCase();
+    const supabaseUrl = process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL;
+    const anonKey = process.env.VITE_SUPABASE_ANON_KEY || process.env.SUPABASE_ANON_KEY;
+    if (supabaseUrl && anonKey) {
+      try {
+        const { createClient } = await import('@supabase/supabase-js');
+        const supabase = createClient(supabaseUrl, anonKey, { auth: { persistSession: false } });
+        const { data: { user } } = await supabase.auth.getUser(token);
+        if (user && user.email?.trim().toLowerCase() === adminEmail) {
+          isAuthorized = true;
+        }
+      } catch {
+        // invalid token
+      }
+    }
+  }
+
+  if (!isAuthorized) {
+    return res.status(401).json({ error: 'Unauthorized. Log in as admin first.' });
   }
 
   // ── Validate body ──────────────────────────────────────────────────────────

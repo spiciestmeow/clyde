@@ -1,3 +1,5 @@
+import { supabase } from './supabase';
+
 /**
  * Resizes and compresses an image file on an HTML5 canvas.
  * Reduces a typical 2MB-5MB camera/web image down to ~20KB-40KB.
@@ -91,9 +93,17 @@ async function uploadToR2(
   const fileBase64 = await fileToBase64(file);
   onProgress?.(50);
 
+  const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+  if (supabase) {
+    const { data } = await supabase.auth.getSession();
+    if (data.session?.access_token) {
+      headers['Authorization'] = `Bearer ${data.session.access_token}`;
+    }
+  }
+
   const response = await fetch('/api/upload-cover', {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers,
     body: JSON.stringify({
       fileName: filePath,
       contentType: file.type || 'application/octet-stream',
