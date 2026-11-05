@@ -156,10 +156,12 @@
 .series-cover-ribbon { display: none; }
 .series-cover-frame:not(:disabled) img { transition: filter .2s ease, transform .25s ease; }
 .series-cover-frame:not(:disabled):hover img,.series-cover-frame:not(:disabled):focus-visible img { filter: brightness(.64); transform: scale(1.015); }
-.series-cover-view-overlay { position: absolute; inset: 0; display: grid; place-items: center; color: #fff; opacity: 0; pointer-events: none; transition: opacity .18s ease; }
-.series-cover-frame:not(:disabled):hover .series-cover-view-overlay,.series-cover-frame:not(:disabled):focus-visible .series-cover-view-overlay { opacity: 1; }
+.series-cover-view-overlay { position: absolute !important; inset: 0 !important; display: grid !important; place-items: center; color: #fff; opacity: 0; pointer-events: none; transition: opacity .18s ease; z-index: 10; }
+.series-cover-frame:not(:disabled):hover .series-cover-view-overlay,
+.series-cover-frame:not(:disabled):active .series-cover-view-overlay,
+.series-cover-frame:not(:disabled):focus-visible .series-cover-view-overlay { opacity: 1 !important; }
 .series-cover-expand { width: 46px; height: 46px; display: grid; place-items: center; border: 1px solid #ffffff66; border-radius: 50%; background: #24212a9c; box-shadow: 0 3px 12px #0005; }
-.series-cover-view-label { position: absolute; right: 8px; bottom: 8px; display: inline-flex; align-items: center; gap: 4px; padding: 5px 8px; border-radius: 16px; background: #121117b8; color: #fff; font-size: 8px; font-weight: 650; }
+.series-cover-view-label { position: absolute !important; right: 8px !important; bottom: 8px !important; display: inline-flex; align-items: center; gap: 4px; padding: 5px 8px; border-radius: 16px; background: #121117b8; color: #fff; font-size: 8px; font-weight: 650; }
 .series-cover-frame.is-image-failed .series-cover-view-overlay { display: none; }
 .series-cover-frame:disabled { cursor: default; }
 .series-left-actions { display: grid; grid-template-columns: 1fr 1fr; gap: clamp(4px, .32vw, 6px); margin-top: clamp(6px, .42vw, 8px); }

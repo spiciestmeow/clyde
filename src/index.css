@@ -12,7 +12,6 @@ img {
 
 /* Invisible overlay shield over covers on mobile/desktop so long-press touches the shield instead of img/link */
 .release-cover::after,
-.series-cover-frame::after,
 .continue-card__cover::after,
 .hero-slide-cover::after {
   content: '';
@@ -27,7 +26,6 @@ img {
 
 /* Ensure child elements like badges remain clickable/on top of shield */
 .release-cover > *:not(img),
-.series-cover-frame > *:not(img),
 .continue-card__cover > *:not(img) {
   position: relative;
   z-index: 2;
