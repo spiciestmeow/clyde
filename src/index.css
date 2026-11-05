@@ -2226,12 +2226,12 @@ html[data-accent-theme="default"] .release-card--series::after { display: none; 
 }
 
 
-/* ── Global Header Donate Button (matches Miyomi) ────────────────── */
+/* ── Global Header Donate Button ────────────────── */
 .donate-header-btn {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  background-color: #ec4899;
+  background: var(--accent-gradient, linear-gradient(135deg, #ef4444, #b91c1c));
   color: #ffffff !important;
   font-size: 13px;
   font-weight: 600;
@@ -2239,14 +2239,14 @@ html[data-accent-theme="default"] .release-card--series::after { display: none; 
   border-radius: 9999px;
   text-decoration: none;
   transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
-  box-shadow: 0 2px 8px rgba(236, 72, 153, 0.25);
+  box-shadow: 0 2px 8px rgba(var(--accent-rgb, 220, 38, 38), 0.25);
   margin-left: 2px;
 }
 
 .donate-header-btn:hover {
-  background-color: #db2777;
+  background: var(--accent-gradient-hover, linear-gradient(135deg, #dc2626, #991b1b));
   transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(236, 72, 153, 0.35);
+  box-shadow: 0 4px 12px rgba(var(--accent-rgb, 220, 38, 38), 0.35);
   color: #ffffff !important;
 }
 

@@ -9,11 +9,20 @@
   --divider: #e2e8f0;
   --text-primary: #0f172a;
   --text-secondary: #475569;
-  --brand: #0ea5e9;
-  --brand-strong: #0284c7;
-  --chip-bg: #eff6ff;
-  --chart-3: #ec4899;
   --card-shadow: 0 6px 20px rgba(0, 0, 0, 0.06);
+
+  /* Default theme: Gradient Red */
+  --brand: #dc2626;
+  --brand-strong: #b91c1c;
+  --chip-bg: #fef2f2;
+  --chip-text: #dc2626;
+  --chart-3: #ef4444;
+  --donation-gradient: linear-gradient(135deg, #ef4444, #b91c1c);
+  --donation-gradient-text: linear-gradient(135deg, #ef4444 0%, #dc2626 50%, #b91c1c 100%);
+  --donation-gradient-bar: linear-gradient(90deg, #ef4444 0%, #dc2626 60%, #b91c1c 100%);
+  --admin-notice-bg: rgba(220, 38, 38, 0.08);
+  --admin-notice-border: rgba(220, 38, 38, 0.28);
+  --admin-notice-color: #dc2626;
 
   min-height: 100vh;
   background-color: var(--bg-page);
@@ -22,17 +31,62 @@
   transition: background-color 0.2s ease, color 0.2s ease;
 }
 
-/* Dark Theme */
+/* Halloween theme: Gradient Orange */
+html[data-accent-theme="halloween"] .donation-page-wrapper,
+.donation-page-wrapper[data-accent-theme="halloween"] {
+  --brand: #ea580c;
+  --brand-strong: #c2410c;
+  --chip-bg: #fff7ed;
+  --chip-text: #ea580c;
+  --chart-3: #f97316;
+  --donation-gradient: linear-gradient(135deg, #fb923c, #ea580c);
+  --donation-gradient-text: linear-gradient(135deg, #fb923c 0%, #f97316 50%, #ea580c 100%);
+  --donation-gradient-bar: linear-gradient(90deg, #fb923c 0%, #f97316 60%, #ea580c 100%);
+  --admin-notice-bg: rgba(234, 88, 12, 0.08);
+  --admin-notice-border: rgba(234, 88, 12, 0.28);
+  --admin-notice-color: #ea580c;
+}
+
+/* Dark Theme - Default (Gradient Red) */
 .theme-dark .donation-page-wrapper {
   --bg-page: #09090b;
   --bg-surface: #121217;
   --divider: #23232a;
   --text-primary: #f8fafc;
   --text-secondary: #94a3b8;
-  --brand: #38bdf8;
-  --brand-strong: #7dd3fc;
-  --chip-bg: #1e293b;
-  --chart-3: #f472b6;
+  --brand: #ef4444;
+  --brand-strong: #f87171;
+  --chip-bg: #221316;
+  --chip-text: #fca5a5;
+  --chart-3: #f43f5e;
+  --donation-gradient: linear-gradient(135deg, #ef4444, #dc2626);
+  --donation-gradient-text: linear-gradient(135deg, #f87171 0%, #ef4444 50%, #fb7185 100%);
+  --donation-gradient-bar: linear-gradient(90deg, #f87171 0%, #ef4444 60%, #dc2626 100%);
+  --admin-notice-bg: rgba(239, 68, 68, 0.15);
+  --admin-notice-border: rgba(239, 68, 68, 0.35);
+  --admin-notice-color: #f87171;
+  --card-shadow: 0 6px 20px rgba(0, 0, 0, 0.35);
+}
+
+/* Dark Theme - Halloween (Gradient Orange) */
+html[data-accent-theme="halloween"] .theme-dark .donation-page-wrapper,
+.theme-dark .donation-page-wrapper[data-accent-theme="halloween"] {
+  --bg-page: #09090b;
+  --bg-surface: #121217;
+  --divider: #23232a;
+  --text-primary: #f8fafc;
+  --text-secondary: #94a3b8;
+  --brand: #f97316;
+  --brand-strong: #fb923c;
+  --chip-bg: #24160f;
+  --chip-text: #fed7aa;
+  --chart-3: #ea580c;
+  --donation-gradient: linear-gradient(135deg, #fb923c, #ea580c);
+  --donation-gradient-text: linear-gradient(135deg, #fed7aa 0%, #fb923c 50%, #f97316 100%);
+  --donation-gradient-bar: linear-gradient(90deg, #fb923c 0%, #f97316 60%, #ea580c 100%);
+  --admin-notice-bg: rgba(249, 115, 22, 0.15);
+  --admin-notice-border: rgba(249, 115, 22, 0.35);
+  --admin-notice-color: #fb923c;
   --card-shadow: 0 6px 20px rgba(0, 0, 0, 0.35);
 }
 
@@ -71,13 +125,13 @@
   padding: 6px 14px;
   border-radius: 9999px;
   background-color: var(--chip-bg);
-  color: var(--text-secondary);
+  color: var(--chip-text, var(--text-secondary));
   font-size: 12px;
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.06em;
   margin-bottom: 16px;
-  border: 1px solid color-mix(in srgb, var(--divider) 80%, transparent);
+  border: 1px solid color-mix(in srgb, var(--brand) 25%, transparent);
 }
 
 .donation-hero-pill svg {
@@ -94,7 +148,7 @@
 }
 
 .donation-hero-title .alive-gradient {
-  background: linear-gradient(to right, var(--brand), var(--chart-3));
+  background: var(--donation-gradient-text, linear-gradient(135deg, var(--brand), var(--chart-3)));
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   display: inline-block;
@@ -153,7 +207,7 @@
 }
 
 .card-icon-box.pink-icon {
-  color: #ec4899;
+  color: var(--brand);
 }
 
 .card-heading {
@@ -192,7 +246,7 @@
   bottom: 0;
   left: 0;
   border-radius: 9999px;
-  background: linear-gradient(to right, var(--brand), var(--chart-3));
+  background: var(--donation-gradient-bar, linear-gradient(90deg, var(--brand), var(--chart-3)));
   transition: width 1.2s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
@@ -384,7 +438,7 @@
   width: 5px;
   height: 5px;
   border-radius: 50%;
-  background-color: #f472b6;
+  background-color: var(--brand);
   flex-shrink: 0;
 }
 
@@ -771,7 +825,8 @@
   width: 64px;
   height: 64px;
   border-radius: 16px;
-  background: linear-gradient(135deg, #cbe5fb, #9db8f7);
+  background: var(--chip-bg);
+  border: 1px solid color-mix(in srgb, var(--brand) 25%, transparent);
   overflow: hidden;
   display: flex;
   align-items: center;

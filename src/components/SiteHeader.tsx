@@ -309,7 +309,7 @@ export default function SiteHeader({
                   onClick={closeMenu}
                 >
                   <div className="mobile-nav-card__left">
-                    <Heart size={19} style={{ color: '#ec4899' }} />
+                    <Heart size={19} style={{ color: 'var(--accent, #dc2626)' }} />
                     <span>Donate</span>
                   </div>
                 </Link>

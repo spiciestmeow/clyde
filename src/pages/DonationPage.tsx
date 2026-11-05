@@ -305,13 +305,14 @@ export default function DonationPage() {
         search={<SiteSearch items={searchItems} trendingItems={trendingItems} />}
       />
 
-      <div className="donation-page-wrapper">
+      <div className="donation-page-wrapper" data-accent-theme={siteSettings.accentTheme || 'default'}>
         <main className="donation-container">
           {adminOnly && isAdmin && (
             <div
+              className="donation-admin-notice"
               style={{
-                background: 'rgba(236, 72, 153, 0.12)',
-                border: '1px solid rgba(236, 72, 153, 0.35)',
+                background: 'var(--admin-notice-bg, rgba(220, 38, 38, 0.08))',
+                border: '1px solid var(--admin-notice-border, rgba(220, 38, 38, 0.28))',
                 borderRadius: '12px',
                 padding: '12px 18px',
                 margin: '0 auto 24px',
@@ -324,7 +325,7 @@ export default function DonationPage() {
                 fontWeight: 500,
               }}
             >
-              <ShieldCheck size={20} style={{ color: '#ec4899', flexShrink: 0 }} />
+              <ShieldCheck size={20} style={{ color: 'var(--admin-notice-color, var(--brand, #dc2626))', flexShrink: 0 }} />
               <span>
                 <strong>Admin Preview Mode:</strong> Donation is set to <em>Admin Only</em>. Public visitors cannot see the donate button or access this page.
               </span>
@@ -460,7 +461,7 @@ export default function DonationPage() {
               {/* Box 3: Where Funds Go (2 cols) */}
               <div className="transparency-subcard trans-col-2">
                 <div className="subcard-tag">
-                  <Heart size={14} style={{ color: '#ec4899' }} />
+                  <Heart size={14} style={{ color: 'var(--brand)' }} />
                   <span>Where Funds Go</span>
                 </div>
                 <div className="breakdown-row-list">
