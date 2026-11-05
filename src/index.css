@@ -107,9 +107,15 @@ html::-webkit-scrollbar-button, body::-webkit-scrollbar-button { display: none !
   opacity: 0;
   transform: scaleX(0);
   transform-origin: left center;
-  background: var(--scrollbar-thumb, #f78745);
-  box-shadow: 0 0 16px rgba(247, 135, 69, 0.65);
+  background: linear-gradient(90deg, #ef4444 0%, #dc2626 50%, #b91c1c 100%);
+  box-shadow: 0 0 14px rgba(220, 38, 38, 0.75), 0 0 6px rgba(239, 68, 68, 0.9);
   transition: transform 220ms ease, opacity 160ms ease;
+}
+
+html[data-accent-theme="halloween"] #vcomics-navigation-progress,
+html[data-accent-theme="halloween"] .navigation-progress {
+  background: linear-gradient(90deg, #fb923c 0%, #f97316 50%, #ea580c 100%);
+  box-shadow: 0 0 14px rgba(234, 88, 12, 0.75), 0 0 6px rgba(249, 115, 22, 0.9);
 }
 [dir="rtl"] #vcomics-navigation-progress,
 [dir="rtl"] .navigation-progress {

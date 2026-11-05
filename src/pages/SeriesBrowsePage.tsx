@@ -153,15 +153,43 @@ export default function SeriesBrowsePage() {
   const [mobileMenu, setMobileMenu] = useState(false);
   const [query, setQuery] = useState(queryFromUrl);
   const [settledQuery, setSettledQuery] = useState(queryFromUrl);
-  const [status, setStatus] = useState('All');
-  const [availability, setAvailability] = useState<(typeof seriesAvailability)[number]>('Any');
-  const [selectedTypes, setSelectedTypes] = useState<string[]>([]);
-  const [minChapters, setMinChapters] = useState('');
-  const [maxChapters, setMaxChapters] = useState('');
+  const [status, setStatus] = useState<string>(() => {
+    if (typeof window === 'undefined') return 'All';
+    return sessionStorage.getItem('clydee_series_browse_status') || 'All';
+  });
+  const [availability, setAvailability] = useState<(typeof seriesAvailability)[number]>(() => {
+    if (typeof window === 'undefined') return 'Any';
+    return (sessionStorage.getItem('clydee_series_browse_availability') as (typeof seriesAvailability)[number]) || 'Any';
+  });
+  const [selectedTypes, setSelectedTypes] = useState<string[]>(() => {
+    if (typeof window === 'undefined') return [];
+    try {
+      const saved = sessionStorage.getItem('clydee_series_browse_types');
+      return saved ? JSON.parse(saved) : [];
+    } catch {
+      return [];
+    }
+  });
+  const [minChapters, setMinChapters] = useState(() => {
+    if (typeof window === 'undefined') return '';
+    return sessionStorage.getItem('clydee_series_browse_min_chapters') || '';
+  });
+  const [maxChapters, setMaxChapters] = useState(() => {
+    if (typeof window === 'undefined') return '';
+    return sessionStorage.getItem('clydee_series_browse_max_chapters') || '';
+  });
   const [createdAfter, setCreatedAfter] = useState('');
   const [createdBefore, setCreatedBefore] = useState('');
   const [genreSearch, setGenreSearch] = useState('');
-  const [genreModes, setGenreModes] = useState<Record<string, GenreMode>>({});
+  const [genreModes, setGenreModes] = useState<Record<string, GenreMode>>(() => {
+    if (typeof window === 'undefined') return {};
+    try {
+      const saved = sessionStorage.getItem('clydee_series_browse_genre_modes');
+      return saved ? JSON.parse(saved) : {};
+    } catch {
+      return {};
+    }
+  });
   const [seriesFilterVisibility, setSeriesFilterVisibility] = useState(
     () => getCachedSiteSettings()?.seriesFilters ?? DEFAULT_SERIES_FILTER_VISIBILITY,
   );
@@ -190,6 +218,18 @@ export default function SeriesBrowsePage() {
     (seriesFilterVisibility.type ? selectedTypes.length : 0) +
     (seriesFilterVisibility.chapterCount ? Number(minChapters !== '') + Number(maxChapters !== '') : 0) +
     (seriesFilterVisibility.releaseDate ? Number(createdAfter !== '') + Number(createdBefore !== '') : 0);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    try {
+      sessionStorage.setItem('clydee_series_browse_genre_modes', JSON.stringify(genreModes));
+      sessionStorage.setItem('clydee_series_browse_status', status);
+      sessionStorage.setItem('clydee_series_browse_availability', availability);
+      sessionStorage.setItem('clydee_series_browse_types', JSON.stringify(selectedTypes));
+      sessionStorage.setItem('clydee_series_browse_min_chapters', minChapters);
+      sessionStorage.setItem('clydee_series_browse_max_chapters', maxChapters);
+    } catch {}
+  }, [genreModes, status, availability, selectedTypes, minChapters, maxChapters]);
   const updateSearchUrl = (value: string) => {
     const params = new URLSearchParams(routeSearch);
     if (value.trim()) params.set('search', value);
@@ -380,6 +420,14 @@ export default function SeriesBrowsePage() {
     setPage(1);
   };
   const clearSeriesFilters = () => {
+    if (typeof window !== 'undefined') {
+      sessionStorage.removeItem('clydee_series_browse_genre_modes');
+      sessionStorage.removeItem('clydee_series_browse_status');
+      sessionStorage.removeItem('clydee_series_browse_availability');
+      sessionStorage.removeItem('clydee_series_browse_types');
+      sessionStorage.removeItem('clydee_series_browse_min_chapters');
+      sessionStorage.removeItem('clydee_series_browse_max_chapters');
+    }
     setGenreModes({});
     setStatus('All');
     setAvailability('Any');

@@ -366,7 +366,7 @@ function ComixLoginScreen({
   };
 
   return (
-    <div className={`comix-admin-wrapper theme-${theme} comix-login-screen`}>
+    <div className="comix-admin-wrapper theme-dark comix-login-screen">
       <a href="/" className="comix-login-back"><ArrowLeft size={15} /> Go back</a>
       <section className="comix-login-content">
         <div className="comix-login-brand-mark"><AdminBrand /></div>
@@ -379,9 +379,6 @@ function ComixLoginScreen({
         <div className="comix-login-card">
           <div className="comix-login-card-top">
             <span>ADMIN ACCESS</span>
-            <button type="button" className="comix-icon-btn" onClick={onToggleTheme} title="Toggle theme">
-              {theme === 'dark' ? <Sun size={17} /> : <Moon size={17} />}
-            </button>
           </div>
           {formError && <div className="comix-login-error" role="alert">{formError}</div>}
           {lockoutSeconds > 0 && (

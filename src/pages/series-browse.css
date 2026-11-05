@@ -68,14 +68,14 @@
   display: inline-flex;
   align-items: center;
   gap: 4px;
-  padding: 2px 7px;
+  padding: 2px 9px;
   border: 1px solid var(--catalog-line);
-  border-radius: 6px;
+  border-radius: 9999px; /* circle round pills */
   background: var(--catalog-panel);
   color: var(--catalog-ink);
   font: inherit;
   font-size: 10px;
-  font-weight: 500;
+  font-weight: 400; /* normal weight, not bold */
   cursor: pointer;
   transition: all .14s ease;
 }
@@ -104,11 +104,13 @@
   background: #fee2e2;
   border-color: rgba(220, 38, 38, 0.4);
   color: #dc2626;
+  text-decoration: line-through;
 }
 .theme-dark .catalog-active-search-chip.is-genre-exclude {
   background: rgba(239, 68, 68, 0.16);
   border-color: rgba(220, 38, 38, 0.4);
   color: #f87171;
+  text-decoration: line-through;
 }
 .catalog-active-search-clear {
   padding: 2px 4px;
@@ -255,18 +257,18 @@ html.series-document-scrollbar::-webkit-scrollbar-button, body.series-document-s
 .catalog-genre-check { display: inline-flex; align-items: center; justify-content: center; flex: 0 0 auto; }
 .catalog-genre-empty-circle { width: 15px; height: 15px; border-radius: 50%; border: 1.5px solid #cbd5e1; display: inline-block; box-sizing: border-box; }
 .theme-dark .catalog-genre-empty-circle { border-color: #4b5563; }
-.catalog-genre-option.is-include { background: #e6f7ef; color: #059669; font-weight: 550; }
-.theme-dark .catalog-genre-option.is-include { background: rgba(16, 185, 129, 0.16); color: #34d399; }
-.catalog-genre-option.is-exclude { background: #fee2e2; color: #dc2626; font-weight: 550; }
-.theme-dark .catalog-genre-option.is-exclude { background: rgba(239, 68, 68, 0.16); color: #f87171; }
+.catalog-genre-option.is-include { background: #e6f7ef; color: #059669; font-weight: 400; border-radius: 9999px; }
+.theme-dark .catalog-genre-option.is-include { background: rgba(16, 185, 129, 0.16); color: #34d399; font-weight: 400; border-radius: 9999px; }
+.catalog-genre-option.is-exclude { background: #fee2e2; color: #dc2626; font-weight: 400; text-decoration: line-through; border-radius: 9999px; }
+.theme-dark .catalog-genre-option.is-exclude { background: rgba(239, 68, 68, 0.16); color: #f87171; font-weight: 400; text-decoration: line-through; border-radius: 9999px; }
 .catalog-filter-empty { margin: 5px; color: var(--catalog-muted); font-size: 8px; }
 .catalog-filter-chips { display: flex; flex-wrap: wrap; gap: 5px; padding-top: 0; }
-.catalog-filter-chip { min-height: 23px; padding: 4px 8px; border: 1px solid var(--catalog-line); border-radius: 999px; background: transparent; color: var(--catalog-muted); font: inherit; font-size: 8px; line-height: 1.2; white-space: nowrap; cursor: pointer; transition: border-color .14s ease, background .14s ease, color .14s ease; }
+.catalog-filter-chip { min-height: 23px; padding: 4px 8px; border: 1px solid var(--catalog-line); border-radius: 999px; background: transparent; color: var(--catalog-muted); font: inherit; font-size: 8px; font-weight: 400; line-height: 1.2; white-space: nowrap; cursor: pointer; transition: border-color .14s ease, background .14s ease, color .14s ease; }
 .catalog-chip-sale { display: inline-flex; align-items: center; gap: 3px; }
 .catalog-chip-sale svg { width: 10px; height: 10px; }
 .catalog-filter-chip:hover { border-color: color-mix(in srgb, var(--catalog-accent) 45%, white); color: var(--catalog-ink); }
-.catalog-filter-chip.is-active { border-color: color-mix(in srgb, var(--catalog-accent) 52%, white); background: color-mix(in srgb, var(--catalog-accent) 10%, white); color: color-mix(in srgb, var(--catalog-accent) 72%, #311); font-weight: 650; }
-.theme-dark .catalog-filter-chip.is-active { border-color: color-mix(in srgb, var(--catalog-accent) 55%, transparent); background: color-mix(in srgb, var(--catalog-accent) 18%, #201f23); color: color-mix(in srgb, var(--catalog-accent) 50%, white); }
+.catalog-filter-chip.is-active { border-color: color-mix(in srgb, var(--catalog-accent) 52%, white); background: color-mix(in srgb, var(--catalog-accent) 10%, white); color: color-mix(in srgb, var(--catalog-accent) 72%, #311); font-weight: 400; }
+.theme-dark .catalog-filter-chip.is-active { border-color: color-mix(in srgb, var(--catalog-accent) 55%, transparent); background: color-mix(in srgb, var(--catalog-accent) 18%, #201f23); color: color-mix(in srgb, var(--catalog-accent) 50%, white); font-weight: 400; }
 
 .catalog-filter-number-fields { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
 .catalog-filter-date-fields { display: grid; gap: 8px; }
