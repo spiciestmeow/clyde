@@ -32,7 +32,6 @@ import {
   Plus,
   Radio,
   RefreshCw,
-  RotateCcw,
   Rss,
   Search,
   Settings,
@@ -1090,10 +1089,22 @@ function ComixDashboard({
     setSupporterToDelete(null);
   };
 
-  const handleResetSupporters = () => {
-    if (!confirm('Reset supporters list back to the default list? This replaces your current custom list.')) return;
-    setSupportersDraft(DEFAULT_SUPPORTERS);
-    void saveSupporters(DEFAULT_SUPPORTERS);
+  const handleExportSupporters = () => {
+    try {
+      const json = JSON.stringify(supportersDraft, null, 2);
+      const blob = new Blob([json], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
+      a.href = url;
+      a.download = `supporters-backup-${timestamp}.json`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    } catch {
+      alert('Failed to export supporters.');
+    }
   };
 
   const handleToggle = async (
@@ -1944,12 +1955,12 @@ function ComixDashboard({
                           type="button"
                           className="btn-secondary"
                           style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '8px 12px', fontSize: 13, borderRadius: 8, cursor: 'pointer' }}
-                          onClick={handleResetSupporters}
+                          onClick={handleExportSupporters}
                           disabled={savingSettings}
-                          title="Restore default 30+ supporters"
+                          title="Download all current supporters as a JSON backup file"
                         >
-                          <RotateCcw size={14} />
-                          <span>Reset Defaults</span>
+                          <Download size={14} />
+                          <span>Export Backup</span>
                         </button>
                         <button
                           type="button"
