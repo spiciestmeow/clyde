@@ -1,4 +1,5 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
+import { useLocation } from 'wouter';
 import {
   Heart,
   Sparkles,
@@ -20,6 +21,14 @@ import SiteSearch from '../components/SiteSearch';
 import { toSiteSearchItems, toTrendingSiteSearchItems } from '../data/seriesSearchCatalog';
 import { useSeriesCatalog } from '../hooks/useSeriesCatalog';
 import { useThemeMode } from '../hooks/useThemeMode';
+import { useIsAdmin } from '../hooks/useIsAdmin';
+import {
+  getCachedSiteSettings,
+  getSiteSettings,
+  SITE_SETTINGS_UPDATED_EVENT,
+  DEFAULT_SITE_SETTINGS,
+  type SiteSettings,
+} from '../lib/siteSettings';
 import assets from '../../clone-data/asset-references.json';
 import './donation-page.css';
 
@@ -218,6 +227,38 @@ function getDiceBearAvatar(name: string): string {
 }
 
 export default function DonationPage() {
+  const [, setLocation] = useLocation();
+  const { isAdmin, checkingAuth } = useIsAdmin();
+  const [siteSettings, setSiteSettings] = useState<SiteSettings>(() => getCachedSiteSettings() ?? DEFAULT_SITE_SETTINGS);
+
+  useEffect(() => {
+    let active = true;
+    void getSiteSettings()
+      .then((s) => {
+        if (active) setSiteSettings(s);
+      })
+      .catch(() => {});
+    const onUpdate = () => {
+      const cached = getCachedSiteSettings();
+      if (cached) setSiteSettings(cached);
+    };
+    window.addEventListener(SITE_SETTINGS_UPDATED_EVENT, onUpdate);
+    return () => {
+      active = false;
+      window.removeEventListener(SITE_SETTINGS_UPDATED_EVENT, onUpdate);
+    };
+  }, []);
+
+  const donateEnabled = siteSettings.header?.donate ?? false;
+  const adminOnly = siteSettings.header?.donateAdminOnly ?? false;
+  const isBlocked = !checkingAuth && !isAdmin && (adminOnly || !donateEnabled);
+
+  useEffect(() => {
+    if (isBlocked) {
+      setLocation('/');
+    }
+  }, [isBlocked, setLocation]);
+
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const { dark, toggleTheme } = useThemeMode();
   const catalogQuery = useSeriesCatalog();
@@ -246,6 +287,10 @@ export default function DonationPage() {
     }
   };
 
+  if (checkingAuth || isBlocked) {
+    return null;
+  }
+
   return (
     <div className={`vortex-page ${dark ? 'theme-dark' : 'theme-light'}`}>
       <SiteHeader
@@ -262,6 +307,29 @@ export default function DonationPage() {
 
       <div className="donation-page-wrapper">
         <main className="donation-container">
+          {adminOnly && isAdmin && (
+            <div
+              style={{
+                background: 'rgba(236, 72, 153, 0.12)',
+                border: '1px solid rgba(236, 72, 153, 0.35)',
+                borderRadius: '12px',
+                padding: '12px 18px',
+                margin: '0 auto 24px',
+                maxWidth: '780px',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '12px',
+                color: 'var(--text-primary)',
+                fontSize: '13px',
+                fontWeight: 500,
+              }}
+            >
+              <ShieldCheck size={20} style={{ color: '#ec4899', flexShrink: 0 }} />
+              <span>
+                <strong>Admin Preview Mode:</strong> Donation is set to <em>Admin Only</em>. Public visitors cannot see the donate button or access this page.
+              </span>
+            </div>
+          )}
           {/* ── 1. Hero ────────────────────────────────────────── */}
           <section className="donation-hero">
             <div className="donation-hero-pill">

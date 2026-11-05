@@ -22,6 +22,7 @@ import {
   type HeaderVisibility,
 } from '../lib/siteSettings';
 import { supabaseConfigReady } from '../lib/supabase';
+import { useIsAdmin } from '../hooks/useIsAdmin';
 
 type SiteSection = 'home' | 'series';
 
@@ -118,13 +119,15 @@ export default function SiteHeader({
   }, [mobileMenuOpen]);
 
   const headerVisibility = visibility ?? savedVisibility ?? DEFAULT_HEADER_VISIBILITY;
+  const { isAdmin } = useIsAdmin();
+  const canSeeDonate = headerVisibility.donate && (!headerVisibility.donateAdminOnly || isAdmin);
   const isSeriesPage = activeSection === 'series';
   const showMenu =
     headerVisibility.home ||
     headerVisibility.series ||
     headerVisibility.shop ||
     headerVisibility.community ||
-    headerVisibility.donate;
+    canSeeDonate;
 
   const closeMenu = () => {
     if (mobileMenuOpen) {
@@ -227,7 +230,7 @@ export default function SiteHeader({
               </Link>
             )}
 
-            {headerVisibility.donate && (
+            {canSeeDonate && (
               <Link className="donate-header-btn desktop-only" href="/donate" aria-label="Support us">
                 <Heart size={13} fill="currentColor" />
                 <span>Donate</span>
@@ -299,7 +302,7 @@ export default function SiteHeader({
                 </Link>
               )}
 
-              {headerVisibility.donate && (
+              {canSeeDonate && (
                 <Link
                   className="mobile-nav-card"
                   href="/donate"

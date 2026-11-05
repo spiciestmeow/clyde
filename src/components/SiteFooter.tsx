@@ -5,6 +5,7 @@ import {
   getSiteSettings,
   SITE_SETTINGS_UPDATED_EVENT,
 } from '../lib/siteSettings';
+import { useIsAdmin } from '../hooks/useIsAdmin';
 
 type SiteFooterProps = {
   logoSrc: string;
@@ -19,9 +20,14 @@ export default function SiteFooter({
   className = 'footer',
   id,
 }: SiteFooterProps) {
-  const [showDonate, setShowDonate] = useState(
-    () => getCachedSiteSettings()?.header?.donate ?? false,
-  );
+  const { isAdmin } = useIsAdmin();
+  const [donateSettings, setDonateSettings] = useState<{ donate: boolean; adminOnly: boolean }>(() => {
+    const cached = getCachedSiteSettings()?.header;
+    return {
+      donate: cached?.donate ?? false,
+      adminOnly: cached?.donateAdminOnly ?? false,
+    };
+  });
   const [facebookUrl, setFacebookUrl] = useState(
     () => getCachedSiteSettings()?.facebookUrl || 'https://facebook.com',
   );
@@ -31,7 +37,10 @@ export default function SiteFooter({
     void getSiteSettings()
       .then((settings) => {
         if (active) {
-          setShowDonate(settings.header?.donate ?? false);
+          setDonateSettings({
+            donate: settings.header?.donate ?? false,
+            adminOnly: settings.header?.donateAdminOnly ?? false,
+          });
           setFacebookUrl(settings.facebookUrl || 'https://facebook.com');
         }
       })
@@ -39,7 +48,10 @@ export default function SiteFooter({
 
     const handleUpdate = () => {
       const cached = getCachedSiteSettings();
-      setShowDonate(cached?.header?.donate ?? false);
+      setDonateSettings({
+        donate: cached?.header?.donate ?? false,
+        adminOnly: cached?.header?.donateAdminOnly ?? false,
+      });
       if (cached?.facebookUrl) {
         setFacebookUrl(cached.facebookUrl);
       }
@@ -51,6 +63,8 @@ export default function SiteFooter({
       window.removeEventListener(SITE_SETTINGS_UPDATED_EVENT, handleUpdate);
     };
   }, []);
+
+  const canSeeDonate = donateSettings.donate && (!donateSettings.adminOnly || isAdmin);
 
   return (
     <footer className={className} id={id}>
@@ -72,7 +86,7 @@ export default function SiteFooter({
         <div className="footer-tagline"><p>{tagline}</p></div>
         <ul className="footer-links">
           <li><Link href="/credits">Credits</Link></li>
-          {showDonate && <li><Link href="/donate">Support Us</Link></li>}
+          {canSeeDonate && <li><Link href="/donate">Support Us</Link></li>}
           <li><a href={facebookUrl} target="_blank" rel="noopener noreferrer">Facebook</a></li>
         </ul>
         <hr />
