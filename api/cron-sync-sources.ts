@@ -78,10 +78,10 @@ export default async function handler(
       auth: { persistSession: false },
     });
 
-    // 1. Fetch all series from catalog
+    // 1. Fetch all series from catalog (omit heavy `chapters` array to keep egress minimal)
     const { data: seriesList, error: fetchError } = await supabase
       .from('series')
-      .select('id, slug, title, chapters, facts, sources, alternate_titles, rating')
+      .select('id, slug, title, facts, sources, alternate_titles, rating')
       .order('id', { ascending: true });
 
     if (fetchError || !seriesList) {
@@ -122,7 +122,8 @@ export default async function handler(
         // Current chapter number — computed early so it can be referenced inside source-refresh logic below
         const currentChStr =
           item.facts?.latest_chapter_number ||
-          (item.chapters?.[0]?.title ? String(item.chapters[0].title).replace(/^[^\d.]*/, '') : '');
+          item.facts?.last_chapter_number ||
+          '';
         const parsedCurrentNum = currentChStr ? parseFloat(currentChStr) : Number.NaN;
         const currentNum = Number.isFinite(parsedCurrentNum) ? parsedCurrentNum : null;
 
@@ -199,7 +200,18 @@ export default async function handler(
             ? new Date(detectedTimestamp).toISOString()
             : undefined;
 
-          const existingChapters = Array.isArray(item.chapters) ? item.chapters : [];
+          // Lazy-load chapters only for this single updated series (saves ~10MB egress on every cron run)
+          let existingChapters: any[] = [];
+          const { data: chapterRow, error: chapterFetchError } = await supabase
+            .from('series')
+            .select('chapters')
+            .eq('id', item.id)
+            .maybeSingle();
+
+          if (!chapterFetchError && Array.isArray(chapterRow?.chapters)) {
+            existingChapters = chapterRow.chapters;
+          }
+
           const alreadyHasCh = existingChapters.some((ch: any) => {
             const t = String(ch?.title || '').trim().toLowerCase();
             return t === newChTitle.toLowerCase() || t === String(detectedChStr);
