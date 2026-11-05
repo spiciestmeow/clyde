@@ -32,7 +32,7 @@ import SecurityVerification from './components/SecurityVerification';
 import { toSiteSearchItems, toTrendingSiteSearchItems } from './data/seriesSearchCatalog';
 import { useThemeMode } from './hooks/useThemeMode';
 import { useSeriesCatalog } from './hooks/useSeriesCatalog';
-import { getWinningChapterSource } from './lib/sourcePriority';
+import { getEarlyBirdSource, getWinningChapterSource } from './lib/sourcePriority';
 import { getMobilePaginationItems, getPaginationItems } from './lib/pagination';
 import ResponsivePaginationPages from './components/ResponsivePaginationPages';
 import {
@@ -302,7 +302,8 @@ function HomePage() {
     return recentlyViewedSeries.flatMap((recent) => {
       const series = bySlug.get(recent.slug.toLocaleLowerCase());
       if (!series) return [];
-      const winningSource = getWinningChapterSource(series.sources, series.facts?.latest_source_url || undefined);
+      const earlyBird = getEarlyBirdSource(series.sources, series.facts?.latest_source_url || undefined);
+      const winningSource = earlyBird || getWinningChapterSource(series.sources, series.facts?.latest_source_url || undefined);
       const latestChapter = winningSource?.latestChapterNumber
         ? `Chapter ${winningSource.latestChapterNumber.replace(/^ch(?:apter)?\.?\s*/i, '')}`
         : series.chapters[0]?.title || (series.facts?.latest_chapter_number ? `Chapter ${series.facts.latest_chapter_number}` : 'Latest chapter unavailable');

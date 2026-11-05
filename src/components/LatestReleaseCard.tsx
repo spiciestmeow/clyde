@@ -3,7 +3,7 @@ import { Link } from 'wouter';
 import { Eye, Pin, Star } from 'lucide-react';
 import { getSeriesReleaseTimestamp, parseChapterAgeMinutes, type SeriesRecord } from '../lib/seriesCatalog';
 import { formatScanlatorSeriesUrl } from '../lib/scanlatorLinks';
-import { getWinningChapterSource } from '../lib/sourcePriority';
+import { getEarlyBirdSource, getWinningChapterSource, releaseTimestamp } from '../lib/sourcePriority';
 
 function MarqueeValue({ text, forceStatic = false }: { text: string; forceStatic?: boolean }) {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -172,9 +172,12 @@ function formatViews(release: LatestRelease): string {
   return typeof release.views === 'number' ? String(release.views) : '0';
 }
 
-function formatReleaseTime(release: LatestRelease): string | null {
+function formatReleaseTime(release: LatestRelease, cardSource?: { latestChapterAt?: string } | null): string | null {
   const latestChapter = release.chapters[0];
-  const timestamp = getSeriesReleaseTimestamp(release as any);
+  const cardSourceTs = cardSource?.latestChapterAt ? releaseTimestamp(cardSource.latestChapterAt) : Number.NaN;
+  const timestamp = !Number.isNaN(cardSourceTs) && cardSourceTs > 0
+    ? cardSourceTs
+    : getSeriesReleaseTimestamp(release as any);
 
   if (timestamp > 0) {
     const diffMs = Date.now() - timestamp;
@@ -225,8 +228,10 @@ export function LatestReleaseCard({
   const viewsValue = formatViews(release);
 
   const latestChapter = release.chapters[0];
+  const earlyBirdSource = getEarlyBirdSource(release.sources, release.facts?.latest_source_url || undefined);
   const winningSource = getWinningChapterSource(release.sources, release.facts?.latest_source_url || undefined);
-  const preferredSourceUrl = winningSource?.url?.trim() || release.facts?.latest_source_url?.trim();
+  const cardSource = earlyBirdSource || winningSource;
+  const preferredSourceUrl = cardSource?.url?.trim() || release.facts?.latest_source_url?.trim();
   const prioritizedSources = preferredSourceUrl
     ? [...(release.sources || [])].sort(
         (a, b) => Number(b.url.trim() === preferredSourceUrl) - Number(a.url.trim() === preferredSourceUrl),
@@ -236,7 +241,7 @@ export function LatestReleaseCard({
   const chapterTarget = firstSource
     ? formatScanlatorSeriesUrl(firstSource.name, firstSource.url, release.title)
     : latestChapter?.href;
-  const relativeTime = formatReleaseTime(release);
+  const relativeTime = formatReleaseTime(release, cardSource);
   const categoryLabel = release.category?.trim() || 'Manhwa';
   return (
     <article className={`release-card${variant === 'series' ? ' release-card--series' : ''}`}>
@@ -279,8 +284,8 @@ export function LatestReleaseCard({
           {latestChapter ? (
             <a className="release-box release-box--chapter" href={chapterTarget || latestChapter.href} target={firstSource ? '_blank' : undefined} rel={firstSource ? 'noopener noreferrer' : undefined}>
               <div className="release-box-left">
-                <span className="chapter-title">{winningSource?.latestChapterNumber
-                  ? `Chapter ${winningSource.latestChapterNumber.replace(/^ch(?:apter)?\.?\s*/i, '')}`
+                <span className="chapter-title">{cardSource?.latestChapterNumber
+                  ? `Chapter ${cardSource.latestChapterNumber.replace(/^ch(?:apter)?\.?\s*/i, '')}`
                   : latestChapter.title}</span>
               </div>
               <div className="release-box-right">
@@ -307,8 +312,8 @@ export function LatestReleaseCard({
             <div className="release-box release-box--chapter is-empty">
               <div className="release-box-left">
                 <span className="chapter-title">
-                  {winningSource?.latestChapterNumber
-                    ? `Chapter ${winningSource.latestChapterNumber.replace(/^ch(?:apter)?\.?\s*/i, '')}`
+                  {cardSource?.latestChapterNumber
+                    ? `Chapter ${cardSource.latestChapterNumber.replace(/^ch(?:apter)?\.?\s*/i, '')}`
                     : release.facts?.latest_chapter_number
                     ? `Chapter ${release.facts.latest_chapter_number.replace(/^ch(?:apter)?\.?\s*/i, '')}`
                     : 'Chapter 1'}

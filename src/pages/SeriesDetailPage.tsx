@@ -32,7 +32,7 @@ import { useThemeMode } from '../hooks/useThemeMode';
 import { useSeriesDetail } from '../hooks/useSeriesDetail';
 import { DEFAULT_SERIES_PAGE_VISIBILITY, SITE_SETTINGS_UPDATED_EVENT, getCachedSiteSettings, getSiteSettings } from '../lib/siteSettings';
 import { formatScanlatorSeriesUrl } from '../lib/scanlatorLinks';
-import { getWinningChapterSource, releaseTimestamp } from '../lib/sourcePriority';
+import { getEarlyBirdSource, getWinningChapterSource, releaseTimestamp } from '../lib/sourcePriority';
 import { recordRecentlyViewedSeries } from '../lib/recentlyViewedSeries';
 import { recordBookmarkEvent } from '../lib/bookmarkNotifications';
 import {
@@ -1006,12 +1006,16 @@ export default function SeriesDetailPage() {
   };
 
   const firstSource = prioritizedSources.find((source) => source.url.trim());
-  const readChapterSource = winningChapterSource?.url?.trim() ? winningChapterSource : firstSource;
+  const readChapterSource = earlyBirdSource?.url?.trim()
+    ? earlyBirdSource
+    : winningChapterSource?.url?.trim()
+    ? winningChapterSource
+    : firstSource;
   const readChapterHref = readChapterSource
     ? formatScanlatorSeriesUrl(readChapterSource.name, readChapterSource.url, series.title)
     : newestChapter?.href;
-  const chapterLabel = winningChapterSource?.latestChapterNumber
-    ? `Chapter ${winningChapterSource.latestChapterNumber.replace(/^ch(?:apter)?\.?\s*/i, '')}`
+  const chapterLabel = (earlyBirdSource || winningChapterSource)?.latestChapterNumber
+    ? `Chapter ${(earlyBirdSource || winningChapterSource)!.latestChapterNumber!.replace(/^ch(?:apter)?\.?\s*/i, '')}`
     : newestChapter
     ? newestChapter.title
     : (series.facts?.latest_chapter_number ? `Chapter ${series.facts.latest_chapter_number}` : String(series.chapters.length));

@@ -1,5 +1,5 @@
 import { supabase } from './supabase';
-import { getWinningChapterSource } from './sourcePriority';
+import { getEarlyBirdSource, getWinningChapterSource } from './sourcePriority';
 
 export type SeriesChapter = {
   title: string;
@@ -321,9 +321,16 @@ function parseExplicitOrRelativeTimestamp(value?: string | null): number {
 }
 
 export function getSeriesReleaseTimestamp(item: Pick<SeriesRecord, 'sources' | 'facts' | 'chapters' | 'createdAt'>): number {
+  // 1. Early bird source latest chapter timestamp (first to upload the latest chapter)
+  const earlyBirdSource = getEarlyBirdSource(item.sources, item.facts?.latest_source_url || undefined);
+  if (earlyBirdSource?.latestChapterAt) {
+    const ts = parseExplicitOrRelativeTimestamp(earlyBirdSource.latestChapterAt);
+    if (ts > 0) return ts;
+  }
+
   const timestamps: number[] = [];
 
-  // 1. Winning source latest chapter timestamp
+  // Fallback to winning source latest chapter timestamp
   const winningSource = getWinningChapterSource(item.sources, item.facts?.latest_source_url || undefined);
   if (winningSource?.latestChapterAt) {
     const ts = parseExplicitOrRelativeTimestamp(winningSource.latestChapterAt);
@@ -535,7 +542,12 @@ function parseChapterNumber(value?: string | number | null): number {
 // Calculate the canonical latest chapter number that is displayed on the series card
 export function getSeriesChapterCount(item: Pick<SeriesRecord, 'sources' | 'facts' | 'chapters'>): number {
   // Use the exact priority logic as LatestReleaseCard:
-  // 1. Winning source's latest chapter number
+  // 1. Early Bird source's latest chapter number (first to upload the latest chapter)
+  const earlyBird = getEarlyBirdSource(item.sources, item.facts?.latest_source_url || undefined);
+  const earlyBirdNum = parseChapterNumber(earlyBird?.latestChapterNumber);
+  if (earlyBirdNum > 0) return earlyBirdNum;
+
+  // Fallback to winning source
   const winning = getWinningChapterSource(item.sources, item.facts?.latest_source_url || undefined);
   const winningNum = parseChapterNumber(winning?.latestChapterNumber);
   if (winningNum > 0) return winningNum;
