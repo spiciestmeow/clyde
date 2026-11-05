@@ -24,12 +24,6 @@ img {
   user-select: none !important;
 }
 
-/* Ensure child elements like badges remain clickable/on top of shield */
-.release-cover > *:not(img),
-.continue-card__cover > *:not(img) {
-  position: relative;
-  z-index: 2;
-}
 
 /* Ensure the parent link/card receives all clicks normally */
 a:has(> img), a span:has(> img), .release-cover, .series-cover-frame, .continue-card__cover {
@@ -2057,7 +2051,7 @@ html[data-accent-theme="default"] .release-card--series::after { display: none; 
 .release-card--series .chapter-badge.is-new { font-size: var(--series-chapter-size); }
 .release-card--series .chapter-badge.is-free { padding: var(--series-free-padding); font-size: var(--series-free-size); }
 .release-card--series .chapter-badge.is-time { font-size: var(--series-time-size); }
-.release-card--series .release-type { top: 3px; right: 3px; padding: var(--series-type-padding); border-radius: 3px; font-size: var(--series-type-size); font-weight: var(--series-type-weight); box-shadow: none; }
+.release-card--series .release-type { position: absolute; top: 3px; right: 3px; z-index: 2; padding: var(--series-type-padding); border-radius: 3px; font-size: var(--series-type-size); font-weight: var(--series-type-weight); box-shadow: none; }
 .catalog-page .catalog-grid .release-card--series .release-type { padding: 3px 4px; border-radius: 2px; font-size: 8px; }
 .catalog-page .catalog-grid .release-card--series .release-cover-pill.is-views { gap: 2px; padding: 1px 5px; border-width: 1px; font-size: 8px; }
 .catalog-page .catalog-grid .release-card--series .release-cover-pill.is-views svg { width: 10px; height: 10px; }
