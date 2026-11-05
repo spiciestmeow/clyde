@@ -10,9 +10,34 @@ img {
   -webkit-user-drag: none !important;
 }
 
+/* Invisible overlay shield over covers on mobile/desktop so long-press touches the shield instead of img/link */
+.release-cover::after,
+.series-cover-frame::after,
+.continue-card__cover::after,
+.hero-slide-cover::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  pointer-events: auto;
+  -webkit-touch-callout: none !important;
+  -webkit-user-select: none !important;
+  user-select: none !important;
+}
+
+/* Ensure child elements like badges remain clickable/on top of shield */
+.release-cover > *:not(img),
+.series-cover-frame > *:not(img),
+.continue-card__cover > *:not(img) {
+  position: relative;
+  z-index: 2;
+}
+
 /* Ensure the parent link/card receives all clicks normally */
 a:has(> img), a span:has(> img), .release-cover, .series-cover-frame, .continue-card__cover {
-  pointer-events: auto;
+  -webkit-touch-callout: none !important;
+  -webkit-user-select: none !important;
+  user-select: none !important;
 }
 
 @font-face {

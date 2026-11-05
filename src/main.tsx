@@ -7,19 +7,57 @@ import { queryClient } from './lib/queryClient';
 
 import './index.css';
 
-// Prevent right-click and dragging on all images (Anti-save protection)
+// Prevent right-click, dragging, and mobile long-press menus on images
 if (typeof window !== 'undefined') {
+  const isImageOrCover = (target: HTMLElement | null) => {
+    return !!(
+      target &&
+      (target.tagName === 'IMG' ||
+        target.closest('.release-cover') ||
+        target.closest('.series-cover-frame') ||
+        target.closest('.continue-card__cover') ||
+        target.closest('.hero-slide-image'))
+    );
+  };
+
   document.addEventListener('contextmenu', (e) => {
-    const target = e.target as HTMLElement | null;
-    if (target && (target.tagName === 'IMG' || target.closest('.release-cover') || target.closest('.series-cover-frame') || target.closest('.hero-slide-image'))) {
+    if (isImageOrCover(e.target as HTMLElement | null)) {
       e.preventDefault();
     }
   });
 
   document.addEventListener('dragstart', (e) => {
-    const target = e.target as HTMLElement | null;
-    if (target && (target.tagName === 'IMG' || target.closest('.release-cover') || target.closest('.series-cover-frame'))) {
+    if (isImageOrCover(e.target as HTMLElement | null)) {
       e.preventDefault();
+    }
+  });
+
+  // Mobile long-press suppression
+  let touchTimer: number | null = null;
+  document.addEventListener(
+    'touchstart',
+    (e) => {
+      const target = e.target as HTMLElement | null;
+      if (isImageOrCover(target)) {
+        touchTimer = window.setTimeout(() => {
+          // If held long enough to be a context menu trigger on mobile
+        }, 400);
+      }
+    },
+    { passive: true }
+  );
+
+  document.addEventListener('touchend', () => {
+    if (touchTimer) {
+      clearTimeout(touchTimer);
+      touchTimer = null;
+    }
+  });
+
+  document.addEventListener('touchcancel', () => {
+    if (touchTimer) {
+      clearTimeout(touchTimer);
+      touchTimer = null;
     }
   });
 }
