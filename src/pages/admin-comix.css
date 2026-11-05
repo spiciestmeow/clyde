@@ -1299,7 +1299,7 @@
 .comix-login-btn:disabled { opacity: .62; cursor: wait; }
 .comix-login-error { margin-bottom: 16px; padding: 10px 14px; border: 1px solid #7f1d1d; border-radius: 7px; background: #2d1616; color: #f87171; font-size: 12px; }
 
-.comix-login-art { position: relative; min-width: 0; min-height: 100vh; overflow: hidden; border: 8px solid var(--page, #09090b); background: radial-gradient(ellipse at 54% 40%, rgba(var(--accent-rgb, 220 38 38), 0.22) 0, var(--panel-soft, #121216) 54%, var(--page, #09090b) 100%); }
+.comix-login-art { position: relative; min-width: 0; min-height: 100vh; overflow: hidden; background: radial-gradient(ellipse at 54% 40%, rgba(var(--accent-rgb, 220 38 38), 0.22) 0, var(--panel-soft, #121216) 54%, var(--page, #09090b) 100%); }
 .comix-login-collage {
   position: absolute;
   inset: -8% -11%;
