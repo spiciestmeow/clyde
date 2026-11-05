@@ -2228,6 +2228,8 @@ html[data-accent-theme="default"] .release-card--series::after { display: none; 
 
 /* ── Global Header Donate Button ────────────────── */
 .donate-header-btn {
+  position: relative;
+  overflow: visible;
   display: inline-flex;
   align-items: center;
   gap: 6px;
@@ -2252,4 +2254,69 @@ html[data-accent-theme="default"] .release-card--series::after { display: none; 
 
 .donate-header-btn svg {
   color: #ffffff;
+}
+
+/* Pulsing Circle Dot Badge on Donate Button */
+.donate-pulse-badge {
+  position: absolute;
+  top: -2px;
+  right: -2px;
+  width: 10px;
+  height: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+  z-index: 2;
+}
+
+.donate-pulse-ring {
+  position: absolute;
+  inset: -4px;
+  border-radius: 50%;
+  background-color: var(--accent, #ef4444);
+  opacity: 0.65;
+  animation: donatePulsePing 2s cubic-bezier(0, 0, 0.2, 1) infinite;
+  pointer-events: none;
+}
+
+.donate-pulse-dot {
+  position: relative;
+  width: 7.5px;
+  height: 7.5px;
+  border-radius: 50%;
+  background-color: #ffffff;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.25), 0 0 6px rgba(255, 255, 255, 0.8);
+  animation: donateDotPulse 2s ease-in-out infinite;
+}
+
+.mobile-nav-card .donate-pulse-badge.is-mobile {
+  position: relative;
+  top: auto;
+  right: auto;
+  margin-left: auto;
+  margin-right: 6px;
+}
+
+@keyframes donatePulsePing {
+  0% {
+    transform: scale(0.6);
+    opacity: 0.85;
+  }
+  50% {
+    opacity: 0.45;
+  }
+  75%, 100% {
+    transform: scale(2.4);
+    opacity: 0;
+  }
+}
+
+@keyframes donateDotPulse {
+  0%, 100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.15);
+  }
 }

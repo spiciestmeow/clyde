@@ -234,6 +234,10 @@ export default function SiteHeader({
               <Link className="donate-header-btn desktop-only" href="/donate" aria-label="Support us">
                 <Heart size={13} fill="currentColor" />
                 <span>Donate</span>
+                <span className="donate-pulse-badge" aria-hidden="true">
+                  <span className="donate-pulse-ring" />
+                  <span className="donate-pulse-dot" />
+                </span>
               </Link>
             )}
 
@@ -312,6 +316,10 @@ export default function SiteHeader({
                     <Heart size={19} style={{ color: 'var(--accent, #dc2626)' }} />
                     <span>Donate</span>
                   </div>
+                  <span className="donate-pulse-badge is-mobile" aria-hidden="true">
+                    <span className="donate-pulse-ring" />
+                    <span className="donate-pulse-dot" />
+                  </span>
                 </Link>
               )}
 
