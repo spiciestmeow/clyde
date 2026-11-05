@@ -506,23 +506,300 @@ export async function getSeriesBrowseFacets(): Promise<SeriesBrowseFacets> {
   return { genres: [...genres].sort((a, b) => a.localeCompare(b)), categories: [...categories].sort((a, b) => a.localeCompare(b)) };
 }
 
+// Normalise a genre/tag string for case-insensitive comparison.
+// Robust chapter number parser matching the card display
+function parseChapterNumber(value?: string | number | null): number {
+  if (value === null || value === undefined) return 0;
+  if (typeof value === 'number') return Number.isFinite(value) && value > 0 ? value : 0;
+  const str = String(value).trim();
+  if (!str) return 0;
+
+  // 1. Strip leading "Chapter", "Ch.", "Episode", "Ep." and extract leading number
+  const cleaned = str.replace(/^(?:chapter|ch|episode|ep)\.?\s*/i, '').trim();
+  const leadingMatch = cleaned.match(/^(\d+(?:\.\d+)?)/);
+  if (leadingMatch) {
+    const num = Number.parseFloat(leadingMatch[1]);
+    if (Number.isFinite(num)) return num;
+  }
+
+  // 2. Look for explicit "Ch. XX" or "Chapter XX" anywhere in the string
+  const chMatch = str.match(/ch(?:apter)?\.?\s*(\d+(?:\.\d+)?)/i);
+  if (chMatch) {
+    const num = Number.parseFloat(chMatch[1]);
+    if (Number.isFinite(num)) return num;
+  }
+
+  return 0;
+}
+
+// Calculate the canonical latest chapter number that is displayed on the series card
+export function getSeriesChapterCount(item: Pick<SeriesRecord, 'sources' | 'facts' | 'chapters'>): number {
+  // Use the exact priority logic as LatestReleaseCard:
+  // 1. Winning source's latest chapter number
+  const winning = getWinningChapterSource(item.sources, item.facts?.latest_source_url || undefined);
+  const winningNum = parseChapterNumber(winning?.latestChapterNumber);
+  if (winningNum > 0) return winningNum;
+
+  // 2. Facts latest/last chapter number
+  const factNum = parseChapterNumber(item.facts?.latest_chapter_number || item.facts?.last_chapter_number);
+  if (factNum > 0) return factNum;
+
+  // 3. First chapter title (newest chapter)
+  const firstChNum = parseChapterNumber(item.chapters?.[0]?.title);
+  if (firstChNum > 0) return firstChNum;
+
+  // 4. Fallback to length of chapters array
+  return Array.isArray(item.chapters) ? item.chapters.length : 0;
+}
+
+// Normalize a genre or tag string for case and symbol agnostic comparison
+function normalizeGenre(value: string): string {
+  return value.trim().toLocaleLowerCase();
+}
+
+// Identify whether a filter tag represents a 100+ chapter count condition
+function is100PlusChapterTag(genre: string): boolean {
+  const norm = normalizeGenre(genre).replace(/[\s\-_]+/g, '');
+  return (
+    norm === '+100chapter' ||
+    norm === '+100chapters' ||
+    norm === '100+chapter' ||
+    norm === '100+chapters' ||
+    norm === '100+ch' ||
+    norm === '+100ch' ||
+    norm === '100+' ||
+    norm === '+100'
+  );
+}
+
+// Test whether a series matches a given genre filter
+function seriesMatchesGenre(item: SeriesRecord, genre: string): boolean {
+  // If the user selected the "+100 Chapter" tag, it MUST strictly have >= 100 chapters
+  if (is100PlusChapterTag(genre)) {
+    return getSeriesChapterCount(item) >= 100;
+  }
+
+  const norm = normalizeGenre(genre);
+  const cleanNorm = norm.replace(/[\s\-_]+/g, '');
+
+  // Check genres
+  const inGenres = (item.genres ?? []).some((g) => {
+    const gNorm = normalizeGenre(g);
+    return gNorm === norm || gNorm.replace(/[\s\-_]+/g, '') === cleanNorm;
+  });
+  if (inGenres) return true;
+
+  // Check tags
+  const inTags = (item.tags ?? []).some((t) => {
+    const tNorm = normalizeGenre(t);
+    return tNorm === norm || tNorm.replace(/[\s\-_]+/g, '') === cleanNorm;
+  });
+  if (inTags) return true;
+
+  return false;
+}
+
+// Apply all browse filters client-side on a full result set.
+function applyBrowseFiltersClientSide(
+  items: SeriesRecord[],
+  options: SeriesBrowsePageOptions,
+): SeriesRecord[] {
+  const includeGenres = options.includeGenres ?? [];
+  const excludeGenres = options.excludeGenres ?? [];
+  const statusesNorm = (options.statuses ?? []).map((s) => s.trim().toLocaleLowerCase());
+  const categoriesNorm = (options.categories ?? []).map((c) => c.trim().toLocaleLowerCase());
+  const search = options.search?.trim().toLocaleLowerCase() ?? '';
+  const minCh = options.minChapters ?? null;
+  const maxCh = options.maxChapters ?? null;
+  const createdAfterMs = options.createdAfter ? Date.parse(options.createdAfter) : null;
+  const createdBeforeMs = options.createdBefore ? Date.parse(options.createdBefore) : null;
+
+  return items.filter((item) => {
+    // Search in title, slug, alternate titles, author, artist
+    if (search) {
+      const inTitle = item.title.toLocaleLowerCase().includes(search);
+      const inSlug = item.slug.toLocaleLowerCase().includes(search);
+      const inAlt = (item.alternateTitles ?? []).some((t) => t.toLocaleLowerCase().includes(search));
+      const inAuthor = Boolean(item.author && item.author.toLocaleLowerCase().includes(search));
+      const inArtist = Boolean(item.artist && item.artist.toLocaleLowerCase().includes(search));
+      if (!inTitle && !inSlug && !inAlt && !inAuthor && !inArtist) return false;
+    }
+
+    // Status filter
+    if (statusesNorm.length > 0) {
+      const itemStatus = item.status.trim().toLocaleLowerCase();
+      const matches = statusesNorm.some((s) => {
+        if (s === itemStatus) return true;
+        if (s === 'ongoing' && ['ongoing', 'releasing'].includes(itemStatus)) return true;
+        return false;
+      });
+      if (!matches) return false;
+    }
+
+    // Category / type filter
+    if (categoriesNorm.length > 0) {
+      const itemCategory = item.category.trim().toLocaleLowerCase();
+      if (!categoriesNorm.includes(itemCategory)) return false;
+    }
+
+    // Genre include filter — series must match ALL included genres
+    if (includeGenres.length > 0) {
+      const hasAll = includeGenres.every((g) => seriesMatchesGenre(item, g));
+      if (!hasAll) return false;
+    }
+
+    // Genre exclude filter — series must NOT match any excluded genre
+    if (excludeGenres.length > 0) {
+      const hasAny = excludeGenres.some((g) => seriesMatchesGenre(item, g));
+      if (hasAny) return false;
+    }
+
+    // Chapter count filter
+    if (minCh !== null || maxCh !== null) {
+      const count = getSeriesChapterCount(item);
+      if (minCh !== null && count < minCh) return false;
+      if (maxCh !== null && count > maxCh) return false;
+    }
+
+    // Created date filter
+    if (createdAfterMs !== null || createdBeforeMs !== null) {
+      const createdMs = Date.parse(item.createdAt);
+      if (Number.isFinite(createdMs)) {
+        if (createdAfterMs !== null && createdMs < createdAfterMs) return false;
+        if (createdBeforeMs !== null && createdMs > createdBeforeMs) return false;
+      }
+    }
+
+    return true;
+  });
+}
+
+// Sort a filtered result set client-side, mirroring the RPC sort options.
+function sortBrowseResultsClientSide(
+  items: SeriesRecord[],
+  sort: string,
+  direction: 'asc' | 'desc',
+): SeriesRecord[] {
+  const asc = direction === 'asc';
+  return [...items].sort((a, b) => {
+    let cmp = 0;
+    switch (sort) {
+      case 'title':
+        cmp = a.title.localeCompare(b.title);
+        break;
+      case 'popular':
+        cmp = (Number(parseFloat(b.rating ?? '0')) || 0) - (Number(parseFloat(a.rating ?? '0')) || 0);
+        break;
+      case 'newest':
+        cmp = Date.parse(b.createdAt) - Date.parse(a.createdAt);
+        break;
+      case 'oldest':
+        cmp = Date.parse(a.createdAt) - Date.parse(b.createdAt);
+        break;
+      case 'chapters': {
+        cmp = getSeriesChapterCount(b) - getSeriesChapterCount(a);
+        break;
+      }
+      case 'updated':
+      case 'latest':
+      default:
+        cmp = getSeriesReleaseTimestamp(b) - getSeriesReleaseTimestamp(a);
+        break;
+    }
+    return asc && sort !== 'oldest' && sort !== 'newest' ? -cmp : cmp;
+  });
+}
+
 export async function getSeriesBrowsePage(options: SeriesBrowsePageOptions): Promise<{ totalCount: number; items: SeriesRecord[] }> {
   const client = requireSupabase();
-  const { data, error } = await client.rpc('get_series_browse_page', {
-    p_options: {
-      ...options,
-      search: options.search?.trim() ?? '',
-      statuses: options.statuses ?? [],
-      categories: options.categories ?? [],
-      includeGenres: options.includeGenres ?? [],
-      excludeGenres: options.excludeGenres ?? [],
-    },
-  });
+  const includeGenres = options.includeGenres ?? [];
+  const excludeGenres = options.excludeGenres ?? [];
+  const hasGenreFilter = includeGenres.length > 0 || excludeGenres.length > 0;
+  const hasChapterFilter = options.minChapters != null || options.maxChapters != null;
+  const hasCreatedFilter = !!(options.createdAfter || options.createdBefore);
+
+  // When genre, chapter, or date filters are active, run the direct query + client-side filtering.
+  // This guarantees that "+100 Chapter", multi-source chapter checks, and special genre tags work accurately.
+  if (hasGenreFilter || hasChapterFilter || hasCreatedFilter) {
+    let request = client
+      .from('series')
+      .select(
+        'id, slug, title, href, cover, category, rating, status, pinned, chapters, ' +
+        'alternate_titles, synopsis, author, artist, publishers, content_rating, year, ' +
+        'original_language, demographics, genres, formats, tags, trackers, sources, ' +
+        'facts, favorites, views, review_count, page_number, page_order, created_at, updated_at',
+      );
+
+    // Server-side pre-filters to optimize payload
+    if (options.statuses?.length) request = (request as any).in('status', options.statuses);
+    if (options.categories?.length) request = (request as any).in('category', options.categories);
+
+    const searchTerm = options.search?.trim();
+    if (searchTerm) {
+      const escaped = searchTerm.replace(/[\\%_,()]/g, (c) => `\\${c}`);
+      request = (request as any).or(`title.ilike.%${escaped}%,slug.ilike.%${escaped}%`);
+    }
+
+    const { data, error } = await request;
+    if (error) throw error;
+
+    const allItems = (data ?? []).map(toSeriesRecord);
+
+    // Apply accurate client-side filtering
+    let filtered = applyBrowseFiltersClientSide(allItems, options);
+
+    // Sort
+    filtered = sortBrowseResultsClientSide(filtered, options.sort ?? 'latest', options.direction ?? 'desc');
+
+    // Paginate
+    const page = Math.max(1, options.page ?? 1);
+    const pageSize = Math.max(1, options.pageSize ?? 36);
+    const from = (page - 1) * pageSize;
+    const pageItems = filtered.slice(from, from + pageSize);
+
+    return { totalCount: filtered.length, items: pageItems };
+  }
+
+  // Standard browse with no special filters — use RPC
+  try {
+    const { data, error } = await client.rpc('get_series_browse_page', {
+      p_options: {
+        ...options,
+        search: options.search?.trim() ?? '',
+        statuses: options.statuses ?? [],
+        categories: options.categories ?? [],
+        includeGenres: [],
+        excludeGenres: [],
+      },
+    });
+    if (!error && data) {
+      const result = data as { totalCount?: number; items?: unknown[] };
+      return {
+        totalCount: Number(result?.totalCount ?? 0),
+        items: (result?.items ?? []).map(toSeriesRecord),
+      };
+    }
+  } catch {
+    // If RPC fails, fall through to direct query below
+  }
+
+  // Fallback direct query
+  const from = Math.max(0, (options.page - 1) * options.pageSize);
+  const to = from + options.pageSize - 1;
+  const { data, count, error } = await client
+    .from('series')
+    .select(
+      'id, slug, title, href, cover, category, rating, status, pinned, chapters, ' +
+      'alternate_titles, synopsis, author, artist, publishers, content_rating, year, ' +
+      'original_language, demographics, genres, formats, tags, trackers, sources, ' +
+      'facts, favorites, views, review_count, page_number, page_order, created_at, updated_at',
+      { count: 'exact' },
+    )
+    .range(from, to);
   if (error) throw error;
-  const result = data as { totalCount?: number; items?: unknown[] } | null;
   return {
-    totalCount: Number(result?.totalCount ?? 0),
-    items: (result?.items ?? []).map(toSeriesRecord),
+    totalCount: count ?? 0,
+    items: (data ?? []).map(toSeriesRecord),
   };
 }
 
