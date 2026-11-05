@@ -528,6 +528,7 @@ function ComixDashboard({
   const [showSaveConfirm, setShowSaveConfirm] = useState(false);
   const [supporterToDelete, setSupporterToDelete] = useState<DonationSupporter | null>(null);
   const [amountError, setAmountError] = useState('');
+  const [nameError, setNameError] = useState('');
   const [nowTick, setNowTick] = useState(() => Date.now());
 
   // Dynamic live clock ticker so all relative timers advance and move in real time
@@ -814,6 +815,7 @@ function ComixDashboard({
   const openNewSupporterModal = () => {
     const nextNum = getNextAnonymousNumber();
     setAmountError('');
+    setNameError('');
     setSupporterForm({
       isAnonymous: true,
       anonymousNumber: nextNum,
@@ -833,6 +835,7 @@ function ComixDashboard({
 
   const openEditSupporterModal = (s: DonationSupporter) => {
     setAmountError('');
+    setNameError('');
     let timeMode: 'auto' | 'custom' | 'manual' = 'manual';
     let customAmount = 5;
     let customUnit: 'minutes' | 'hours' | 'days' | 'months' | 'years' = 'minutes';
@@ -901,6 +904,13 @@ function ComixDashboard({
   };
 
   const handleSaveSupporterForm = () => {
+    // Validate required actual supporter name if mode is not anonymous
+    if (!supporterForm.isAnonymous && !supporterForm.actualName.trim()) {
+      setNameError('Actual supporter name is required.');
+      return;
+    }
+    setNameError('');
+
     // Validate required donation amount
     const rawAmt = supporterForm.amount.replace(/[^0-9.]/g, '').trim();
     const numAmt = parseFloat(rawAmt);
@@ -2024,6 +2034,7 @@ function ComixDashboard({
                                 className={`supporter-identity-btn ${supporterForm.isAnonymous ? 'is-anonymous' : 'is-anonymous-inactive'}`}
                                 onClick={() => {
                                   const num = supporterForm.anonymousNumber || getNextAnonymousNumber();
+                                  if (nameError) setNameError('');
                                   setSupporterForm({ ...supporterForm, isAnonymous: true, anonymousNumber: num });
                                 }}
                               >
@@ -2065,15 +2076,25 @@ function ComixDashboard({
                           ) : (
                             <div style={{ marginBottom: 16 }}>
                               <label className="supporter-modal-label-sm">
-                                Actual Supporter Name
+                                Actual Supporter Name <span style={{ color: '#ef4444' }}>*</span>
                               </label>
                               <input
                                 type="text"
                                 placeholder="e.g. grazzhella Vicente, Anna domi"
+                                required
                                 value={supporterForm.actualName}
-                                onChange={(e) => setSupporterForm({ ...supporterForm, actualName: e.target.value })}
+                                onChange={(e) => {
+                                  setSupporterForm({ ...supporterForm, actualName: e.target.value });
+                                  if (nameError) setNameError('');
+                                }}
                                 className="supporter-modal-input"
+                                style={{ borderColor: nameError ? '#ef4444' : undefined }}
                               />
+                              {nameError && (
+                                <div style={{ color: '#ef4444', fontSize: 11, marginTop: 4 }}>
+                                  {nameError}
+                                </div>
+                              )}
                             </div>
                           )}
 
