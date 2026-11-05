@@ -724,95 +724,44 @@ function sortBrowseResultsClientSide(
 
 export async function getSeriesBrowsePage(options: SeriesBrowsePageOptions): Promise<{ totalCount: number; items: SeriesRecord[] }> {
   const client = requireSupabase();
-  const includeGenres = options.includeGenres ?? [];
-  const excludeGenres = options.excludeGenres ?? [];
-  const hasGenreFilter = includeGenres.length > 0 || excludeGenres.length > 0;
-  const hasChapterFilter = options.minChapters != null || options.maxChapters != null;
-  const hasCreatedFilter = !!(options.createdAfter || options.createdBefore);
 
-  // When genre, chapter, or date filters are active, run the direct query + client-side filtering.
-  // This guarantees that "+100 Chapter", multi-source chapter checks, and special genre tags work accurately.
-  if (hasGenreFilter || hasChapterFilter || hasCreatedFilter) {
-    let request = client
-      .from('series')
-      .select(
-        'id, slug, title, href, cover, category, rating, status, pinned, chapters, ' +
-        'alternate_titles, synopsis, author, artist, publishers, content_rating, year, ' +
-        'original_language, demographics, genres, formats, tags, trackers, sources, ' +
-        'facts, favorites, views, review_count, page_number, page_order, created_at, updated_at',
-      );
-
-    // Server-side pre-filters to optimize payload
-    if (options.statuses?.length) request = (request as any).in('status', options.statuses);
-    if (options.categories?.length) request = (request as any).in('category', options.categories);
-
-    const searchTerm = options.search?.trim();
-    if (searchTerm) {
-      const escaped = searchTerm.replace(/[\\%_,()]/g, (c) => `\\${c}`);
-      request = (request as any).or(`title.ilike.%${escaped}%,slug.ilike.%${escaped}%`);
-    }
-
-    const { data, error } = await request;
-    if (error) throw error;
-
-    const allItems = (data ?? []).map(toSeriesRecord);
-
-    // Apply accurate client-side filtering
-    let filtered = applyBrowseFiltersClientSide(allItems, options);
-
-    // Sort
-    filtered = sortBrowseResultsClientSide(filtered, options.sort ?? 'latest', options.direction ?? 'desc');
-
-    // Paginate
-    const page = Math.max(1, options.page ?? 1);
-    const pageSize = Math.max(1, options.pageSize ?? 36);
-    const from = (page - 1) * pageSize;
-    const pageItems = filtered.slice(from, from + pageSize);
-
-    return { totalCount: filtered.length, items: pageItems };
-  }
-
-  // Standard browse with no special filters — use RPC
-  try {
-    const { data, error } = await client.rpc('get_series_browse_page', {
-      p_options: {
-        ...options,
-        search: options.search?.trim() ?? '',
-        statuses: options.statuses ?? [],
-        categories: options.categories ?? [],
-        includeGenres: [],
-        excludeGenres: [],
-      },
-    });
-    if (!error && data) {
-      const result = data as { totalCount?: number; items?: unknown[] };
-      return {
-        totalCount: Number(result?.totalCount ?? 0),
-        items: (result?.items ?? []).map(toSeriesRecord),
-      };
-    }
-  } catch {
-    // If RPC fails, fall through to direct query below
-  }
-
-  // Fallback direct query
-  const from = Math.max(0, (options.page - 1) * options.pageSize);
-  const to = from + options.pageSize - 1;
-  const { data, count, error } = await client
+  let request = client
     .from('series')
     .select(
       'id, slug, title, href, cover, category, rating, status, pinned, chapters, ' +
       'alternate_titles, synopsis, author, artist, publishers, content_rating, year, ' +
       'original_language, demographics, genres, formats, tags, trackers, sources, ' +
       'facts, favorites, views, review_count, page_number, page_order, created_at, updated_at',
-      { count: 'exact' },
-    )
-    .range(from, to);
+    );
+
+  // Server-side pre-filters to optimize payload
+  if (options.statuses?.length) request = (request as any).in('status', options.statuses);
+  if (options.categories?.length) request = (request as any).in('category', options.categories);
+
+  const searchTerm = options.search?.trim();
+  if (searchTerm) {
+    const escaped = searchTerm.replace(/[\\%_,()]/g, (c) => `\\${c}`);
+    request = (request as any).or(`title.ilike.%${escaped}%,slug.ilike.%${escaped}%`);
+  }
+
+  const { data, error } = await request;
   if (error) throw error;
-  return {
-    totalCount: count ?? 0,
-    items: (data ?? []).map(toSeriesRecord),
-  };
+
+  const allItems = (data ?? []).map(toSeriesRecord);
+
+  // Apply accurate client-side filtering (genres, tags, chapter count, dates)
+  let filtered = applyBrowseFiltersClientSide(allItems, options);
+
+  // Sort accurately using canonical client-side algorithms (strictly matches displayed card timestamps & chapter numbers)
+  filtered = sortBrowseResultsClientSide(filtered, options.sort ?? 'latest', options.direction ?? 'desc');
+
+  // Paginate
+  const page = Math.max(1, options.page ?? 1);
+  const pageSize = Math.max(1, options.pageSize ?? 36);
+  const from = (page - 1) * pageSize;
+  const pageItems = filtered.slice(from, from + pageSize);
+
+  return { totalCount: filtered.length, items: pageItems };
 }
 
 export type SiteSearchCatalogItem = { title: string; href: string; cover: string; category: string; searchText?: string };
@@ -988,47 +937,13 @@ export async function getSeriesRecommendations(
 }
 
 export async function getHomeLatestReleasePage(page: number, pageSize: number, search = ''): Promise<SeriesCatalogResponse> {
-  try {
-    const rpcResult = await getSeriesBrowsePage({
-      page,
-      pageSize,
-      search,
-      sort: 'latest',
-      direction: 'desc',
-    });
-    if (rpcResult && Array.isArray(rpcResult.items)) {
-      return rpcResult;
-    }
-  } catch (rpcErr) {
-    console.warn('get_series_browse_page RPC failed for home latest releases, falling back to direct query:', rpcErr);
-  }
-
-  const client = requireSupabase();
-  const from = Math.max(0, page - 1) * pageSize;
-  const to = from + pageSize - 1;
-  let request = client
-    .from('series')
-    .select(
-      'id, slug, title, href, cover, category, rating, status, pinned, chapters, ' +
-      'alternate_titles, synopsis, author, artist, publishers, content_rating, year, ' +
-      'original_language, demographics, genres, formats, tags, trackers, sources, ' +
-      'facts, favorites, views, review_count, page_number, page_order, created_at, updated_at',
-      { count: 'exact' },
-    );
-  const normalizedSearch = search.trim();
-  if (normalizedSearch) {
-    const escaped = normalizedSearch.replace(/[\\%_,()]/g, (character) => `\\${character}`);
-    request = request.or(`title.ilike.%${escaped}%,slug.ilike.%${escaped}%`);
-  }
-  const { data, error, count } = await request
-    .order('facts->>last_chapter_added_at', { ascending: false, nullsFirst: false })
-    .order('created_at', { ascending: false })
-    .order('page_number', { ascending: true })
-    .order('page_order', { ascending: true })
-    .order('title', { ascending: true })
-    .range(from, to);
-  if (error) throw error;
-  return { totalCount: count ?? 0, items: (data ?? []).map(toSeriesRecord) };
+  return getSeriesBrowsePage({
+    page,
+    pageSize,
+    search,
+    sort: 'latest',
+    direction: 'desc',
+  });
 }
 
 export async function getSeriesBySlugs(slugs: string[]): Promise<SeriesRecord[]> {
