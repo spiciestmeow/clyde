@@ -1099,14 +1099,19 @@ export function extractChaptersFromHtml(
     }
   }
 
-  // Thunder Scans renders locked chapters as <li data-num="N"> rows. Those
-  // rows have no chapter href, while a separate "New Chapter" link provides
-  // the latest number without its date. Read the chapter number and date from
-  // the same list row so the timestamp is not lost for locked chapters.
-  if (/(^|\.)en-thunderscans\.com$/i.test(parsedUrl.hostname)) {
-    const thunderRowRegex = /<li\b([^>]*)>([\s\S]*?)<\/li>/gi;
+  // Themesia / MangaStream theme (used by Thunder Scans, Madara Scans, etc.)
+  // renders chapter rows as <li data-num="N"> containing .chapternum and .chapterdate.
+  // Locked/coin chapters may use modal triggers without standard hrefs, while a
+  // separate "New Chapter" banner provides the latest number without its date.
+  // Read the chapter number, URL, and date from the list row so timestamps and links
+  // are never lost.
+  if (
+    /(^|\.)(?:en-thunderscans\.com|madarascans\.net)$/i.test(parsedUrl.hostname) ||
+    (cleanHtml.includes('id="chapterlist"') && cleanHtml.includes('chapternum'))
+  ) {
+    const themeRowRegex = /<li\b([^>]*)>([\s\S]*?)<\/li>/gi;
     let rowMatch: RegExpExecArray | null;
-    while ((rowMatch = thunderRowRegex.exec(cleanHtml)) !== null) {
+    while ((rowMatch = themeRowRegex.exec(cleanHtml)) !== null) {
       const attributes = rowMatch[1];
       const rowHtml = rowMatch[2];
       const dataNumMatch = attributes.match(/\bdata-num\s*=\s*["'](\d+(?:\.\d+)?)["']/i);
@@ -1115,17 +1120,24 @@ export function extractChaptersFromHtml(
       const num = parseFloat(dataNumMatch[1]);
       if (Number.isNaN(num) || num < 0 || num >= 5000) continue;
       const ts = extractTimeFromContext(rowHtml, timestampPreference);
+      const hrefMatch = rowHtml.match(/<a\b[^>]*\bhref\s*=\s*["']([^"']+)["']/i);
+      const rowHref = hrefMatch?.[1];
+
       const existing = foundChapters.get(num);
       if (!existing) {
         foundChapters.set(num, {
           number: num,
           title: `Chapter ${dataNumMatch[1]}`,
+          url: rowHref,
           releasedAt: ts ? new Date(ts).toISOString() : undefined,
         });
-      } else if (ts) {
-        const existingTs = existing.releasedAt ? Date.parse(existing.releasedAt) : Number.NaN;
-        if (Number.isNaN(existingTs) || ts > existingTs) {
-          existing.releasedAt = new Date(ts).toISOString();
+      } else {
+        if (!existing.url && rowHref) existing.url = rowHref;
+        if (ts) {
+          const existingTs = existing.releasedAt ? Date.parse(existing.releasedAt) : Number.NaN;
+          if (Number.isNaN(existingTs) || ts > existingTs) {
+            existing.releasedAt = new Date(ts).toISOString();
+          }
         }
       }
     }

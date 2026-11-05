@@ -151,19 +151,11 @@ export default async function handler(
           refreshedSources = (Array.isArray(item.sources) ? item.sources : []).map((source: any) => {
             const scanResult = sourceResultsByUrl.get(typeof source?.url === 'string' ? source.url.trim() : '');
             if (!scanResult) return source;
-            const isWinningSource = typeof source?.url === 'string' && source.url.trim() === latestDirectSourceUrl.trim();
-            const currentSourceAtMs = source?.latestChapterAt ? Date.parse(source.latestChapterAt) : NaN;
-            const newReleaseAtMs = detectedTimestamp || (scanResult.latestChapterAt ? Date.parse(scanResult.latestChapterAt) : NaN);
-            // When already up-to-date, do not push an existing chapter's release time forward into the future
-            const canonicalReleaseAt = !Number.isNaN(currentSourceAtMs) && !Number.isNaN(newReleaseAtMs) && currentNum !== null && detectedChNum === currentNum && newReleaseAtMs > currentSourceAtMs
-              ? source.latestChapterAt
-              : (detectedTimestamp ? new Date(detectedTimestamp).toISOString() : scanResult.latestChapterAt);
 
             return {
               ...source,
-              latestChapterNumber: scanResult.latestChapterNumber,
-              // Keep the winning source aligned with the canonical timestamp
-              latestChapterAt: isWinningSource ? canonicalReleaseAt : (scanResult.latestChapterAt || source?.latestChapterAt),
+              latestChapterNumber: scanResult.latestChapterNumber || source.latestChapterNumber,
+              latestChapterAt: scanResult.latestChapterAt || source.latestChapterAt,
               rating: scanResult.rating || source.rating,
             };
           });
