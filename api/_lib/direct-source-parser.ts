@@ -19,16 +19,19 @@ function parseMonthDayWithoutYear(text: string): number | null {
   const day = Number(match[2]);
   if (month < 0 || day < 1 || day > 31) return null;
 
-  const now = new Date();
-  let date = new Date(now.getFullYear(), month, day);
-  if (date.getMonth() !== month || date.getDate() !== day) return null;
+  const nowUtc = Date.now();
+  const currentYear = new Date().getUTCFullYear();
+  // Use UTC noon so the displayed date matches regardless of server timezone.
+  let utcNoon = Date.UTC(currentYear, month, day, 12, 0, 0);
+  // Reject if Date.UTC rolled over to a different month (e.g. Feb 31 → Mar).
+  if (new Date(utcNoon).getUTCMonth() !== month || new Date(utcNoon).getUTCDate() !== day) return null;
 
   // Yearless calendar labels refer to the latest occurrence of that date.
   // This handles a date near New Year without interpreting it as a future post.
-  if (date.getTime() > now.getTime() + 24 * 60 * 60 * 1000) {
-    date = new Date(now.getFullYear() - 1, month, day);
+  if (utcNoon > nowUtc + 24 * 60 * 60 * 1000) {
+    utcNoon = Date.UTC(currentYear - 1, month, day, 12, 0, 0);
   }
-  return date.getTime();
+  return utcNoon;
 }
 
 /**
@@ -66,7 +69,29 @@ function parseRelativeTime(text: string): number | null {
   const yearlessDate = parseMonthDayWithoutYear(text);
   if (yearlessDate !== null) return yearlessDate;
 
-  // Try standard ISO / date parsing
+  // Parse "Month Day, Year" or "Month Day Year" (e.g. "August 13, 2026") as
+  // UTC noon so the result is day-stable across all server timezones. Using
+  // Date.parse() without an explicit timezone treats the string as local time,
+  // which shifts the UTC timestamp by the server's UTC offset and can cause the
+  // date to be reported one day earlier (e.g. UTC+8 turns "Aug 13" into Aug 12
+  // 16:00 UTC, which displays as "Aug 12" to UTC viewers).
+  const fullDateMatch = text.match(
+    /\b(Jan(?:uary)?|Feb(?:ruary)?|Mar(?:ch)?|Apr(?:il)?|May|Jun(?:e)?|Jul(?:y)?|Aug(?:ust)?|Sep(?:tember)?|Oct(?:ober)?|Nov(?:ember)?|Dec(?:ember)?)\s+(\d{1,2})(?:st|nd|rd|th)?[,]?\s+(\d{4})\b/i,
+  );
+  if (fullDateMatch) {
+    const monthKey = fullDateMatch[1].slice(0, 3).toLowerCase();
+    const monthIndex = ['jan', 'feb', 'mar', 'apr', 'may', 'jun', 'jul', 'aug', 'sep', 'oct', 'nov', 'dec'].indexOf(monthKey);
+    const day = Number(fullDateMatch[2]);
+    const year = Number(fullDateMatch[3]);
+    if (monthIndex >= 0 && day >= 1 && day <= 31 && year >= 2000) {
+      // Use UTC noon (12:00) so the displayed date is correct in any timezone.
+      const utcNoon = Date.UTC(year, monthIndex, day, 12, 0, 0);
+      if (utcNoon <= Date.now() + 86400000) return utcNoon;
+    }
+  }
+
+  // Try standard ISO / date parsing (ISO strings like "2026-08-13T..." include
+  // explicit timezone info so Date.parse handles them correctly).
   const parsed = Date.parse(text);
   if (!Number.isNaN(parsed) && parsed > 946684800000 && parsed <= Date.now() + 86400000) {
     return parsed;
