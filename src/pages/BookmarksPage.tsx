@@ -130,11 +130,21 @@ export default function BookmarksPage() {
     return Array.from(set);
   }, [bookmarks]);
 
-  // Fetch series details from DB for all saved slugs
+  // All recently viewed series slugs in order of most recently visited
+  const continueSlugs = useMemo(() => {
+    return recentlyViewed.map((item) => item.slug).filter(Boolean);
+  }, [recentlyViewed]);
+
+  // All slugs we need to fetch from the DB (bookmarks + recently viewed)
+  const allRequiredSlugs = useMemo(() => {
+    return Array.from(new Set([...allSavedSlugs, ...continueSlugs]));
+  }, [allSavedSlugs, continueSlugs]);
+
+  // Fetch series details from DB for all required slugs
   const { data: allSeries = [], isLoading } = useQuery({
-    queryKey: [...SERIES_CATALOG_QUERY_KEY, 'bookmarks-page', allSavedSlugs],
-    queryFn: () => getSeriesBySlugs(allSavedSlugs),
-    enabled: allSavedSlugs.length > 0,
+    queryKey: [...SERIES_CATALOG_QUERY_KEY, 'bookmarks-page', allRequiredSlugs],
+    queryFn: () => getSeriesBySlugs(allRequiredSlugs),
+    enabled: allRequiredSlugs.length > 0,
     staleTime: 2 * 60 * 1000,
   });
 
@@ -144,12 +154,6 @@ export default function BookmarksPage() {
     allSeries.forEach((s) => map.set(s.slug, s));
     return map;
   }, [allSeries]);
-
-  // Determine which series belong to which tab
-  const continueSlugs = useMemo(() => {
-    const savedSet = new Set(allSavedSlugs);
-    return recentlyViewed.filter((item) => savedSet.has(item.slug)).map((item) => item.slug);
-  }, [allSavedSlugs, recentlyViewed]);
 
   const tabCounts = useMemo(() => {
     let readingCount = 0;
@@ -219,7 +223,11 @@ export default function BookmarksPage() {
           </div>
           <div className="bookmarks-header-text">
             <h1>Bookmarks</h1>
-            <p>{allSavedSlugs.length} {allSavedSlugs.length === 1 ? 'series' : 'series'} saved</p>
+            <p>
+              {activeTab === 'continue'
+                ? `${continueSlugs.length} recently viewed ${continueSlugs.length === 1 ? 'series' : 'series'}`
+                : `${allSavedSlugs.length} ${allSavedSlugs.length === 1 ? 'series' : 'series'} saved`}
+            </p>
           </div>
         </div>
 
@@ -275,12 +283,16 @@ export default function BookmarksPage() {
             <h3>
               {activeTab === 'all'
                 ? 'No bookmarks yet'
-                : `No series in "${TABS.find((t) => t.id === activeTab)?.label}"`}
+                : activeTab === 'continue'
+                  ? 'No recently viewed series'
+                  : `No series in "${TABS.find((t) => t.id === activeTab)?.label}"`}
             </h3>
             <p>
               {activeTab === 'all'
                 ? 'Explore our catalogue and bookmark titles you want to track!'
-                : 'Choose this status when bookmarking series on their details page to organize your reading list.'}
+                : activeTab === 'continue'
+                  ? 'Read any series and it will automatically appear here so you can easily continue reading.'
+                  : 'Choose this status when bookmarking series on their details page to organize your reading list.'}
             </p>
             <Link className="bookmarks-browse-btn" href="/series">
               Browse Series

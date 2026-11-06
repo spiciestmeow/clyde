@@ -2,7 +2,7 @@ export type RecentlyViewedSeries = { slug: string; viewedAt: number };
 
 export const RECENTLY_VIEWED_SERIES_KEY = 'vortex-recently-viewed-series';
 export const RECENTLY_VIEWED_SERIES_UPDATED_EVENT = 'vortex-recently-viewed-series-updated';
-const MAX_RECENT_SERIES = 12;
+const MAX_RECENT_SERIES = 36;
 
 export function readRecentlyViewedSeries(): RecentlyViewedSeries[] {
   try {
