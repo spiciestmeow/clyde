@@ -1014,7 +1014,8 @@
 
 .notification-center--page {
   width: min(1320px, 100%);
-  min-height: calc(100vh - 104px);
+  /* No forced min-height: the sidebar is fixed now, so an empty list shouldn't add scroll space above the footer. */
+  min-height: 0;
   margin: 0 auto;
   padding: 22px 24px 30px;
   display: grid;
@@ -1080,7 +1081,7 @@
   z-index: auto;
   width: 100%;
   max-height: none;
-  min-height: 460px;
+  min-height: 0;
   overflow: visible;
   border: 0;
   border-radius: 0;
@@ -1197,7 +1198,7 @@
 }
 .notification-panel--page .notification-filters { display: none; }
 .notification-panel--page .notification-list { overflow: visible; }
-.notification-panel--page .notification-empty { min-height: 310px; }
+.notification-panel--page .notification-empty { min-height: 260px; }
 .notification-panel--page .notification-empty__icon { width: 64px; height: 64px; }
 .notification-panel--page .notification-empty__title { font-size: 16px; font-weight: 600; }
 .notification-panel--page .notification-empty__subtitle { font-size: 14px; }
@@ -1208,6 +1209,14 @@
   position: relative;
   z-index: 2;
   background: var(--page);
+}
+
+/* Remove the vertical side lines around the footer card on this page only. */
+.vortex-page.notifications-route .notifications-route__footer,
+.vortex-page.notifications-route .notifications-route__footer .footer-inner {
+  border-left: 0;
+  border-right: 0;
+  box-shadow: none;
 }
 
 @media (max-width: 680px) {
