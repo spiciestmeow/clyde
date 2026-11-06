@@ -482,6 +482,16 @@
   animation: notification-spin .65s linear infinite;
 }
 
+.notification-end-label {
+  width: 100%;
+  text-align: center;
+  padding: 24px 16px 28px;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--muted, #8a837c);
+  user-select: none;
+}
+
 .notification-item {
   width: 100%;
   min-height: 82px;

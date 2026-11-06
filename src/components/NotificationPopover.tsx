@@ -787,6 +787,11 @@ export default function NotificationPopover({ mode = 'popover' }: NotificationPo
                     )}
                   </div>
                 )}
+                {visibleItems.length > 0 && !hasOlder && (
+                  <div className="notification-end-label">
+                    End of notifications
+                  </div>
+                )}
                 {!visibleItems.length && (
                   <div className="notification-empty">
                     <span className="notification-empty__icon" aria-hidden="true">
