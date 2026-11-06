@@ -14,7 +14,7 @@ declare global {
 
 export type InstallResult = {
   success: boolean;
-  method: 'native' | 'manual';
+  method: 'native' | 'manual' | 'reload';
 };
 
 export function usePwaInstall() {
@@ -80,14 +80,21 @@ export function usePwaInstall() {
   }, []);
 
   const triggerInstall = async (mode: 'standalone' | 'fullscreen' = 'standalone'): Promise<InstallResult> => {
-    if (mode === 'fullscreen') {
-      try {
-        localStorage.setItem('clydee-pwa-fullscreen', 'true');
-        if (typeof document !== 'undefined' && !document.fullscreenElement && document.documentElement.requestFullscreen) {
-          void document.documentElement.requestFullscreen();
+    // Each mode has its own manifest, chosen in index.html from the ?mode= query param.
+    // If the page was loaded for the other mode, reload into the right one first so the
+    // browser picks up that manifest and its install prompt.
+    if (typeof window !== 'undefined') {
+      const currentMode =
+        new URLSearchParams(window.location.search).get('mode') === 'fullscreen' ? 'fullscreen' : 'standalone';
+      if (currentMode !== mode) {
+        const url = new URL(window.location.href);
+        if (mode === 'fullscreen') {
+          url.searchParams.set('mode', 'fullscreen');
+        } else {
+          url.searchParams.delete('mode');
         }
-      } catch {
-        // Fullscreen may require explicit user gesture
+        window.location.replace(url.toString());
+        return { success: false, method: 'reload' };
       }
     }
 

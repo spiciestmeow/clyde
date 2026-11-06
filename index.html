@@ -20,6 +20,19 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
     <meta name="apple-mobile-web-app-title" content="Clydee" />
     <link rel="apple-touch-icon" href="/pwa-192x192.png" />
+    <script>
+      // Pick the web app manifest for the install mode. Each mode has its own manifest
+      // (display + app id), so the page is loaded with ?mode=fullscreen to install that one.
+      // The installed fullscreen app starts at ?mode=pwa-fullscreen, so it keeps its own manifest too.
+      (function () {
+        var m = new URLSearchParams(location.search).get('mode');
+        var fullscreen = m === 'fullscreen' || m === 'pwa-fullscreen';
+        var link = document.createElement('link');
+        link.rel = 'manifest';
+        link.href = fullscreen ? '/pwa/manifest.fullscreen.json' : '/pwa/manifest.json';
+        document.head.appendChild(link);
+      })();
+    </script>
     <!-- /PWA -->
     <script>
       // Capture PWA install prompt as early as possible so it is never missed

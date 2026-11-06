@@ -1,9 +1,7 @@
 import { useState } from 'react';
 import {
   Check,
-  Download,
   ExternalLink,
-  Maximize2,
   PlusSquare,
   Share,
   Sparkles,
@@ -30,6 +28,10 @@ export default function InstallPwaPage() {
   const trendingItems = toTrendingSiteSearchItems(catalogQuery.items);
 
   const { canInstall, isInstalled, platform, triggerInstall } = usePwaInstall();
+  const currentMode: 'standalone' | 'fullscreen' =
+    typeof window !== 'undefined' && new URLSearchParams(window.location.search).get('mode') === 'fullscreen'
+      ? 'fullscreen'
+      : 'standalone';
   const [installedSuccess, setInstalledSuccess] = useState(false);
   const [showManualModal, setShowManualModal] = useState(false);
 
@@ -118,9 +120,8 @@ export default function InstallPwaPage() {
             >
               <div className="install-pwa-action-card-text">
                 <span className="install-pwa-action-card-title">Install Include UI</span>
-                <span className="install-pwa-action-card-desc">Include other UI elements such as a status bar.</span>
+                <span className="install-pwa-action-card-desc">Include other UI elements such as a status bar.{currentMode !== 'standalone' ? ' (page will reload to switch mode)' : ''}</span>
               </div>
-              <Download size={20} className="install-pwa-action-card-icon" />
             </button>
 
             <div className="install-pwa-or-divider" aria-hidden="true">
@@ -134,9 +135,8 @@ export default function InstallPwaPage() {
             >
               <div className="install-pwa-action-card-text">
                 <span className="install-pwa-action-card-title">Install Fullscreen</span>
-                <span className="install-pwa-action-card-desc">All of the available display area is used. (page will reload to switch mode)</span>
+                <span className="install-pwa-action-card-desc">All of the available display area is used.{currentMode !== 'fullscreen' ? ' (page will reload to switch mode)' : ''}</span>
               </div>
-              <Maximize2 size={20} className="install-pwa-action-card-icon" />
             </button>
           </div>
 

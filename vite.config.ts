@@ -251,43 +251,9 @@ export default defineConfig(({ mode }) => {
       VitePWA({
         registerType: 'autoUpdate',
         includeAssets: ['clydee-logo.png', 'favicon.svg', 'robots.txt', 'nocover.jpg'],
-        manifest: {
-          name: 'Clydee',
-          short_name: 'Clydee',
-          description: 'Read comics, manga, manhua, and manhwa translated swiftly on Clydee.',
-          theme_color: '#09090b',
-          background_color: '#09090b',
-          display: 'standalone',
-          scope: '/',
-          start_url: '/',
-          orientation: 'portrait-primary',
-          icons: [
-            {
-              src: '/pwa-192x192.png',
-              sizes: '192x192',
-              type: 'image/png',
-              purpose: 'any',
-            },
-            {
-              src: '/pwa-192x192.png',
-              sizes: '192x192',
-              type: 'image/png',
-              purpose: 'maskable',
-            },
-            {
-              src: '/pwa-512x512.png',
-              sizes: '512x512',
-              type: 'image/png',
-              purpose: 'any',
-            },
-            {
-              src: '/pwa-512x512.png',
-              sizes: '512x512',
-              type: 'image/png',
-              purpose: 'maskable',
-            },
-          ],
-        },
+        // Manifests are static files in /public/pwa (standalone + fullscreen).
+        // index.html picks which one to link based on the ?mode= query param.
+        manifest: false,
         workbox: {
           // Cache static assets (JS, CSS, fonts, images) with cache-first
           // Exclude large assets (logo, seasonal images) from precache - they're served normally
