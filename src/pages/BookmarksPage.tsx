@@ -27,6 +27,7 @@ import {
   type SeriesRecord,
 } from '../lib/seriesCatalog';
 import { readRecentlyViewedSeries } from '../lib/recentlyViewedSeries';
+import { getEarlyBirdSource, getWinningChapterSource } from '../lib/sourcePriority';
 import { useThemeMode } from '../hooks/useThemeMode';
 import assetReferences from '../../clone-data/asset-references.json';
 import type { BookmarkType } from './SeriesDetailPage';
@@ -58,7 +59,8 @@ function formatViewedTime(timestamp: number): string {
   const elapsedHours = Math.floor(elapsedMinutes / 60);
   if (elapsedHours < 24) return `${elapsedHours}h ago`;
   const elapsedDays = Math.floor(elapsedHours / 24);
-  return `${elapsedDays}d ago`;
+  if (elapsedDays < 7) return `${elapsedDays}d ago`;
+  return new Date(timestamp).toLocaleDateString();
 }
 
 function readRawBookmarks(): string[] {
@@ -207,12 +209,16 @@ export default function BookmarksPage() {
       .filter((s): s is SeriesRecord => Boolean(s));
   }, [activeTab, allSavedSlugs, bookmarkTypes, seriesBySlug]);
 
-  // Prepare Recent Viewed poster cards
+  // Prepare Recent Viewed poster cards matching homepage source priority and chapter resolution
   const recentViewedCards = useMemo(() => {
     return recentlyViewed.flatMap((recent) => {
       const series = seriesBySlug.get(recent.slug);
       if (!series) return [];
-      const latestChapter = series.chapters[0]?.title || (series.facts?.latest_chapter_number ? `Chapter ${series.facts.latest_chapter_number}` : 'Chapter 1');
+      const earlyBird = getEarlyBirdSource(series.sources, series.facts?.latest_source_url || undefined);
+      const winningSource = earlyBird || getWinningChapterSource(series.sources, series.facts?.latest_source_url || undefined);
+      const latestChapter = winningSource?.latestChapterNumber
+        ? `Chapter ${winningSource.latestChapterNumber.replace(/^ch(?:apter)?\.?\s*/i, '')}`
+        : series.chapters[0]?.title || (series.facts?.latest_chapter_number ? `Chapter ${series.facts.latest_chapter_number}` : 'Latest chapter unavailable');
       return [{
         slug: series.slug,
         title: series.title,
