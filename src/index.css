@@ -691,10 +691,16 @@ html[data-accent-theme="default"] .hero-spider { display: none; }
 }
 
 .issue-banner-left {
-  display: flex;
+  display: none;
   align-items: center;
-  gap: 16px;
+  gap: 12px;
   min-width: 0;
+}
+
+@media (min-width: 640px) {
+  .issue-banner-left {
+    display: flex;
+  }
 }
 
 .issue-banner-accent {
