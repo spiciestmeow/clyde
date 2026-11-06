@@ -325,7 +325,7 @@ export default function SeriesDetailPage() {
   const [bookmarkTypes, setBookmarkTypes] = useState<Record<string, BookmarkType>>(readBookmarkTypes);
   const bookmarkButtonRef = useRef<HTMLButtonElement>(null);
   const bookmarkDropdownMenuRef = useRef<HTMLDivElement>(null);
-  const [dropdownPosition, setDropdownPosition] = useState<{ top: number; right: number; width: number }>({ top: 0, right: 0, width: 185 });
+  const [dropdownPosition, setDropdownPosition] = useState<{ top: number; left: number; width: number }>({ top: 0, left: 0, width: 185 });
   const [siteSettings, setSiteSettings] = useState(() => getCachedSiteSettings());
   const [seriesPageVisibility, setSeriesPageVisibility] = useState(
     () => getCachedSiteSettings()?.seriesPage ?? DEFAULT_SERIES_PAGE_VISIBILITY,
@@ -693,9 +693,10 @@ export default function SeriesDetailPage() {
     const rect = bookmarkButtonRef.current.getBoundingClientRect();
     const isMobile = typeof window !== 'undefined' && window.innerWidth <= 600;
     const dropdownWidth = isMobile ? Math.min(260, window.innerWidth - 32) : 185;
-    const right = Math.max(8, window.innerWidth - rect.right);
+    // Align right edge of dropdown exactly with right edge of the button
+    const left = Math.max(8, rect.right - dropdownWidth);
     const top = rect.bottom + 6;
-    setDropdownPosition({ top, right, width: dropdownWidth });
+    setDropdownPosition({ top, left, width: dropdownWidth });
   }, []);
 
   const handleBookmarkButtonClick = () => {
@@ -1237,7 +1238,7 @@ export default function SeriesDetailPage() {
                 disabled={bookmarkBusy}
                 data-testid="button-bookmark-series"
               >
-                {bookmarked ? <Check size={15} /> : <Bookmark size={15} />}
+                <Bookmark size={15} fill="currentColor" />
                 {bookmarked
                   ? (currentBookmarkType ? (BOOKMARK_OPTIONS.find((o) => o.id === currentBookmarkType)?.buttonLabel ?? 'Bookmarked') : 'Bookmarked')
                   : 'Bookmark'}
@@ -1249,7 +1250,7 @@ export default function SeriesDetailPage() {
                   role="menu"
                   style={{
                     top: `${dropdownPosition.top}px`,
-                    right: `${dropdownPosition.right}px`,
+                    left: `${dropdownPosition.left}px`,
                     width: `${dropdownPosition.width}px`,
                   }}
                 >
