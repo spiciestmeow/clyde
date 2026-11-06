@@ -121,7 +121,7 @@
   background: var(--panel, #ffffff);
   color: var(--text, #374151);
   font-size: 12px;
-  font-weight: 600;
+  font-weight: 400;
   text-decoration: none;
   transition: all 0.15s ease;
   white-space: nowrap;
