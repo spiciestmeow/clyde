@@ -2,15 +2,13 @@ import { useState } from 'react';
 import { Link } from 'wouter';
 import {
   Check,
-  ChevronRight,
   Download,
   ExternalLink,
-  Laptop,
   Maximize2,
   PlusSquare,
   Share,
-  Smartphone,
   Sparkles,
+  X,
 } from 'lucide-react';
 import SiteFooter from '../components/SiteFooter';
 import SiteHeader from '../components/SiteHeader';
@@ -34,11 +32,14 @@ export default function InstallPwaPage() {
 
   const { canInstall, isInstalled, platform, triggerInstall } = usePwaInstall();
   const [installedSuccess, setInstalledSuccess] = useState(false);
+  const [showManualModal, setShowManualModal] = useState(false);
 
   const handleInstallClick = async (mode: 'standalone' | 'fullscreen') => {
-    const success = await triggerInstall(mode);
-    if (success) {
+    const result = await triggerInstall(mode);
+    if (result.success) {
       setInstalledSuccess(true);
+    } else if (result.method === 'manual') {
+      setShowManualModal(true);
     }
   };
 
@@ -204,15 +205,15 @@ export default function InstallPwaPage() {
           </div>
 
           <div className="install-pwa-tip-box">
-            <strong>Android Tip:</strong> If the button doesn't open the install prompt, tap the Chrome menu (<strong>⋮</strong>) in the top-right and choose <strong>"Install app"</strong> or <strong>"Add to Home screen"</strong>.
+            <strong>Android Tip:</strong> If your browser hasn't prompted yet, tap the browser menu (<strong>⋮</strong>) in the top-right and choose <strong>"Install app"</strong> or <strong>"Add to Home screen"</strong>.
           </div>
         </section>
 
         {/* iOS Section */}
         <section className="install-pwa-section" aria-labelledby="section-ios">
           <div className="install-pwa-section-header">
-            <h2 id="section-ios" className="install-pwa-section-title">iOS (iPhone & iPad)</h2>
-            <p className="install-pwa-section-sub">Install directly via Safari in 4 quick steps.</p>
+            <h2 id="section-ios" className="install-pwa-section-title">iOS / iPadOS</h2>
+            <p className="install-pwa-section-sub">Safari and most other iOS browsers.</p>
           </div>
 
           <ol className="install-pwa-steps-list">
@@ -220,7 +221,7 @@ export default function InstallPwaPage() {
               <span className="install-pwa-step-num">1</span>
               <div className="install-pwa-step-content">
                 <strong>Open in Safari</strong>
-                <span>Open Clydee in the Safari browser on your iPhone or iPad.</span>
+                <span>Open Clydee in Safari on your iPhone or iPad.</span>
               </div>
               <ExternalLink size={18} className="install-pwa-step-icon" />
             </li>
@@ -253,31 +254,64 @@ export default function InstallPwaPage() {
             </li>
           </ol>
         </section>
-
-        {/* Desktop Section */}
-        <section className="install-pwa-section" aria-labelledby="section-desktop">
-          <div className="install-pwa-section-header">
-            <h2 id="section-desktop" className="install-pwa-section-title">Desktop (Windows, macOS, Linux)</h2>
-            <p className="install-pwa-section-sub">Experience Clydee in a clean, standalone desktop window.</p>
-          </div>
-
-          <button
-            type="button"
-            className="install-pwa-action-card"
-            onClick={() => void handleInstallClick('standalone')}
-          >
-            <div className="install-pwa-action-card-text">
-              <span className="install-pwa-action-card-title">Install on Desktop</span>
-              <span className="install-pwa-action-card-desc">Install Clydee as an app for Chrome, Edge, Brave, or Opera.</span>
-            </div>
-            <Laptop size={20} className="install-pwa-action-card-icon" />
-          </button>
-
-          <div className="install-pwa-tip-box">
-            <strong>Desktop Shortcut:</strong> Look for the <strong>Install icon</strong> in your browser's address bar (on the right side of the URL), or click the browser menu (<strong>⋮</strong>) &rarr; <strong>"Install Clydee"</strong>.
-          </div>
-        </section>
       </main>
+
+      {/* Manual Fallback Modal if browser didn't supply direct beforeinstallprompt */}
+      {showManualModal && (
+        <div className="install-pwa-modal-backdrop" onClick={() => setShowManualModal(false)}>
+          <div className="install-pwa-modal" onClick={(e) => e.stopPropagation()} role="dialog" aria-modal="true">
+            <div className="install-pwa-modal-header">
+              <div className="install-pwa-modal-icon">
+                <img src="/pwa-192x192.png" alt="Clydee" width={48} height={48} />
+              </div>
+              <div className="install-pwa-modal-title-group">
+                <h3>Install Clydee App</h3>
+                <p>clydee</p>
+              </div>
+              <button
+                type="button"
+                className="install-pwa-modal-close"
+                onClick={() => setShowManualModal(false)}
+                aria-label="Close"
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            <div className="install-pwa-modal-body">
+              {platform === 'ios' ? (
+                <div className="install-pwa-modal-instructions">
+                  <p>To install on <strong>iOS (Safari)</strong>:</p>
+                  <ol>
+                    <li>Tap the <strong>Share</strong> button (box with arrow) at the bottom of Safari.</li>
+                    <li>Scroll down and tap <strong>"Add to Home Screen"</strong>.</li>
+                    <li>Tap <strong>Add</strong> in the top-right.</li>
+                  </ol>
+                </div>
+              ) : (
+                <div className="install-pwa-modal-instructions">
+                  <p>Your browser requires 1 quick manual tap to complete installation:</p>
+                  <ol>
+                    <li>Click or tap the <strong>Menu (⋮)</strong> in your browser bar (or the <strong>install icon</strong> on the right of the URL bar).</li>
+                    <li>Select <strong>"Install app"</strong> or <strong>"Add to Home screen"</strong>.</li>
+                    <li>Confirm by clicking <strong>Install</strong>.</li>
+                  </ol>
+                </div>
+              )}
+            </div>
+
+            <div className="install-pwa-modal-footer">
+              <button
+                type="button"
+                className="install-pwa-modal-btn"
+                onClick={() => setShowManualModal(false)}
+              >
+                Got it
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       <SiteFooter
         className="footer install-pwa-footer"

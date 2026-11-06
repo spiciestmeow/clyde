@@ -21,6 +21,19 @@
     <meta name="apple-mobile-web-app-title" content="Clydee" />
     <link rel="apple-touch-icon" href="/pwa-192x192.png" />
     <!-- /PWA -->
+    <script>
+      // Capture PWA install prompt as early as possible so it is never missed
+      window.deferredPwaPrompt = null;
+      window.addEventListener('beforeinstallprompt', function (e) {
+        e.preventDefault();
+        window.deferredPwaPrompt = e;
+        window.dispatchEvent(new Event('clydee-pwa-prompt-available'));
+      });
+      window.addEventListener('appinstalled', function () {
+        window.deferredPwaPrompt = null;
+        window.dispatchEvent(new Event('clydee-pwa-installed'));
+      });
+    </script>
     <link rel="icon" type="image/png" href="/clydee-logo.png" />
     <title>Clydee</title>
     <script>

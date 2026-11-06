@@ -263,16 +263,28 @@ export default defineConfig(({ mode }) => {
           orientation: 'portrait-primary',
           icons: [
             {
-              src: 'pwa-192x192.png',
+              src: '/pwa-192x192.png',
               sizes: '192x192',
               type: 'image/png',
               purpose: 'any',
             },
             {
-              src: 'pwa-512x512.png',
+              src: '/pwa-192x192.png',
+              sizes: '192x192',
+              type: 'image/png',
+              purpose: 'maskable',
+            },
+            {
+              src: '/pwa-512x512.png',
               sizes: '512x512',
               type: 'image/png',
-              purpose: 'any maskable',
+              purpose: 'any',
+            },
+            {
+              src: '/pwa-512x512.png',
+              sizes: '512x512',
+              type: 'image/png',
+              purpose: 'maskable',
             },
           ],
         },
@@ -329,7 +341,7 @@ export default defineConfig(({ mode }) => {
         },
         devOptions: {
           // Enable PWA in dev mode for testing
-          enabled: false,
+          enabled: true,
           type: 'module',
         },
       }),

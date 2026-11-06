@@ -1,46 +1,63 @@
 import { useEffect, useState } from 'react';
 
-// Store deferred beforeinstallprompt across the app
-interface BeforeInstallPromptEvent extends Event {
-  readonly platforms: string[];
-  readonly userChoice: Promise<{
-    outcome: 'accepted' | 'dismissed';
-    platform: string;
-  }>;
-  prompt(): Promise<void>;
+declare global {
+  interface Window {
+    deferredPwaPrompt?: {
+      prompt(): Promise<void>;
+      userChoice: Promise<{
+        outcome: 'accepted' | 'dismissed';
+        platform: string;
+      }>;
+    } | null;
+  }
 }
 
-let deferredPrompt: BeforeInstallPromptEvent | null = null;
-const promptListeners = new Set<() => void>();
-
-if (typeof window !== 'undefined') {
-  window.addEventListener('beforeinstallprompt', (e) => {
-    e.preventDefault();
-    deferredPrompt = e as BeforeInstallPromptEvent;
-    promptListeners.forEach((listener) => listener());
-  });
-
-  window.addEventListener('appinstalled', () => {
-    deferredPrompt = null;
-    promptListeners.forEach((listener) => listener());
-  });
-}
+export type InstallResult = {
+  success: boolean;
+  method: 'native' | 'manual';
+};
 
 export function usePwaInstall() {
-  const [canInstall, setCanInstall] = useState<boolean>(() => Boolean(deferredPrompt));
+  const [canInstall, setCanInstall] = useState<boolean>(() => {
+    return typeof window !== 'undefined' && Boolean(window.deferredPwaPrompt);
+  });
   const [isInstalled, setIsInstalled] = useState<boolean>(false);
   const [platform, setPlatform] = useState<'ios' | 'android' | 'desktop'>('desktop');
 
   useEffect(() => {
-    const handlePromptChange = () => {
-      setCanInstall(Boolean(deferredPrompt));
+    const checkPrompt = () => {
+      if (typeof window !== 'undefined') {
+        setCanInstall(Boolean(window.deferredPwaPrompt));
+      }
     };
 
-    promptListeners.add(handlePromptChange);
+    checkPrompt();
+
+    const onPrompt = (e: Event) => {
+      e.preventDefault();
+      window.deferredPwaPrompt = e as unknown as Window['deferredPwaPrompt'];
+      setCanInstall(true);
+    };
+
+    const onPromptAvailable = () => {
+      setCanInstall(true);
+    };
+
+    const onAppInstalled = () => {
+      window.deferredPwaPrompt = null;
+      setCanInstall(false);
+      setIsInstalled(true);
+    };
+
+    window.addEventListener('beforeinstallprompt', onPrompt);
+    window.addEventListener('clydee-pwa-prompt-available', onPromptAvailable);
+    window.addEventListener('clydee-pwa-installed', onAppInstalled);
+    window.addEventListener('appinstalled', onAppInstalled);
 
     // Check if running in standalone mode (already installed)
     const isStandalone =
       window.matchMedia('(display-mode: standalone)').matches ||
+      window.matchMedia('(display-mode: fullscreen)').matches ||
       Boolean((navigator as unknown as { standalone?: boolean }).standalone);
     setIsInstalled(isStandalone);
 
@@ -55,37 +72,44 @@ export function usePwaInstall() {
     }
 
     return () => {
-      promptListeners.delete(handlePromptChange);
+      window.removeEventListener('beforeinstallprompt', onPrompt);
+      window.removeEventListener('clydee-pwa-prompt-available', onPromptAvailable);
+      window.removeEventListener('clydee-pwa-installed', onAppInstalled);
+      window.removeEventListener('appinstalled', onAppInstalled);
     };
   }, []);
 
-  const triggerInstall = async (mode: 'standalone' | 'fullscreen' = 'standalone'): Promise<boolean> => {
-    if (mode === 'fullscreen' && typeof document !== 'undefined') {
+  const triggerInstall = async (mode: 'standalone' | 'fullscreen' = 'standalone'): Promise<InstallResult> => {
+    if (mode === 'fullscreen') {
       try {
-        if (!document.fullscreenElement && document.documentElement.requestFullscreen) {
+        localStorage.setItem('clydee-pwa-fullscreen', 'true');
+        if (typeof document !== 'undefined' && !document.fullscreenElement && document.documentElement.requestFullscreen) {
           void document.documentElement.requestFullscreen();
         }
       } catch {
-        // Fullscreen request may require user gesture
+        // Fullscreen may require explicit user gesture
       }
     }
 
-    if (!deferredPrompt) {
-      return false;
+    const promptEvent = typeof window !== 'undefined' ? window.deferredPwaPrompt : null;
+    if (promptEvent && typeof promptEvent.prompt === 'function') {
+      try {
+        await promptEvent.prompt();
+        const choice = await promptEvent.userChoice;
+        if (choice && choice.outcome === 'accepted') {
+          window.deferredPwaPrompt = null;
+          setCanInstall(false);
+          setIsInstalled(true);
+          return { success: true, method: 'native' };
+        }
+        return { success: false, method: 'native' };
+      } catch (err) {
+        console.warn('Native install prompt error:', err);
+      }
     }
 
-    try {
-      await deferredPrompt.prompt();
-      const choice = await deferredPrompt.userChoice;
-      if (choice.outcome === 'accepted') {
-        deferredPrompt = null;
-        setCanInstall(false);
-        return true;
-      }
-    } catch (err) {
-      console.warn('Install prompt failed:', err);
-    }
-    return false;
+    // Native beforeinstallprompt is not directly available (e.g. already triggered, iOS, or requires browser menu)
+    return { success: false, method: 'manual' };
   };
 
   return {
