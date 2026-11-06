@@ -999,6 +999,13 @@
   flex-direction: column;
 }
 
+/* .vortex-page uses overflow:hidden, which blocks position:sticky for descendants.
+   `clip` still prevents horizontal overflow but keeps sticky working on this route. */
+.vortex-page.notifications-route {
+  overflow-x: clip;
+  overflow-y: visible;
+}
+
 .notifications-route__main {
   width: 100%;
   flex: 1 0 auto;
@@ -1018,6 +1025,14 @@
 }
 
 .notification-page-sidebar {
+  /* Fixed to the screen so it never moves, even when the list ends. It sits at its natural spot:
+     60px header + 22px page padding from the top, and the left edge of the centered 1320px layout + 24px padding. */
+  position: fixed;
+  z-index: 1;
+  top: 82px;
+  left: calc((100% - min(1320px, 100%)) / 2 + 24px);
+  width: 280px;
+  height: calc(100dvh - 82px - 16px);
   min-height: 0;
   padding: 0 0 14px;
   display: flex;
@@ -1059,6 +1074,8 @@
 }
 
 .notification-panel--page {
+  /* The sidebar is fixed (out of the grid flow), so keep the list in the second column. */
+  grid-column: 2;
   position: static;
   z-index: auto;
   width: 100%;
@@ -1185,7 +1202,13 @@
 .notification-panel--page .notification-empty__title { font-size: 16px; font-weight: 600; }
 .notification-panel--page .notification-empty__subtitle { font-size: 14px; }
 
-.notifications-route__footer { margin-top: auto; }
+.notifications-route__footer {
+  margin-top: auto;
+  /* Sit above the fixed sidebar so the footer slides over it on narrow desktop widths. */
+  position: relative;
+  z-index: 2;
+  background: var(--page);
+}
 
 @media (max-width: 680px) {
   .notification-panel--page .notification-item__date--inline { display: inline; }
