@@ -116,6 +116,15 @@ export default function NotificationPopover({ mode = 'popover' }: NotificationPo
   const [bookmarkIntervals, setBookmarkIntervals] = useState<Record<string, BookmarkSubscriptionInterval[]>>(() => getBookmarkIntervals());
   const [isLoading, setIsLoading] = useState(true);
   const [hasLoaded, setHasLoaded] = useState(false);
+  // Last known count, so the bell badge doesn't vanish while a remounted header loads.
+  const [cachedUnreadCount] = useState<number>(() => {
+    try {
+      const count = parseInt(window.localStorage.getItem('vortex-unread-count') || '0', 10);
+      return Number.isFinite(count) && count > 0 ? count : 0;
+    } catch {
+      return 0;
+    }
+  });
   const [refreshing, setRefreshing] = useState(false);
   const [loadingOlder, setLoadingOlder] = useState(false);
   const [hasOlder, setHasOlder] = useState(false);
@@ -319,6 +328,7 @@ export default function NotificationPopover({ mode = 'popover' }: NotificationPo
   });
   const olderItems = visibleItems.filter((item) => Date.parse(item.created_at) < weekStart.getTime());
   const unreadCount = eligibleItems.filter((item) => !hiddenIds.has(item.id) && !readIds.has(item.id)).length;
+  const badgeCount = hasLoaded ? unreadCount : cachedUnreadCount;
 
   useEffect(() => {
     // Don't publish the placeholder 0 from a freshly mounted popover (items are
@@ -664,7 +674,7 @@ export default function NotificationPopover({ mode = 'popover' }: NotificationPo
       {!isPage && <button
         type="button"
         className={`icon-pill notification-trigger${open || location.split('?')[0] === '/notifications' ? ' is-open' : ''}`}
-        aria-label={`Notifications${unreadCount ? `, ${unreadCount} unread` : ''}`}
+        aria-label={`Notifications${badgeCount ? `, ${badgeCount} unread` : ''}`}
         onClick={() => {
           if (location.split('?')[0] === '/notifications') {
             void loadNotifications();
@@ -689,7 +699,7 @@ export default function NotificationPopover({ mode = 'popover' }: NotificationPo
           <path strokeLinecap="round" strokeLinejoin="round" d="M14.857 17.082a23.848 23.848 0 0 0 5.454-1.31A8.967 8.967 0 0 1 18 9.75V9A6 6 0 0 0 6 9v.75a8.967 8.967 0 0 1-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 24.255 0 0 1-5.714 0" />
           <path fill="none" strokeLinecap="round" strokeLinejoin="round" d="M14.857 17.082a3 3 0 1 1-5.714 0" />
         </svg>
-        {unreadCount > 0 && <span className="notification-count" aria-hidden="true">{unreadCount > 99 ? '99+' : unreadCount}</span>}
+        {badgeCount > 0 && <span className="notification-count" aria-hidden="true">{badgeCount > 99 ? '99+' : badgeCount}</span>}
       </button>}
 
       {isPage && (
