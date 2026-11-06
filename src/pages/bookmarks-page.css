@@ -195,7 +195,7 @@
   background: var(--series-red, #dc2626);
   border-color: var(--series-red, #dc2626);
   color: #ffffff;
-  font-weight: 600;
+  font-weight: 500;
 }
 
 .bookmarks-tab-icon {
