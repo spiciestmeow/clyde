@@ -3,6 +3,7 @@ import { fileURLToPath } from 'node:url';
 import react from '@vitejs/plugin-react';
 import tailwindcss from '@tailwindcss/vite';
 import { defineConfig, loadEnv } from 'vite';
+import { VitePWA } from 'vite-plugin-pwa';
 
 const root = path.dirname(fileURLToPath(import.meta.url));
 
@@ -243,7 +244,96 @@ export default defineConfig(({ mode }) => {
   return {
   root,
   base: '/',
-  plugins: [react(), tailwindcss(), syncSourcesDevPlugin()],
+  plugins: [
+      react(),
+      tailwindcss(),
+      syncSourcesDevPlugin(),
+      VitePWA({
+        registerType: 'autoUpdate',
+        includeAssets: ['clydee-logo.png', 'favicon.svg', 'robots.txt', 'nocover.jpg'],
+        manifest: {
+          name: 'Clydee',
+          short_name: 'Clydee',
+          description: 'Read comics, manga, manhua, and manhwa translated swiftly on Clydee.',
+          theme_color: '#09090b',
+          background_color: '#09090b',
+          display: 'standalone',
+          scope: '/',
+          start_url: '/',
+          orientation: 'portrait-primary',
+          icons: [
+            {
+              src: 'pwa-192x192.png',
+              sizes: '192x192',
+              type: 'image/png',
+              purpose: 'any',
+            },
+            {
+              src: 'pwa-512x512.png',
+              sizes: '512x512',
+              type: 'image/png',
+              purpose: 'any maskable',
+            },
+          ],
+        },
+        workbox: {
+          // Cache static assets (JS, CSS, fonts, images) with cache-first
+          // Exclude large assets (logo, seasonal images) from precache - they're served normally
+          globPatterns: ['**/*.{js,css,html,ico,png,svg,woff,woff2}'],
+          globIgnores: ['**/clydee-logo.png', '**/trick_pumpkin.webp', '**/pwa-*.png'],
+          maximumFileSizeToCacheInBytes: 3 * 1024 * 1024, // 3 MiB
+          runtimeCaching: [
+            // Supabase API — network-first (always fresh data)
+            {
+              urlPattern: /^https:\/\/.*\.supabase\.co\/.*/i,
+              handler: 'NetworkFirst',
+              options: {
+                cacheName: 'supabase-api-cache',
+                expiration: {
+                  maxEntries: 50,
+                  maxAgeSeconds: 60 * 5, // 5 minutes
+                },
+                networkTimeoutSeconds: 10,
+              },
+            },
+            // Cover images from external CDNs — stale-while-revalidate
+            {
+              urlPattern: /^https:\/\/(uploads\.mangadex\.org|cdn\.mangadex\.org)\/.*/i,
+              handler: 'StaleWhileRevalidate',
+              options: {
+                cacheName: 'cover-image-cache',
+                expiration: {
+                  maxEntries: 200,
+                  maxAgeSeconds: 60 * 60 * 24 * 7, // 7 days
+                },
+              },
+            },
+            // Google Fonts — cache first
+            {
+              urlPattern: /^https:\/\/fonts\.(googleapis|gstatic)\.com\/.*/i,
+              handler: 'CacheFirst',
+              options: {
+                cacheName: 'google-fonts-cache',
+                expiration: {
+                  maxEntries: 20,
+                  maxAgeSeconds: 60 * 60 * 24 * 365, // 1 year
+                },
+              },
+            },
+          ],
+          // Show offline fallback page when navigation fails
+          navigateFallback: '/index.html',
+          navigateFallbackDenylist: [/^\/api\//],
+          skipWaiting: true,
+          clientsClaim: true,
+        },
+        devOptions: {
+          // Enable PWA in dev mode for testing
+          enabled: false,
+          type: 'module',
+        },
+      }),
+    ],
   resolve: {
     alias: {
       '@': path.resolve(root, 'src'),
