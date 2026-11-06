@@ -1,7 +1,7 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState, type PointerEvent as ReactPointerEvent, type SyntheticEvent } from 'react';
 import { keepPreviousData, useQuery } from '@tanstack/react-query';
-import { ArrowLeft, ArrowRight, ArrowUp, ArrowUpRight, ChevronDown, ChevronLeft, ChevronRight, Clock3, Megaphone, RefreshCw, WifiOff } from 'lucide-react';
-import { Route, Switch, Router as WouterRouter, useLocation } from 'wouter';
+import { ArrowLeft, ArrowRight, ArrowUp, ArrowUpRight, ChevronDown, ChevronLeft, ChevronRight, Clock3, Megaphone, RefreshCw, Smartphone, WifiOff } from 'lucide-react';
+import { Link, Route, Switch, Router as WouterRouter, useLocation } from 'wouter';
 import SiteSearch from './components/SiteSearch';
 import SiteFooter from './components/SiteFooter';
 import SiteHeader from './components/SiteHeader';
@@ -29,6 +29,7 @@ import CreditsPage from './pages/CreditsPage';
 import LatestUpdatesPage from './pages/LatestUpdatesPage';
 import DonationPage from './pages/DonationPage';
 import BookmarksPage from './pages/BookmarksPage';
+import InstallPwaPage from './pages/InstallPwaPage';
 import SecurityVerification from './components/SecurityVerification';
 import { toSiteSearchItems, toTrendingSiteSearchItems } from './data/seriesSearchCatalog';
 import { useThemeMode } from './hooks/useThemeMode';
@@ -619,6 +620,25 @@ function HomePage() {
                 </div>
               </section>
             )}
+
+            {/* Install PWA Button / Banner (Together with the 3 buttons - 1:1 replica of Image 2) */}
+            <Link
+              href="/install-pwa"
+              className="pwa-install-banner-card"
+              title="Install Clydee PWA"
+              aria-label="Install PWA for iOS & Android"
+            >
+              <div className="pwa-install-banner-left">
+                <div className="pwa-install-banner-icon" aria-hidden="true">
+                  <Smartphone size={20} />
+                </div>
+                <div className="pwa-install-banner-text">
+                  <span className="pwa-install-banner-title">Install PWA</span>
+                  <span className="pwa-install-banner-sub">Install app for iOS &amp; Android</span>
+                </div>
+              </div>
+              <ChevronRight size={18} className="pwa-install-banner-chevron" aria-hidden="true" />
+            </Link>
           </div>
         )}
 
@@ -1024,6 +1044,8 @@ function App() {
         <Route path="/series/:slug" component={SeriesDetailPage} />
         <Route path="/notifications" component={NotificationsPage} />
         <Route path="/latest-updates" component={LatestUpdatesPage} />
+        <Route path="/install-pwa" component={InstallPwaPage} />
+        <Route path="/install" component={InstallPwaPage} />
         <Route component={NotFoundPage} />
       </Switch>
     </WouterRouter>

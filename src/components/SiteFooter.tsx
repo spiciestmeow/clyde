@@ -87,6 +87,7 @@ export default function SiteFooter({
         <ul className="footer-links">
           <li><Link href="/credits">Credits</Link></li>
           {canSeeDonate && <li><Link href="/donate">Support Us</Link></li>}
+          <li><Link href="/install-pwa">Install PWA</Link></li>
           <li><a href={facebookUrl} target="_blank" rel="noopener noreferrer">Facebook</a></li>
         </ul>
         <hr />

@@ -1,0 +1,503 @@
+/* Install PWA Page Styling */
+.install-pwa-route {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.install-pwa-container {
+  width: 100%;
+  max-width: 780px;
+  margin: 0 auto;
+  padding: 32px 20px 64px;
+  flex: 1 0 auto;
+}
+
+/* Breadcrumbs */
+.install-pwa-breadcrumbs {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  color: var(--muted, #71717a);
+  margin-bottom: 16px;
+  text-transform: uppercase;
+}
+
+.install-pwa-breadcrumb-link {
+  color: var(--muted, #71717a);
+  text-decoration: none;
+  transition: color 0.15s ease;
+}
+
+.install-pwa-breadcrumb-link:hover {
+  color: var(--text, #f4f4f5);
+}
+
+.install-pwa-breadcrumb-sep {
+  opacity: 0.5;
+}
+
+.install-pwa-breadcrumb-current {
+  color: var(--text, #f4f4f5);
+}
+
+/* Header */
+.install-pwa-header {
+  margin-bottom: 36px;
+}
+
+.install-pwa-title {
+  font-size: 30px;
+  font-weight: 700;
+  line-height: 1.2;
+  color: var(--text, #f4f4f5);
+  margin: 0 0 10px;
+}
+
+.install-pwa-subtitle {
+  font-size: 15px;
+  line-height: 1.5;
+  color: var(--muted, #a1a1aa);
+  margin: 0;
+}
+
+.install-pwa-badge-installed {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 14px;
+  padding: 8px 14px;
+  border-radius: 9999px;
+  background: rgba(34, 197, 94, 0.12);
+  border: 1px solid rgba(34, 197, 94, 0.3);
+  color: #4ade80;
+  font-size: 13px;
+  font-weight: 500;
+}
+
+/* Section */
+.install-pwa-section {
+  margin-bottom: 40px;
+}
+
+.install-pwa-section-header {
+  margin-bottom: 14px;
+}
+
+.install-pwa-section-title {
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--text, #f4f4f5);
+  margin: 0 0 4px;
+}
+
+.install-pwa-section-sub {
+  font-size: 13.5px;
+  color: var(--muted, #a1a1aa);
+  margin: 0;
+}
+
+/* Phone Mockup */
+.install-pwa-mockup-wrapper {
+  display: flex;
+  justify-content: center;
+  margin: 28px 0 32px;
+}
+
+.install-pwa-phone {
+  position: relative;
+  width: 260px;
+  height: 280px;
+  border-radius: 40px 40px 0 0;
+  background: #09090b;
+  border: 4px solid #27272a;
+  border-bottom: 0;
+  box-shadow: 0 20px 40px -15px rgba(0, 0, 0, 0.7), 0 0 0 1px rgba(255, 255, 255, 0.05);
+  padding: 12px 14px 0;
+  overflow: hidden;
+}
+
+.install-pwa-phone-notch {
+  position: absolute;
+  top: 10px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 72px;
+  height: 18px;
+  background: #000000;
+  border-radius: 12px;
+  z-index: 5;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  padding-right: 6px;
+}
+
+.install-pwa-phone-camera {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #18181b;
+}
+
+.install-pwa-phone-screen {
+  width: 100%;
+  height: 100%;
+  border-radius: 28px 28px 0 0;
+  background: linear-gradient(180deg, #182232 0%, #0d121c 100%);
+  padding: 10px 10px 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.install-pwa-phone-statusbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 4px 6px 12px;
+  font-size: 11px;
+  font-weight: 600;
+  color: #ffffff;
+}
+
+.install-pwa-phone-indicators {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.install-pwa-bar-signal,
+.install-pwa-bar-wifi,
+.install-pwa-bar-battery {
+  display: inline-block;
+  background: #ffffff;
+  border-radius: 2px;
+}
+
+.install-pwa-bar-signal {
+  width: 12px;
+  height: 9px;
+  opacity: 0.9;
+}
+
+.install-pwa-bar-wifi {
+  width: 11px;
+  height: 8px;
+  opacity: 0.9;
+}
+
+.install-pwa-bar-battery {
+  width: 16px;
+  height: 8px;
+  border: 1px solid #ffffff;
+  background: transparent;
+  position: relative;
+}
+
+.install-pwa-bar-battery::after {
+  content: '';
+  position: absolute;
+  left: 1px;
+  top: 1px;
+  bottom: 1px;
+  width: 80%;
+  background: #ffffff;
+}
+
+.install-pwa-phone-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px 8px;
+  padding: 8px 4px 0;
+}
+
+.install-pwa-app-icon {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+
+.install-pwa-app-icon-img {
+  width: 44px;
+  height: 44px;
+  border-radius: 10px;
+  overflow: hidden;
+  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.4);
+}
+
+.install-pwa-app-icon-img img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.install-pwa-app-name {
+  font-size: 9.5px;
+  font-weight: 500;
+  color: #ffffff;
+  text-align: center;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 48px;
+}
+
+.install-pwa-app-icon-dummy {
+  width: 44px;
+  height: 44px;
+  border-radius: 10px;
+  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.3);
+}
+
+.dummy-cal {
+  background: #ffffff;
+  color: #111827;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+.dummy-cal-day {
+  font-size: 7.5px;
+  font-weight: 700;
+  color: #ef4444;
+  line-height: 1;
+}
+
+.dummy-cal-num {
+  font-size: 18px;
+  font-weight: 300;
+  line-height: 1;
+}
+
+.dummy-photos {
+  background: radial-gradient(circle, #fde047 20%, #38bdf8 60%, #ec4899 100%);
+}
+
+.dummy-camera {
+  background: #6b7280;
+}
+
+.dummy-mail {
+  background: #3b82f6;
+}
+
+.dummy-safari {
+  background: #0284c7;
+}
+
+.dummy-clock {
+  background: #111827;
+  border: 1px solid #374151;
+}
+
+.dummy-settings {
+  background: #9ca3af;
+}
+
+/* Prose */
+.install-pwa-prose p {
+  font-size: 15px;
+  line-height: 1.6;
+  color: var(--muted, #a1a1aa);
+  margin: 0 0 14px;
+}
+
+.install-pwa-prose p:last-child {
+  margin-bottom: 0;
+}
+
+/* Action Cards */
+.install-pwa-options {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.install-pwa-action-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  width: 100%;
+  padding: 16px 20px;
+  background: var(--panel, #18181b);
+  border: 1px solid var(--line, rgba(255, 255, 255, 0.08));
+  border-radius: 14px;
+  text-align: left;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  color: inherit;
+  font-family: inherit;
+}
+
+.install-pwa-action-card:hover {
+  background: var(--series-soft, #27272a);
+  border-color: rgba(255, 255, 255, 0.2);
+  transform: translateY(-1px);
+}
+
+.install-pwa-action-card:active {
+  transform: scale(0.99);
+}
+
+.install-pwa-action-card-text {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.install-pwa-action-card-title {
+  font-size: 15.5px;
+  font-weight: 600;
+  color: var(--text, #f4f4f5);
+}
+
+.install-pwa-action-card-desc {
+  font-size: 13px;
+  color: var(--muted, #a1a1aa);
+  line-height: 1.4;
+}
+
+.install-pwa-action-card-icon {
+  flex-shrink: 0;
+  color: var(--accent, #dc2626);
+}
+
+/* OR divider */
+.install-pwa-or-divider {
+  display: flex;
+  align-items: center;
+  text-align: center;
+  margin: 4px 0;
+}
+
+.install-pwa-or-divider::before,
+.install-pwa-or-divider::after {
+  content: '';
+  flex: 1;
+  border-bottom: 1px solid var(--line, rgba(255, 255, 255, 0.08));
+}
+
+.install-pwa-or-divider span {
+  padding: 0 14px;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  color: var(--muted, #71717a);
+}
+
+/* Tips */
+.install-pwa-tip-box {
+  margin-top: 14px;
+  padding: 12px 16px;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid var(--line, rgba(255, 255, 255, 0.06));
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--muted, #a1a1aa);
+}
+
+.install-pwa-tip-box strong {
+  color: var(--text, #f4f4f5);
+}
+
+/* iOS Steps */
+.install-pwa-steps-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.install-pwa-step-card {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 14px 18px;
+  background: var(--panel, #18181b);
+  border: 1px solid var(--line, rgba(255, 255, 255, 0.08));
+  border-radius: 12px;
+}
+
+.install-pwa-step-num {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: rgba(var(--accent-rgb, 220, 38, 38), 0.15);
+  color: var(--accent, #dc2626);
+  font-size: 13px;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+.install-pwa-step-content {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  flex: 1;
+}
+
+.install-pwa-step-content strong {
+  font-size: 14px;
+  color: var(--text, #f4f4f5);
+}
+
+.install-pwa-step-content span {
+  font-size: 12.5px;
+  color: var(--muted, #a1a1aa);
+}
+
+.install-pwa-step-icon {
+  flex-shrink: 0;
+  color: var(--muted, #71717a);
+}
+
+/* Light Mode Overrides */
+.theme-light .install-pwa-action-card,
+.theme-light .install-pwa-step-card {
+  background: #ffffff;
+  border-color: #e5e7eb;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+.theme-light .install-pwa-action-card:hover {
+  background: #f9fafb;
+  border-color: #d1d5db;
+}
+
+.theme-light .install-pwa-tip-box {
+  background: #f9fafb;
+  border-color: #e5e7eb;
+}
+
+.theme-light .install-pwa-phone {
+  background: #18181b;
+  border-color: #e4e4e7;
+  box-shadow: 0 20px 40px -15px rgba(0, 0, 0, 0.2);
+}
+
+@media (max-width: 640px) {
+  .install-pwa-container {
+    padding: 20px 16px 48px;
+  }
+  .install-pwa-title {
+    font-size: 24px;
+  }
+  .install-pwa-phone {
+    width: 240px;
+    height: 260px;
+  }
+}

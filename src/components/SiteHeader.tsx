@@ -7,6 +7,7 @@ import {
   Heart,
   Menu,
   ShoppingBag,
+  Smartphone,
   Trophy,
   UserRound,
   UsersRound,
@@ -368,6 +369,18 @@ export default function SiteHeader({
                   </div>
                 </Link>
               )}
+
+              <Link
+                className="mobile-nav-card"
+                href="/install-pwa"
+                onClick={closeMenu}
+              >
+                <div className="mobile-nav-card__left">
+                  <Smartphone size={19} style={{ color: '#2dd4bf' }} />
+                  <span>Install PWA</span>
+                </div>
+                <ChevronRight size={17} className="mobile-nav-card__chevron" />
+              </Link>
 
               {headerVisibility.theme && (
                 <button
