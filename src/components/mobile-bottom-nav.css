@@ -1,5 +1,5 @@
 /* ===============================================================
-   Mobile Bottom Floating Navigation Bar
+   Mobile Bottom Floating Navigation Bar (Translucent Glass Style)
    =============================================================== */
 
 /* Hidden on desktop / wide viewports */
@@ -13,12 +13,12 @@
 @media (max-width: 768px) {
   /* Prevent content from being hidden behind the floating bar */
   body {
-    padding-bottom: calc(76px + env(safe-area-inset-bottom, 0px));
+    padding-bottom: calc(78px + env(safe-area-inset-bottom, 0px));
   }
 
   /* Reposition scroll-up activity button to stay above the floating bar */
   .scroll-up-activity {
-    bottom: calc(86px + env(safe-area-inset-bottom, 0px)) !important;
+    bottom: calc(88px + env(safe-area-inset-bottom, 0px)) !important;
   }
 
   .mobile-bottom-nav {
@@ -28,33 +28,34 @@
     transform: translateX(-50%);
     width: calc(100% - 24px);
     max-width: 420px;
-    height: 60px;
+    height: 62px;
     z-index: 999;
     pointer-events: none; /* Only inner is interactive */
   }
 
+  /* Translucent Glass Pill Container */
   .mobile-bottom-nav__inner {
     pointer-events: auto;
     width: 100%;
     height: 100%;
     display: flex;
     align-items: center;
-    justify-content: space-around;
-    padding: 0 6px;
-    background: rgba(255, 255, 255, 0.95);
-    backdrop-filter: blur(20px);
-    -webkit-backdrop-filter: blur(20px);
+    justify-content: space-between;
+    padding: 0 8px;
+    background: rgba(255, 255, 255, 0.78);
+    backdrop-filter: blur(28px) saturate(190%);
+    -webkit-backdrop-filter: blur(28px) saturate(190%);
     border-radius: 9999px;
-    border: 1px solid rgba(0, 0, 0, 0.08);
-    box-shadow: 0 10px 30px -5px rgba(0, 0, 0, 0.16), 0 0 1px 1px rgba(0, 0, 0, 0.04);
+    border: 1px solid rgba(255, 255, 255, 0.65);
+    box-shadow: 0 12px 34px -4px rgba(0, 0, 0, 0.13), 0 1px 3px rgba(0, 0, 0, 0.05);
   }
 
-  /* Theme Support */
+  /* Dark Theme Glass */
   .theme-dark .mobile-bottom-nav__inner,
   html.theme-dark .mobile-bottom-nav__inner {
-    background: rgba(24, 24, 28, 0.94);
-    border-color: rgba(255, 255, 255, 0.08);
-    box-shadow: 0 12px 35px -5px rgba(0, 0, 0, 0.55), 0 0 1px 1px rgba(255, 255, 255, 0.04);
+    background: rgba(20, 20, 26, 0.76);
+    border-color: rgba(255, 255, 255, 0.12);
+    box-shadow: 0 16px 40px -4px rgba(0, 0, 0, 0.58), 0 0 1px 1px rgba(255, 255, 255, 0.06);
   }
 
   /* Nav Items */
@@ -62,27 +63,47 @@
     flex: 1;
     height: 100%;
     display: flex;
-    flex-direction: column;
     align-items: center;
     justify-content: center;
     text-decoration: none;
-    color: #71717a;
-    transition: color 0.18s ease, transform 0.14s ease;
     -webkit-tap-highlight-color: transparent;
     user-select: none;
   }
 
-  .theme-dark .mobile-bottom-nav__item,
-  html.theme-dark .mobile-bottom-nav__item {
-    color: #a1a1aa;
+  /* Capsule Pill around active / inactive items */
+  .mobile-bottom-nav__item-pill {
+    width: 100%;
+    max-width: 68px;
+    height: 48px;
+    border-radius: 15px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    color: #6b7280;
+    background: transparent;
+    transition: background-color 0.2s ease, color 0.18s ease, transform 0.14s ease;
   }
 
-  .mobile-bottom-nav__item:active {
-    transform: scale(0.92);
+  .theme-dark .mobile-bottom-nav__item-pill,
+  html.theme-dark .mobile-bottom-nav__item-pill {
+    color: #9ca3af;
   }
 
-  .mobile-bottom-nav__item.is-active {
-    color: var(--accent, #e11d48);
+  .mobile-bottom-nav__item:active .mobile-bottom-nav__item-pill {
+    transform: scale(0.93);
+  }
+
+  /* Active Menu State (matches screenshot with soft gray capsule & solid dark icon) */
+  .mobile-bottom-nav__item.is-active .mobile-bottom-nav__item-pill {
+    background: rgba(0, 0, 0, 0.07);
+    color: #111827;
+  }
+
+  .theme-dark .mobile-bottom-nav__item.is-active .mobile-bottom-nav__item-pill,
+  html.theme-dark .mobile-bottom-nav__item.is-active .mobile-bottom-nav__item-pill {
+    background: rgba(255, 255, 255, 0.13);
+    color: #ffffff;
   }
 
   .mobile-bottom-nav__icon-wrapper {
@@ -90,12 +111,12 @@
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    width: 24px;
-    height: 24px;
+    width: 22px;
+    height: 22px;
   }
 
   .mobile-bottom-nav__label {
-    font-size: 10px;
+    font-size: 10.5px;
     font-weight: 500;
     margin-top: 3px;
     line-height: 1;
@@ -103,10 +124,10 @@
   }
 
   .mobile-bottom-nav__item.is-active .mobile-bottom-nav__label {
-    font-weight: 600;
+    font-weight: 650;
   }
 
-  /* Badge */
+  /* Red Badge for Notifications */
   .mobile-bottom-nav__badge {
     position: absolute;
     top: -4px;
@@ -129,14 +150,14 @@
 
   .theme-dark .mobile-bottom-nav__badge,
   html.theme-dark .mobile-bottom-nav__badge {
-    border-color: #18181c;
+    border-color: #1a1a20;
   }
 
   /* Center Elevated Homepage Button */
   .mobile-bottom-nav__home-btn {
     flex: 0 0 auto;
     position: relative;
-    margin-top: -20px;
+    margin-top: -18px;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -155,8 +176,8 @@
     height: 52px;
     border-radius: 50%;
     background: #ffffff;
-    border: 3px solid #f4f4f5;
-    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.22);
+    border: 3px solid rgba(255, 255, 255, 0.85);
+    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.18);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -167,13 +188,13 @@
   .theme-dark .mobile-bottom-nav__home-circle,
   html.theme-dark .mobile-bottom-nav__home-circle {
     background: #ffffff;
-    border-color: #0e0e11;
-    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.6);
+    border-color: rgba(20, 20, 26, 0.85);
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.55);
   }
 
   .mobile-bottom-nav__home-btn.is-active .mobile-bottom-nav__home-circle {
     border-color: var(--accent, #e11d48);
-    box-shadow: 0 0 0 2px var(--accent, #e11d48), 0 6px 20px rgba(0, 0, 0, 0.3);
+    box-shadow: 0 0 0 2px var(--accent, #e11d48), 0 6px 20px rgba(0, 0, 0, 0.28);
   }
 
   .mobile-bottom-nav__home-logo {

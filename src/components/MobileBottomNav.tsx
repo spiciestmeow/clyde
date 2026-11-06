@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Link, useLocation } from 'wouter';
-import { Bell, Bookmark, BookOpen, Smartphone } from 'lucide-react';
+import { Bell, Bookmark, Home, Smartphone } from 'lucide-react';
 import './mobile-bottom-nav.css';
 
 function getStoredUnreadCount(): number {
@@ -64,10 +64,16 @@ export default function MobileBottomNav() {
           className={`mobile-bottom-nav__item${isSeriesActive ? ' is-active' : ''}`}
           aria-label="Series"
         >
-          <div className="mobile-bottom-nav__icon-wrapper">
-            <BookOpen size={20} strokeWidth={isSeriesActive ? 2.4 : 1.8} />
+          <div className="mobile-bottom-nav__item-pill">
+            <div className="mobile-bottom-nav__icon-wrapper">
+              <Home
+                size={20}
+                fill={isSeriesActive ? 'currentColor' : 'none'}
+                strokeWidth={isSeriesActive ? 2.2 : 1.8}
+              />
+            </div>
+            <span className="mobile-bottom-nav__label">Series</span>
           </div>
-          <span className="mobile-bottom-nav__label">Series</span>
         </Link>
 
         {/* 2. Bookmarks */}
@@ -76,10 +82,16 @@ export default function MobileBottomNav() {
           className={`mobile-bottom-nav__item${isBookmarksActive ? ' is-active' : ''}`}
           aria-label="Bookmarks"
         >
-          <div className="mobile-bottom-nav__icon-wrapper">
-            <Bookmark size={20} strokeWidth={isBookmarksActive ? 2.4 : 1.8} />
+          <div className="mobile-bottom-nav__item-pill">
+            <div className="mobile-bottom-nav__icon-wrapper">
+              <Bookmark
+                size={20}
+                fill={isBookmarksActive ? 'currentColor' : 'none'}
+                strokeWidth={isBookmarksActive ? 2.2 : 1.8}
+              />
+            </div>
+            <span className="mobile-bottom-nav__label">Bookmarks</span>
           </div>
-          <span className="mobile-bottom-nav__label">Bookmarks</span>
         </Link>
 
         {/* 3. Center Elevated Button - Homepage (Web Logo) */}
@@ -106,15 +118,21 @@ export default function MobileBottomNav() {
           className={`mobile-bottom-nav__item${isNotificationsActive ? ' is-active' : ''}`}
           aria-label={unreadCount > 0 ? `Notifications, ${unreadCount} unread` : 'Notifications'}
         >
-          <div className="mobile-bottom-nav__icon-wrapper">
-            <Bell size={20} strokeWidth={isNotificationsActive ? 2.4 : 1.8} />
-            {unreadCount > 0 && (
-              <span className="mobile-bottom-nav__badge" aria-hidden="true">
-                {unreadCount > 99 ? '99+' : unreadCount}
-              </span>
-            )}
+          <div className="mobile-bottom-nav__item-pill">
+            <div className="mobile-bottom-nav__icon-wrapper">
+              <Bell
+                size={20}
+                fill={isNotificationsActive ? 'currentColor' : 'none'}
+                strokeWidth={isNotificationsActive ? 2.2 : 1.8}
+              />
+              {unreadCount > 0 && (
+                <span className="mobile-bottom-nav__badge" aria-hidden="true">
+                  {unreadCount > 99 ? '99+' : unreadCount}
+                </span>
+              )}
+            </div>
+            <span className="mobile-bottom-nav__label">Notifications</span>
           </div>
-          <span className="mobile-bottom-nav__label">Notifications</span>
         </Link>
 
         {/* 5. PWA */}
@@ -123,10 +141,12 @@ export default function MobileBottomNav() {
           className={`mobile-bottom-nav__item${isPwaActive ? ' is-active' : ''}`}
           aria-label="Install PWA"
         >
-          <div className="mobile-bottom-nav__icon-wrapper">
-            <Smartphone size={20} strokeWidth={isPwaActive ? 2.4 : 1.8} />
+          <div className="mobile-bottom-nav__item-pill">
+            <div className="mobile-bottom-nav__icon-wrapper">
+              <Smartphone size={20} strokeWidth={isPwaActive ? 2.4 : 1.8} />
+            </div>
+            <span className="mobile-bottom-nav__label">PWA</span>
           </div>
-          <span className="mobile-bottom-nav__label">PWA</span>
         </Link>
       </div>
     </nav>
