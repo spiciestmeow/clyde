@@ -33,6 +33,7 @@
 .catalog-intro { text-align: center; margin: 0 auto 10px; }
 .catalog-intro h1 { display: flex; justify-content: center; align-items: center; gap: 8px; margin: 0; font-size: clamp(27px, 3vw, 32px); line-height: 1.05; letter-spacing: -.045em; font-weight: 760; color: var(--catalog-ink); }
 .catalog-title-mark { display: inline-flex; align-items: end; gap: 2px; height: 24px; padding: 3px; }
+.catalog-title-svg { display: inline-block; vertical-align: middle; flex-shrink: 0; filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.12)); }
 .catalog-title-mark i { display: block; width: 6px; border-radius: 2px 2px 0 0; background: #d94b47; }
 .catalog-title-mark i:first-child { height: 14px; background: #eab846; }
 .catalog-title-mark i:nth-child(2) { height: 20px; background: #4b9670; }

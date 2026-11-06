@@ -40,6 +40,7 @@ import { LatestReleaseCard, seriesToRelease } from '../components/LatestReleaseC
 import { BrowsePageSkeleton } from '../components/HomeSectionSkeletons';
 import { getMobilePaginationItems } from '../lib/pagination';
 import assets from '../../clone-data/asset-references.json';
+import { SeriesBooksIcon } from '../components/icons/SeriesBooksIcon';
 import '../series-detail.css';
 import '../series-data-status.css';
 import './series-browse.css';
@@ -469,7 +470,7 @@ export default function SeriesBrowsePage() {
     />
     <main className="catalog-main">
       <header className="catalog-intro">
-        <h1><span aria-hidden="true" className="catalog-title-mark"><i /><i /><i /></span> Series</h1>
+        <h1><SeriesBooksIcon size={30} className="catalog-title-svg" /> Series</h1>
         <p>Explore a vast array of distinctive and exclusive works on our platform</p>
       </header>
       {pageQuery.isLoading && <BrowsePageSkeleton count={PAGE_SIZE} />}
