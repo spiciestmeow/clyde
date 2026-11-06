@@ -33,6 +33,11 @@
     pointer-events: none; /* Only inner is interactive */
   }
 
+  /* Push the bar behind the mobile filter sheet (and its backdrop) while the sheet is open. */
+  body:has(.has-filter-sheet) .mobile-bottom-nav {
+    z-index: 0;
+  }
+
   /* Translucent Glass Pill Container */
   .mobile-bottom-nav__inner {
     pointer-events: auto;
