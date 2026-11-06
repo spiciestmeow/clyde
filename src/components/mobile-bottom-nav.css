@@ -1,0 +1,186 @@
+/* ===============================================================
+   Mobile Bottom Floating Navigation Bar
+   =============================================================== */
+
+/* Hidden on desktop / wide viewports */
+@media (min-width: 769px) {
+  .mobile-bottom-nav {
+    display: none !important;
+  }
+}
+
+/* Visible only on mobile / small viewports */
+@media (max-width: 768px) {
+  /* Prevent content from being hidden behind the floating bar */
+  body {
+    padding-bottom: calc(76px + env(safe-area-inset-bottom, 0px));
+  }
+
+  /* Reposition scroll-up activity button to stay above the floating bar */
+  .scroll-up-activity {
+    bottom: calc(86px + env(safe-area-inset-bottom, 0px)) !important;
+  }
+
+  .mobile-bottom-nav {
+    position: fixed;
+    bottom: calc(14px + env(safe-area-inset-bottom, 0px));
+    left: 50%;
+    transform: translateX(-50%);
+    width: calc(100% - 24px);
+    max-width: 420px;
+    height: 60px;
+    z-index: 999;
+    pointer-events: none; /* Only inner is interactive */
+  }
+
+  .mobile-bottom-nav__inner {
+    pointer-events: auto;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: space-around;
+    padding: 0 6px;
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border-radius: 9999px;
+    border: 1px solid rgba(0, 0, 0, 0.08);
+    box-shadow: 0 10px 30px -5px rgba(0, 0, 0, 0.16), 0 0 1px 1px rgba(0, 0, 0, 0.04);
+  }
+
+  /* Theme Support */
+  .theme-dark .mobile-bottom-nav__inner,
+  html.theme-dark .mobile-bottom-nav__inner {
+    background: rgba(24, 24, 28, 0.94);
+    border-color: rgba(255, 255, 255, 0.08);
+    box-shadow: 0 12px 35px -5px rgba(0, 0, 0, 0.55), 0 0 1px 1px rgba(255, 255, 255, 0.04);
+  }
+
+  /* Nav Items */
+  .mobile-bottom-nav__item {
+    flex: 1;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-decoration: none;
+    color: #71717a;
+    transition: color 0.18s ease, transform 0.14s ease;
+    -webkit-tap-highlight-color: transparent;
+    user-select: none;
+  }
+
+  .theme-dark .mobile-bottom-nav__item,
+  html.theme-dark .mobile-bottom-nav__item {
+    color: #a1a1aa;
+  }
+
+  .mobile-bottom-nav__item:active {
+    transform: scale(0.92);
+  }
+
+  .mobile-bottom-nav__item.is-active {
+    color: var(--accent, #e11d48);
+  }
+
+  .mobile-bottom-nav__icon-wrapper {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 24px;
+    height: 24px;
+  }
+
+  .mobile-bottom-nav__label {
+    font-size: 10px;
+    font-weight: 500;
+    margin-top: 3px;
+    line-height: 1;
+    letter-spacing: -0.01em;
+  }
+
+  .mobile-bottom-nav__item.is-active .mobile-bottom-nav__label {
+    font-weight: 600;
+  }
+
+  /* Badge */
+  .mobile-bottom-nav__badge {
+    position: absolute;
+    top: -4px;
+    right: -8px;
+    background: #ef4444;
+    color: #ffffff;
+    font-size: 9px;
+    font-weight: 700;
+    min-width: 15px;
+    height: 15px;
+    border-radius: 9999px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0 3px;
+    line-height: 1;
+    border: 1.5px solid #ffffff;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+  }
+
+  .theme-dark .mobile-bottom-nav__badge,
+  html.theme-dark .mobile-bottom-nav__badge {
+    border-color: #18181c;
+  }
+
+  /* Center Elevated Homepage Button */
+  .mobile-bottom-nav__home-btn {
+    flex: 0 0 auto;
+    position: relative;
+    margin-top: -20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-decoration: none;
+    -webkit-tap-highlight-color: transparent;
+    user-select: none;
+    transition: transform 0.18s ease;
+  }
+
+  .mobile-bottom-nav__home-btn:active {
+    transform: scale(0.92);
+  }
+
+  .mobile-bottom-nav__home-circle {
+    width: 52px;
+    height: 52px;
+    border-radius: 50%;
+    background: #ffffff;
+    border: 3px solid #f4f4f5;
+    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.22);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    transition: box-shadow 0.2s ease, border-color 0.2s ease;
+  }
+
+  .theme-dark .mobile-bottom-nav__home-circle,
+  html.theme-dark .mobile-bottom-nav__home-circle {
+    background: #ffffff;
+    border-color: #0e0e11;
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.6);
+  }
+
+  .mobile-bottom-nav__home-btn.is-active .mobile-bottom-nav__home-circle {
+    border-color: var(--accent, #e11d48);
+    box-shadow: 0 0 0 2px var(--accent, #e11d48), 0 6px 20px rgba(0, 0, 0, 0.3);
+  }
+
+  .mobile-bottom-nav__home-logo {
+    width: 32px;
+    height: 32px;
+    object-fit: contain;
+    display: block;
+    pointer-events: none;
+  }
+}

@@ -30,6 +30,7 @@ import LatestUpdatesPage from './pages/LatestUpdatesPage';
 import DonationPage from './pages/DonationPage';
 import BookmarksPage from './pages/BookmarksPage';
 import InstallPwaPage from './pages/InstallPwaPage';
+import MobileBottomNav from './components/MobileBottomNav';
 import SecurityVerification from './components/SecurityVerification';
 import { toSiteSearchItems, toTrendingSiteSearchItems } from './data/seriesSearchCatalog';
 import { useThemeMode } from './hooks/useThemeMode';
@@ -1016,6 +1017,7 @@ function App() {
       <ScrollUpActivityButton />
       <NavigationProgress />
       <Toaster />
+      <MobileBottomNav />
       <Switch>
         <Route path="/" component={HomePage} />
         <Route path={ADMIN_ROUTE} component={AdminPage} />

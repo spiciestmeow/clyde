@@ -317,6 +317,13 @@ export default function NotificationPopover({ mode = 'popover' }: NotificationPo
   });
   const olderItems = visibleItems.filter((item) => Date.parse(item.created_at) < weekStart.getTime());
   const unreadCount = eligibleItems.filter((item) => !hiddenIds.has(item.id) && !readIds.has(item.id)).length;
+
+  useEffect(() => {
+    try {
+      localStorage.setItem('vortex-unread-count', String(unreadCount));
+    } catch {}
+    window.dispatchEvent(new CustomEvent('vortex-unread-count-updated', { detail: unreadCount }));
+  }, [unreadCount]);
   const visibleUnreadCount = visibleItems.filter((item) => !readIds.has(item.id)).length;
   const visibleReadCount = visibleItems.length - visibleUnreadCount;
   const unreadCountsByCategory = useMemo(() => ({
