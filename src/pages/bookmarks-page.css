@@ -321,6 +321,19 @@
   opacity: 0.9;
 }
 
+/* Footer clean styling for bookmarks page */
+.bookmarks-route .footer,
+.bookmarks-footer {
+  box-shadow: none !important;
+  border: 0 !important;
+  background: transparent !important;
+}
+
+.bookmarks-route .footer-inner {
+  box-shadow: none !important;
+  border: 0 !important;
+}
+
 /* Responsive */
 @media (max-width: 1050px) {
   .bookmarks-grid {
@@ -344,5 +357,39 @@
   .bookmarks-tab-btn {
     padding: 7px 12px;
     font-size: 12px;
+  }
+
+  /* Bigger series card cover on mobile */
+  .bookmarks-route .release-card--series {
+    --series-cover-width: clamp(140px, 40vw, 160px);
+    --series-cover-radius: 6px;
+    --series-card-gap: 10px;
+    --series-card-padding: 5px;
+  }
+
+  .bookmarks-route .release-card--series .release-cover {
+    align-self: stretch;
+    height: auto;
+    min-height: 204px;
+    aspect-ratio: 2 / 3;
+  }
+
+  .bookmarks-route .release-card--series .release-cover img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: center;
+  }
+}
+
+@media (max-width: 380px) {
+  .bookmarks-route .release-card--series {
+    --series-cover-width: clamp(124px, 38vw, 138px);
+    --series-card-gap: 8px;
+    --series-card-padding: 4px;
+  }
+
+  .bookmarks-route .release-card--series .release-cover {
+    min-height: 184px;
   }
 }

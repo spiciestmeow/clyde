@@ -400,7 +400,7 @@ export default function BookmarksPage() {
       </main>
 
       <SiteFooter
-        className="footer latest-updates-footer"
+        className="footer bookmarks-footer"
         logoSrc="/clydee-logo.png"
         tagline="Read Comics, manga, manhua, manhwa, translated swiftly: Clydee, your ultimate library."
       />
