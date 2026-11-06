@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type SyntheticEvent } from 'react';
+import { createPortal } from 'react-dom';
 import { Link, useLocation, useParams } from 'wouter';
 import { Activity, ArrowDownUp, ArrowLeft, ArrowUpRight, Bell, BookOpen, Bookmark, CalendarDays, Check, CheckCircle2, ChevronDown, ChevronRight, Clock3, Eye, Flag, Heart, List, Maximize2, MessageSquare, MessageSquareText, PenLine, Rows3, Search, Share2, Square, Star, Trash2, TriangleAlert, Type, X, ZoomIn } from 'lucide-react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
@@ -322,7 +323,9 @@ export default function SeriesDetailPage() {
   const [bookmarkNoticeDismissed, setBookmarkNoticeDismissed] = useState(false);
   const [bookmarkDropdownOpen, setBookmarkDropdownOpen] = useState(false);
   const [bookmarkTypes, setBookmarkTypes] = useState<Record<string, BookmarkType>>(readBookmarkTypes);
-  const bookmarkDropdownRef = useRef<HTMLDivElement>(null);
+  const bookmarkButtonRef = useRef<HTMLButtonElement>(null);
+  const bookmarkDropdownMenuRef = useRef<HTMLDivElement>(null);
+  const [dropdownPosition, setDropdownPosition] = useState<{ top: number; right: number; width: number }>({ top: 0, right: 0, width: 185 });
   const [siteSettings, setSiteSettings] = useState(() => getCachedSiteSettings());
   const [seriesPageVisibility, setSeriesPageVisibility] = useState(
     () => getCachedSiteSettings()?.seriesPage ?? DEFAULT_SERIES_PAGE_VISIBILITY,
@@ -685,10 +688,33 @@ export default function SeriesDetailPage() {
 
   const currentBookmarkType = series ? (bookmarkTypes[series.slug] ?? null) : null;
 
+  const updateDropdownCoords = useCallback(() => {
+    if (!bookmarkButtonRef.current) return;
+    const rect = bookmarkButtonRef.current.getBoundingClientRect();
+    const isMobile = typeof window !== 'undefined' && window.innerWidth <= 600;
+    const dropdownWidth = isMobile ? Math.min(260, window.innerWidth - 32) : 185;
+    const right = Math.max(8, window.innerWidth - rect.right);
+    const top = rect.bottom + 6;
+    setDropdownPosition({ top, right, width: dropdownWidth });
+  }, []);
+
   const handleBookmarkButtonClick = () => {
     if (!series) return;
+    updateDropdownCoords();
     setBookmarkDropdownOpen((prev) => !prev);
   };
+
+  useEffect(() => {
+    if (!bookmarkDropdownOpen) return;
+    updateDropdownCoords();
+    const handleScrollOrResize = () => updateDropdownCoords();
+    window.addEventListener('scroll', handleScrollOrResize, true);
+    window.addEventListener('resize', handleScrollOrResize);
+    return () => {
+      window.removeEventListener('scroll', handleScrollOrResize, true);
+      window.removeEventListener('resize', handleScrollOrResize);
+    };
+  }, [bookmarkDropdownOpen, updateDropdownCoords]);
 
   const selectBookmarkType = async (type: BookmarkType | 'remove') => {
     if (!series || bookmarkBusy) return;
@@ -796,12 +822,24 @@ export default function SeriesDetailPage() {
   useEffect(() => {
     if (!bookmarkDropdownOpen) return;
     const handleClickOutside = (e: MouseEvent) => {
-      if (bookmarkDropdownRef.current && !bookmarkDropdownRef.current.contains(e.target as Node)) {
-        setBookmarkDropdownOpen(false);
+      const target = e.target as Node;
+      if (bookmarkButtonRef.current && bookmarkButtonRef.current.contains(target)) {
+        return;
       }
+      if (bookmarkDropdownMenuRef.current && bookmarkDropdownMenuRef.current.contains(target)) {
+        return;
+      }
+      setBookmarkDropdownOpen(false);
+    };
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setBookmarkDropdownOpen(false);
     };
     document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
+    document.addEventListener('keydown', handleKeyDown);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener('keydown', handleKeyDown);
+    };
   }, [bookmarkDropdownOpen]);
   const share = () => setShareModalOpen(true);
   const chooseReaction = (key: ReactionKey) => {
@@ -1190,8 +1228,9 @@ export default function SeriesDetailPage() {
           </div>}
           <div className="series-left-actions">
             {readChapterHref && chapterLabel ? <a href={readChapterHref} className="series-action series-action--primary" target={readChapterSource ? '_blank' : undefined} rel={readChapterSource ? 'noopener noreferrer' : undefined}><span>Read {chapterLabel}</span></a> : <button className="series-action series-action--primary" disabled title="No chapter link is available yet">Reading unavailable</button>}
-            <div className="series-bookmark-wrapper" ref={bookmarkDropdownRef}>
+            <div className="series-bookmark-wrapper">
               <button
+                ref={bookmarkButtonRef}
                 className={`series-action series-action--bookmark${bookmarked ? ' is-saved' : ''}`}
                 onClick={handleBookmarkButtonClick}
                 aria-pressed={bookmarked}
@@ -1203,8 +1242,17 @@ export default function SeriesDetailPage() {
                   ? (currentBookmarkType ? (BOOKMARK_OPTIONS.find((o) => o.id === currentBookmarkType)?.buttonLabel ?? 'Bookmarked') : 'Bookmarked')
                   : 'Bookmark'}
               </button>
-              {bookmarkDropdownOpen && (
-                <div className="series-bookmark-dropdown" role="menu">
+              {bookmarkDropdownOpen && typeof document !== 'undefined' && createPortal(
+                <div
+                  ref={bookmarkDropdownMenuRef}
+                  className="series-bookmark-dropdown is-portal"
+                  role="menu"
+                  style={{
+                    top: `${dropdownPosition.top}px`,
+                    right: `${dropdownPosition.right}px`,
+                    width: `${dropdownPosition.width}px`,
+                  }}
+                >
                   {BOOKMARK_OPTIONS.map((option) => (
                     <button
                       key={option.id}
@@ -1228,7 +1276,8 @@ export default function SeriesDetailPage() {
                       Remove Bookmark
                     </button>
                   )}
-                </div>
+                </div>,
+                document.body
               )}
             </div>
           </div>

@@ -702,19 +702,29 @@
 /* ── Bookmark dropdown ──────────────────────────────── */
 .series-bookmark-wrapper {
   position: relative;
+  display: flex;
+  width: 100%;
+  min-width: 0;
+}
+.series-bookmark-wrapper .series-action {
+  width: 100%;
+  flex: 1 1 100%;
 }
 .series-bookmark-dropdown {
   position: absolute;
   top: calc(100% + 6px);
-  left: 0;
-  min-width: 190px;
+  right: 0;
+  min-width: 185px;
   background: var(--panel, #fff);
   border: 1px solid var(--line, #e5e5e5);
   border-radius: 10px;
-  box-shadow: 0 8px 24px rgba(0,0,0,.12);
+  box-shadow: 0 10px 28px rgba(0,0,0,.14);
   overflow: hidden;
-  z-index: 200;
+  z-index: 99999;
   animation: bm-drop-in .18s cubic-bezier(.2,.75,.25,1) both;
+}
+.series-bookmark-dropdown.is-portal {
+  position: fixed;
 }
 @keyframes bm-drop-in {
   from { opacity: 0; transform: translateY(-8px); }
@@ -758,7 +768,7 @@
 
 /* Mobile */
 @media (max-width: 600px) {
-  .series-bookmark-dropdown {
+  .series-bookmark-dropdown:not(.is-portal) {
     left: 0;
     right: 0;
     min-width: 0;
