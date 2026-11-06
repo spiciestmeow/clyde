@@ -1964,12 +1964,12 @@ html[data-accent-theme="halloween"] .popular-section > .section-title::before { 
 .theme-light .mobile-nav-card.is-active {
   background: color-mix(in srgb, var(--accent) 10%, white);
   color: #1a1a1e;
-  font-weight: 700;
+  font-weight: 600;
 }
 .theme-dark .mobile-nav-card.is-active {
   background: rgba(var(--accent-rgb), 0.15);
   color: #ffffff;
-  font-weight: 700;
+  font-weight: 600;
 }
 .mobile-nav-card__left {
   display: flex;

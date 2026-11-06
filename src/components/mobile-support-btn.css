@@ -1,0 +1,33 @@
+.mobile-support-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  padding: 14px 18px;
+  margin-bottom: 10px;
+  border-radius: 16px;
+  background: linear-gradient(90deg, #ef4444 0%, #b91c1c 100%);
+  color: #fff;
+  font-size: 1rem;
+  font-weight: 700;
+  text-decoration: none;
+  box-shadow: none;
+  transition: transform 0.15s ease, filter 0.15s ease;
+}
+
+.mobile-support-btn:hover {
+  filter: brightness(1.05);
+}
+
+.mobile-support-btn:active {
+  transform: scale(0.98);
+}
+
+.mobile-support-btn svg {
+  flex-shrink: 0;
+}
+
+.mobile-menu-drawer__footer .mobile-support-btn {
+  margin-bottom: 0;
+}

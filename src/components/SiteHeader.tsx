@@ -14,6 +14,7 @@ import {
 } from 'lucide-react';
 import { Link } from 'wouter';
 import HeroSpider from './HeroSpider';
+import './mobile-support-btn.css';
 import NotificationPopover from './NotificationPopover';
 import {
   DEFAULT_HEADER_VISIBILITY,
@@ -307,23 +308,6 @@ export default function SiteHeader({
                 </Link>
               )}
 
-              {canSeeDonate && (
-                <Link
-                  className="mobile-nav-card"
-                  href="/donate"
-                  onClick={closeMenu}
-                >
-                  <div className="mobile-nav-card__left">
-                    <Heart size={19} style={{ color: 'var(--accent, #dc2626)' }} />
-                    <span>Donate</span>
-                  </div>
-                  <span className="donate-pulse-badge is-mobile" aria-hidden="true">
-                    <span className="donate-pulse-ring" />
-                    <span className="donate-pulse-dot" />
-                  </span>
-                </Link>
-              )}
-
               {headerVisibility.community && (
                 <div className="mobile-nav-group">
                   <Link
@@ -373,18 +357,14 @@ export default function SiteHeader({
             </nav>
           </div>
 
-          <div className="mobile-menu-drawer__footer">
-            <Link
-              className="mobile-drawer-home-btn"
-              href="/"
-              onClick={closeMenu}
-            >
-              <svg className="nav-primary-icon" width="19" height="19" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-                <path d="M12.707 2.293l9 9c.63.63.184 1.707-.707 1.707h-1v6a3 3 0 0 1-3 3h-1v-7a3 3 0 0 0-2.824-2.995l-.176-.005h-2a3 3 0 0 0-3 3v7h-1a3 3 0 0 1-3-3v-6h-1c-.89 0-1.337-1.077-.707-1.707l9-9a1 1 0 0 1 1.414 0m.293 11.707a1 1 0 0 1 1 1v7h-4v-7a1 1 0 0 1 .883-.993l.117-.007z" />
-              </svg>
-              <span>Home</span>
-            </Link>
-          </div>
+          {canSeeDonate && (
+            <div className="mobile-menu-drawer__footer">
+              <Link className="mobile-support-btn" href="/donate" onClick={closeMenu}>
+                <Heart size={18} fill="currentColor" />
+                <span>Support Clyde</span>
+              </Link>
+            </div>
+          )}
         </div>
       )}
     </>
