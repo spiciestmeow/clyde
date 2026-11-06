@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type SyntheticEvent } from 'react';
 import { Link, useLocation, useParams } from 'wouter';
-import { Activity, ArrowDownUp, ArrowLeft, ArrowUpRight, Bell, BookOpen, Bookmark, CalendarDays, Check, CheckCircle2, ChevronDown, ChevronRight, Clock3, Eye, Flag, Heart, List, Maximize2, MessageSquare, MessageSquareText, PenLine, Rows3, Search, Share2, Square, Star, TriangleAlert, Type, X, ZoomIn } from 'lucide-react';
+import { Activity, ArrowDownUp, ArrowLeft, ArrowUpRight, Bell, BookOpen, Bookmark, CalendarDays, Check, CheckCircle2, ChevronDown, ChevronRight, Clock3, Eye, Flag, Heart, List, Maximize2, MessageSquare, MessageSquareText, PenLine, Rows3, Search, Share2, Square, Star, Trash2, TriangleAlert, Type, X, ZoomIn } from 'lucide-react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { toast } from '../hooks/use-toast';
 import {
   cacheSeriesCatalog,
   getCachedSeriesCatalog,
@@ -52,6 +53,36 @@ type ReactionKey = SeriesReactionKey;
 type ReactionCounts = SeriesReactionCounts;
 type RailPosition = { left: number; top: number; width: number; maxHeight: number };
 type FixedRailPositions = { left: RailPosition; right: RailPosition };
+
+export type BookmarkType = 'reading' | 'to-read' | 'finished' | 'abandoned';
+
+export const BOOKMARK_OPTIONS: { id: BookmarkType; label: string; buttonLabel: string }[] = [
+  { id: 'reading', label: 'Currently Reading', buttonLabel: 'Reading' },
+  { id: 'to-read', label: 'To-Read List', buttonLabel: 'To-Read' },
+  { id: 'finished', label: 'Finished Reading', buttonLabel: 'Finished' },
+  { id: 'abandoned', label: 'Abandoned Reads', buttonLabel: 'Abandoned' },
+];
+
+export const BOOKMARK_TYPES_STORAGE_KEY = 'vortex-bookmark-types';
+
+function readBookmarkTypes(): Record<string, BookmarkType> {
+  if (typeof window === 'undefined') return {};
+  try {
+    const raw = localStorage.getItem(BOOKMARK_TYPES_STORAGE_KEY);
+    return raw ? JSON.parse(raw) : {};
+  } catch {
+    return {};
+  }
+}
+
+function writeBookmarkTypes(types: Record<string, BookmarkType>): void {
+  if (typeof window === 'undefined') return;
+  try {
+    localStorage.setItem(BOOKMARK_TYPES_STORAGE_KEY, JSON.stringify(types));
+  } catch {
+    // storage unavailable
+  }
+}
 
 const assetList = assets as { src: string; alt: string }[];
 const reactionKeys: ReactionKey[] = ['like', 'love', 'happy', 'wow', 'sad', 'angry'];
@@ -289,6 +320,9 @@ export default function SeriesDetailPage() {
   const [sourceReactionBusy, setSourceReactionBusy] = useState<string[]>([]);
   const [bookmarkBusy, setBookmarkBusy] = useState(false);
   const [bookmarkNoticeDismissed, setBookmarkNoticeDismissed] = useState(false);
+  const [bookmarkDropdownOpen, setBookmarkDropdownOpen] = useState(false);
+  const [bookmarkTypes, setBookmarkTypes] = useState<Record<string, BookmarkType>>(readBookmarkTypes);
+  const bookmarkDropdownRef = useRef<HTMLDivElement>(null);
   const [siteSettings, setSiteSettings] = useState(() => getCachedSiteSettings());
   const [seriesPageVisibility, setSeriesPageVisibility] = useState(
     () => getCachedSiteSettings()?.seriesPage ?? DEFAULT_SERIES_PAGE_VISIBILITY,
@@ -649,54 +683,126 @@ export default function SeriesDetailPage() {
     chapterCount: item.chapterCount,
   })), [relatedQuery.data]);
 
-  const toggleBookmark = async () => {
+  const currentBookmarkType = series ? (bookmarkTypes[series.slug] ?? null) : null;
+
+  const handleBookmarkButtonClick = () => {
+    if (!series) return;
+    setBookmarkDropdownOpen((prev) => !prev);
+  };
+
+  const selectBookmarkType = async (type: BookmarkType | 'remove') => {
     if (!series || bookmarkBusy) return;
+    setBookmarkDropdownOpen(false);
     setBookmarkBusy(true);
 
-    const nextBookmarked = !bookmarked;
-    const next = nextBookmarked
-      ? Array.from(new Set([...bookmarks, series.slug, series.href]))
-      : bookmarks.filter((id) => id !== series.slug && id !== series.href);
-
-    setBookmarks(next);
-    try {
-      localStorage.setItem('vortex-series-bookmarks', JSON.stringify(next));
-      recordBookmarkEvent(series.slug, nextBookmarked ? 'bookmark' : 'unbookmark');
-      window.dispatchEvent(new Event('vortex-bookmarks-change'));
-    } catch {
-      /* storage may be unavailable */
-    }
-
-    // Optimistically update favorite count
-    setFavoriteCount((prev) => Math.max(0, prev + (nextBookmarked ? 1 : -1)));
-
-    // Sync to backend so everyone sees the updated favorite count
-    try {
-      const response = await fetch('/api/series-favorite', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          seriesSlug: series.slug,
-          action: nextBookmarked ? 'bookmark' : 'unbookmark',
-          visitorId: getAnonymousVisitorId(),
-        }),
+    if (type === 'remove') {
+      const next = bookmarks.filter((id) => id !== series.slug && id !== series.href);
+      const nextTypes = { ...bookmarkTypes };
+      delete nextTypes[series.slug];
+      setBookmarks(next);
+      setBookmarkTypes(nextTypes);
+      try {
+        localStorage.setItem('vortex-series-bookmarks', JSON.stringify(next));
+        writeBookmarkTypes(nextTypes);
+        recordBookmarkEvent(series.slug, 'unbookmark');
+        window.dispatchEvent(new Event('vortex-bookmarks-change'));
+      } catch { /* storage may be unavailable */ }
+      setFavoriteCount((prev) => Math.max(0, prev - 1));
+      toast({
+        description: (
+          <span className="notification-read-toast__content">
+            <Check className="notification-read-toast__icon" size={18} aria-hidden="true" />
+            Bookmark removed
+          </span>
+        ),
+        className: 'notification-read-toast',
+        duration: 3000,
       });
-      if (response.ok) {
-        const data = await response.json();
-        if (typeof data.favorites === 'number') {
-          setFavoriteCount(data.favorites);
-        }
-        void queryClient.invalidateQueries({
-          queryKey: [...SERIES_CATALOG_QUERY_KEY, 'home-highlights'],
-          refetchType: 'none',
+      // Sync removal to backend
+      try {
+        const response = await fetch('/api/series-favorite', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            seriesSlug: series.slug,
+            action: 'unbookmark',
+            visitorId: getAnonymousVisitorId(),
+          }),
         });
+        if (response.ok) {
+          const data = await response.json();
+          if (typeof data.favorites === 'number') setFavoriteCount(data.favorites);
+          void queryClient.invalidateQueries({
+            queryKey: [...SERIES_CATALOG_QUERY_KEY, 'home-highlights'],
+            refetchType: 'none',
+          });
+        }
+      } catch (err) {
+        console.warn('Could not sync favorite count:', err);
       }
-    } catch (err) {
-      console.warn('Could not sync favorite count:', err);
-    } finally {
-      setBookmarkBusy(false);
+    } else {
+      const wasBookmarked = bookmarked;
+      const next = wasBookmarked
+        ? bookmarks
+        : Array.from(new Set([...bookmarks, series.slug, series.href]));
+      const nextTypes = { ...bookmarkTypes, [series.slug]: type };
+      setBookmarks(next);
+      setBookmarkTypes(nextTypes);
+      try {
+        localStorage.setItem('vortex-series-bookmarks', JSON.stringify(next));
+        writeBookmarkTypes(nextTypes);
+        if (!wasBookmarked) recordBookmarkEvent(series.slug, 'bookmark');
+        window.dispatchEvent(new Event('vortex-bookmarks-change'));
+      } catch { /* storage may be unavailable */ }
+      if (!wasBookmarked) setFavoriteCount((prev) => prev + 1);
+      toast({
+        description: (
+          <span className="notification-read-toast__content">
+            <Check className="notification-read-toast__icon" size={18} aria-hidden="true" />
+            Bookmark updated successfully
+          </span>
+        ),
+        className: 'notification-read-toast',
+        duration: 3000,
+      });
+      // Sync new bookmark to backend
+      if (!wasBookmarked) {
+        try {
+          const response = await fetch('/api/series-favorite', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              seriesSlug: series.slug,
+              action: 'bookmark',
+              visitorId: getAnonymousVisitorId(),
+            }),
+          });
+          if (response.ok) {
+            const data = await response.json();
+            if (typeof data.favorites === 'number') setFavoriteCount(data.favorites);
+            void queryClient.invalidateQueries({
+              queryKey: [...SERIES_CATALOG_QUERY_KEY, 'home-highlights'],
+              refetchType: 'none',
+            });
+          }
+        } catch (err) {
+          console.warn('Could not sync favorite count:', err);
+        }
+      }
     }
+    setBookmarkBusy(false);
   };
+
+  useEffect(() => {
+    if (!bookmarkDropdownOpen) return;
+    const handleClickOutside = (e: MouseEvent) => {
+      if (bookmarkDropdownRef.current && !bookmarkDropdownRef.current.contains(e.target as Node)) {
+        setBookmarkDropdownOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [bookmarkDropdownOpen]);
   const share = () => setShareModalOpen(true);
   const chooseReaction = (key: ReactionKey) => {
     if (reactionBusy) return;
@@ -1084,13 +1190,48 @@ export default function SeriesDetailPage() {
           </div>}
           <div className="series-left-actions">
             {readChapterHref && chapterLabel ? <a href={readChapterHref} className="series-action series-action--primary" target={readChapterSource ? '_blank' : undefined} rel={readChapterSource ? 'noopener noreferrer' : undefined}><span>Read {chapterLabel}</span></a> : <button className="series-action series-action--primary" disabled title="No chapter link is available yet">Reading unavailable</button>}
-            <button className={`series-action series-action--bookmark${bookmarked ? ' is-saved' : ''}`} onClick={toggleBookmark} aria-pressed={bookmarked} disabled={bookmarkBusy} data-testid="button-bookmark-series">{bookmarked ? <Check size={15} /> : <Bookmark size={15} />}{bookmarked ? 'Bookmarked' : 'Bookmark'}</button>
+            <div className="series-bookmark-wrapper" ref={bookmarkDropdownRef}>
+              <button
+                className={`series-action series-action--bookmark${bookmarked ? ' is-saved' : ''}`}
+                onClick={handleBookmarkButtonClick}
+                aria-pressed={bookmarked}
+                disabled={bookmarkBusy}
+                data-testid="button-bookmark-series"
+              >
+                {bookmarked ? <Check size={15} /> : <Bookmark size={15} />}
+                {bookmarked
+                  ? (currentBookmarkType ? (BOOKMARK_OPTIONS.find((o) => o.id === currentBookmarkType)?.buttonLabel ?? 'Bookmarked') : 'Bookmarked')
+                  : 'Bookmark'}
+              </button>
+              {bookmarkDropdownOpen && (
+                <div className="series-bookmark-dropdown" role="menu">
+                  {BOOKMARK_OPTIONS.map((option) => (
+                    <button
+                      key={option.id}
+                      type="button"
+                      className={`series-bookmark-option${currentBookmarkType === option.id ? ' is-active' : ''}`}
+                      role="menuitem"
+                      onClick={() => void selectBookmarkType(option.id)}
+                    >
+                      {option.label}
+                      {currentBookmarkType === option.id && <Check size={13} />}
+                    </button>
+                  ))}
+                  {bookmarked && (
+                    <button
+                      type="button"
+                      className="series-bookmark-option series-bookmark-option--remove"
+                      role="menuitem"
+                      onClick={() => void selectBookmarkType('remove')}
+                    >
+                      <Trash2 size={13} />
+                      Remove Bookmark
+                    </button>
+                  )}
+                </div>
+              )}
+            </div>
           </div>
-          {!bookmarked && !bookmarkNoticeDismissed && <div className="series-bookmark-notice" role="status">
-            <Bell size={16} aria-hidden="true" />
-            <span>Bookmark this series and we'll ping you when new chapters drop!</span>
-            <button type="button" aria-label="Dismiss bookmark reminder" onClick={() => setBookmarkNoticeDismissed(true)}><X size={15} /></button>
-          </div>}
           {seriesPageVisibility.reportIssue && <ReportCallout seriesSlug={slug} seriesTitle={title} />}
           {seriesPageVisibility.ratingStats && <div className="series-quick-stats">
             <div><Star size={15} fill="currentColor" /><strong>{detail?.rating ?? series.rating ?? '—'}</strong><small>Ratings</small></div>
