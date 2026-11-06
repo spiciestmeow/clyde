@@ -1,3 +1,4 @@
+import { useImgSkeleton } from '../hooks/useImgSkeleton';
 import { useEffect, useRef, useState, type PointerEvent as ReactPointerEvent, type MouseEvent as ReactMouseEvent } from 'react';
 import { Link } from 'wouter';
 
@@ -18,6 +19,7 @@ export function PopularNowCard({
   imageSrc,
   copyIndex = 0,
 }: PopularNowCardProps) {
+  const { imgRef, loaded, onLoad, onError, imgClassName } = useImgSkeleton(imageSrc);
   const longPressTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const longPressTriggered = useRef(false);
   const pointerStart = useRef<{ x: number; y: number } | null>(null);
@@ -77,13 +79,16 @@ export function PopularNowCard({
       onClickCapture={handleClickCapture}
     >
       <div className="popular-card__card">
-        <div className="popular-card__art">
+        <div className={`popular-card__art${!loaded ? " card-shimmer" : ""}`}>
           <img
+            ref={imgRef}
             draggable={false}
             src={imageSrc}
             alt={`Cover of ${item.title}`}
             loading="lazy"
             referrerPolicy="no-referrer"
+            onLoad={onLoad}
+            onError={onError}
           />
         </div>
         <div className="popular-card__title">

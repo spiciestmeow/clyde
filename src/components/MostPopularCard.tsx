@@ -1,4 +1,5 @@
 import { Link } from 'wouter';
+import { useImgSkeleton } from '../hooks/useImgSkeleton';
 
 export type MostPopularCardItem = {
   title: string;
@@ -24,10 +25,20 @@ export function MostPopularCard({
   imageSrc,
   rank,
 }: MostPopularCardProps) {
+  const { imgRef, loaded, onLoad, onError, imgClassName } = useImgSkeleton(imageSrc);
+
   return (
     <Link className="rank-card" href={item.href} data-genre-tone={getGenreTone(item.title)}>
-      <span className="rank-cover">
-        <img src={imageSrc} alt={item.title} loading="lazy" />
+      <span className={`rank-cover${!loaded ? ' card-shimmer' : ''}`}>
+        <img
+          ref={imgRef}
+          src={imageSrc}
+          alt={item.title}
+          loading="lazy"
+          className={imgClassName}
+          onLoad={onLoad}
+          onError={onError}
+        />
       </span>
       <b className="rank-number">{rank}</b>
       <div className="rank-info">
@@ -45,4 +56,3 @@ export function MostPopularCard({
     </Link>
   );
 }
-

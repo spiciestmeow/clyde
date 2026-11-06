@@ -1,4 +1,5 @@
 import { Clock3, History, Play } from 'lucide-react';
+import { useImgSkeleton } from '../hooks/useImgSkeleton';
 
 export type ContinueReadingItem = {
   title: string;
@@ -17,6 +18,45 @@ function formatViewedTime(timestamp: number): string {
   const elapsedDays = Math.floor(elapsedHours / 24);
   if (elapsedDays < 7) return `${elapsedDays}d ago`;
   return new Date(timestamp).toLocaleDateString();
+}
+
+function ContinueReadingCard({ item }: { item: ContinueReadingItem }) {
+  const { imgRef, loaded, onLoad, onError, imgClassName } = useImgSkeleton(item.coverSrc);
+
+  return (
+    <a
+      className="continue-card"
+      href={item.href}
+      aria-label={`Recently viewed ${item.title}, latest synced chapter ${item.chapter}`}
+    >
+      <span className="continue-card__cover-shell">
+        <span className={`continue-card__cover${!loaded ? ' card-shimmer' : ''}`}>
+          <img
+            ref={imgRef}
+            src={item.coverSrc}
+            alt={`Cover of ${item.title}`}
+            loading="lazy"
+            className={imgClassName}
+            onLoad={onLoad}
+            onError={onError}
+          />
+          <span className="continue-card__hover-action" aria-hidden="true">
+            <span><Play fill="currentColor" /></span>
+          </span>
+          <span className="continue-card__cover-progress">
+            <span>{item.chapter}</span>
+          </span>
+        </span>
+      </span>
+      <span className="continue-card__title">{item.title}</span>
+      <span className="continue-card__activity">
+        <span className="continue-card__last-read">
+          <Clock3 aria-hidden="true" />
+          Viewed {formatViewedTime(item.viewedAt)}
+        </span>
+      </span>
+    </a>
+  );
 }
 
 type ContinueReadingSectionProps = {
@@ -42,31 +82,7 @@ export function ContinueReadingSection({
 
       <div className="continue-grid">
         {items.map((item) => (
-          <a
-            className="continue-card"
-            href={item.href}
-            key={item.title}
-            aria-label={`Recently viewed ${item.title}, latest synced chapter ${item.chapter}`}
-          >
-            <span className="continue-card__cover-shell">
-              <span className="continue-card__cover">
-                <img src={item.coverSrc} alt={`Cover of ${item.title}`} loading="lazy" />
-                <span className="continue-card__hover-action" aria-hidden="true">
-                  <span><Play fill="currentColor" /></span>
-                </span>
-                <span className="continue-card__cover-progress">
-                  <span>{item.chapter}</span>
-                </span>
-              </span>
-            </span>
-            <span className="continue-card__title">{item.title}</span>
-            <span className="continue-card__activity">
-              <span className="continue-card__last-read">
-                <Clock3 aria-hidden="true" />
-                Viewed {formatViewedTime(item.viewedAt)}
-              </span>
-            </span>
-          </a>
+          <ContinueReadingCard key={item.title} item={item} />
         ))}
       </div>
     </section>

@@ -29,6 +29,7 @@ import {
 import { readRecentlyViewedSeries } from '../lib/recentlyViewedSeries';
 import { getEarlyBirdSource, getWinningChapterSource } from '../lib/sourcePriority';
 import { useThemeMode } from '../hooks/useThemeMode';
+import { useImgSkeleton } from '../hooks/useImgSkeleton';
 import assetReferences from '../../clone-data/asset-references.json';
 import type { BookmarkType } from './SeriesDetailPage';
 import './latest-updates.css';
@@ -97,6 +98,44 @@ function coverUrl(source?: string | null, width = 400) {
     }
   }
   return source;
+}
+
+function BookmarkContinueCard({
+  item,
+}: {
+  item: { slug: string; title: string; href: string; coverSrc: string; chapter: string; viewedAt: number };
+}) {
+  const { imgRef, loaded, onLoad, onError, imgClassName } = useImgSkeleton(item.coverSrc);
+  return (
+    <Link href={item.href} className="continue-card">
+      <span className="continue-card__cover-shell">
+        <span className={`continue-card__cover${!loaded ? ' card-shimmer' : ''}`}>
+          <img
+            ref={imgRef}
+            src={item.coverSrc}
+            alt={`Cover of ${item.title}`}
+            loading="lazy"
+            className={imgClassName}
+            onLoad={onLoad}
+            onError={onError}
+          />
+          <span className="continue-card__hover-action" aria-hidden="true">
+            <span><Play fill="currentColor" /></span>
+          </span>
+          <span className="continue-card__cover-progress">
+            <span>{item.chapter}</span>
+          </span>
+        </span>
+      </span>
+      <span className="continue-card__title">{item.title}</span>
+      <span className="continue-card__activity">
+        <span className="continue-card__last-read">
+          <Clock3 size={12} aria-hidden="true" />
+          {formatViewedTime(item.viewedAt)}
+        </span>
+      </span>
+    </Link>
+  );
 }
 
 export default function BookmarksPage() {
@@ -320,30 +359,7 @@ export default function BookmarksPage() {
             ) : recentViewedCards.length > 0 ? (
               <div className="bookmarks-recent-grid">
                 {recentViewedCards.map((item) => (
-                  <Link
-                    key={item.slug}
-                    href={item.href}
-                    className="continue-card"
-                  >
-                    <span className="continue-card__cover-shell">
-                      <span className="continue-card__cover">
-                        <img src={item.coverSrc} alt={`Cover of ${item.title}`} loading="lazy" />
-                        <span className="continue-card__hover-action" aria-hidden="true">
-                          <span><Play fill="currentColor" /></span>
-                        </span>
-                        <span className="continue-card__cover-progress">
-                          <span>{item.chapter}</span>
-                        </span>
-                      </span>
-                    </span>
-                    <span className="continue-card__title">{item.title}</span>
-                    <span className="continue-card__activity">
-                      <span className="continue-card__last-read">
-                        <Clock3 size={12} aria-hidden="true" />
-                        {formatViewedTime(item.viewedAt)}
-                      </span>
-                    </span>
-                  </Link>
+                  <BookmarkContinueCard key={item.slug} item={item} />
                 ))}
               </div>
             ) : (

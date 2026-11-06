@@ -3,6 +3,7 @@ import { createPortal } from 'react-dom';
 import { useQuery } from '@tanstack/react-query';
 import { ChevronRight, Search, X } from 'lucide-react';
 import { useLocation } from 'wouter';
+import { useImgSkeleton } from '../hooks/useImgSkeleton';
 
 export type SiteSearchItem = {
   title: string;
@@ -21,6 +22,25 @@ type SiteSearchProps = {
   className?: string;
 };
 
+function SearchResultCover({ cover }: { cover?: string }) {
+  const { loaded, onLoad, onError, imgClassName } = useImgSkeleton(cover);
+  if (!cover) return <span className="site-search-result__cover" />;
+  return (
+    <span className={`site-search-result__cover${!loaded ? ' card-shimmer' : ''}`}>
+      <img
+        src={cover}
+        alt=""
+        loading="lazy"
+        className={imgClassName}
+        onLoad={onLoad}
+        onError={(event) => {
+          onError();
+          event.currentTarget.hidden = true;
+        }}
+      />
+    </span>
+  );
+}
 export default function SiteSearch({
   items,
   trendingItems,

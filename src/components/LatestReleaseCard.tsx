@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { useImgSkeleton } from '../hooks/useImgSkeleton';
 import { Link } from 'wouter';
 import { Eye, Pin, Star } from 'lucide-react';
 import { getSeriesReleaseTimestamp, parseChapterAgeMinutes, type SeriesRecord } from '../lib/seriesCatalog';
@@ -217,6 +218,7 @@ export function LatestReleaseCard({
   imageSrc,
   variant = 'default',
 }: LatestReleaseCardProps) {
+  const { imgRef, loaded, onLoad, onError, imgClassName } = useImgSkeleton(imageSrc);
   const author = cleanCredit(release.author);
   const artist = cleanCredit(release.artist);
   const isSameAuthorArtist =
@@ -245,8 +247,8 @@ export function LatestReleaseCard({
   const categoryLabel = release.category?.trim() || 'Manhwa';
   return (
     <article className={`release-card${variant === 'series' ? ' release-card--series' : ''}`}>
-      <Link className="release-cover" href={release.href} title={release.title}>
-        <img src={imageSrc} alt={release.title} loading="lazy" />
+      <Link className={`release-cover${!loaded ? " card-shimmer" : ""}`} href={release.href} title={release.title}>
+        <img ref={imgRef} src={imageSrc} alt={release.title} loading="lazy" className={imgClassName} onLoad={onLoad} onError={onError} />
         <span className="release-type" data-category={categoryLabel.toLowerCase()}>
           {categoryLabel}
         </span>

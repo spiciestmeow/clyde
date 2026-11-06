@@ -32,6 +32,7 @@ import { SeriesReportIssue } from '../components/SeriesReportIssue';
 import { Shareable } from '../components/Shareable';
 import { useThemeMode } from '../hooks/useThemeMode';
 import { useSeriesDetail } from '../hooks/useSeriesDetail';
+import { useImgSkeleton } from '../hooks/useImgSkeleton';
 import { DEFAULT_SERIES_PAGE_VISIBILITY, SITE_SETTINGS_UPDATED_EVENT, getCachedSiteSettings, getSiteSettings } from '../lib/siteSettings';
 import { formatScanlatorSeriesUrl } from '../lib/scanlatorLinks';
 import { getEarlyBirdSource, getWinningChapterSource, releaseTimestamp } from '../lib/sourcePriority';
@@ -49,7 +50,7 @@ import {
 import '../series-detail.css';
 import '../series-data-status.css';
 
-type Recommendation = { title: string; href: string; cover: string; rating: string | null; chapterCount: number };
+type Recommendation = { title: string; href: string; cover: string; rating: string | null; chapterCount: number | null };
 type ReactionKey = SeriesReactionKey;
 type ReactionCounts = SeriesReactionCounts;
 type RailPosition = { left: number; top: number; width: number; maxHeight: number };
@@ -197,6 +198,42 @@ function recoverSeriesImage(event: SyntheticEvent<HTMLDivElement>) {
   }
 }
 
+function SeriesRelatedItem({ item }: { item: Recommendation }) {
+  const coverUrl = imageUrl(item.cover, 120);
+  const { loaded, onLoad, onError, imgClassName } = useImgSkeleton(coverUrl);
+  return (
+    <Link
+      href={item.href}
+      className="series-related"
+      data-testid={`link-related-${item.href.split('/').pop()}`}
+      data-recommendation-item="true"
+    >
+      <span className={`series-related-cover${!loaded ? ' card-shimmer' : ''}`}>
+        <img
+          src={coverUrl}
+          alt={item.title}
+          width={56}
+          height={75}
+          loading="lazy"
+          className={imgClassName}
+          onLoad={onLoad}
+          onError={onError}
+        />
+      </span>
+      <span className="series-related-copy">
+        <strong>{item.title}</strong>
+        <small className="series-related-meta">
+          <span className="series-related-rating">
+            <span className="series-related-star" aria-hidden="true">★</span>
+            {item.rating ?? '—'}
+          </span>
+          <span>{item.chapterCount ?? '—'} ch</span>
+        </small>
+      </span>
+    </Link>
+  );
+}
+
 function readSet(key: string): string[] {
   try {
     const value = JSON.parse(localStorage.getItem(key) || '[]');
@@ -303,6 +340,8 @@ export default function SeriesDetailPage() {
     return searchSiteCatalog(query, 4);
   }, []);
   const [bookmarks, setBookmarks] = useState<string[]>(() => readSet('vortex-series-bookmarks'));
+  const mainCoverUrl = series?.cover ? imageUrl(series.cover, 700) : null;
+  const { loaded: mainCoverLoaded, onLoad: onMainCoverLoad, onError: onMainCoverError, imgClassName: mainCoverImgClassName } = useImgSkeleton(mainCoverUrl);
   const [favoriteCount, setFavoriteCount] = useState<number>(() => {
     return parseInt(String(series?.favorites || '0').replace(/[^\d]/g, ''), 10) || 0;
   });
@@ -1212,13 +1251,19 @@ export default function SeriesDetailPage() {
           {series.cover ? <button
             type="button"
             ref={coverButtonRef}
-            className="series-cover-frame"
+            className={`series-cover-frame${!mainCoverLoaded ? ' card-shimmer' : ''}`}
             onClick={() => setCoverOpen(true)}
             aria-haspopup="dialog"
             aria-label={`View full-size cover of ${title}`}
             title="View full-size cover"
           >
-            <img src={imageUrl(series.cover, 700)} alt={`Cover of ${title}`} />
+            <img
+              src={mainCoverUrl || imageUrl(series.cover, 700)}
+              alt={`Cover of ${title}`}
+              className={mainCoverImgClassName}
+              onLoad={onMainCoverLoad}
+              onError={onMainCoverError}
+            />
             {series.category && <span className="series-cover-ribbon">{series.category}</span>}
             <span className="series-cover-view-overlay" aria-hidden="true">
               <span className="series-cover-expand"><Maximize2 size={20} /></span>
@@ -1540,16 +1585,9 @@ export default function SeriesDetailPage() {
               <span className="card-shimmer" />
               <div><span className="card-shimmer" /><span className="card-shimmer" /></div>
             </div>)}
-          </div> : related.length > 0 ? <div className="series-related-list">{related.map((item) => <Link href={item.href} className="series-related" key={item.href} data-testid={`link-related-${item.href.split('/').pop()}`} data-recommendation-item="true">
-            <span className="series-related-cover"><img src={imageUrl(item.cover, 120)} alt={item.title} width={56} height={75} loading="lazy" /></span>
-            <span className="series-related-copy">
-              <strong>{item.title}</strong>
-              <small className="series-related-meta">
-                <span className="series-related-rating"><span className="series-related-star" aria-hidden="true">★</span>{item.rating ?? '—'}</span>
-                <span>{item.chapterCount ?? '—'} ch</span>
-              </small>
-            </span>
-          </Link>)}</div> : relatedQuery.isError ? <div className="series-empty" role="alert">Could not load similar series. <button type="button" onClick={() => void relatedQuery.refetch()}>Retry</button></div>
+          </div> : related.length > 0 ? <div className="series-related-list">{related.map((item) => (
+            <SeriesRelatedItem key={item.href} item={item} />
+          ))}</div> : relatedQuery.isError ? <div className="series-empty" role="alert">Could not load similar series. <button type="button" onClick={() => void relatedQuery.refetch()}>Retry</button></div>
             : relatedQuery.fetchStatus === 'paused' ? <div className="series-empty" role="status">Waiting for a network connection…</div>
               : relatedQuery.isSuccess ? <div className="series-empty">No similar series found.</div>
                 : <div className="series-empty" role="alert">Similar series haven’t loaded. <button type="button" onClick={() => void relatedQuery.refetch()}>Retry</button></div>}
