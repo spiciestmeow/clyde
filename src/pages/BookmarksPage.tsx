@@ -207,14 +207,12 @@ export default function BookmarksPage() {
       .filter((s): s is SeriesRecord => Boolean(s));
   }, [activeTab, allSavedSlugs, bookmarkTypes, seriesBySlug]);
 
-  // Prepare Recent Viewed poster cards with progress & activity
+  // Prepare Recent Viewed poster cards
   const recentViewedCards = useMemo(() => {
     return recentlyViewed.flatMap((recent) => {
       const series = seriesBySlug.get(recent.slug);
       if (!series) return [];
       const latestChapter = series.chapters[0]?.title || (series.facts?.latest_chapter_number ? `Chapter ${series.facts.latest_chapter_number}` : 'Chapter 1');
-      const totalChapters = series.chapters.length || 20;
-      const remaining = Math.max(0, totalChapters - 1);
       return [{
         slug: series.slug,
         title: series.title,
@@ -222,8 +220,6 @@ export default function BookmarksPage() {
         coverSrc: coverUrl(series.cover, 400),
         chapter: latestChapter,
         viewedAt: recent.viewedAt,
-        remaining: remaining > 0 ? `${remaining} left` : 'Latest',
-        progress: '5%',
       }];
     });
   }, [recentlyViewed, seriesBySlug]);
@@ -331,7 +327,6 @@ export default function BookmarksPage() {
                         </span>
                         <span className="continue-card__cover-progress">
                           <span>{item.chapter}</span>
-                          <span>{item.progress}</span>
                         </span>
                       </span>
                     </span>
@@ -340,9 +335,6 @@ export default function BookmarksPage() {
                       <span className="continue-card__last-read">
                         <Clock3 size={12} aria-hidden="true" />
                         {formatViewedTime(item.viewedAt)}
-                      </span>
-                      <span className="continue-card__remaining">
-                        {item.remaining}
                       </span>
                     </span>
                   </Link>
