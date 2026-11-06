@@ -1,5 +1,4 @@
 import { useState } from 'react';
-import { Link } from 'wouter';
 import {
   Check,
   Download,
@@ -58,13 +57,6 @@ export default function InstallPwaPage() {
       />
 
       <main className="install-pwa-container">
-        {/* Breadcrumb */}
-        <nav className="install-pwa-breadcrumbs" aria-label="Breadcrumb">
-          <Link href="/" className="install-pwa-breadcrumb-link">HOME</Link>
-          <span className="install-pwa-breadcrumb-sep" aria-hidden="true">/</span>
-          <span className="install-pwa-breadcrumb-current">INSTALL PWA</span>
-        </nav>
-
         {/* Page Header */}
         <header className="install-pwa-header">
           <h1 className="install-pwa-title">Progressive Web App</h1>
@@ -91,70 +83,14 @@ export default function InstallPwaPage() {
 
           {/* Smartphone Mockup */}
           <div className="install-pwa-mockup-wrapper">
-            <div className="install-pwa-phone">
-              <div className="install-pwa-phone-notch">
-                <span className="install-pwa-phone-camera" />
-              </div>
-              <div className="install-pwa-phone-screen">
-                <div className="install-pwa-phone-statusbar">
-                  <span className="install-pwa-phone-time">9:41</span>
-                  <div className="install-pwa-phone-indicators">
-                    <span className="install-pwa-bar-signal" />
-                    <span className="install-pwa-bar-wifi" />
-                    <span className="install-pwa-bar-battery" />
-                  </div>
-                </div>
-
-                <div className="install-pwa-phone-grid">
-                  {/* Clydee App Icon */}
-                  <div className="install-pwa-app-icon is-highlighted">
-                    <div className="install-pwa-app-icon-img">
-                      <img src="/pwa-192x192.png" alt="Clydee icon" width={60} height={60} />
-                    </div>
-                    <span className="install-pwa-app-name">Clydee</span>
-                  </div>
-
-                  {/* Dummy Home Icons */}
-                  <div className="install-pwa-app-icon">
-                    <div className="install-pwa-app-icon-dummy dummy-cal">
-                      <span className="dummy-cal-day">MON</span>
-                      <span className="dummy-cal-num">6</span>
-                    </div>
-                    <span className="install-pwa-app-name">Calendar</span>
-                  </div>
-
-                  <div className="install-pwa-app-icon">
-                    <div className="install-pwa-app-icon-dummy dummy-photos" />
-                    <span className="install-pwa-app-name">Photos</span>
-                  </div>
-
-                  <div className="install-pwa-app-icon">
-                    <div className="install-pwa-app-icon-dummy dummy-camera" />
-                    <span className="install-pwa-app-name">Camera</span>
-                  </div>
-
-                  <div className="install-pwa-app-icon">
-                    <div className="install-pwa-app-icon-dummy dummy-mail" />
-                    <span className="install-pwa-app-name">Mail</span>
-                  </div>
-
-                  <div className="install-pwa-app-icon">
-                    <div className="install-pwa-app-icon-dummy dummy-safari" />
-                    <span className="install-pwa-app-name">Browser</span>
-                  </div>
-
-                  <div className="install-pwa-app-icon">
-                    <div className="install-pwa-app-icon-dummy dummy-clock" />
-                    <span className="install-pwa-app-name">Clock</span>
-                  </div>
-
-                  <div className="install-pwa-app-icon">
-                    <div className="install-pwa-app-icon-dummy dummy-settings" />
-                    <span className="install-pwa-app-name">Settings</span>
-                  </div>
-                </div>
-              </div>
-            </div>
+            <img
+              src="/pwa-mockup.png"
+              alt="Clydee PWA on mobile device"
+              className="install-pwa-mockup-img"
+              width={540}
+              height={310}
+              loading="eager"
+            />
           </div>
 
           <div className="install-pwa-prose">
