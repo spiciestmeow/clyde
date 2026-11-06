@@ -115,6 +115,7 @@ export default function NotificationPopover({ mode = 'popover' }: NotificationPo
   const [hiddenIds, setHiddenIds] = useState<Set<string>>(() => getStoredIds(HIDDEN_IDS_KEY));
   const [bookmarkIntervals, setBookmarkIntervals] = useState<Record<string, BookmarkSubscriptionInterval[]>>(() => getBookmarkIntervals());
   const [isLoading, setIsLoading] = useState(true);
+  const [hasLoaded, setHasLoaded] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const [loadingOlder, setLoadingOlder] = useState(false);
   const [hasOlder, setHasOlder] = useState(false);
@@ -203,6 +204,7 @@ export default function NotificationPopover({ mode = 'popover' }: NotificationPo
         series_cover: item.series_cover?.trim() || knownCoversRef.current.get(item.series_id) || '',
       })));
       setHasOlder(notifications.length === NOTIFICATION_PAGE_SIZE);
+      setHasLoaded(true);
     } finally {
       if (showInitialLoading) setIsLoading(false);
     }
@@ -319,11 +321,14 @@ export default function NotificationPopover({ mode = 'popover' }: NotificationPo
   const unreadCount = eligibleItems.filter((item) => !hiddenIds.has(item.id) && !readIds.has(item.id)).length;
 
   useEffect(() => {
+    // Don't publish the placeholder 0 from a freshly mounted popover (items are
+    // still empty). That would wipe the bottom nav badge on every route change.
+    if (!hasLoaded) return;
     try {
       localStorage.setItem('vortex-unread-count', String(unreadCount));
     } catch {}
     window.dispatchEvent(new CustomEvent('vortex-unread-count-updated', { detail: unreadCount }));
-  }, [unreadCount]);
+  }, [unreadCount, hasLoaded]);
   const visibleUnreadCount = visibleItems.filter((item) => !readIds.has(item.id)).length;
   const visibleReadCount = visibleItems.length - visibleUnreadCount;
   const unreadCountsByCategory = useMemo(() => ({
