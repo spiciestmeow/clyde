@@ -28,6 +28,7 @@ import SeriesBrowsePage from './pages/SeriesBrowsePage';
 import CreditsPage from './pages/CreditsPage';
 import LatestUpdatesPage from './pages/LatestUpdatesPage';
 import DonationPage from './pages/DonationPage';
+import BookmarksPage from './pages/BookmarksPage';
 import SecurityVerification from './components/SecurityVerification';
 import { toSiteSearchItems, toTrendingSiteSearchItems } from './data/seriesSearchCatalog';
 import { useThemeMode } from './hooks/useThemeMode';
@@ -1018,6 +1019,7 @@ function App() {
         <Route path="/dmca-policy" component={CreditsPage} />
         <Route path="/donate" component={DonationPage} />
         <Route path="/support" component={DonationPage} />
+        <Route path="/bookmarks" component={BookmarksPage} />
         <Route path="/series" component={SeriesBrowsePage} />
         <Route path="/series/:slug" component={SeriesDetailPage} />
         <Route path="/notifications" component={NotificationsPage} />
