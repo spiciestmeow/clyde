@@ -7,6 +7,7 @@ export type HeaderVisibility = {
   community: boolean;
   search: boolean;
   bookmarks: boolean;
+  bookmarksAdminOnly: boolean;
   notifications: boolean;
   theme: boolean;
   account: boolean;
@@ -283,6 +284,7 @@ export const DEFAULT_HEADER_VISIBILITY: HeaderVisibility = {
   community: true,
   search: true,
   bookmarks: true,
+  bookmarksAdminOnly: true,
   notifications: true,
   theme: true,
   account: true,

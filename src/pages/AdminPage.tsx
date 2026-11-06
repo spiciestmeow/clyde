@@ -154,6 +154,7 @@ const headerVisibilityOptions: { key: keyof HeaderVisibility; label: string; des
   { key: 'community', label: 'Community', description: 'Community hub and discussion entry point.', group: 'Navigation' },
   { key: 'search', label: 'Search', description: 'Quick search field in the site header.', group: 'Reader tools' },
   { key: 'bookmarks', label: 'Bookmarks', description: 'A reader’s saved series and reading list.', group: 'Reader tools' },
+  { key: 'bookmarksAdminOnly', label: 'Bookmarks: Admin Only Mode', description: 'When enabled, the bookmarks button in the header is visible only to logged-in admins. Hidden from the public.', group: 'Reader tools' },
   { key: 'notifications', label: 'Notifications', description: 'Updates and activity notifications.', group: 'Reader tools' },
   { key: 'theme', label: 'Theme control', description: 'Light and dark appearance control.', group: 'Reader tools' },
   { key: 'account', label: 'Account', description: 'Sign in and account access.', group: 'Reader tools' },

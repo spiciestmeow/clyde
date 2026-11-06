@@ -121,6 +121,7 @@ export default function SiteHeader({
   const headerVisibility = visibility ?? savedVisibility ?? DEFAULT_HEADER_VISIBILITY;
   const { isAdmin } = useIsAdmin();
   const canSeeDonate = headerVisibility.donate && (!headerVisibility.donateAdminOnly || isAdmin);
+  const canSeeBookmarks = headerVisibility.bookmarks && (!headerVisibility.bookmarksAdminOnly || isAdmin);
   const isSeriesPage = activeSection === 'series';
   const showMenu =
     headerVisibility.home ||
@@ -187,7 +188,7 @@ export default function SiteHeader({
           <div className="topbar-actions">
             {searchContent}
 
-            {headerVisibility.bookmarks && (
+            {canSeeBookmarks && (
               <Link className="bookmark-pill desktop-only" href="/bookmarks">
                 <Bookmark size={15} />
                 <span>Bookmarks</span>
@@ -355,7 +356,7 @@ export default function SiteHeader({
                 </div>
               )}
 
-              {headerVisibility.bookmarks && (
+              {canSeeBookmarks && (
                 <Link
                   className="mobile-nav-card"
                   href="/bookmarks"
