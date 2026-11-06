@@ -364,7 +364,47 @@
     --series-cover-width: clamp(140px, 40vw, 160px);
     --series-cover-radius: 6px;
     --series-card-gap: 10px;
-    --series-card-padding: 5px;
+    --series-card-padding: 6px;
+
+    /* Bigger title, rating, and releasing type/status */
+    --series-title-size: 15.5px;
+    --series-title-margin: 5px;
+    --series-meta-size: 12.5px;
+    --series-meta-margin: 8px;
+    --series-rating-size: 13.5px;
+    --series-status-size: 12px;
+    --series-status-dot: 8px;
+    --series-type-size: 11px;
+    --series-type-padding: 3px 8px;
+
+    /* Smaller, more compact chapter & details series cards (boxes) */
+    --series-box-gap: 5px;
+    --series-box-top: 2px;
+    --series-box-height: 31px;
+    --series-box-padding: 0 7px;
+    --series-box-radius: 5px;
+    --series-box-size: 10.5px;
+    --series-box-label-size: 10.5px;
+    --series-box-value-size: 10px;
+    --series-chapter-size: 11px;
+    --series-free-size: 9.5px;
+    --series-free-padding: 1px 5px;
+    --series-time-size: 10px;
+    --series-pill-size: 9px;
+  }
+
+  .bookmarks-route .release-card--series .release-title {
+    font-weight: 750;
+    line-height: 1.22;
+  }
+
+  .bookmarks-route .release-card--series .release-meta {
+    gap: 12px;
+  }
+
+  .bookmarks-route .release-card--series .release-rating svg {
+    width: 15px;
+    height: 15px;
   }
 
   .bookmarks-route .release-card--series .release-cover {
@@ -392,5 +432,15 @@
     --series-cover-width: clamp(124px, 38vw, 138px);
     --series-card-gap: 8px;
     --series-card-padding: 4px;
+    --series-title-size: 14.5px;
+    --series-rating-size: 12.5px;
+    --series-status-size: 11px;
+    --series-box-height: 29px;
+    --series-box-gap: 4px;
+    --series-box-padding: 0 6px;
+    --series-box-size: 9.5px;
+    --series-box-label-size: 9.5px;
+    --series-box-value-size: 9px;
+    --series-chapter-size: 10px;
   }
 }
