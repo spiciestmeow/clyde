@@ -311,30 +311,6 @@ export default function DonationPage() {
 
       <div className="donation-page-wrapper" data-accent-theme={siteSettings.accentTheme || 'default'}>
         <main className="donation-container">
-          {adminOnly && isAdmin && (
-            <div
-              className="donation-admin-notice"
-              style={{
-                background: 'var(--admin-notice-bg, rgba(220, 38, 38, 0.08))',
-                border: '1px solid var(--admin-notice-border, rgba(220, 38, 38, 0.28))',
-                borderRadius: '12px',
-                padding: '12px 18px',
-                margin: '0 auto 24px',
-                maxWidth: '780px',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '12px',
-                color: 'var(--text-primary)',
-                fontSize: '13px',
-                fontWeight: 500,
-              }}
-            >
-              <ShieldCheck size={20} style={{ color: 'var(--admin-notice-color, var(--brand, #dc2626))', flexShrink: 0 }} />
-              <span>
-                <strong>Admin Preview Mode:</strong> Donation is set to <em>Admin Only</em>. Public visitors cannot see the donate button or access this page.
-              </span>
-            </div>
-          )}
           {/* ── 1. Hero ────────────────────────────────────────── */}
           <section className="donation-hero">
             <div className="donation-hero-pill">
