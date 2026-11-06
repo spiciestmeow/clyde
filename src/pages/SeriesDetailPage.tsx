@@ -1281,6 +1281,19 @@ export default function SeriesDetailPage() {
               )}
             </div>
           </div>
+          {!bookmarked && !bookmarkNoticeDismissed && (
+            <div className="series-bookmark-notice" role="status">
+              <Bell size={16} aria-hidden="true" />
+              <span>Bookmark this series and we'll ping you when new chapters drop!</span>
+              <button
+                type="button"
+                aria-label="Dismiss bookmark reminder"
+                onClick={() => setBookmarkNoticeDismissed(true)}
+              >
+                <X size={15} />
+              </button>
+            </div>
+          )}
           {seriesPageVisibility.reportIssue && <ReportCallout seriesSlug={slug} seriesTitle={title} />}
           {seriesPageVisibility.ratingStats && <div className="series-quick-stats">
             <div><Star size={15} fill="currentColor" /><strong>{detail?.rating ?? series.rating ?? '—'}</strong><small>Ratings</small></div>

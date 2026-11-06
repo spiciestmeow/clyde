@@ -725,6 +725,7 @@
 }
 .series-bookmark-dropdown.is-portal {
   position: fixed;
+  left: auto !important;
 }
 @keyframes bm-drop-in {
   from { opacity: 0; transform: translateY(-8px); }
