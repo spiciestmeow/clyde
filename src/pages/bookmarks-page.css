@@ -58,7 +58,115 @@
   flex-wrap: wrap;
   align-items: center;
   gap: 8px;
-  margin-bottom: 28px;
+  margin-bottom: 20px;
+}
+
+/* Tabs divider */
+.bookmarks-tabs-divider {
+  width: 100%;
+  height: 1px;
+  background: var(--line, #e5e7eb);
+  margin: 0 0 24px;
+  border: 0;
+}
+
+.theme-dark .bookmarks-tabs-divider {
+  background: var(--line, #2d2d33);
+}
+
+/* Recent Viewed header section */
+.bookmarks-recent-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+.bookmarks-recent-header__left {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+}
+
+.bookmarks-recent-header__icon {
+  width: 20px;
+  height: 20px;
+  margin-top: 2px;
+  color: var(--text, #111827);
+  flex-shrink: 0;
+}
+
+.bookmarks-recent-header h2 {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 700;
+  line-height: 1.2;
+  color: var(--text, #111827);
+}
+
+.bookmarks-recent-header p {
+  margin: 4px 0 0;
+  font-size: 13px;
+  color: var(--series-muted, #6b7280);
+}
+
+.bookmarks-view-all-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 14px;
+  border: 1px solid var(--line, #e5e7eb);
+  border-radius: 9999px;
+  background: var(--panel, #ffffff);
+  color: var(--text, #374151);
+  font-size: 12px;
+  font-weight: 600;
+  text-decoration: none;
+  transition: all 0.15s ease;
+  white-space: nowrap;
+}
+
+.bookmarks-view-all-pill:hover {
+  background: var(--series-soft, #f3f4f6);
+  border-color: #d1d5db;
+}
+
+.theme-dark .bookmarks-view-all-pill {
+  background: var(--panel, #1f1f23);
+  border-color: var(--line, #2d2d33);
+  color: var(--text, #e5e7eb);
+}
+
+.theme-dark .bookmarks-view-all-pill:hover {
+  background: var(--series-soft, #2a2a30);
+  border-color: #3f3f46;
+}
+
+/* Recent Viewed grid */
+.bookmarks-recent-grid {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: 16px;
+}
+
+@media (max-width: 1200px) {
+  .bookmarks-recent-grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 800px) {
+  .bookmarks-recent-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 540px) {
+  .bookmarks-recent-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+  }
 }
 
 .bookmarks-tab-btn {

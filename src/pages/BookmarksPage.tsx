@@ -2,11 +2,14 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Link } from 'wouter';
 import {
+  ArrowRight,
   Bookmark,
   BookOpen,
   CheckCircle2,
   Clock,
-  RotateCcw,
+  Clock3,
+  History,
+  Play,
   XCircle,
   type LucideIcon,
 } from 'lucide-react';
@@ -36,6 +39,7 @@ interface BookmarkTabDef {
   id: TabKey;
   label: string;
   icon?: LucideIcon;
+  hideBadge?: boolean;
 }
 
 const TABS: BookmarkTabDef[] = [
@@ -44,8 +48,18 @@ const TABS: BookmarkTabDef[] = [
   { id: 'to-read', label: 'To-Read List', icon: Clock },
   { id: 'finished', label: 'Finished Reading', icon: CheckCircle2 },
   { id: 'abandoned', label: 'Abandoned Reads', icon: XCircle },
-  { id: 'continue', label: 'Continue Reading', icon: RotateCcw },
+  { id: 'continue', label: 'Recent Viewed', icon: History, hideBadge: true },
 ];
+
+function formatViewedTime(timestamp: number): string {
+  const elapsedMinutes = Math.max(0, Math.floor((Date.now() - timestamp) / 60_000));
+  if (elapsedMinutes < 1) return 'just now';
+  if (elapsedMinutes < 60) return `${elapsedMinutes}m ago`;
+  const elapsedHours = Math.floor(elapsedMinutes / 60);
+  if (elapsedHours < 24) return `${elapsedHours}h ago`;
+  const elapsedDays = Math.floor(elapsedHours / 24);
+  return `${elapsedDays}d ago`;
+}
 
 function readRawBookmarks(): string[] {
   if (typeof window === 'undefined') return [];
@@ -179,13 +193,10 @@ export default function BookmarksPage() {
     };
   }, [allSavedSlugs, bookmarkTypes, continueSlugs]);
 
-  // Filter series based on active tab
+  // Filter series based on active tab for regular cards
   const visibleSeries = useMemo(() => {
     if (activeTab === 'all') {
       return allSavedSlugs.map((slug) => seriesBySlug.get(slug)).filter((s): s is SeriesRecord => Boolean(s));
-    }
-    if (activeTab === 'continue') {
-      return continueSlugs.map((slug) => seriesBySlug.get(slug)).filter((s): s is SeriesRecord => Boolean(s));
     }
     return allSavedSlugs
       .filter((slug) => {
@@ -194,7 +205,28 @@ export default function BookmarksPage() {
       })
       .map((slug) => seriesBySlug.get(slug))
       .filter((s): s is SeriesRecord => Boolean(s));
-  }, [activeTab, allSavedSlugs, continueSlugs, bookmarkTypes, seriesBySlug]);
+  }, [activeTab, allSavedSlugs, bookmarkTypes, seriesBySlug]);
+
+  // Prepare Recent Viewed poster cards with progress & activity
+  const recentViewedCards = useMemo(() => {
+    return recentlyViewed.flatMap((recent) => {
+      const series = seriesBySlug.get(recent.slug);
+      if (!series) return [];
+      const latestChapter = series.chapters[0]?.title || (series.facts?.latest_chapter_number ? `Chapter ${series.facts.latest_chapter_number}` : 'Chapter 1');
+      const totalChapters = series.chapters.length || 20;
+      const remaining = Math.max(0, totalChapters - 1);
+      return [{
+        slug: series.slug,
+        title: series.title,
+        href: series.href || `/series/${series.slug}`,
+        coverSrc: coverUrl(series.cover, 400),
+        chapter: latestChapter,
+        viewedAt: recent.viewedAt,
+        remaining: remaining > 0 ? `${remaining} left` : 'Latest',
+        progress: '5%',
+      }];
+    });
+  }, [recentlyViewed, seriesBySlug]);
 
   return (
     <div className={`vortex-page bookmarks-route latest-updates-route ${dark ? 'theme-dark' : 'theme-light'}`}>
@@ -253,51 +285,119 @@ export default function BookmarksPage() {
                   </span>
                 )}
                 <span>{tab.label}</span>
-                <span className="bookmarks-tab-badge">{count}</span>
+                {!tab.hideBadge && <span className="bookmarks-tab-badge">{count}</span>}
               </button>
             );
           })}
         </div>
 
-        {/* Series cards grid or loading / empty state */}
-        {isLoading && allSavedSlugs.length > 0 ? (
-          <div className="bookmarks-grid release-variant-series">
-            <LatestReleasesSkeleton count={Math.min(6, allSavedSlugs.length || 3)} />
-          </div>
-        ) : visibleSeries.length > 0 ? (
-          <div className="bookmarks-grid latest-updates-grid release-variant-series">
-            {visibleSeries.map((release) => (
-              <LatestReleaseCard
-                key={release.slug}
-                release={release}
-                imageSrc={coverUrl(release.cover, 400)}
-                variant="series"
-              />
-            ))}
-          </div>
-        ) : (
-          <div className="bookmarks-empty">
-            <div className="bookmarks-empty-icon" aria-hidden="true">
-              <Bookmark size={28} />
+        {/* Divider below the tabs matching user request */}
+        <hr className="bookmarks-tabs-divider" aria-hidden="true" />
+
+        {/* Content based on selected tab */}
+        {activeTab === 'continue' ? (
+          <section className="bookmarks-recent-section" aria-labelledby="recent-viewed-heading">
+            {/* Replicated Title Header with Subtitle */}
+            <div className="bookmarks-recent-header">
+              <div className="bookmarks-recent-header__left">
+                <History className="bookmarks-recent-header__icon" aria-hidden="true" />
+                <div>
+                  <h2 id="recent-viewed-heading">Recent Viewed</h2>
+                  <p>Pick up with the latest synced chapter</p>
+                </div>
+              </div>
+              <Link href="/series" className="bookmarks-view-all-pill">
+                View All <ArrowRight size={13} aria-hidden="true" />
+              </Link>
             </div>
-            <h3>
-              {activeTab === 'all'
-                ? 'No bookmarks yet'
-                : activeTab === 'continue'
-                  ? 'No recently viewed series'
+
+            {isLoading && continueSlugs.length > 0 ? (
+              <div className="bookmarks-recent-grid">
+                <LatestReleasesSkeleton count={Math.min(6, continueSlugs.length || 3)} />
+              </div>
+            ) : recentViewedCards.length > 0 ? (
+              <div className="bookmarks-recent-grid">
+                {recentViewedCards.map((item) => (
+                  <Link
+                    key={item.slug}
+                    href={item.href}
+                    className="continue-card"
+                  >
+                    <span className="continue-card__cover-shell">
+                      <span className="continue-card__cover">
+                        <img src={item.coverSrc} alt={`Cover of ${item.title}`} loading="lazy" />
+                        <span className="continue-card__hover-action" aria-hidden="true">
+                          <span><Play fill="currentColor" /></span>
+                        </span>
+                        <span className="continue-card__cover-progress">
+                          <span>{item.chapter}</span>
+                          <span>{item.progress}</span>
+                        </span>
+                      </span>
+                    </span>
+                    <span className="continue-card__title">{item.title}</span>
+                    <span className="continue-card__activity">
+                      <span className="continue-card__last-read">
+                        <Clock3 size={12} aria-hidden="true" />
+                        {formatViewedTime(item.viewedAt)}
+                      </span>
+                      <span className="continue-card__remaining">
+                        {item.remaining}
+                      </span>
+                    </span>
+                  </Link>
+                ))}
+              </div>
+            ) : (
+              <div className="bookmarks-empty">
+                <div className="bookmarks-empty-icon" aria-hidden="true">
+                  <History size={28} />
+                </div>
+                <h3>No recently viewed series</h3>
+                <p>Read any series and it will automatically appear here so you can easily continue reading.</p>
+                <Link className="bookmarks-browse-btn" href="/series">
+                  Browse Series
+                </Link>
+              </div>
+            )}
+          </section>
+        ) : (
+          /* Regular category cards */
+          isLoading && allSavedSlugs.length > 0 ? (
+            <div className="bookmarks-grid release-variant-series">
+              <LatestReleasesSkeleton count={Math.min(6, allSavedSlugs.length || 3)} />
+            </div>
+          ) : visibleSeries.length > 0 ? (
+            <div className="bookmarks-grid latest-updates-grid release-variant-series">
+              {visibleSeries.map((release) => (
+                <LatestReleaseCard
+                  key={release.slug}
+                  release={release}
+                  imageSrc={coverUrl(release.cover, 400)}
+                  variant="series"
+                />
+              ))}
+            </div>
+          ) : (
+            <div className="bookmarks-empty">
+              <div className="bookmarks-empty-icon" aria-hidden="true">
+                <Bookmark size={28} />
+              </div>
+              <h3>
+                {activeTab === 'all'
+                  ? 'No bookmarks yet'
                   : `No series in "${TABS.find((t) => t.id === activeTab)?.label}"`}
-            </h3>
-            <p>
-              {activeTab === 'all'
-                ? 'Explore our catalogue and bookmark titles you want to track!'
-                : activeTab === 'continue'
-                  ? 'Read any series and it will automatically appear here so you can easily continue reading.'
+              </h3>
+              <p>
+                {activeTab === 'all'
+                  ? 'Explore our catalogue and bookmark titles you want to track!'
                   : 'Choose this status when bookmarking series on their details page to organize your reading list.'}
-            </p>
-            <Link className="bookmarks-browse-btn" href="/series">
-              Browse Series
-            </Link>
-          </div>
+              </p>
+              <Link className="bookmarks-browse-btn" href="/series">
+                Browse Series
+              </Link>
+            </div>
+          )
         )}
       </main>
 
