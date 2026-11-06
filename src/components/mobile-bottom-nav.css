@@ -123,10 +123,6 @@
     letter-spacing: -0.01em;
   }
 
-  .mobile-bottom-nav__item.is-active .mobile-bottom-nav__label {
-    font-weight: 650;
-  }
-
   /* Red Badge for Notifications */
   .mobile-bottom-nav__badge {
     position: absolute;
@@ -190,11 +186,6 @@
     background: #ffffff;
     border-color: rgba(20, 20, 26, 0.85);
     box-shadow: 0 6px 20px rgba(0, 0, 0, 0.55);
-  }
-
-  .mobile-bottom-nav__home-btn.is-active .mobile-bottom-nav__home-circle {
-    border-color: var(--accent, #e11d48);
-    box-shadow: 0 0 0 2px var(--accent, #e11d48), 0 6px 20px rgba(0, 0, 0, 0.28);
   }
 
   .mobile-bottom-nav__home-logo {

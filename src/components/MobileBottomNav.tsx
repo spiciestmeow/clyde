@@ -97,7 +97,7 @@ export default function MobileBottomNav() {
         {/* 3. Center Elevated Button - Homepage (Web Logo) */}
         <Link
           href="/"
-          className={`mobile-bottom-nav__home-btn${isHomeActive ? ' is-active' : ''}`}
+          className="mobile-bottom-nav__home-btn"
           aria-label="Homepage"
           title="Home"
         >
