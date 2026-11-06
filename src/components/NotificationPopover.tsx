@@ -125,6 +125,8 @@ export default function NotificationPopover({ mode = 'popover' }: NotificationPo
   const deleteHoldTimeoutRef = useRef<number | null>(null);
   const deleteHoldArmTimeoutRef = useRef<number | null>(null);
   const rootRef = useRef<HTMLDivElement>(null);
+  const listContainerRef = useRef<HTMLDivElement>(null);
+  const loadMoreSentinelRef = useRef<HTMLDivElement>(null);
   const listIsLoading = isLoading || refreshing;
 
   const lastLoadedAtRef = useRef<number>(0);
@@ -248,6 +250,34 @@ export default function NotificationPopover({ mode = 'popover' }: NotificationPo
       setLoadingOlder(false);
     }
   };
+
+  // Auto-load older notifications when scrolled near the end
+  const handleListScroll = useCallback(() => {
+    if (loadingOlder || !hasOlder || !listContainerRef.current) return;
+    const el = listContainerRef.current;
+    if (el.scrollTop + el.clientHeight >= el.scrollHeight - 60) {
+      void loadOlderNotifications();
+    }
+  }, [loadingOlder, hasOlder, loadOlderNotifications]);
+
+  useEffect(() => {
+    if (!hasOlder || loadingOlder || !loadMoreSentinelRef.current) return;
+    const sentinel = loadMoreSentinelRef.current;
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0]?.isIntersecting) {
+          void loadOlderNotifications();
+        }
+      },
+      {
+        root: isPage ? null : listContainerRef.current,
+        rootMargin: '100px',
+        threshold: 0.1,
+      }
+    );
+    observer.observe(sentinel);
+    return () => observer.disconnect();
+  }, [hasOlder, loadingOlder, isPage, loadOlderNotifications, open]);
 
   // Initial load once on mount so the bell badge has the initial count.
   // We do NOT poll continuously in the background to prevent eating Supabase log ingestion and egress.
@@ -732,7 +762,13 @@ export default function NotificationPopover({ mode = 'popover' }: NotificationPo
           {!isPage && renderFilters('notification-filters')}
           {isPage && renderFilters('notification-filters notification-page-mobile-filters')}
 
-          <div className="notification-list" aria-live="polite" aria-busy={listIsLoading}>
+          <div
+            ref={listContainerRef}
+            className="notification-list"
+            aria-live="polite"
+            aria-busy={listIsLoading}
+            onScroll={handleListScroll}
+          >
             {listIsLoading ? <NotificationLoadingSkeleton /> : (
               <>
                 {todayItems.length > 0 && <div className="notification-list__section">Today</div>}
@@ -741,16 +777,15 @@ export default function NotificationPopover({ mode = 'popover' }: NotificationPo
                 {renderItems(earlierThisWeekItems)}
                 {olderItems.length > 0 && <div className="notification-list__section">Earlier</div>}
                 {renderItems(olderItems)}
-                {hasOlder && (
-                  <button
-                    type="button"
-                    className="notification-load-older"
-                    onClick={() => void loadOlderNotifications()}
-                    disabled={loadingOlder}
-                  >
-                    <RefreshCw className={loadingOlder ? 'is-refreshing' : ''} size={14} />
-                    {loadingOlder ? 'Loading older notifications…' : 'Load older notifications'}
-                  </button>
+                {visibleItems.length > 0 && hasOlder && (
+                  <div ref={loadMoreSentinelRef} className="notification-infinite-trigger">
+                    {loadingOlder && (
+                      <div className="notification-load-older-indicator" role="status" aria-label="Loading older notifications">
+                        <RefreshCw className="is-refreshing" size={14} />
+                        <span>Loading older notifications…</span>
+                      </div>
+                    )}
+                  </div>
                 )}
                 {!visibleItems.length && (
                   <div className="notification-empty">

@@ -463,6 +463,25 @@
 .notification-load-older:disabled { cursor: wait; opacity: .7; }
 .notification-load-older .is-refreshing { animation: notification-spin .65s linear infinite; }
 
+.notification-infinite-trigger {
+  width: 100%;
+  min-height: 10px;
+}
+
+.notification-load-older-indicator {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 12px 16px;
+  color: var(--muted, #a1a1aa);
+  font-size: 12px;
+}
+
+.notification-load-older-indicator .is-refreshing {
+  animation: notification-spin .65s linear infinite;
+}
+
 .notification-item {
   width: 100%;
   min-height: 82px;
