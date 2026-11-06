@@ -1,4 +1,4 @@
-import { useEffect, useLayoutEffect, useMemo, useRef, useState, type PointerEvent as ReactPointerEvent, type SyntheticEvent } from 'react';
+import { lazy, Suspense, useEffect, useLayoutEffect, useMemo, useRef, useState, type PointerEvent as ReactPointerEvent, type SyntheticEvent } from 'react';
 import { keepPreviousData, useQuery } from '@tanstack/react-query';
 import { ArrowLeft, ArrowRight, ArrowUp, ArrowUpRight, ChevronDown, ChevronLeft, ChevronRight, Clock3, Megaphone, RefreshCw, Smartphone, WifiOff } from 'lucide-react';
 import { Link, Route, Switch, Router as WouterRouter, useLocation } from 'wouter';
@@ -22,7 +22,8 @@ import {
   MostPopularSkeleton,
 } from './components/HomeSectionSkeletons';
 import { ContinueReadingSection, type ContinueReadingItem } from './components/ContinueReadingSection';
-import AdminPage from './pages/AdminPage';
+// Admin panel is only used by site admins, so load it on demand instead of bundling it for everyone.
+const AdminPage = lazy(() => import('./pages/AdminPage'));
 import SeriesDetailPage from './pages/SeriesDetailPage';
 import SeriesBrowsePage from './pages/SeriesBrowsePage';
 import CreditsPage from './pages/CreditsPage';
@@ -1020,7 +1021,11 @@ function App() {
       <MobileBottomNav />
       <Switch>
         <Route path="/" component={HomePage} />
-        <Route path={ADMIN_ROUTE} component={AdminPage} />
+        <Route path={ADMIN_ROUTE}>
+          <Suspense fallback={null}>
+            <AdminPage />
+          </Suspense>
+        </Route>
         <Route path="/credits" component={CreditsPage} />
         <Route path="/dmca-policy" component={CreditsPage} />
         <Route path="/donate" component={DonationPage} />

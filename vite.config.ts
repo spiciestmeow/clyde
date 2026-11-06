@@ -355,6 +355,22 @@ export default defineConfig(({ mode }) => {
   build: {
     outDir: path.resolve(root, 'dist'),
     emptyOutDir: true,
+    rollupOptions: {
+      output: {
+        // Split big third-party libraries into their own cacheable chunks so the
+        // main app bundle stays small and library code isn't re-downloaded on every deploy.
+        manualChunks(id: string) {
+          if (!id.includes('node_modules')) return undefined;
+          if (/[\\/]node_modules[\\/](react|react-dom|scheduler)[\\/]/.test(id)) return 'vendor-react';
+          if (id.includes('@supabase')) return 'vendor-supabase';
+          if (id.includes('@radix-ui')) return 'vendor-radix';
+          if (id.includes('framer-motion') || id.includes('motion-dom') || id.includes('motion-utils')) return 'vendor-motion';
+          if (id.includes('recharts') || id.includes('d3-')) return 'vendor-charts';
+          if (id.includes('@tanstack')) return 'vendor-query';
+          return undefined;
+        },
+      },
+    },
   },
   server: {
     host: '0.0.0.0',
