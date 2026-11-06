@@ -359,7 +359,7 @@
     font-size: 12px;
   }
 
-  /* Bigger series card cover on mobile */
+  /* Bigger series card cover on mobile showing full scale of image */
   .bookmarks-route .release-card--series {
     --series-cover-width: clamp(140px, 40vw, 160px);
     --series-cover-radius: 6px;
@@ -368,17 +368,22 @@
   }
 
   .bookmarks-route .release-card--series .release-cover {
-    align-self: stretch;
-    height: auto;
-    min-height: 204px;
-    aspect-ratio: 2 / 3;
+    align-self: flex-start;
+    height: auto !important;
+    min-height: 0 !important;
+    max-height: none !important;
+    aspect-ratio: auto !important;
+    overflow: hidden;
+    background: transparent !important;
   }
 
   .bookmarks-route .release-card--series .release-cover img {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-    object-position: center;
+    width: 100% !important;
+    height: auto !important;
+    max-width: 100%;
+    object-fit: contain !important;
+    object-position: top center;
+    display: block;
   }
 }
 
@@ -387,9 +392,5 @@
     --series-cover-width: clamp(124px, 38vw, 138px);
     --series-card-gap: 8px;
     --series-card-padding: 4px;
-  }
-
-  .bookmarks-route .release-card--series .release-cover {
-    min-height: 184px;
   }
 }
