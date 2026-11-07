@@ -5,8 +5,8 @@ export function useIsAdmin(): { isAdmin: boolean; checkingAuth: boolean } {
   const [isAdmin, setIsAdmin] = useState<boolean>(() => {
     if (typeof window !== 'undefined') {
       try {
-        const hasSession = Object.keys(localStorage).some(
-          (k) => k.startsWith('sb-') && k.endsWith('-auth-token') && Boolean(localStorage.getItem(k)?.includes('access_token')),
+        const hasSession = Object.keys(sessionStorage).some(
+          (k) => k.startsWith('sb-') && k.endsWith('-auth-token') && Boolean(sessionStorage.getItem(k)?.includes('access_token')),
         );
         return hasSession;
       } catch {

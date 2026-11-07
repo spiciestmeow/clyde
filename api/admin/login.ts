@@ -1,6 +1,7 @@
 import { createHmac } from 'node:crypto';
 import { createClient } from '@supabase/supabase-js';
 import {
+  createAdminSessionCookie,
   setNoStore,
   type AdminApiRequest,
   type AdminApiResponse,
@@ -95,6 +96,7 @@ export default async function handler(
     p_requester_hash: requesterHash,
   });
   if (clearError) console.error('Could not clear admin sign-in failures:', clearError.message);
-  response.status(200).json({ session: data.session });
+  response.setHeader('Set-Cookie', createAdminSessionCookie());
+  response.status(200).json({ session: data.session, authenticated: true });
 }
 

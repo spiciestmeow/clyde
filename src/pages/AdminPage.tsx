@@ -1195,6 +1195,11 @@ function ComixDashboard({
   };
 
   const handleSignOut = async () => {
+    try {
+      await fetch('/api/admin/logout', { method: 'POST' });
+    } catch {
+      // Ignore network errors on logout
+    }
     if (supabase) {
       await supabase.auth.signOut();
     }

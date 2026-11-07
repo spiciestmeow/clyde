@@ -64,11 +64,20 @@ export function matchesAdminPassword(candidate: unknown): boolean {
   return equalStrings(candidate, expected);
 }
 
-export function createAdminSessionCookie(): string {
-  const secret = process.env.SESSION_SECRET;
+function getSessionSecret(): string {
+  const secret =
+    process.env.SESSION_SECRET ||
+    process.env.ADMIN_LOGIN_RATE_LIMIT_SECRET ||
+    process.env.SUPABASE_SECRET_KEY ||
+    process.env.SUPABASE_SERVICE_ROLE_KEY;
   if (!secret || secret.length < 32) {
-    throw new Error('SESSION_SECRET must contain at least 32 characters.');
+    throw new Error('SESSION_SECRET or SUPABASE_SERVICE_ROLE_KEY must contain at least 32 characters.');
   }
+  return secret;
+}
+
+export function createAdminSessionCookie(): string {
+  const secret = getSessionSecret();
 
   const payload: SessionPayload = {
     role: 'admin',
@@ -101,9 +110,14 @@ export function clearAdminSessionCookie(): string {
 }
 
 export function isAdminAuthenticated(request: AdminApiRequest): boolean {
-  const secret = process.env.SESSION_SECRET;
+  let secret: string;
+  try {
+    secret = getSessionSecret();
+  } catch {
+    return false;
+  }
   const token = readCookie(request, COOKIE_NAME);
-  if (!secret || secret.length < 32 || !token) return false;
+  if (!token) return false;
 
   const separator = token.lastIndexOf('.');
   if (separator < 1) return false;
@@ -127,5 +141,3 @@ export function isAdminAuthenticated(request: AdminApiRequest): boolean {
 export function setNoStore(response: AdminApiResponse): void {
   response.setHeader('Cache-Control', 'no-store, max-age=0');
 }
-
-    
