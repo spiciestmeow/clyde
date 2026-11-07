@@ -13,7 +13,6 @@
   --series-blue: #3479dc;
   min-height: 100dvh;
   position: relative;
-  isolation: isolate;
   color: var(--series-ink);
   background: linear-gradient(135deg, #fff 0%, #fafafa 54%, #f5f6f7 100%);
 }

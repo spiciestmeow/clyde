@@ -33,8 +33,9 @@
     pointer-events: none; /* Only inner is interactive */
   }
 
-  /* Push the bar behind the mobile filter sheet (and its backdrop) while the sheet is open. */
-  body:has(.has-filter-sheet) .mobile-bottom-nav {
+  /* Push the bar behind the mobile filter sheet and mobile menu drawer while open. */
+  body:has(.has-filter-sheet) .mobile-bottom-nav,
+  body:has(.mobile-menu-drawer) .mobile-bottom-nav {
     z-index: 0;
   }
 
