@@ -379,6 +379,16 @@ export default async function handler(
 
     // 3. Persist latest sync execution log to site_settings so Admin UI can show real history
     try {
+      // Sync history lives in its own `sync_logs` table (see supabase/sync-logs.sql) so admin
+      // dashboard saves, which rewrite site_settings.header_visibility, can never wipe it.
+      // If that table doesn't exist yet, fall back to the legacy location inside site_settings.
+      const { data: storedLogsRow, error: storedLogsError } = await supabase
+        .from('sync_logs')
+        .select('logs')
+        .eq('id', 'global')
+        .maybeSingle();
+      const useLogsTable = !storedLogsError;
+
       const { data: currentSettings } = await supabase
         .from('site_settings')
         .select('header_visibility')
@@ -386,7 +396,10 @@ export default async function handler(
         .maybeSingle();
 
       const currentHeader = (currentSettings?.header_visibility as any) || {};
-      const existingLogs = Array.isArray(currentHeader.sync_logs) ? currentHeader.sync_logs : [];
+      const legacyLogs = Array.isArray(currentHeader.sync_logs) ? currentHeader.sync_logs : [];
+      const existingLogs = useLogsTable && Array.isArray(storedLogsRow?.logs)
+        ? storedLogsRow.logs
+        : legacyLogs;
 
       // Store only notable log lines (updates, errors, mismatches) to keep site_settings small.
       // The full logs are still returned in the HTTP response for debugging.
@@ -418,15 +431,32 @@ export default async function handler(
       // Keep only the 5 most recent runs to avoid database bloat
       const nextLogs = [newLogEntry, ...existingLogs].slice(0, 5);
 
-      await supabase
-        .from('site_settings')
-        .update({
-          header_visibility: {
-            ...currentHeader,
-            sync_logs: nextLogs,
-          },
-        })
-        .eq('id', 'global');
+      let savedToLogsTable = false;
+      if (useLogsTable) {
+        const { error: logsUpsertError } = await supabase
+          .from('sync_logs')
+          .upsert(
+            { id: 'global', logs: nextLogs, updated_at: new Date().toISOString() },
+            { onConflict: 'id' },
+          );
+        savedToLogsTable = !logsUpsertError;
+        if (logsUpsertError) {
+          console.warn('Could not save sync log to sync_logs table:', logsUpsertError.message);
+        }
+      }
+
+      // Legacy fallback: only used until supabase/sync-logs.sql has been run.
+      if (!savedToLogsTable) {
+        await supabase
+          .from('site_settings')
+          .update({
+            header_visibility: {
+              ...currentHeader,
+              sync_logs: nextLogs,
+            },
+          })
+          .eq('id', 'global');
+      }
     } catch (logErr) {
       console.warn('Could not persist sync log to site_settings:', logErr);
     }

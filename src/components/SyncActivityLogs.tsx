@@ -58,19 +58,36 @@ export function SyncActivityLogs() {
     if (!supabase) return;
     setIsLoading(true);
     try {
-      const { data, error } = await supabase
-        .from('site_settings')
-        .select('header_visibility')
+      // Prefer the dedicated sync_logs table (immune to admin settings saves); fall back to the
+      // legacy site_settings location until supabase/sync-logs.sql has been run.
+      let loaded: SyncLogEntry[] | null = null;
+
+      const { data: logsRow, error: logsError } = await supabase
+        .from('sync_logs')
+        .select('logs')
         .eq('id', 'global')
         .maybeSingle();
+      if (!logsError && logsRow && Array.isArray(logsRow.logs)) {
+        loaded = logsRow.logs as SyncLogEntry[];
+      }
 
-      if (!error && data?.header_visibility) {
-        const h = data.header_visibility as any;
-        if (Array.isArray(h.sync_logs)) {
-          setLogs(h.sync_logs);
-          if (h.sync_logs.length > 0 && !expandedLogId) {
-            setExpandedLogId(h.sync_logs[0].id);
-          }
+      if (!loaded) {
+        const { data, error } = await supabase
+          .from('site_settings')
+          .select('header_visibility')
+          .eq('id', 'global')
+          .maybeSingle();
+
+        if (!error && data?.header_visibility) {
+          const h = data.header_visibility as any;
+          if (Array.isArray(h.sync_logs)) loaded = h.sync_logs;
+        }
+      }
+
+      if (loaded) {
+        setLogs(loaded);
+        if (loaded.length > 0 && !expandedLogId) {
+          setExpandedLogId(loaded[0].id);
         }
       }
     } catch {
