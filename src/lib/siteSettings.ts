@@ -42,6 +42,7 @@ export type SeriesPageVisibility = {
   discordCard: boolean;
   reactions: boolean;
   discussion: boolean;
+  discussionAdminOnly: boolean;
   similarSeries: boolean;
   footer: boolean;
 };
@@ -542,6 +543,7 @@ export const DEFAULT_SERIES_PAGE_VISIBILITY: SeriesPageVisibility = {
   discordCard: true,
   reactions: true,
   discussion: true,
+  discussionAdminOnly: true,
   similarSeries: true,
   footer: true,
 };

@@ -214,6 +214,7 @@ const seriesPageVisibilityOptions: { key: keyof SeriesPageVisibility; label: str
   { key: 'discordCard', label: 'Socials card', description: 'Invite readers to join our Facebook socials.', group: 'Community and discovery' },
   { key: 'reactions', label: 'Reactions', description: 'Like, Love, Laugh, Wow, Sad, and Angry reactions.', group: 'Community and discovery' },
   { key: 'discussion', label: 'Discussion', description: 'Series discussion prompt and comments area.', group: 'Community and discovery' },
+  { key: 'discussionAdminOnly', label: 'Discussion: Admin Only Mode', description: 'When enabled, the discussion & comments section is visible only to logged-in admins during testing. Hidden from regular readers.', group: 'Community and discovery' },
   { key: 'similarSeries', label: 'Similar series', description: 'Recommended series list beside the page content.', group: 'Community and discovery' },
   { key: 'footer', label: 'Series page footer', description: 'Brand information and policy links below the series page.', group: 'Community and discovery' },
 ];

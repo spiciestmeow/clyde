@@ -29,9 +29,11 @@ import SiteHeader from '../components/SiteHeader';
 import SiteSearch from '../components/SiteSearch';
 import SeriesNotFound from '../components/SeriesNotFound';
 import { SeriesReportIssue } from '../components/SeriesReportIssue';
+import { SeriesDiscussionSection } from '../components/SeriesDiscussionSection';
 import { Shareable } from '../components/Shareable';
 import { useThemeMode } from '../hooks/useThemeMode';
 import { useSeriesDetail } from '../hooks/useSeriesDetail';
+import { useIsAdmin } from '../hooks/useIsAdmin';
 import { useImgSkeleton } from '../hooks/useImgSkeleton';
 import { DEFAULT_SERIES_PAGE_VISIBILITY, SITE_SETTINGS_UPDATED_EVENT, getCachedSiteSettings, getSiteSettings } from '../lib/siteSettings';
 import { formatScanlatorSeriesUrl } from '../lib/scanlatorLinks';
@@ -391,6 +393,7 @@ export default function SeriesDetailPage() {
   const [shareModalOpen, setShareModalOpen] = useState(false);
   const [mobileNav, setMobileNav] = useState(false);
   const { dark, toggleTheme } = useThemeMode();
+  const { isAdmin } = useIsAdmin();
   const [activeTab, setActiveTab] = useState<'sources' | 'synopsis' | 'reviews'>('sources');
   const [, setTick] = useState(0);
   const [synopsisExpanded, setSynopsisExpanded] = useState(false);
@@ -1572,10 +1575,13 @@ export default function SeriesDetailPage() {
             })}</div>
             <p className="series-local-reaction-note" role="note">No account needed. Your reactions are saved anonymously and counts are shared.</p>
           </section>}
-          {seriesPageVisibility.discussion && <section className="series-discussion" aria-label="Discussion">
-            <div className="series-discussion-head"><h2><MessageSquare size={14} /> Discussion</h2><span>3</span></div>
-            <div className="series-discussion-panel"><strong>Join the discussion</strong><span>Sign in to share your thoughts and react to comments.</span></div>
-          </section>}
+          {seriesPageVisibility.discussion && (!seriesPageVisibility.discussionAdminOnly || isAdmin) && (
+            <SeriesDiscussionSection
+              seriesSlug={series.slug}
+              seriesTitle={series.title}
+              isAdminPreview={Boolean(seriesPageVisibility.discussionAdminOnly && isAdmin)}
+            />
+          )}
         </div>
 
         {seriesPageVisibility.similarSeries && <aside className={`series-sidebar${relatedQuery.isLoading ? ' is-loading' : ''}`} style={fixedRailPositions?.right}>
