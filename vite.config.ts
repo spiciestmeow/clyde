@@ -271,19 +271,6 @@ export default defineConfig(({ mode }) => {
                 networkTimeoutSeconds: 3,
               },
             },
-            // Supabase API — network-first (always fresh data)
-            {
-              urlPattern: /^https:\/\/.*\.supabase\.co\/.*/i,
-              handler: 'NetworkFirst',
-              options: {
-                cacheName: 'supabase-api-cache',
-                expiration: {
-                  maxEntries: 50,
-                  maxAgeSeconds: 60 * 5, // 5 minutes
-                },
-                networkTimeoutSeconds: 10,
-              },
-            },
             // Cover images from external CDNs — stale-while-revalidate
             {
               urlPattern: /^https:\/\/(uploads\.mangadex\.org|cdn\.mangadex\.org)\/.*/i,
