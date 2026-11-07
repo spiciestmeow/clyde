@@ -141,10 +141,22 @@ function BookmarkContinueCard({
 export default function BookmarksPage() {
   const { dark, toggleTheme } = useThemeMode();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [activeTab, setActiveTab] = useState<TabKey>('all');
+  const [activeTab, setActiveTab] = useState<TabKey>(() => {
+    if (typeof window === 'undefined') return 'all';
+    const saved = sessionStorage.getItem('clydee_bookmarks_tab') as TabKey;
+    const validTabs: TabKey[] = ['all', 'reading', 'to-read', 'finished', 'abandoned', 'continue'];
+    return validTabs.includes(saved) ? saved : 'all';
+  });
   const [bookmarks, setBookmarks] = useState<string[]>(readRawBookmarks);
   const [bookmarkTypes, setBookmarkTypes] = useState<Record<string, BookmarkType>>(readBookmarkTypesMap);
   const [recentlyViewed, setRecentlyViewed] = useState(() => readRecentlyViewedSeries());
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    try {
+      sessionStorage.setItem('clydee_bookmarks_tab', activeTab);
+    } catch {}
+  }, [activeTab]);
 
   // Search setup for site header
   const highlightsQuery = useQuery({

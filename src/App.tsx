@@ -190,14 +190,31 @@ function CatalogSectionUnavailable({ children }: { children: string }) {
 
 function HomePage() {
   const [slide, setSlide] = useState(0);
-  const [filter, setFilter] = useState<'Latest' | 'New'>('Latest');
+  const [filter, setFilter] = useState<'Latest' | 'New'>(() => {
+    if (typeof window === 'undefined') return 'Latest';
+    const saved = sessionStorage.getItem('clydee_home_release_filter');
+    return saved === 'New' || saved === 'Latest' ? saved : 'Latest';
+  });
   const [popularPeriod, setPopularPeriod] = useState<'This week' | 'Today' | 'All time'>('This week');
   const [showPeriodDropdown, setShowPeriodDropdown] = useState(false);
   const periodDropdownRef = useRef<HTMLDivElement>(null);
-  const [releasePage, setReleasePage] = useState(1);
+  const [releasePage, setReleasePage] = useState<number>(() => {
+    if (typeof window === 'undefined') return 1;
+    const saved = sessionStorage.getItem('clydee_home_release_page');
+    const parsed = saved ? parseInt(saved, 10) : 1;
+    return Number.isFinite(parsed) && parsed > 0 ? parsed : 1;
+  });
   const [copiedShare, setCopiedShare] = useState(false);
   const [shareModalOpen, setShareModalOpen] = useState(false);
   const [reportModalOpen, setReportModalOpen] = useState(false);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    try {
+      sessionStorage.setItem('clydee_home_release_filter', filter);
+      sessionStorage.setItem('clydee_home_release_page', String(releasePage));
+    } catch {}
+  }, [filter, releasePage]);
 
   const handleShare = () => {
     setShareModalOpen(true);
@@ -376,6 +393,11 @@ function HomePage() {
     : orderedNewSeriesIds.length;
   const releasePageCount = Math.max(1, Math.ceil(visibleReleaseCount / RELEASES_PER_PAGE));
   const currentReleasePage = Math.min(releasePage, releasePageCount);
+  useEffect(() => {
+    if (visibleReleaseCount > 0 && releasePage > releasePageCount) {
+      setReleasePage(releasePageCount);
+    }
+  }, [visibleReleaseCount, releasePage, releasePageCount]);
   const pagedReleases = visibleReleases;
   const releaseLoading = filter === 'Latest'
     ? latestReleasePageQuery.isFetching
@@ -884,8 +906,21 @@ function HomePage() {
 }
 function ScrollToTop() {
   const [location] = useLocation();
+  const isPopStateRef = useRef(false);
 
   useEffect(() => {
+    const handlePopState = () => {
+      isPopStateRef.current = true;
+    };
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, []);
+
+  useEffect(() => {
+    if (isPopStateRef.current) {
+      isPopStateRef.current = false;
+      return;
+    }
     window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
     document.documentElement.scrollTop = 0;
     document.body.scrollTop = 0;

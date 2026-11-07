@@ -53,11 +53,33 @@ function coverUrl(source?: string | null, width = 400) {
 function LatestUpdatesPage() {
   const { dark, toggleTheme } = useThemeMode();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [activeTab, setActiveTab] = useState<ReleaseTab>('Hot');
-  const [viewMode, setViewMode] = useState<ViewMode>('grid');
+  const [activeTab, setActiveTab] = useState<ReleaseTab>(() => {
+    if (typeof window === 'undefined') return 'Hot';
+    const saved = sessionStorage.getItem('clydee_updates_tab');
+    return saved === 'New' || saved === 'Hot' ? saved : 'Hot';
+  });
+  const [viewMode, setViewMode] = useState<ViewMode>(() => {
+    if (typeof window === 'undefined') return 'grid';
+    const saved = sessionStorage.getItem('clydee_updates_view_mode');
+    return saved === 'list' || saved === 'grid' ? saved : 'grid';
+  });
   const [search, setSearch] = useState('');
   const [debouncedSearch, setDebouncedSearch] = useState('');
-  const [page, setPage] = useState(1);
+  const [page, setPage] = useState<number>(() => {
+    if (typeof window === 'undefined') return 1;
+    const saved = sessionStorage.getItem('clydee_updates_page');
+    const parsed = saved ? parseInt(saved, 10) : 1;
+    return Number.isFinite(parsed) && parsed > 0 ? parsed : 1;
+  });
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    try {
+      sessionStorage.setItem('clydee_updates_tab', activeTab);
+      sessionStorage.setItem('clydee_updates_view_mode', viewMode);
+      sessionStorage.setItem('clydee_updates_page', String(page));
+    } catch {}
+  }, [activeTab, viewMode, page]);
   const [newSeriesOrder, setNewSeriesOrder] = useState<string[]>(() => getCachedSiteSettings()?.newSeriesOrder ?? []);
   const highlightsQuery = useQuery({
     queryKey: [...SERIES_CATALOG_QUERY_KEY, 'latest-updates-search-highlights'],
@@ -116,6 +138,11 @@ function LatestUpdatesPage() {
     ? hotReleasesQuery.data?.items ?? []
     : newReleasesQuery.data ?? [];
   const visibleCount = activeTab === 'Hot' ? hotReleasesQuery.data?.totalCount ?? 0 : filteredNewSeries.length;
+  useEffect(() => {
+    if (visibleCount > 0 && page > pageCount) {
+      setPage(pageCount);
+    }
+  }, [visibleCount, page, pageCount]);
   const isLoadingReleases = activeTab === 'Hot'
     ? hotReleasesQuery.isFetching
     : newSeriesIndexQuery.isFetching || (newPageIds.length > 0 && newReleasesQuery.isFetching);

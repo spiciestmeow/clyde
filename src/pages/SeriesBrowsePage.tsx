@@ -1,4 +1,4 @@
-﻿import { useCallback, useEffect, useMemo, useRef, useState, type KeyboardEvent as ReactKeyboardEvent, type SyntheticEvent } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState, type KeyboardEvent as ReactKeyboardEvent, type SyntheticEvent } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Link, useLocation, useSearch } from 'wouter';
 import {
@@ -203,11 +203,22 @@ export default function SeriesBrowsePage() {
   });
   const hasExpandedFilterSection = (Object.keys(filterSectionsOpen) as FilterSection[])
     .some((section) => seriesFilterVisibility[section] && filterSectionsOpen[section]);
-  const [sort, setSort] = useState<SortMode>('latest');
-  const [sortDirection, setSortDirection] = useState<SortDirection>('desc');
+  const [sort, setSort] = useState<SortMode>(() => {
+    if (typeof window === 'undefined') return 'latest';
+    return (sessionStorage.getItem('clydee_series_browse_sort') as SortMode) || 'latest';
+  });
+  const [sortDirection, setSortDirection] = useState<SortDirection>(() => {
+    if (typeof window === 'undefined') return 'desc';
+    return (sessionStorage.getItem('clydee_series_browse_sort_dir') as SortDirection) || 'desc';
+  });
   const [sortMenuOpen, setSortMenuOpen] = useState(false);
   const sortMenuRef = useRef<HTMLDivElement>(null);
-  const [page, setPage] = useState(1);
+  const [page, setPage] = useState<number>(() => {
+    if (typeof window === 'undefined') return 1;
+    const saved = sessionStorage.getItem('clydee_series_browse_page');
+    const parsed = saved ? parseInt(saved, 10) : 1;
+    return Number.isFinite(parsed) && parsed > 0 ? parsed : 1;
+  });
   const [filtersOpen, setFiltersOpen] = useState(false);
   const discord = assetList.find((item) => item.alt === 'Discord Image Link')?.src ?? '';
   const activeSortLabel = sortOptions.find((option) => option.value === sort)?.label ?? 'Latest Chapters';
@@ -228,8 +239,11 @@ export default function SeriesBrowsePage() {
       sessionStorage.setItem('clydee_series_browse_types', JSON.stringify(selectedTypes));
       sessionStorage.setItem('clydee_series_browse_min_chapters', minChapters);
       sessionStorage.setItem('clydee_series_browse_max_chapters', maxChapters);
+      sessionStorage.setItem('clydee_series_browse_sort', sort);
+      sessionStorage.setItem('clydee_series_browse_sort_dir', sortDirection);
+      sessionStorage.setItem('clydee_series_browse_page', String(page));
     } catch {}
-  }, [genreModes, status, availability, selectedTypes, minChapters, maxChapters]);
+  }, [genreModes, status, availability, selectedTypes, minChapters, maxChapters, sort, sortDirection, page]);
   const updateSearchUrl = (value: string) => {
     const params = new URLSearchParams(routeSearch);
     if (value.trim()) params.set('search', value);
@@ -238,10 +252,14 @@ export default function SeriesBrowsePage() {
     setLocation(`${location}${search ? `?${search}` : ''}`, { replace: true });
   };
 
+  const prevRouteSearchRef = useRef(routeSearch);
   useEffect(() => {
-    const nextQuery = new URLSearchParams(routeSearch).get('search') ?? '';
-    setQuery((current) => current === nextQuery ? current : nextQuery);
-    setPage(1);
+    if (prevRouteSearchRef.current !== routeSearch) {
+      prevRouteSearchRef.current = routeSearch;
+      const nextQuery = new URLSearchParams(routeSearch).get('search') ?? '';
+      setQuery((current) => current === nextQuery ? current : nextQuery);
+      setPage(1);
+    }
   }, [routeSearch]);
 
   useEffect(() => {
@@ -443,6 +461,9 @@ export default function SeriesBrowsePage() {
       sessionStorage.removeItem('clydee_series_browse_types');
       sessionStorage.removeItem('clydee_series_browse_min_chapters');
       sessionStorage.removeItem('clydee_series_browse_max_chapters');
+      sessionStorage.removeItem('clydee_series_browse_sort');
+      sessionStorage.removeItem('clydee_series_browse_sort_dir');
+      sessionStorage.removeItem('clydee_series_browse_page');
     }
     setGenreModes({});
     setStatus('All');
