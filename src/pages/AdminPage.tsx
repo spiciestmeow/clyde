@@ -79,6 +79,7 @@ import {
 } from '../lib/siteSettings';
 import { supabase, supabaseConfigReady } from '../lib/supabase';
 import { getAvatarColor } from '../lib/avatarColor';
+import { uploadOrCompressCover } from '../lib/imageUpload';
 import { getSeriesCatalog, getSeriesCatalogCount, getSeriesCatalogCoverSamples, SERIES_CATALOG_QUERY_KEY } from '../lib/seriesCatalog';
 import './admin-comix.css';
 
@@ -1289,6 +1290,7 @@ function ComixDashboard({
   const [savingProfile, setSavingProfile] = useState(false);
   const [profileFeedback, setProfileFeedback] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
   const [copiedId, setCopiedId] = useState(false);
+  const [selectedAvatarFile, setSelectedAvatarFile] = useState<File | null>(null);
   const avatarFileInputRef = useRef<HTMLInputElement>(null);
 
   // User display name & initial dynamically reflected
@@ -1315,13 +1317,30 @@ function ComixDashboard({
     }
 
     try {
+      let remoteAvatarUrl = profileAvatarUrl.trim();
+      if (selectedAvatarFile) {
+        try {
+          remoteAvatarUrl = await uploadOrCompressCover(selectedAvatarFile, `avatar-${session.user.id}`);
+        } catch {
+          // If remote upload is not available, do not upload huge base64 into user_metadata
+          remoteAvatarUrl = '';
+        }
+      }
+
+      // CRITICAL: Never store raw base64 data URLs in Supabase user_metadata.
+      // Supabase embeds user_metadata into the JWT access_token. An oversized JWT (>8KB)
+      // triggers Cloudflare's header size limit and breaks all subsequent API calls with ERR_HTTP2_PROTOCOL_ERROR.
+      if (remoteAvatarUrl.startsWith('data:')) {
+        remoteAvatarUrl = '';
+      }
+
       const profileData = {
         full_name: profileDisplayName.trim(),
         display_name: profileDisplayName.trim(),
         username: profileUsername.trim().replace(/^@/, ''),
         bio: profileBio.trim(),
         social_links: profileSocials.trim(),
-        avatar_url: profileAvatarUrl.trim(),
+        avatar_url: remoteAvatarUrl,
       };
 
       try {
@@ -1332,7 +1351,7 @@ function ComixDashboard({
             username: profileData.username,
             bio: profileData.bio,
             socials: profileData.social_links,
-            avatarUrl: profileData.avatar_url,
+            avatarUrl: profileAvatarUrl.trim(),
           })
         );
       } catch {}
@@ -1355,6 +1374,7 @@ function ComixDashboard({
         }
       }
 
+      setSelectedAvatarFile(null);
       setNewPassword('');
       setConfirmPassword('');
       setProfileFeedback({ type: 'success', message: 'Changes saved successfully.' });
@@ -1382,10 +1402,11 @@ function ComixDashboard({
   const handleAvatarFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file) return;
-    if (file.size > 1024 * 1024) {
-      setProfileFeedback({ type: 'error', message: 'Avatar image must be under 1 MB.' });
+    if (file.size > 2 * 1024 * 1024) {
+      setProfileFeedback({ type: 'error', message: 'Avatar image must be under 2 MB.' });
       return;
     }
+    setSelectedAvatarFile(file);
     const reader = new FileReader();
     reader.onload = (e) => {
       const result = e.target?.result;

@@ -10,6 +10,23 @@ import './index.css';
 // Automatically recover from stale chunk errors when a new deployment is published.
 // Timestamp guard prevents reload loops if a chunk is genuinely missing.
 if (typeof window !== 'undefined') {
+  // Purge any legacy Supabase API cache left behind by earlier Service Worker builds
+  if ('caches' in window) {
+    void caches.delete('supabase-api-cache');
+  }
+  // Keep local development free of service workers, and force production clients to update immediately
+  if ('serviceWorker' in navigator) {
+    void navigator.serviceWorker.getRegistrations().then((registrations) => {
+      for (const registration of registrations) {
+        if (import.meta.env.DEV) {
+          void registration.unregister();
+        } else {
+          void registration.update();
+        }
+      }
+    }).catch(() => {});
+  }
+
   window.addEventListener('vite:preloadError', (event) => {
     event.preventDefault();
     try {

@@ -1,7 +1,23 @@
 import { createClient } from '@supabase/supabase-js';
 
-export const supabaseUrl = import.meta.env.VITE_SUPABASE_URL?.trim();
-export const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY?.trim();
+/** Cleans values pasted into hosting dashboards: wrapping quotes, spaces, trailing slashes, /rest/v1. */
+function cleanEnvValue(value: string | undefined): string | undefined {
+  const trimmed = value?.trim().replace(/^["']+|["']+$/g, '').trim();
+  return trimmed || undefined;
+}
+
+function cleanSupabaseUrl(value: string | undefined): string | undefined {
+  const cleaned = cleanEnvValue(value);
+  if (!cleaned) return undefined;
+  return cleaned.replace(/\/+$/, '').replace(/\/(rest|auth)\/v1$/, '').replace(/\/+$/, '');
+}
+
+export const supabaseUrl = cleanSupabaseUrl(import.meta.env.VITE_SUPABASE_URL);
+export const supabaseAnonKey = cleanEnvValue(import.meta.env.VITE_SUPABASE_ANON_KEY);
+
+if (typeof window !== 'undefined' && supabaseUrl && !/^https:\/\/[a-z0-9-]+\.supabase\.co$/i.test(supabaseUrl)) {
+  console.warn('VITE_SUPABASE_URL looks unusual:', supabaseUrl, '(expected https://<project-ref>.supabase.co)');
+}
 
 export const supabaseConfigReady = Boolean(supabaseUrl && supabaseAnonKey);
 
