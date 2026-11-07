@@ -3191,10 +3191,7 @@ function ComixDashboard({
                 </div>
 
                 {/* ACTIONS */}
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingTop: 24, borderTop: '1px solid var(--cx-border)' }}>
-                  <button type="button" className="btn-cancel" onClick={handleSignOut}>
-                    <LogOut size={15} style={{ marginRight: 6 }} /> Sign out
-                  </button>
+                <div style={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center', paddingTop: 24, borderTop: '1px solid var(--cx-border)' }}>
                   <button type="submit" className="comix-save-profile-btn" disabled={savingProfile}>
                     {savingProfile ? 'Saving changes...' : 'Save changes'}
                   </button>
