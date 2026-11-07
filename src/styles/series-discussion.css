@@ -753,19 +753,30 @@
 }
 
 .replies-toggle-btn {
-  margin-top: 9px;
+  gap: 5px;
+  margin-top: 12px;
+  margin-bottom: 2px;
+  font-size: 8.5px;
+  color: var(--sd-accent);
 }
 
-.replies-toggle-btn:hover,
 .replies-more-btn:hover {
   color: var(--series-ink, #29262a);
 }
 
+.replies-toggle-btn:hover {
+  color: #dc2626;
+}
+
+/* Grey line while the replies are collapsed, red once they are open */
 .replies-toggle-dash {
-  width: 11px;
-  height: 1.5px;
-  margin-right: 2px;
-  border-radius: 1px;
+  width: 24px;
+  height: 1px;
+  margin-right: 5px;
+  background: var(--series-faint, #b9b4ba);
+}
+
+.replies-toggle-btn.is-expanded .replies-toggle-dash {
   background: var(--sd-accent);
 }
 
@@ -1235,5 +1246,16 @@
   .discussion-blocked-note {
     padding: 6px 10px;
     font-size: 11px;
+  }
+
+  .replies-toggle-btn {
+    gap: 7px;
+    margin-top: 14px;
+    font-size: 12.5px;
+  }
+
+  .replies-toggle-dash {
+    width: 36px;
+    margin-right: 6px;
   }
 }

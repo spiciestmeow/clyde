@@ -2,6 +2,8 @@ import React, { useEffect, useState, useRef } from 'react';
 import {
   MessageSquare,
   ThumbsUp,
+  ThumbsDown,
+  Loader2,
   Pin,
   Trash2,
   RotateCw,
@@ -21,35 +23,29 @@ import {
   ChevronUp,
   CornerDownRight,
   ShieldAlert,
-  Sparkles,
   Flame,
   Clock,
   Hourglass,
   MoreHorizontal,
-  Share2,
+  Info,
+  UserPlus,
+  Ban,
+  Pencil,
   Flag,
 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import {
   fetchSeriesComments,
-  fetchCommentReactors,
   reportSeriesComment,
   addSeriesComment,
-  reactSeriesComment,
+  voteSeriesComment,
   deleteSeriesComment,
-  togglePinSeriesComment,
+  editSeriesComment,
   type SeriesComment,
-  type CommentReactionKey,
-  type CommentReactorList,
 } from '../lib/comments';
-import angryReactionIcon from '../assets/reactions/angry.webp';
-import cryReactionIcon from '../assets/reactions/cry.webp';
-import laughReactionIcon from '../assets/reactions/laugh.webp';
-import likeReactionIcon from '../assets/reactions/like.webp';
-import loveReactionIcon from '../assets/reactions/love.webp';
-import wowReactionIcon from '../assets/reactions/wow.webp';
-import { ReactorsPopover, ReactionsModal, buildReactionGroups } from './CommentReactors';
+import { ComposerBox } from './ComposerBox';
 import '../styles/series-discussion.css';
+import '../styles/comment-votes.css';
 
 interface SeriesDiscussionProps {
   seriesSlug: string;
@@ -65,55 +61,12 @@ const REPLY_PREVIEW_COUNT = 3;
 /** localStorage key for commenters this reader has blocked on this device. */
 const BLOCKED_USERS_KEY = 'clydee_blocked_comment_users';
 
-/** Reactions shown in the hover picker (same icons as the series reaction bar). */
-const REACTIONS: { key: CommentReactionKey; label: string; icon: string; color: string }[] = [
-  { key: 'like', label: 'Like', icon: likeReactionIcon, color: '#3b82f6' },
-  { key: 'love', label: 'Love', icon: loveReactionIcon, color: '#ef4444' },
-  { key: 'happy', label: 'Haha', icon: laughReactionIcon, color: '#f59e0b' },
-  { key: 'wow', label: 'Wow', icon: wowReactionIcon, color: '#f59e0b' },
-  { key: 'sad', label: 'Sad', icon: cryReactionIcon, color: '#f59e0b' },
-  { key: 'angry', label: 'Angry', icon: angryReactionIcon, color: '#ea580c' },
-];
+/** localStorage key for commenters this reader added as friends on this device. */
+const FRIENDS_KEY = 'clydee_comment_friends';
 
-/** Looks up a reaction by key. Accepts the legacy 'laugh' alias; unknown keys fall back to like. */
-function resolveReaction(key: string) {
-  const normalized = key === 'laugh' ? 'happy' : key;
-  return REACTIONS.find((r) => r.key === normalized) ?? REACTIONS[0];
-}
-
-/** The reaction the current reader has on a comment, or null. */
-function getMyReaction(item: SeriesComment) {
-  if (item.user_reaction) return resolveReaction(item.user_reaction);
-  return item.user_vote === 1 ? resolveReaction('like') : null;
-}
-
-/** Small round reaction icon used in the summary pill. */
-function ReactionDot({ type }: { type: string }) {
-  const reaction = resolveReaction(type);
-  return (
-    <span className="reaction-dot">
-      <img src={reaction.icon} alt="" draggable={false} />
-    </span>
-  );
-}
-
-/** Top reaction types for a comment (max 3). Falls back to a single like. */
-function getTopReactionTypes(item: SeriesComment): string[] {
-  if (item.reactions) {
-    const merged: Record<string, number> = {};
-    for (const [key, count] of Object.entries(item.reactions)) {
-      if (count > 0) {
-        const resolved = resolveReaction(key).key;
-        merged[resolved] = (merged[resolved] || 0) + count;
-      }
-    }
-    const top = Object.entries(merged)
-      .sort((a, b) => b[1] - a[1])
-      .slice(0, 3)
-      .map(([key]) => key);
-    if (top.length > 0) return top;
-  }
-  return ['like'];
+/** The reader's current vote on a comment: 1 (up), -1 (down) or 0 (none). */
+function getMyVote(item: SeriesComment): 1 | -1 | 0 {
+  return item.user_vote === 1 || item.user_vote === -1 ? item.user_vote : 0;
 }
 
 export function SeriesDiscussionSection({ seriesSlug, seriesTitle, isAdminPreview }: SeriesDiscussionProps) {
@@ -157,22 +110,17 @@ export function SeriesDiscussionSection({ seriesSlug, seriesTitle, isAdminPrevie
   // Revealed spoilers
   const [revealedSpoilers, setRevealedSpoilers] = useState<Set<string>>(new Set());
 
-  // Hover / long-press reaction picker (which comment's picker is open)
-  const [pickerOpenId, setPickerOpenId] = useState<string | null>(null);
-  const pickerTimer = useRef<number | null>(null);
-  const longPressTimer = useRef<number | null>(null);
-  const longPressFired = useRef(false);
+  // Vote that is currently being saved (shows a loading circle on that button)
+  const [voting, setVoting] = useState<{ id: string; dir: 1 | -1 } | null>(null);
 
-  // Reaction summary: hover/tap popover + "See all reactions" dialog
-  const [summaryOpenId, setSummaryOpenId] = useState<string | null>(null);
-  const [reactionsModal, setReactionsModal] = useState<SeriesComment | null>(null);
-  const [reactorsCache, setReactorsCache] = useState<Record<string, CommentReactorList>>({});
-  const [reactorsLoadingId, setReactorsLoadingId] = useState<string | null>(null);
-  const summaryTimer = useRef<number | null>(null);
+  // Inline comment editing (author's own comments)
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editContent, setEditContent] = useState('');
+  const [editSaving, setEditSaving] = useState(false);
 
   // Comment "..." menu (copy link / block user / report)
   const [menuOpenId, setMenuOpenId] = useState<string | null>(null);
-  const [menuNotice, setMenuNotice] = useState<{ id: string; action: 'copy' | 'report' } | null>(null);
+  const [menuNotice, setMenuNotice] = useState<{ id: string; action: 'copy' | 'report' | 'friend' } | null>(null);
   const [blockedUsers, setBlockedUsers] = useState<string[]>(() => {
     try {
       const parsed = JSON.parse(localStorage.getItem(BLOCKED_USERS_KEY) || '[]');
@@ -192,7 +140,7 @@ export function SeriesDiscussionSection({ seriesSlug, seriesTitle, isAdminPrevie
   };
 
   /** Shows a short confirmation inside the menu item, then closes the menu. */
-  const flashMenuNotice = (id: string, action: 'copy' | 'report') => {
+  const flashMenuNotice = (id: string, action: 'copy' | 'report' | 'friend') => {
     setMenuNotice({ id, action });
     window.setTimeout(() => {
       setMenuNotice((current) => (current?.id === id ? null : current));
@@ -227,75 +175,27 @@ export function SeriesDiscussionSection({ seriesSlug, seriesTitle, isAdminPrevie
     flashMenuNotice(comment.id, 'report');
   };
 
-  const clearSummaryTimer = () => {
-    if (summaryTimer.current) {
-      window.clearTimeout(summaryTimer.current);
-      summaryTimer.current = null;
+  /** Quick profile summary for a commenter (logged-in readers only). */
+  const handleInfo = (comment: SeriesComment) => {
+    setMenuOpenId(null);
+    window.alert(
+      `${comment.user_name}\nLevel ${getLevel(comment)} · ${comment.user_role}\nCommented ${formatTime(comment.created_at)}`,
+    );
+  };
+
+  /** Saves the commenter to this device's friend list (no server friends system yet). */
+  const handleAddFriend = (comment: SeriesComment) => {
+    try {
+      const parsed = JSON.parse(localStorage.getItem(FRIENDS_KEY) || '[]');
+      const list: string[] = Array.isArray(parsed) ? parsed.filter((n): n is string => typeof n === 'string') : [];
+      if (!list.includes(comment.user_name)) {
+        localStorage.setItem(FRIENDS_KEY, JSON.stringify([...list, comment.user_name]));
+      }
+    } catch {
+      // storage unavailable: nothing to persist
     }
+    flashMenuNotice(comment.id, 'friend');
   };
-
-  /** Loads who reacted to a comment once, then reuses it until reactions change. */
-  const ensureReactors = (comment: SeriesComment) => {
-    if (reactorsCache[comment.id] || reactorsLoadingId === comment.id) return;
-    setReactorsLoadingId(comment.id);
-    void fetchCommentReactors(comment)
-      .then((list) => setReactorsCache((prev) => ({ ...prev, [comment.id]: list })))
-      .catch(() => setReactorsCache((prev) => ({ ...prev, [comment.id]: { named: [], guests: {} } })))
-      .finally(() => setReactorsLoadingId((current) => (current === comment.id ? null : current)));
-  };
-
-  const openReactionsModal = (comment: SeriesComment) => {
-    clearSummaryTimer();
-    setSummaryOpenId(null);
-    ensureReactors(comment);
-    setReactionsModal(comment);
-  };
-
-  const clearPickerTimer = () => {
-    if (pickerTimer.current) {
-      window.clearTimeout(pickerTimer.current);
-      pickerTimer.current = null;
-    }
-  };
-
-  const openPicker = (id: string) => {
-    clearPickerTimer();
-    pickerTimer.current = window.setTimeout(() => setPickerOpenId(id), 180);
-  };
-
-  const closePicker = () => {
-    clearPickerTimer();
-    pickerTimer.current = window.setTimeout(() => setPickerOpenId(null), 280);
-  };
-
-  const clearLongPress = () => {
-    if (longPressTimer.current) {
-      window.clearTimeout(longPressTimer.current);
-      longPressTimer.current = null;
-    }
-  };
-
-  // Close the picker when tapping/clicking anywhere outside it
-  useEffect(() => {
-    if (!pickerOpenId) return;
-    const onPointerDown = (event: PointerEvent) => {
-      const target = event.target as HTMLElement | null;
-      if (!target?.closest('.reaction-picker-wrap')) setPickerOpenId(null);
-    };
-    document.addEventListener('pointerdown', onPointerDown);
-    return () => document.removeEventListener('pointerdown', onPointerDown);
-  }, [pickerOpenId]);
-
-  // Close the reaction summary popover when tapping/clicking anywhere outside it
-  useEffect(() => {
-    if (!summaryOpenId) return;
-    const onPointerDown = (event: PointerEvent) => {
-      const target = event.target as HTMLElement | null;
-      if (!target?.closest('.reaction-summary-wrap')) setSummaryOpenId(null);
-    };
-    document.addEventListener('pointerdown', onPointerDown);
-    return () => document.removeEventListener('pointerdown', onPointerDown);
-  }, [summaryOpenId]);
 
   // Close the comment "..." menu on outside tap or Escape
   useEffect(() => {
@@ -314,15 +214,6 @@ export function SeriesDiscussionSection({ seriesSlug, seriesTitle, isAdminPrevie
       document.removeEventListener('keydown', onKeyDown);
     };
   }, [menuOpenId]);
-
-  // Clean up timers on unmount
-  useEffect(() => {
-    return () => {
-      clearPickerTimer();
-      clearLongPress();
-      clearSummaryTimer();
-    };
-  }, []);
 
   // Check auth user & session
   useEffect(() => {
@@ -348,7 +239,6 @@ export function SeriesDiscussionSection({ seriesSlug, seriesTitle, isAdminPrevie
       const { comments: list, totalCount: count } = await fetchSeriesComments(seriesSlug, sort, 'all');
       setComments(list);
       setTotalCount(count);
-      setReactorsCache({});
 
       // Default expand first thread's replies
       setExpandedReplies((prev) => {
@@ -503,73 +393,42 @@ export function SeriesDiscussionSection({ seriesSlug, seriesTitle, isAdminPrevie
     }
   };
 
-  // Reactions (like / love / haha / wow / sad / angry)
-  const handleReact = async (comment: SeriesComment, next: CommentReactionKey) => {
-    clearPickerTimer();
-    setPickerOpenId(null);
+  // Upvote / downvote (tapping your current vote again removes it)
+  const handleVote = async (comment: SeriesComment, next: 1 | -1) => {
+    if (voting?.id === comment.id) return; // already saving a vote on this comment
+    const current = getMyVote(comment);
+    const target: 1 | -1 | 0 = current === next ? 0 : next;
 
-    const mine = getMyReaction(comment);
-    const current: CommentReactionKey | undefined = mine?.key;
-    const target: CommentReactionKey | undefined = current === next ? undefined : next;
-
-    const updateInTree = (list: SeriesComment[]): SeriesComment[] => {
-      return list.map((c) => {
+    const updateInTree = (list: SeriesComment[]): SeriesComment[] =>
+      list.map((c) => {
         if (c.id === comment.id) {
-          const reactions = { ...(c.reactions || {}) };
-          if (current) {
-            reactions[current] = Math.max(0, (reactions[current] || 0) - 1);
-            if (!reactions[current]) delete reactions[current];
-          }
-          if (target) reactions[target] = (reactions[target] || 0) + 1;
-
           let upvotes = c.upvotes;
-          if (current && !target) upvotes = Math.max(0, upvotes - 1);
-          if (!current && target) upvotes += 1;
-
-          return { ...c, reactions, upvotes, user_reaction: target, user_vote: target ? (1 as const) : (0 as const) };
+          let downvotes = c.downvotes;
+          if (current === 1) upvotes = Math.max(0, upvotes - 1);
+          if (current === -1) downvotes = Math.max(0, downvotes - 1);
+          if (target === 1) upvotes += 1;
+          if (target === -1) downvotes += 1;
+          return { ...c, upvotes, downvotes, user_vote: target };
         }
         if (c.replies && c.replies.length > 0) {
           return { ...c, replies: updateInTree(c.replies) };
         }
         return c;
       });
-    };
 
-    // Optimistic update, then persist
+    // Optimistic update, then persist (spinner stays at least 400ms so it is visible)
     setComments((prev) => updateInTree(prev));
-    setReactorsCache((prev) => {
-      const next = { ...prev };
-      delete next[comment.id];
-      return next;
-    });
-
-    // Save the reader's display name with the reaction (admin session or guest nickname), if they have one
-    let reactor: { name: string; avatar?: string } | undefined;
-    if (currentUserId) {
-      reactor = { name: currentUserName, avatar: currentUserAvatar ?? undefined };
-    } else {
-      try {
-        const nickname = localStorage.getItem('clydee_guest_nickname')?.trim();
-        if (nickname) reactor = { name: nickname };
-      } catch {
-        // storage unavailable: react as a guest
-      }
-    }
+    setVoting({ id: comment.id, dir: next });
     try {
-      await reactSeriesComment(comment.id, seriesSlug, current, next, reactor);
+      await Promise.all([
+        voteSeriesComment(comment.id, seriesSlug, current, next),
+        new Promise((resolve) => window.setTimeout(resolve, 400)),
+      ]);
     } catch {
       // ignore
+    } finally {
+      setVoting((now) => (now?.id === comment.id ? null : now));
     }
-  };
-
-  // Clicking the Like button itself: add a like, or remove whatever reaction you have
-  const handleLikeClick = (comment: SeriesComment) => {
-    if (longPressFired.current) {
-      longPressFired.current = false;
-      return;
-    }
-    const mine = getMyReaction(comment);
-    void handleReact(comment, mine?.key ?? 'like');
   };
 
   // Delete
@@ -579,10 +438,36 @@ export function SeriesDiscussionSection({ seriesSlug, seriesTitle, isAdminPrevie
     void loadComments(true);
   };
 
-  // Pin
-  const handleTogglePin = async (comment: SeriesComment) => {
-    await togglePinSeriesComment(comment.id, seriesSlug, !comment.is_pinned);
-    void loadComments(true);
+  // Edit your own comment
+  const handleStartEdit = (comment: SeriesComment) => {
+    setMenuOpenId(null);
+    setReplyingToId(null);
+    setEditingId(comment.id);
+    setEditContent(comment.content);
+  };
+
+  const handleSaveEdit = async (comment: SeriesComment) => {
+    const text = editContent.trim();
+    if (!text || editSaving) return;
+    setEditSaving(true);
+
+    const updateInTree = (list: SeriesComment[]): SeriesComment[] =>
+      list.map((c) => {
+        if (c.id === comment.id) return { ...c, content: text };
+        if (c.replies && c.replies.length > 0) return { ...c, replies: updateInTree(c.replies) };
+        return c;
+      });
+
+    try {
+      await editSeriesComment(comment.id, seriesSlug, text);
+      setComments((prev) => updateInTree(prev));
+      setEditingId(null);
+      setEditContent('');
+    } catch {
+      // ignore
+    } finally {
+      setEditSaving(false);
+    }
   };
 
   // Spoiler toggle
@@ -648,26 +533,17 @@ export function SeriesDiscussionSection({ seriesSlug, seriesTitle, isAdminPrevie
     // Commenters this reader blocked are hidden (their thread included)
     if (blockedUsers.includes(item.user_name)) return null;
     const isRevealed = revealedSpoilers.has(item.id);
-    const canManage = isAdmin || (currentUserId && item.user_id === currentUserId);
-    const level = getLevel(item);
     const isRepliesExpanded = expandedReplies[item.id] !== false;
     const replyList = (item.replies ?? []).filter((reply) => !blockedUsers.includes(reply.user_name));
     const hasReplies = replyList.length > 0;
-    const myReaction = getMyReaction(item);
+    const myVote = getMyVote(item);
+    const votingDir = voting?.id === item.id ? voting.dir : null;
     const isOwnComment = Boolean(currentUserId && item.user_id === currentUserId);
 
     // Replies preview ("Show more replies (n)")
     const showAll = Boolean(showAllReplies[item.id]);
     const visibleReplies = showAll ? replyList : replyList.slice(0, REPLY_PREVIEW_COUNT);
     const hiddenReplyCount = replyList.length - REPLY_PREVIEW_COUNT;
-
-    // Reactions count display (e.g. 37, 8, 7)
-    const reactionTotal =
-      item.upvotes > 0
-        ? item.upvotes
-        : item.reactions
-        ? Object.values(item.reactions).reduce((a, b) => a + b, 0)
-        : 0;
 
     const showThreadLine = !isChild && hasReplies && isRepliesExpanded;
 
@@ -691,66 +567,9 @@ export function SeriesDiscussionSection({ seriesSlug, seriesTitle, isAdminPrevie
 
         {/* Right Main Column */}
         <div className="comment-main">
-          {/* "..." options menu, top right of every comment */}
-          <div className="comment-menu-wrap">
-            <button
-              type="button"
-              className={`comment-menu-btn${menuOpenId === item.id ? ' is-open' : ''}`}
-              aria-label="Comment options"
-              aria-haspopup="menu"
-              aria-expanded={menuOpenId === item.id}
-              onClick={() => setMenuOpenId(menuOpenId === item.id ? null : item.id)}
-            >
-              <MoreHorizontal size={10} />
-            </button>
-            {menuOpenId === item.id && (
-              <div className="comment-menu" role="menu">
-                <button type="button" role="menuitem" className="comment-menu-item" onClick={() => void handleCopyLink(item)}>
-                  <Share2 size={9} />
-                  <span>{menuNotice?.id === item.id && menuNotice.action === 'copy' ? 'Link copied' : 'Copy comment link'}</span>
-                </button>
-                {!isOwnComment && (
-                  <>
-                    <button
-                      type="button"
-                      role="menuitem"
-                      className="comment-menu-item is-danger"
-                      onClick={() => handleBlockUser(item)}
-                    >
-                      <ShieldAlert size={9} />
-                      <span>Block user</span>
-                    </button>
-                    <button
-                      type="button"
-                      role="menuitem"
-                      className="comment-menu-item is-danger"
-                      onClick={() => void handleReport(item)}
-                    >
-                      <Flag size={9} />
-                      <span>{menuNotice?.id === item.id && menuNotice.action === 'report' ? 'Report sent' : 'Report'}</span>
-                    </button>
-                  </>
-                )}
-              </div>
-            )}
-          </div>
-
           {/* Header row */}
           <div className="comment-header">
             <span className="comment-author-name">{item.user_name}</span>
-
-            {/* Level badge */}
-            <span className={`comment-level-badge${level > 50 ? ' is-high' : ''}`}>Lv {level}</span>
-
-            {/* Role badge if applicable */}
-            {item.user_role === 'Reading Legend' && (
-              <span className="comment-role-badge role-reading-legend">
-                <Sparkles size={6.5} /> Reading Legend
-              </span>
-            )}
-            {item.user_role === 'Admin' && <span className="comment-role-badge role-admin">Admin</span>}
-            {item.user_role === 'Scanlator' && <span className="comment-role-badge role-scanlator">Scanlator</span>}
-            {item.user_role === 'VIP' && <span className="comment-role-badge role-vip">VIP</span>}
 
             {item.is_pinned && (
               <span className="comment-pinned-tag">
@@ -771,8 +590,38 @@ export function SeriesDiscussionSection({ seriesSlug, seriesTitle, isAdminPrevie
             </div>
           )}
 
-          {/* Comment text body or spoiler */}
-          {item.is_spoiler && !isRevealed ? (
+          {/* Comment text body (or the inline editor, or a spoiler mask) */}
+          {editingId === item.id ? (
+            <div className="comment-inline-edit">
+              <ComposerBox
+                value={editContent}
+                onChange={setEditContent}
+                placeholder="Edit your comment..."
+                maxLength={5000}
+                autoFocus
+              />
+              <div className="composer-action-row">
+                <button
+                  type="button"
+                  className="composer-cancel-btn"
+                  onClick={() => {
+                    setEditingId(null);
+                    setEditContent('');
+                  }}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  className={`composer-post-btn${editContent.trim() ? ' has-content' : ''}`}
+                  onClick={() => void handleSaveEdit(item)}
+                  disabled={!editContent.trim() || editSaving}
+                >
+                  <span>{editSaving ? 'Saving...' : 'Save'}</span>
+                </button>
+              </div>
+            </div>
+          ) : item.is_spoiler && !isRevealed ? (
             <div
               className="comment-spoiler-mask"
               onClick={() => toggleSpoiler(item.id)}
@@ -790,123 +639,44 @@ export function SeriesDiscussionSection({ seriesSlug, seriesTitle, isAdminPrevie
 
           {/* Action Row */}
           <div className="comment-actions">
-            {/* Like button with hover reaction picker */}
-            <div
-              className="reaction-picker-wrap"
-              onPointerEnter={(e) => {
-                if (e.pointerType === 'mouse') openPicker(item.id);
-              }}
-              onPointerLeave={(e) => {
-                if (e.pointerType === 'mouse') closePicker();
-              }}
+            {/* Upvote / downvote, each with its own count */}
+            <button
+              type="button"
+              className={`action-vote-btn action-vote-btn--up${myVote === 1 ? ' is-active' : ''}`}
+              onClick={() => void handleVote(item, 1)}
+              aria-label="Upvote"
+              aria-pressed={myVote === 1}
+              aria-busy={votingDir === 1}
+              disabled={votingDir !== null}
             >
-              {pickerOpenId === item.id && (
-                <div className="reaction-picker-pos">
-                  <div className="reaction-picker" role="menu" aria-label="Choose a reaction">
-                    {REACTIONS.map((reaction) => (
-                      <button
-                        key={reaction.key}
-                        type="button"
-                        role="menuitem"
-                        className={`reaction-picker-btn${myReaction?.key === reaction.key ? ' is-selected' : ''}`}
-                        onClick={() => void handleReact(item, reaction.key)}
-                        aria-label={reaction.label}
-                      >
-                        <img src={reaction.icon} alt="" draggable={false} />
-                        <span className="reaction-picker-tip">{reaction.label}</span>
-                      </button>
-                    ))}
-                  </div>
-                </div>
+              {votingDir === 1 ? (
+                <Loader2 size={9.5} className="is-spinning" />
+              ) : (
+                <ThumbsUp size={9.5} fill={myVote === 1 ? 'currentColor' : 'none'} />
               )}
-
-              <button
-                type="button"
-                className={`action-like-btn${myReaction ? ' is-reacted' : ''}`}
-                style={myReaction ? { color: myReaction.color } : undefined}
-                onClick={() => handleLikeClick(item)}
-                onTouchStart={() => {
-                  longPressFired.current = false;
-                  clearLongPress();
-                  longPressTimer.current = window.setTimeout(() => {
-                    longPressFired.current = true;
-                    setPickerOpenId(item.id);
-                  }, 380);
-                }}
-                onTouchEnd={clearLongPress}
-                onTouchMove={clearLongPress}
-                onTouchCancel={clearLongPress}
-                onContextMenu={(e) => e.preventDefault()}
-                aria-label={myReaction ? `${myReaction.label} (tap to remove)` : 'Like comment'}
-                aria-haspopup="menu"
-              >
-                {myReaction && myReaction.key !== 'like' ? (
-                  <img className="action-like-icon" src={myReaction.icon} alt="" draggable={false} />
-                ) : (
-                  <ThumbsUp size={9.5} fill={myReaction ? 'currentColor' : 'none'} />
-                )}
-                <span>{myReaction ? myReaction.label : 'Like'}</span>
-              </button>
-            </div>
-
-            {/* Reaction summary: hover (desktop) or tap opens who-reacted card; "See all reactions" opens the dialog */}
-            {reactionTotal > 0 && (
-              <div
-                className="reaction-summary-wrap"
-                onPointerEnter={(e) => {
-                  if (e.pointerType !== 'mouse') return;
-                  clearSummaryTimer();
-                  summaryTimer.current = window.setTimeout(() => {
-                    setSummaryOpenId(item.id);
-                    ensureReactors(item);
-                  }, 200);
-                }}
-                onPointerLeave={(e) => {
-                  if (e.pointerType !== 'mouse') return;
-                  clearSummaryTimer();
-                  summaryTimer.current = window.setTimeout(() => setSummaryOpenId(null), 250);
-                }}
-              >
-                {summaryOpenId === item.id && (
-                  <div className="reactors-popover-pos">
-                    <ReactorsPopover
-                      groups={buildReactionGroups(reactorsCache[item.id], REACTIONS)}
-                      loading={!reactorsCache[item.id]}
-                      onSeeAll={() => openReactionsModal(item)}
-                    />
-                  </div>
-                )}
-                <button
-                  type="button"
-                  className="action-reaction-pill"
-                  aria-haspopup="dialog"
-                  aria-expanded={summaryOpenId === item.id}
-                  title="See who reacted"
-                  onClick={(e) => {
-                    clearSummaryTimer();
-                    const pointerType = (e.nativeEvent as PointerEvent).pointerType;
-                    if (summaryOpenId === item.id && pointerType !== 'mouse') {
-                      setSummaryOpenId(null);
-                      return;
-                    }
-                    setSummaryOpenId(item.id);
-                    ensureReactors(item);
-                  }}
-                >
-                  <span className="reaction-cluster">
-                    {getTopReactionTypes(item).map((type) => (
-                      <ReactionDot key={type} type={type} />
-                    ))}
-                  </span>
-                  <span className="reaction-count">{reactionTotal}</span>
-                </button>
-              </div>
-            )}
+              <span>{item.upvotes}</span>
+            </button>
+            <button
+              type="button"
+              className={`action-vote-btn action-vote-btn--down${myVote === -1 ? ' is-active' : ''}`}
+              onClick={() => void handleVote(item, -1)}
+              aria-label="Downvote"
+              aria-pressed={myVote === -1}
+              aria-busy={votingDir === -1}
+              disabled={votingDir !== null}
+            >
+              {votingDir === -1 ? (
+                <Loader2 size={9.5} className="is-spinning" />
+              ) : (
+                <ThumbsDown size={9.5} fill={myVote === -1 ? 'currentColor' : 'none'} />
+              )}
+              <span>{item.downvotes}</span>
+            </button>
 
             {/* Reply button */}
             <button
               type="button"
-              className="action-reply-btn"
+              className={`action-reply-btn${replyingToId === item.id ? ' is-active' : ''}`}
               onClick={() => {
                 if (replyingToId === item.id) {
                   setReplyingToId(null);
@@ -922,49 +692,112 @@ export function SeriesDiscussionSection({ seriesSlug, seriesTitle, isAdminPrevie
               <span>Reply</span>
             </button>
 
-            {/* Pin comment (Admin) */}
-            {isAdmin && !isChild && (
+            {/* "..." options menu, sits next to Reply */}
+            <div className={`comment-menu-wrap${menuOpenId === item.id ? ' is-open' : ''}`}>
               <button
                 type="button"
-                className="action-admin-btn"
-                onClick={() => handleTogglePin(item)}
-                title="Pin comment"
+                className={`comment-menu-btn${menuOpenId === item.id ? ' is-open' : ''}`}
+                aria-label="Comment options"
+                aria-haspopup="menu"
+                aria-expanded={menuOpenId === item.id}
+                onClick={() => setMenuOpenId(menuOpenId === item.id ? null : item.id)}
               >
-                <Pin size={8.5} />
+                <MoreHorizontal size={10} />
               </button>
-            )}
+              {menuOpenId === item.id && (
+                <div className="comment-menu" role="menu">
+                  {/* Everyone can share */}
+                  <button type="button" role="menuitem" className="comment-menu-item" onClick={() => void handleCopyLink(item)}>
+                    <Link2 size={9} />
+                    <span>{menuNotice?.id === item.id && menuNotice.action === 'copy' ? 'Link copied' : 'Share'}</span>
+                  </button>
 
-            {/* Delete comment */}
-            {canManage && (
-              <button
-                type="button"
-                className="action-admin-btn"
-                onClick={() => handleDelete(item.id)}
-                title="Delete comment"
-              >
-                <Trash2 size={8.5} />
-              </button>
-            )}
+                  {/* Logged-in readers get the full menu */}
+                  {currentUserId && (
+                    <>
+                      <button type="button" role="menuitem" className="comment-menu-item" onClick={() => handleInfo(item)}>
+                        <Info size={9} />
+                        <span>Info</span>
+                      </button>
+                      {isOwnComment && (
+                        <button type="button" role="menuitem" className="comment-menu-item" onClick={() => handleStartEdit(item)}>
+                          <Pencil size={9} />
+                          <span>Edit</span>
+                        </button>
+                      )}
+                      {!isOwnComment && (
+                        <>
+                          <button
+                            type="button"
+                            role="menuitem"
+                            className="comment-menu-item"
+                            onClick={() => handleAddFriend(item)}
+                          >
+                            <UserPlus size={9} />
+                            <span>{menuNotice?.id === item.id && menuNotice.action === 'friend' ? 'Friend added' : 'Add Friend'}</span>
+                          </button>
+                          <button
+                            type="button"
+                            role="menuitem"
+                            className="comment-menu-item"
+                            onClick={() => void handleReport(item)}
+                          >
+                            <Flag size={9} />
+                            <span>{menuNotice?.id === item.id && menuNotice.action === 'report' ? 'Report sent' : 'Report'}</span>
+                          </button>
+                          <button
+                            type="button"
+                            role="menuitem"
+                            className="comment-menu-item is-danger"
+                            onClick={() => handleBlockUser(item)}
+                          >
+                            <Ban size={9} />
+                            <span>Block</span>
+                          </button>
+                        </>
+                      )}
+                      {(isOwnComment || isAdmin) && (
+                        <button
+                          type="button"
+                          role="menuitem"
+                          className="comment-menu-item is-danger"
+                          onClick={() => {
+                            setMenuOpenId(null);
+                            void handleDelete(item.id);
+                          }}
+                        >
+                          <Trash2 size={9} />
+                          <span>Delete</span>
+                        </button>
+                      )}
+                    </>
+                  )}
+                </div>
+              )}
+            </div>
           </div>
 
           {/* Inline Reply Composer */}
           {replyingToId === item.id && (
             <div className="comment-inline-reply">
-              <div className="composer-box">
-                <textarea
-                  className="composer-textarea composer-textarea--inline"
-                  rows={1}
-                  placeholder={`Replying to @${replyTargetName}...`}
-                  value={replyContent}
-                  onChange={(e) => setReplyContent(e.target.value)}
-                  maxLength={5000}
-                  autoFocus
-                />
+              <div className="comment-replying-ref comment-replying-ref--composer">
+                <span>replying to</span>
+                <span className="comment-replying-tag">@{replyTargetName}</span>
+              </div>
+              <ComposerBox
+                value={replyContent}
+                onChange={setReplyContent}
+                placeholder="Write a reply..."
+                maxLength={5000}
+                autoFocus
+              />
+              <div className="composer-counter-row">
+                <span>{replyContent.length}/5000</span>
               </div>
               <div className="composer-action-row">
                 <button
                   type="button"
-                  className="action-reply-btn"
+                  className="composer-cancel-btn"
                   onClick={() => {
                     setReplyingToId(null);
                     setReplyContent('');
@@ -974,11 +807,10 @@ export function SeriesDiscussionSection({ seriesSlug, seriesTitle, isAdminPrevie
                 </button>
                 <button
                   type="button"
-                  className="composer-post-btn has-content"
+                  className={`composer-post-btn${replyContent.trim() ? ' has-content' : ''}`}
                   onClick={() => handleSubmitReply(parentId || item.id, item.user_name)}
                   disabled={!replyContent.trim() || replyPosting}
                 >
-                  <Send size={9} />
                   <span>{replyPosting ? 'Posting...' : 'Reply'}</span>
                 </button>
               </div>
@@ -990,16 +822,13 @@ export function SeriesDiscussionSection({ seriesSlug, seriesTitle, isAdminPrevie
             <>
               <button
                 type="button"
-                className="replies-toggle-btn"
+                className={`replies-toggle-btn${isRepliesExpanded ? ' is-expanded' : ''}`}
                 onClick={() => toggleRepliesAccordion(item.id)}
+                aria-expanded={isRepliesExpanded}
               >
                 <span className="replies-toggle-dash" aria-hidden="true" />
-                {isRepliesExpanded ? <ChevronUp size={9} /> : <ChevronDown size={9} />}
-                <span>
-                  {isRepliesExpanded
-                    ? 'Hide replies'
-                    : `${replyList.length} ${replyList.length === 1 ? 'reply' : 'replies'}`}
-                </span>
+                {isRepliesExpanded ? <ChevronUp size={8} /> : <ChevronDown size={8} />}
+                <span>{isRepliesExpanded ? 'Hide replies' : `View replies (${replyList.length})`}</span>
               </button>
 
               {isRepliesExpanded && (
@@ -1300,14 +1129,6 @@ export function SeriesDiscussionSection({ seriesSlug, seriesTitle, isAdminPrevie
         )}
       </div>
 
-      {reactionsModal && (
-        <ReactionsModal
-          groups={buildReactionGroups(reactorsCache[reactionsModal.id], REACTIONS)}
-          loading={!reactorsCache[reactionsModal.id]}
-          dark={typeof document !== 'undefined' && document.querySelector('.series-page.theme-dark') !== null}
-          onClose={() => setReactionsModal(null)}
-        />
-      )}
     </section>
   );
 }

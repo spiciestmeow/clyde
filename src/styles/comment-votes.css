@@ -1,0 +1,241 @@
+/* Upvote / downvote buttons under every comment.
+   Sized to match .action-reply-btn in series-discussion.css (same padding, font, radius). */
+.action-vote-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  padding: 3px 6px;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  font-size: 7.5px;
+  font-weight: 600;
+  color: var(--series-muted, #77737a);
+  cursor: pointer;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+  transition: color 0.1s ease, background-color 0.1s ease, box-shadow 0.1s ease;
+}
+
+.action-vote-btn:hover {
+  background: var(--series-card, #ffffff);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+}
+
+.action-vote-btn--up:hover,
+.action-vote-btn--up.is-active {
+  color: #3b82f6;
+}
+
+.action-vote-btn--down:hover,
+.action-vote-btn--down.is-active {
+  color: #ef4444;
+}
+
+.action-vote-btn.is-active {
+  font-weight: 700;
+}
+
+/* While the vote is being saved: keep the look, show a progress cursor */
+.action-vote-btn:disabled {
+  cursor: progress;
+}
+
+.action-vote-btn:disabled:hover {
+  box-shadow: none;
+}
+
+.action-vote-btn:focus-visible {
+  outline: 2px solid currentColor;
+  outline-offset: 1px;
+}
+
+/* Below 1200px the section has no zoom: match the bumped-up Reply button */
+@media (max-width: 1199px) {
+  .action-vote-btn {
+    font-size: 10.5px;
+    padding: 5px 9px;
+    border-radius: 9px;
+  }
+}
+
+/* "..." options menu now lives in the action row, right after Reply.
+   Same box as the Reply button so the row stays one height. */
+.comment-actions .comment-menu-wrap {
+  position: relative;
+  top: auto;
+  right: auto;
+  display: inline-flex;
+  align-items: center;
+}
+
+.comment-actions .comment-menu-btn {
+  width: auto;
+  height: auto;
+  padding: 3px 6px;
+  border-radius: 6px;
+  line-height: 1;
+}
+
+.comment-actions .comment-menu-btn:hover,
+.comment-actions .comment-menu-btn.is-open {
+  background: var(--series-card, #ffffff);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+  color: var(--series-ink, #29262a);
+}
+
+/* Dropdown is right-aligned to the "..." button (opens toward the left) */
+.comment-actions .comment-menu {
+  left: auto;
+  right: 0;
+  transform-origin: top right;
+
+  /* Glassmorphism */
+  background: rgba(255, 255, 255, 0.6);
+  -webkit-backdrop-filter: blur(16px) saturate(170%);
+  backdrop-filter: blur(16px) saturate(170%);
+  border: 1px solid rgba(255, 255, 255, 0.55);
+  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.18), inset 0 1px 0 rgba(255, 255, 255, 0.5);
+}
+
+.series-page.theme-dark .comment-actions .comment-menu {
+  background: rgba(37, 37, 43, 0.55);
+  border-color: rgba(255, 255, 255, 0.12);
+  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.08);
+}
+
+/* An open menu must paint above the "..." buttons of the comments below it */
+.comment-menu-wrap.is-open {
+  z-index: 50;
+}
+
+/* No divider lines between menu items */
+.comment-menu-item + .comment-menu-item {
+  border-top: none;
+}
+
+/* The dash next to "View replies" / "Hide replies" stays red, same as the label */
+.replies-toggle-dash,
+.replies-toggle-btn.is-expanded .replies-toggle-dash {
+  background: var(--sd-accent, #ef4444);
+}
+
+.replies-toggle-btn:hover .replies-toggle-dash {
+  background: #dc2626;
+}
+
+/* "View replies" / "Hide replies" label: slightly bold, not heavy, and the same on hover */
+.replies-toggle-btn,
+.replies-toggle-btn:hover {
+  font-weight: 500;
+  -webkit-text-stroke: 0.25px currentColor;
+}
+
+/* Keep the red line thin */
+.replies-toggle-dash {
+  height: 0.7px;
+}
+
+/* Cancel button in the inline reply box had no styles (it showed at browser-default size).
+   Sized to match the Reply / Post Comment pill next to it. */
+.composer-cancel-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 23px;
+  padding: 0 12px;
+  border: none;
+  border-radius: 9999px;
+  background: transparent;
+  color: var(--series-muted, #77737a);
+  font-family: inherit;
+  font-size: 8.5px;
+  font-weight: 600;
+  line-height: 1;
+  cursor: pointer;
+  transition: background-color 0.12s ease, color 0.12s ease;
+}
+
+.composer-cancel-btn:hover {
+  background: color-mix(in srgb, var(--series-ink, #29262a) 6%, transparent);
+  color: var(--series-ink, #29262a);
+}
+
+@media (max-width: 1199px) {
+  .composer-cancel-btn {
+    height: 28px;
+    padding: 0 14px;
+    font-size: 11px;
+  }
+}
+
+/* Header no longer needs room for the old top-right button */
+.comment-header {
+  padding-right: 0;
+}
+
+/* Roomier, cleaner pill for the hover background of every action button
+   (vote, reply, menu), with regular-weight labels that do not change on hover. */
+.comment-actions {
+  gap: 2px;
+  margin-left: -10px; /* the pill sticks out; the icon/text stays aligned with the comment */
+}
+
+.comment-actions .action-reply-btn,
+.comment-actions .action-vote-btn,
+.comment-actions .comment-menu-btn {
+  gap: 4px;
+  padding: 5px 10px;
+  border-radius: 9999px;
+  font-weight: 500;
+}
+
+.comment-actions .action-admin-btn {
+  padding: 6px;
+  border-radius: 9999px;
+}
+
+.comment-actions .action-reply-btn:hover,
+.comment-actions .action-vote-btn:hover:not(:disabled),
+.comment-actions .comment-menu-btn:hover,
+.comment-actions .comment-menu-btn.is-open,
+.comment-actions .action-admin-btn:hover {
+  font-weight: 500;
+  background: var(--series-card, #ffffff);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.1);
+}
+
+.comment-actions .action-vote-btn.is-active {
+  font-weight: 600;
+}
+
+/* Below 1200px: match the bumped-up Reply button (must come after the base rules above) */
+@media (max-width: 1199px) {
+  .comment-actions .comment-menu-btn {
+    padding: 5px 9px;
+    border-radius: 9px;
+  }
+
+  .comment-actions .comment-menu-btn svg {
+    width: 12px;
+    height: 12px;
+  }
+}
+
+@media (max-width: 1199px) {
+  .comment-actions {
+    gap: 3px;
+    margin-left: -12px;
+  }
+
+  .comment-actions .action-reply-btn,
+  .comment-actions .action-vote-btn,
+  .comment-actions .comment-menu-btn {
+    padding: 7px 12px;
+    border-radius: 9999px;
+  }
+
+  .comment-actions .action-admin-btn {
+    padding: 8px;
+  }
+}

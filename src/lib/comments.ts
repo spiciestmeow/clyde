@@ -731,6 +731,30 @@ export async function togglePinSeriesComment(
   return true;
 }
 
+/**
+ * Edits the text of a comment (the author, or an admin).
+ * Tries Supabase first; if that is unavailable or refuses, the edit is kept in the local cache.
+ */
+export async function editSeriesComment(commentId: string, seriesSlug: string, content: string): Promise<boolean> {
+  const text = content.trim();
+  if (!text) return false;
+
+  if (supabase) {
+    try {
+      const { error } = await supabase.from('series_comments').update({ content: text }).eq('id', commentId);
+      if (!error) return true;
+    } catch {}
+  }
+
+  const localList = getLocalComments(seriesSlug);
+  const found = localList.find((c) => c.id === commentId);
+  if (found) {
+    found.content = text;
+    saveLocalComments(seriesSlug, localList);
+  }
+  return true;
+}
+
 const LOCAL_REPORTS_KEY = 'clydee_comment_reports';
 
 /**
