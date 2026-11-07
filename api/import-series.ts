@@ -73,7 +73,7 @@ async function importFromMangaDex(urlOrId: string): Promise<ImportedSeriesData> 
     throw new Error(`MangaDex API returned status ${res.status}`);
   }
 
-  const json = await res.json();
+  const json = (await res.json()) as any;
   const manga = json?.data;
   const attributes = manga?.attributes;
   if (!attributes) {
@@ -199,7 +199,7 @@ async function importFromMangaDex(urlOrId: string): Promise<ImportedSeriesData> 
       headers: { 'User-Agent': 'VortexScans/1.0' },
     });
     if (statRes.ok) {
-      const statJson = await statRes.json();
+      const statJson = (await statRes.json()) as any;
       const avg = statJson.statistics?.[id]?.rating?.average;
       if (typeof avg === 'number' && avg > 0) {
         rating = avg % 1 === 0 ? avg.toFixed(1) : avg.toFixed(2);
@@ -252,7 +252,7 @@ async function importFromMangaBaka(urlOrId: string): Promise<ImportedSeriesData>
       headers: { 'User-Agent': 'VortexScans/1.0' },
     });
     if (searchRes.ok) {
-      const searchJson = await searchRes.json();
+      const searchJson = (await searchRes.json()) as any;
       if (searchJson.data && searchJson.data.length > 0) {
         seriesId = String(searchJson.data[0].id);
       }
@@ -274,7 +274,7 @@ async function importFromMangaBaka(urlOrId: string): Promise<ImportedSeriesData>
     throw new Error(`MangaBaka API returned status ${res.status}`);
   }
 
-  const json = await res.json();
+  const json = (await res.json()) as any;
   const d = json?.data;
   if (!d) {
     throw new Error('MangaBaka series data not found.');
@@ -474,7 +474,7 @@ async function importFromMangaUpdates(urlOrId: string): Promise<ImportedSeriesDa
         body: JSON.stringify({ search: searchTitle, stype: 'title' }),
       });
       if (searchRes.ok) {
-        const searchData = await searchRes.json();
+        const searchData = (await searchRes.json()) as any;
         const firstHit = searchData.results?.[0]?.record;
         if (firstHit?.series_id) {
           const detailRes = await fetch(`https://api.mangaupdates.com/v1/series/${firstHit.series_id}`, {

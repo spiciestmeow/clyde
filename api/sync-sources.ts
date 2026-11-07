@@ -237,18 +237,18 @@ export async function fetchScanlationSources(rawTitle: string, alternateTitles: 
   const seriesId = bestRecord.series_id;
 
   // 2. Fetch detail & groups in parallel with 4s timeout
-  const [detail, groupsData] = await Promise.all([
+  const [detail, groupsData]: [any, any] = await Promise.all([
     fetch(`https://api.mangaupdates.com/v1/series/${seriesId}`, {
       headers: { 'User-Agent': 'VortexScans/1.0' },
       signal: AbortSignal.timeout(4000),
     })
-      .then((r) => (r.ok ? r.json() : null))
+      .then((r) => (r.ok ? (r.json() as Promise<any>) : null))
       .catch(() => null),
     fetch(`https://api.mangaupdates.com/v1/series/${seriesId}/groups`, {
       headers: { 'User-Agent': 'VortexScans/1.0' },
       signal: AbortSignal.timeout(4000),
     })
-      .then((r) => (r.ok ? r.json() : null))
+      .then((r) => (r.ok ? (r.json() as Promise<any>) : null))
       .catch(() => null),
   ]);
 
