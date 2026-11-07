@@ -3073,7 +3073,7 @@ function ComixDashboard({
                           onClick={handleCopyProfileId}
                           title="Copy Profile ID"
                         >
-                          {copiedId ? <Check size={16} style={{ color: '#2dd4bf' }} /> : <Copy size={16} />}
+                          {copiedId ? <Check size={16} style={{ color: 'var(--cx-teal)' }} /> : <Copy size={16} />}
                         </button>
                       </div>
                       <div className="comix-field-footer">

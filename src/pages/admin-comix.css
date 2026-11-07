@@ -1846,8 +1846,8 @@
 
 .comix-field-input-box input:focus,
 .comix-field-input-box textarea:focus {
-  border-color: #2dd4bf;
-  box-shadow: 0 0 0 3px rgba(45, 212, 191, 0.15);
+  border-color: var(--cx-teal);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--cx-teal) 18%, transparent);
 }
 
 .comix-field-footer {
@@ -1986,21 +1986,22 @@
 }
 
 .comix-save-profile-btn {
-  background: #2dd4bf;
-  color: #042f2e;
-  border: none;
+  background-color: var(--cx-teal);
+  color: var(--cx-teal-text);
+  border: 1px solid var(--cx-teal);
   border-radius: 8px;
   padding: 10px 24px;
   font-size: 14px;
   font-weight: 400; /* normal font weight */
   cursor: pointer;
-  transition: background 0.15s ease, transform 0.1s ease, box-shadow 0.15s ease;
+  transition: background-color 0.15s ease, border-color 0.15s ease, transform 0.1s ease, box-shadow 0.15s ease;
 }
 
 .comix-save-profile-btn:hover:not(:disabled) {
-  background: #14b8a6;
+  background-color: var(--cx-teal-hover);
+  border-color: var(--cx-teal-hover);
   transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(45, 212, 191, 0.25);
+  box-shadow: 0 4px 12px color-mix(in srgb, var(--cx-teal) 30%, transparent);
 }
 
 .comix-save-profile-btn:disabled {
@@ -2020,9 +2021,9 @@
 }
 
 .comix-profile-feedback.is-success {
-  background: rgba(45, 212, 191, 0.12);
-  border: 1px solid rgba(45, 212, 191, 0.35);
-  color: #2dd4bf;
+  background: color-mix(in srgb, var(--cx-teal) 12%, transparent);
+  border: 1px solid color-mix(in srgb, var(--cx-teal) 35%, transparent);
+  color: var(--cx-teal);
 }
 
 .comix-profile-feedback.is-error {
