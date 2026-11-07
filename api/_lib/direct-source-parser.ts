@@ -841,6 +841,123 @@ function extractMangaFireChapters(
   return Array.from(chapters.values()).sort((a, b) => b.number - a.number);
 }
 
+export function isFlameComicsHost(hostname: string): boolean {
+  return (
+    /(^|\.)(flamecomics\.(?:xyz|com|me)|flamescans\.(?:org|com|xyz))$/i.test(hostname) ||
+    /flame(?:comics|scans)/i.test(hostname)
+  );
+}
+
+/**
+ * Flame Comics renders chapters using Mantine/Next.js and provides authoritative
+ * chapter entries with exact ISO publication dates in JSON-LD (<script type="application/ld+json">).
+ * Note: Flame Comics' pre-rendered SSR text node often retains stale relative strings
+ * (e.g. "13 hours ago") from when the edge cache was generated. The real source of
+ * truth is JSON-LD `datePublished` (ISO) or the chapter card's `title` / `aria-label` attribute
+ * (e.g. "November 4, 2026 5:58 PM").
+ */
+export function extractFlameComicsChapters(
+  html: string,
+  pageUrl: URL,
+): DetectedChapterItem[] {
+  const chaptersMap = new Map<number, DetectedChapterItem>();
+
+  // 1. Authoritative: JSON-LD ComicSeries/CreativeWorkSeries schema with hasPart
+  const jsonLdRegex = /<script\b[^>]*type=["']application\/ld\+json["'][^>]*>([\s\S]*?)<\/script>/gi;
+  let jsonMatch: RegExpExecArray | null;
+  while ((jsonMatch = jsonLdRegex.exec(html)) !== null) {
+    try {
+      const data = JSON.parse(jsonMatch[1]);
+      const parts = Array.isArray(data?.hasPart) ? data.hasPart : null;
+      if (parts) {
+        for (const part of parts) {
+          let chNum: number | null = null;
+          if (typeof part.position === 'number' && Number.isFinite(part.position)) {
+            chNum = part.position;
+          } else if (typeof part.position === 'string') {
+            const parsed = parseFloat(part.position);
+            if (Number.isFinite(parsed)) chNum = parsed;
+          }
+
+          if (chNum === null && typeof part.name === 'string') {
+            const nameMatch = part.name.match(/\bChapter\s*(\d+(?:\.\d+)?)/i);
+            if (nameMatch) chNum = parseFloat(nameMatch[1]);
+          }
+
+          if (chNum === null || chNum < 0 || chNum >= 5000) continue;
+
+          let url = typeof part.url === 'string' && part.url.trim() ? part.url.trim() : '';
+          try {
+            url = new URL(url, pageUrl).pathname;
+          } catch {
+            // keep raw url if parse fails
+          }
+
+          let releasedAt: string | undefined;
+          if (typeof part.datePublished === 'string' && part.datePublished.trim()) {
+            const timeMs = Date.parse(part.datePublished);
+            if (!Number.isNaN(timeMs) && timeMs > 0) {
+              releasedAt = new Date(timeMs).toISOString();
+            }
+          }
+
+          chaptersMap.set(chNum, {
+            number: chNum,
+            title: `Chapter ${chNum}`,
+            url: url || pageUrl.pathname,
+            releasedAt,
+          });
+        }
+      }
+    } catch {
+      // ignore JSON parse errors in malformed script tags
+    }
+  }
+
+  // 2. HTML cards: <a href="/series/{id}/{hash}" ...>
+  // Flame Comics embeds the exact date in title="..." or aria-label="..." (e.g. title="November 4, 2026 5:58 PM")
+  const cardRegex = /<a\b[^>]*href=["'](\/series\/\d+\/[a-z0-9]+)["'][^>]*>([\s\S]*?)<\/a>/gi;
+  let cardMatch: RegExpExecArray | null;
+  while ((cardMatch = cardRegex.exec(html)) !== null) {
+    const rawHref = cardMatch[1];
+    const inner = cardMatch[2];
+
+    const chNumMatch = inner.match(/\bChapter\s*(?:<!--\s*-->)?\s*(\d+(?:\.\d+)?)/i);
+    if (!chNumMatch) continue;
+
+    const chNum = parseFloat(chNumMatch[1]);
+    if (Number.isNaN(chNum) || chNum < 0 || chNum >= 5000) continue;
+
+    let exactTimestamp: string | undefined;
+    const titleDateMatch = inner.match(/(?:title|aria-label)=["']([^"']+\d{4}[^"']*)["']/i);
+    if (titleDateMatch) {
+      const parsedMs = Date.parse(titleDateMatch[1].trim());
+      if (!Number.isNaN(parsedMs) && parsedMs > 0) {
+        exactTimestamp = new Date(parsedMs).toISOString();
+      }
+    }
+
+    const existing = chaptersMap.get(chNum);
+    if (existing) {
+      if (!existing.releasedAt && exactTimestamp) {
+        existing.releasedAt = exactTimestamp;
+      }
+      if (!existing.url && rawHref) {
+        existing.url = rawHref;
+      }
+    } else {
+      chaptersMap.set(chNum, {
+        number: chNum,
+        title: `Chapter ${chNum}`,
+        url: rawHref,
+        releasedAt: exactTimestamp,
+      });
+    }
+  }
+
+  return Array.from(chaptersMap.values()).sort((a, b) => b.number - a.number);
+}
+
 /**
  * Lagoon's series page can show only calendar dates while its homepage cards
  * show relative ages. Use the homepage age only when both the series permalink
@@ -1016,6 +1133,11 @@ export function extractChaptersFromHtml(
           : 'newest';
 
   const foundChapters = new Map<number, DetectedChapterItem>();
+
+  if (isFlameComicsHost(parsedUrl.hostname)) {
+    const flameChapters = extractFlameComicsChapters(cleanHtml, parsedUrl);
+    if (flameChapters.length > 0) return flameChapters;
+  }
 
   if (isYakshaComicsHost(parsedUrl.hostname)) {
     // Do not fall through to the generic scraper here: it can mistake a
