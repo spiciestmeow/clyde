@@ -2,8 +2,8 @@ import React, { useEffect, useState, useRef } from 'react';
 import {
   MessageSquare,
   ThumbsUp,
+  Heart,
   Pin,
-  Reply,
   Trash2,
   RotateCw,
   RotateCcw,
@@ -20,7 +20,9 @@ import {
   AtSign,
   ChevronDown,
   ChevronUp,
+  CornerDownRight,
   ShieldAlert,
+  Sparkles,
   Flame,
   Clock,
   Hourglass,
@@ -43,6 +45,50 @@ interface SeriesDiscussionProps {
 }
 
 const QUICK_EMOJIS = ['😊', '🔥', '❤️', '👍', '😂', '😭', '💀', '🎉', '✨', '👀'];
+
+/** Replies shown under a comment before "Show more replies (n)" appears. */
+const REPLY_PREVIEW_COUNT = 3;
+
+/** Small coloured circle used in the reaction summary pill. */
+function ReactionDot({ type }: { type: string }) {
+  switch (type) {
+    case 'love':
+      return (
+        <span className="reaction-dot dot-love">
+          <Heart size={6} fill="currentColor" strokeWidth={0} />
+        </span>
+      );
+    case 'happy':
+    case 'laugh':
+      return <span className="reaction-dot dot-emoji dot-laugh">😆</span>;
+    case 'wow':
+      return <span className="reaction-dot dot-emoji dot-wow">😮</span>;
+    case 'sad':
+      return <span className="reaction-dot dot-emoji dot-sad">😢</span>;
+    case 'angry':
+      return <span className="reaction-dot dot-emoji dot-angry">😡</span>;
+    case 'like':
+    default:
+      return (
+        <span className="reaction-dot dot-like">
+          <ThumbsUp size={6} fill="currentColor" strokeWidth={0} />
+        </span>
+      );
+  }
+}
+
+/** Top reaction types for a comment (max 3). Falls back to like + love. */
+function getTopReactionTypes(item: SeriesComment): string[] {
+  if (item.reactions) {
+    const top = Object.entries(item.reactions)
+      .filter(([, count]) => count > 0)
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 3)
+      .map(([key]) => key);
+    if (top.length > 0) return top;
+  }
+  return ['like', 'love'];
+}
 
 export function SeriesDiscussionSection({ seriesSlug, seriesTitle, isAdminPreview }: SeriesDiscussionProps) {
   const [comments, setComments] = useState<SeriesComment[]>([]);
@@ -73,6 +119,8 @@ export function SeriesDiscussionSection({ seriesSlug, seriesTitle, isAdminPrevie
 
   // Collapsed replies state (key: parent comment id, value: boolean isExpanded)
   const [expandedReplies, setExpandedReplies] = useState<Record<string, boolean>>({});
+  // "Show more replies" state (key: parent comment id, value: show every reply)
+  const [showAllReplies, setShowAllReplies] = useState<Record<string, boolean>>({});
 
   // Inline reply composer state
   const [replyingToId, setReplyingToId] = useState<string | null>(null);
@@ -244,6 +292,7 @@ export function SeriesDiscussionSection({ seriesSlug, seriesTitle, isAdminPrevie
       setReplyContent('');
       setReplyingToId(null);
       setExpandedReplies((prev) => ({ ...prev, [parentId]: true }));
+      setShowAllReplies((prev) => ({ ...prev, [parentId]: true }));
       void loadComments(true);
     } catch {
       // ignore
@@ -305,6 +354,14 @@ export function SeriesDiscussionSection({ seriesSlug, seriesTitle, isAdminPrevie
     }));
   };
 
+  // Toggle "show more replies"
+  const toggleShowAllReplies = (id: string) => {
+    setShowAllReplies((prev) => ({
+      ...prev,
+      [id]: !prev[id],
+    }));
+  };
+
   // Relative time helper
   const formatTime = (isoString: string): string => {
     const parsed = Date.parse(isoString);
@@ -343,8 +400,14 @@ export function SeriesDiscussionSection({ seriesSlug, seriesTitle, isAdminPrevie
     const canManage = isAdmin || (currentUserId && item.user_id === currentUserId);
     const level = getLevel(item);
     const isRepliesExpanded = expandedReplies[item.id] !== false;
-    const hasReplies = item.replies && item.replies.length > 0;
+    const replyList = item.replies ?? [];
+    const hasReplies = replyList.length > 0;
     const isLiked = item.user_vote === 1;
+
+    // Replies preview ("Show more replies (n)")
+    const showAll = Boolean(showAllReplies[item.id]);
+    const visibleReplies = showAll ? replyList : replyList.slice(0, REPLY_PREVIEW_COUNT);
+    const hiddenReplyCount = replyList.length - REPLY_PREVIEW_COUNT;
 
     // Reactions count display (e.g. 37, 8, 7)
     const reactionTotal =
@@ -354,15 +417,23 @@ export function SeriesDiscussionSection({ seriesSlug, seriesTitle, isAdminPrevie
         ? Object.values(item.reactions).reduce((a, b) => a + b, 0)
         : 0;
 
+    const showThreadLine = !isChild && hasReplies && isRepliesExpanded;
+
     return (
-      <div key={item.id} className={`comment-item${isChild ? ' comment-item--reply' : ''}`}>
-        {/* Left Avatar */}
-        <div className="comment-avatar">
-          {item.user_avatar ? (
-            <img src={item.user_avatar} alt="" />
-          ) : (
-            (item.user_name || 'R').slice(0, 1).toUpperCase()
-          )}
+      <div
+        key={item.id}
+        className={`comment-item${isChild ? ' comment-item--reply' : ' comment-item--root'}`}
+      >
+        {/* Left column: avatar + vertical thread line */}
+        <div className="comment-avatar-col">
+          <div className="comment-avatar">
+            {item.user_avatar ? (
+              <img src={item.user_avatar} alt="" />
+            ) : (
+              (item.user_name || 'R').slice(0, 1).toUpperCase()
+            )}
+          </div>
+          {showThreadLine && <span className="comment-thread-line" aria-hidden="true" />}
         </div>
 
         {/* Right Main Column */}
@@ -372,27 +443,21 @@ export function SeriesDiscussionSection({ seriesSlug, seriesTitle, isAdminPrevie
             <span className="comment-author-name">{item.user_name}</span>
 
             {/* Level badge */}
-            <span className={`comment-level-badge${level > 50 ? ' is-high' : ''}`}>
-              LV {level}
-            </span>
+            <span className={`comment-level-badge${level > 50 ? ' is-high' : ''}`}>Lv {level}</span>
 
             {/* Role badge if applicable */}
             {item.user_role === 'Reading Legend' && (
-              <span className="comment-role-badge role-reading-legend">Reading Legend</span>
+              <span className="comment-role-badge role-reading-legend">
+                <Sparkles size={6.5} /> Reading Legend
+              </span>
             )}
-            {item.user_role === 'Admin' && (
-              <span className="comment-role-badge role-admin">Admin</span>
-            )}
-            {item.user_role === 'Scanlator' && (
-              <span className="comment-role-badge role-scanlator">Scanlator</span>
-            )}
-            {item.user_role === 'VIP' && (
-              <span className="comment-role-badge role-vip">VIP</span>
-            )}
+            {item.user_role === 'Admin' && <span className="comment-role-badge role-admin">Admin</span>}
+            {item.user_role === 'Scanlator' && <span className="comment-role-badge role-scanlator">Scanlator</span>}
+            {item.user_role === 'VIP' && <span className="comment-role-badge role-vip">VIP</span>}
 
             {item.is_pinned && (
-              <span style={{ fontSize: '8.5px', color: '#ef4444', display: 'inline-flex', alignItems: 'center', gap: '2px', fontWeight: 600 }}>
-                <Pin size={8} /> Pinned
+              <span className="comment-pinned-tag">
+                <Pin size={7} /> Pinned
               </span>
             )}
 
@@ -403,7 +468,8 @@ export function SeriesDiscussionSection({ seriesSlug, seriesTitle, isAdminPrevie
           {/* Replying mention tag if child comment */}
           {item.reply_to_name && (
             <div className="comment-replying-ref">
-              <span>replying to </span>
+              <CornerDownRight size={7.5} />
+              <span>replying to</span>
               <span className="comment-replying-tag">@{item.reply_to_name}</span>
             </div>
           )}
@@ -418,7 +484,7 @@ export function SeriesDiscussionSection({ seriesSlug, seriesTitle, isAdminPrevie
             >
               <p className="comment-text comment-spoiler-blur">{item.content}</p>
               <div className="comment-spoiler-overlay">
-                <Eye size={10} /> Spoiler
+                <Eye size={9} /> Spoiler
               </div>
             </div>
           ) : (
@@ -434,11 +500,11 @@ export function SeriesDiscussionSection({ seriesSlug, seriesTitle, isAdminPrevie
               onClick={() => handleLike(item)}
               aria-label="Like comment"
             >
-              <ThumbsUp size={10} fill={isLiked ? 'currentColor' : 'none'} />
+              <ThumbsUp size={9.5} fill={isLiked ? 'currentColor' : 'none'} />
               <span>Like</span>
             </button>
 
-            {/* Reaction Pill with overlapping emoji circles (Heart & Laugh) + count */}
+            {/* Reaction summary pill with overlapping coloured circles + count */}
             {reactionTotal > 0 && (
               <button
                 type="button"
@@ -447,8 +513,9 @@ export function SeriesDiscussionSection({ seriesSlug, seriesTitle, isAdminPrevie
                 title="Reactions"
               >
                 <span className="reaction-cluster">
-                  <span className="reaction-emoji-badge type-heart">❤️</span>
-                  <span className="reaction-emoji-badge type-laugh">😆</span>
+                  {getTopReactionTypes(item).map((type) => (
+                    <ReactionDot key={type} type={type} />
+                  ))}
                 </span>
                 <span className="reaction-count">{reactionTotal}</span>
               </button>
@@ -469,7 +536,7 @@ export function SeriesDiscussionSection({ seriesSlug, seriesTitle, isAdminPrevie
                 }
               }}
             >
-              <Reply size={10} />
+              <MessageSquare size={9.5} />
               <span>Reply</span>
             </button>
 
@@ -503,7 +570,7 @@ export function SeriesDiscussionSection({ seriesSlug, seriesTitle, isAdminPrevie
             <div className="comment-inline-reply">
               <div className="composer-box">
                 <textarea
-                  className="composer-textarea"
+                  className="composer-textarea composer-textarea--inline"
                   rows={1}
                   placeholder={`Replying to @${replyTargetName}...`}
                   value={replyContent}
@@ -512,7 +579,7 @@ export function SeriesDiscussionSection({ seriesSlug, seriesTitle, isAdminPrevie
                   autoFocus
                 />
               </div>
-              <div className="composer-action-row" style={{ marginTop: '4px' }}>
+              <div className="composer-action-row">
                 <button
                   type="button"
                   className="action-reply-btn"
@@ -529,14 +596,14 @@ export function SeriesDiscussionSection({ seriesSlug, seriesTitle, isAdminPrevie
                   onClick={() => handleSubmitReply(parentId || item.id, item.user_name)}
                   disabled={!replyContent.trim() || replyPosting}
                 >
-                  <Send size={9.5} />
+                  <Send size={9} />
                   <span>{replyPosting ? 'Posting...' : 'Reply'}</span>
                 </button>
               </div>
             </div>
           )}
 
-          {/* Nested Replies with accordion toggle & connector line */}
+          {/* Nested replies with accordion toggle */}
           {hasReplies && (
             <>
               <button
@@ -544,17 +611,29 @@ export function SeriesDiscussionSection({ seriesSlug, seriesTitle, isAdminPrevie
                 className="replies-toggle-btn"
                 onClick={() => toggleRepliesAccordion(item.id)}
               >
-                {isRepliesExpanded ? <ChevronUp size={9.5} /> : <ChevronDown size={9.5} />}
+                <span className="replies-toggle-dash" aria-hidden="true" />
+                {isRepliesExpanded ? <ChevronUp size={9} /> : <ChevronDown size={9} />}
                 <span>
                   {isRepliesExpanded
                     ? 'Hide replies'
-                    : `${item.replies!.length} ${item.replies!.length === 1 ? 'reply' : 'replies'}`}
+                    : `${replyList.length} ${replyList.length === 1 ? 'reply' : 'replies'}`}
                 </span>
               </button>
 
               {isRepliesExpanded && (
                 <div className="replies-thread">
-                  {item.replies!.map((reply) => renderComment(reply, true, item.id))}
+                  {visibleReplies.map((reply) => renderComment(reply, true, item.id))}
+
+                  {replyList.length > REPLY_PREVIEW_COUNT && (
+                    <button
+                      type="button"
+                      className="replies-more-btn"
+                      onClick={() => toggleShowAllReplies(item.id)}
+                    >
+                      {showAll ? <ChevronUp size={9} /> : <ChevronDown size={9} />}
+                      <span>{showAll ? 'Show fewer replies' : `Show more replies (${hiddenReplyCount})`}</span>
+                    </button>
+                  )}
                 </div>
               )}
             </>
@@ -572,7 +651,7 @@ export function SeriesDiscussionSection({ seriesSlug, seriesTitle, isAdminPrevie
       <div className="discussion-header">
         <div className="discussion-header-left">
           <div className="discussion-icon-wrap">
-            <MessageSquare size={13} />
+            <MessageSquare size={12} />
           </div>
           <h2 className="discussion-title">Discussion</h2>
           <span className="discussion-count">{totalCount}</span>
@@ -583,37 +662,45 @@ export function SeriesDiscussionSection({ seriesSlug, seriesTitle, isAdminPrevie
           )}
         </div>
 
-        {/* Sorter Pills (🔥 Best, 🕒 New, ⏳ Old) */}
-        <div className="discussion-sort-group">
+        {/* Sorter pills (Best / New / Old) */}
+        <div className="discussion-sort-wrap">
+          <div className="discussion-sort-group" role="tablist" aria-label="Sort comments">
+            <button
+              type="button"
+              role="tab"
+              aria-selected={sort === 'best'}
+              className={`discussion-sort-btn${sort === 'best' ? ' is-active' : ''}`}
+              onClick={() => setSort('best')}
+            >
+              <Flame size={8.5} /> Best
+            </button>
+            <button
+              type="button"
+              role="tab"
+              aria-selected={sort === 'newest'}
+              className={`discussion-sort-btn${sort === 'newest' ? ' is-active' : ''}`}
+              onClick={() => setSort('newest')}
+            >
+              <Clock size={8.5} /> New
+            </button>
+            <button
+              type="button"
+              role="tab"
+              aria-selected={sort === 'oldest'}
+              className={`discussion-sort-btn${sort === 'oldest' ? ' is-active' : ''}`}
+              onClick={() => setSort('oldest')}
+            >
+              <Hourglass size={8.5} /> Old
+            </button>
+          </div>
           <button
             type="button"
-            className={`discussion-sort-btn${sort === 'best' ? ' is-active' : ''}`}
-            onClick={() => setSort('best')}
-          >
-            <Flame size={9.5} /> Best
-          </button>
-          <button
-            type="button"
-            className={`discussion-sort-btn${sort === 'newest' ? ' is-active' : ''}`}
-            onClick={() => setSort('newest')}
-          >
-            <Clock size={9.5} /> New
-          </button>
-          <button
-            type="button"
-            className={`discussion-sort-btn${sort === 'oldest' ? ' is-active' : ''}`}
-            onClick={() => setSort('oldest')}
-          >
-            <Hourglass size={9.5} /> Old
-          </button>
-          <button
-            type="button"
-            className="toolbar-btn"
-            style={{ marginLeft: '1px' }}
+            className="toolbar-btn discussion-refresh-btn"
             onClick={handleRefresh}
             title="Refresh comments"
+            aria-label="Refresh comments"
           >
-            <RotateCw size={9.5} className={refreshing ? 'is-spinning' : ''} />
+            <RotateCw size={9} className={refreshing ? 'is-spinning' : ''} />
           </button>
         </div>
       </div>
@@ -622,11 +709,7 @@ export function SeriesDiscussionSection({ seriesSlug, seriesTitle, isAdminPrevie
       <div className="discussion-composer-wrap">
         {/* Left User Avatar */}
         <div className="composer-avatar">
-          {currentUserAvatar ? (
-            <img src={currentUserAvatar} alt="" />
-          ) : (
-            userInitial
-          )}
+          {currentUserAvatar ? <img src={currentUserAvatar} alt="" /> : userInitial}
         </div>
 
         {/* Right Composer Card */}
@@ -643,7 +726,7 @@ export function SeriesDiscussionSection({ seriesSlug, seriesTitle, isAdminPrevie
                     title="Undo"
                     disabled={historyIndex <= 0}
                   >
-                    <RotateCcw size={10} />
+                    <RotateCcw size={9.5} />
                   </button>
                   <button
                     type="button"
@@ -652,7 +735,7 @@ export function SeriesDiscussionSection({ seriesSlug, seriesTitle, isAdminPrevie
                     title="Redo"
                     disabled={historyIndex >= history.length - 1}
                   >
-                    <RotateCw size={10} />
+                    <RotateCw size={9.5} />
                   </button>
                   <span className="toolbar-divider" />
                   <button
@@ -661,7 +744,7 @@ export function SeriesDiscussionSection({ seriesSlug, seriesTitle, isAdminPrevie
                     onClick={() => wrapText('**', '**', 'bold text')}
                     title="Bold"
                   >
-                    <Bold size={10} />
+                    <Bold size={9.5} />
                   </button>
                   <button
                     type="button"
@@ -669,7 +752,7 @@ export function SeriesDiscussionSection({ seriesSlug, seriesTitle, isAdminPrevie
                     onClick={() => wrapText('*', '*', 'italic text')}
                     title="Italic"
                   >
-                    <Italic size={10} />
+                    <Italic size={9.5} />
                   </button>
                   <button
                     type="button"
@@ -677,7 +760,7 @@ export function SeriesDiscussionSection({ seriesSlug, seriesTitle, isAdminPrevie
                     onClick={() => wrapText('<u>', '</u>', 'underlined text')}
                     title="Underline"
                   >
-                    <Underline size={10} />
+                    <Underline size={9.5} />
                   </button>
                   <button
                     type="button"
@@ -685,7 +768,7 @@ export function SeriesDiscussionSection({ seriesSlug, seriesTitle, isAdminPrevie
                     onClick={() => wrapText('~~', '~~', 'strikethrough text')}
                     title="Strikethrough"
                   >
-                    <Strikethrough size={10} />
+                    <Strikethrough size={9.5} />
                   </button>
                   <span className="toolbar-divider" />
                   <button
@@ -697,15 +780,7 @@ export function SeriesDiscussionSection({ seriesSlug, seriesTitle, isAdminPrevie
                     }}
                     title="Link"
                   >
-                    <Link2 size={10} />
-                  </button>
-                  <button
-                    type="button"
-                    className="toolbar-btn"
-                    onClick={() => wrapText('> ', '\n', 'quoted text')}
-                    title="Quote"
-                  >
-                    <Quote size={10} />
+                    <Link2 size={9.5} />
                   </button>
                   <button
                     type="button"
@@ -713,7 +788,15 @@ export function SeriesDiscussionSection({ seriesSlug, seriesTitle, isAdminPrevie
                     onClick={() => wrapText('||', '||', 'spoiler')}
                     title="Spoiler tag"
                   >
-                    <Eye size={10} />
+                    <Eye size={9.5} />
+                  </button>
+                  <button
+                    type="button"
+                    className="toolbar-btn"
+                    onClick={() => wrapText('> ', '\n', 'quoted text')}
+                    title="Quote"
+                  >
+                    <Quote size={9.5} />
                   </button>
                 </div>
 
@@ -727,7 +810,7 @@ export function SeriesDiscussionSection({ seriesSlug, seriesTitle, isAdminPrevie
                     }}
                     title="Add image"
                   >
-                    <ImageIcon size={10} />
+                    <ImageIcon size={9.5} />
                   </button>
                   <button
                     type="button"
@@ -735,7 +818,7 @@ export function SeriesDiscussionSection({ seriesSlug, seriesTitle, isAdminPrevie
                     onClick={() => setShowEmojiPicker(!showEmojiPicker)}
                     title="Emoji"
                   >
-                    <Smile size={10} />
+                    <Smile size={9.5} />
                   </button>
                   <button
                     type="button"
@@ -743,7 +826,7 @@ export function SeriesDiscussionSection({ seriesSlug, seriesTitle, isAdminPrevie
                     onClick={() => insertAtCursor('@')}
                     title="Mention"
                   >
-                    <AtSign size={10} />
+                    <AtSign size={9.5} />
                   </button>
                   <button
                     type="button"
@@ -779,27 +862,26 @@ export function SeriesDiscussionSection({ seriesSlug, seriesTitle, isAdminPrevie
               <textarea
                 ref={textareaRef}
                 className="composer-textarea"
-                rows={1}
+                rows={3}
                 placeholder="What are your thoughts?"
                 value={content}
                 onChange={(e) => handleContentChange(e.target.value)}
                 maxLength={5000}
               />
-
-              {/* Bottom right inside box: Character counter */}
-              <div className="composer-counter-row">
-                <span>{content.length}/5000</span>
-              </div>
             </div>
 
-            {/* Below Composer Box: Only Post Comment button on far right */}
+            {/* Below the box: counter, then Post Comment on the far right */}
+            <div className="composer-counter-row">
+              <span>{content.length}/5000</span>
+            </div>
+
             <div className="composer-action-row">
               <button
                 type="submit"
                 className={`composer-post-btn${content.trim() ? ' has-content' : ''}`}
                 disabled={!content.trim() || posting}
               >
-                <Send size={10} />
+                <Send size={9} />
                 <span>{posting ? 'Posting...' : 'Post Comment'}</span>
               </button>
             </div>
