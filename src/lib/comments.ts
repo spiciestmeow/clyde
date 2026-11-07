@@ -568,7 +568,7 @@ export async function reactSeriesComment(
         let { error } = await supabase
           .from('series_comment_votes')
           .upsert(
-            reactor?.name ? { ...base, user_name: reactor.name, user_avatar: reactor.avatar ?? null } : base,
+            (reactor?.name ? { ...base, user_name: reactor.name, user_avatar: reactor.avatar ?? null } : base) as any,
             { onConflict: 'comment_id,user_id' },
           );
         if (error && reactor?.name) {

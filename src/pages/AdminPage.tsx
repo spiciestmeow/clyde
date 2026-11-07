@@ -412,16 +412,33 @@ function ComixLoginScreen({
         return;
       }
 
+      let signedInSession = null;
       const { data, error } = await supabase.auth.setSession({
         access_token: result.session.access_token,
         refresh_token: result.session.refresh_token,
       });
-      if (error || !data.session) {
-        setFormError('Sign in failed. Please try again.');
+
+      if (!error && data.session) {
+        signedInSession = data.session;
+      } else {
+        console.warn('Admin sign-in: setSession failed, attempting direct signInWithPassword fallback:', error?.message);
+        const directAuth = await supabase.auth.signInWithPassword({
+          email: email.trim(),
+          password,
+        });
+        if (!directAuth.error && directAuth.data.session) {
+          signedInSession = directAuth.data.session;
+        } else {
+          console.error('Admin direct sign-in fallback failed:', directAuth.error?.message ?? error?.message);
+        }
+      }
+
+      if (!signedInSession) {
+        setFormError(error?.message || 'Sign in failed. Please try again.');
         return;
       }
       setLockoutSeconds(0);
-      onSignedIn(data.session);
+      onSignedIn(signedInSession);
     } catch {
       setFormError('Could not reach the sign-in service. Please try again.');
     } finally {
