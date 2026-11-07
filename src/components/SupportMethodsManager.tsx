@@ -15,6 +15,7 @@ import {
 import { compressImageFile } from '../lib/imageUpload';
 import {
   DEFAULT_SUPPORT_METHODS,
+  getSupportMethodBanner,
   type SupportMethod,
   type SupportMethodKind,
 } from '../lib/siteSettings';
@@ -37,13 +38,19 @@ type FormState = {
   network: string;
   accountName: string;
   valueLabel: string;
+  colorEnd: string;
+  gradientAngle: number;
+  valueIcon: '' | 'hash' | 'phone';
+  qrUrl: string;
+  qrCaption: string;
   enabled: boolean;
 };
 
-type FormErrors = { name?: string; address?: string; icon?: string };
+type FormErrors = { name?: string; address?: string; icon?: string; qr?: string };
 
 const DEFAULT_COLOR = '#dc2626';
 const HEX_RE = /^#[0-9a-f]{6}$/i;
+const DEFAULT_ANGLE = 135;
 
 const EMPTY_FORM: FormState = {
   name: '',
@@ -56,6 +63,11 @@ const EMPTY_FORM: FormState = {
   network: '',
   accountName: '',
   valueLabel: '',
+  colorEnd: '',
+  gradientAngle: DEFAULT_ANGLE,
+  valueIcon: '',
+  qrUrl: '',
+  qrCaption: '',
   enabled: true,
 };
 
@@ -71,6 +83,11 @@ function formFromMethod(m: SupportMethod): FormState {
     network: m.network ?? '',
     accountName: m.accountName ?? '',
     valueLabel: m.valueLabel ?? '',
+    colorEnd: m.colorEnd ?? '',
+    gradientAngle: m.gradientAngle ?? DEFAULT_ANGLE,
+    valueIcon: m.valueIcon ?? '',
+    qrUrl: m.qrUrl ?? '',
+    qrCaption: m.qrCaption ?? '',
     enabled: m.enabled,
   };
 }
@@ -212,6 +229,8 @@ export default function SupportMethodsManager({ methods, saving, onSave }: Props
   const [toDelete, setToDelete] = useState<SupportMethod | null>(null);
   const [confirmReset, setConfirmReset] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
+  const qrFileRef = useRef<HTMLInputElement>(null);
+  const [qrUploading, setQrUploading] = useState(false);
 
   const set = <K extends keyof FormState>(key: K, value: FormState[K]) =>
     setForm((prev) => ({ ...prev, [key]: value }));
@@ -260,6 +279,38 @@ export default function SupportMethodsManager({ methods, saving, onSave }: Props
     }
   };
 
+  const handleQrFile = async (event: ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    event.target.value = '';
+    if (!file) return;
+    if (!file.type.startsWith('image/')) {
+      setErrors((prev) => ({ ...prev, qr: 'Please choose an image file.' }));
+      return;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      setErrors((prev) => ({ ...prev, qr: 'Image is too large (max 5 MB).' }));
+      return;
+    }
+    setQrUploading(true);
+    try {
+      // QR codes need more detail than icons, so keep up to 512px at high quality.
+      const dataUrl = await compressImageFile(file, 512, 512, 0.95);
+      if (dataUrl.length > 200000) {
+        setErrors((prev) => ({ ...prev, qr: 'QR image is too large after compression. Try a simpler or smaller image.' }));
+        return;
+      }
+      set('qrUrl', dataUrl);
+      setErrors((prev) => ({ ...prev, qr: undefined }));
+    } catch (err) {
+      setErrors((prev) => ({
+        ...prev,
+        qr: err instanceof Error ? err.message : 'Failed to process the image.',
+      }));
+    } finally {
+      setQrUploading(false);
+    }
+  };
+
   const handleSaveForm = () => {
     const nextErrors: FormErrors = {};
     const name = form.name.trim();
@@ -282,6 +333,11 @@ export default function SupportMethodsManager({ methods, saving, onSave }: Props
       nextErrors.icon = 'Icon must be an https:// image URL or an uploaded image.';
     }
 
+    const qr = form.qrUrl.trim();
+    if (form.kind === 'details' && qr && !/^(https?:\/\/|\/|data:image\/)/i.test(qr)) {
+      nextErrors.qr = 'QR code must be an https:// image URL or an uploaded image.';
+    }
+
     if (Object.keys(nextErrors).length > 0) {
       setErrors(nextErrors);
       return;
@@ -300,6 +356,13 @@ export default function SupportMethodsManager({ methods, saving, onSave }: Props
       network: isDetails ? form.network.trim() || undefined : undefined,
       accountName: isDetails ? form.accountName.trim() || undefined : undefined,
       valueLabel: isDetails ? form.valueLabel.trim() || undefined : undefined,
+      colorEnd: isDetails && HEX_RE.test(form.colorEnd) ? form.colorEnd : undefined,
+      gradientAngle: isDetails
+        ? Math.min(360, Math.max(0, Math.round(Number(form.gradientAngle) || 0)))
+        : undefined,
+      valueIcon: isDetails && form.valueIcon ? form.valueIcon : undefined,
+      qrUrl: isDetails && qr ? qr : undefined,
+      qrCaption: isDetails && qr ? form.qrCaption.trim() || undefined : undefined,
       enabled: form.enabled,
     };
 
@@ -340,6 +403,13 @@ export default function SupportMethodsManager({ methods, saving, onSave }: Props
   const previewColor = colorForPicker;
   const isDetailsForm = form.kind === 'details';
   const uploadedIcon = form.iconUrl.startsWith('data:');
+  const uploadedQr = form.qrUrl.startsWith('data:');
+  const colorEndForPicker = HEX_RE.test(form.colorEnd) ? form.colorEnd : colorForPicker;
+  const bannerPreview = getSupportMethodBanner({
+    color: colorForPicker,
+    colorEnd: HEX_RE.test(form.colorEnd) ? form.colorEnd : undefined,
+    gradientAngle: form.gradientAngle,
+  });
 
   return (
     <>
@@ -436,7 +506,7 @@ export default function SupportMethodsManager({ methods, saving, onSave }: Props
                     </div>
                     <span
                       title={m.color}
-                      style={{ width: 12, height: 12, borderRadius: '50%', background: m.color, flex: '0 0 12px', boxShadow: 'inset 0 0 0 1px rgba(0,0,0,.12)' }}
+                      style={{ width: 12, height: 12, borderRadius: '50%', background: getSupportMethodBanner(m).background, flex: '0 0 12px', boxShadow: 'inset 0 0 0 1px rgba(0,0,0,.12)' }}
                     />
                   </div>
 
@@ -660,6 +730,82 @@ export default function SupportMethodsManager({ methods, saving, onSave }: Props
                       onChange={(e) => set('instructions', e.target.value)}
                     />
                   </div>
+
+                  <div>
+                    <label className="supporter-modal-label-sm">Icon beside the copyable value</label>
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 8 }}>
+                      {([
+                        ['', 'Auto'],
+                        ['hash', 'Address (#)'],
+                        ['phone', 'Phone'],
+                      ] as const).map(([val, label]) => (
+                        <button
+                          key={val || 'auto'}
+                          type="button"
+                          className={`supporter-time-mode-btn ${form.valueIcon === val ? 'is-active' : ''}`}
+                          onClick={() => set('valueIcon', val)}
+                        >
+                          <span>{label}</span>
+                        </button>
+                      ))}
+                    </div>
+                    <div style={{ fontSize: 11, color: 'var(--cx-text-subtle)', marginTop: 4 }}>
+                      Auto shows a phone icon when the field label mentions a number or phone, otherwise #.
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="supporter-modal-label-sm">QR code (optional)</label>
+                    <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                      <input
+                        type="text"
+                        className="supporter-modal-input"
+                        placeholder="https://… image URL, or upload one"
+                        readOnly={uploadedQr}
+                        value={uploadedQr ? '(uploaded image)' : form.qrUrl}
+                        onChange={(e) => {
+                          set('qrUrl', e.target.value);
+                          if (errors.qr) setErrors((prev) => ({ ...prev, qr: undefined }));
+                        }}
+                        style={{ flex: 1, minWidth: 0 }}
+                      />
+                      <input ref={qrFileRef} type="file" accept="image/*" hidden onChange={(e) => void handleQrFile(e)} />
+                      <button
+                        type="button"
+                        className="btn-secondary"
+                        disabled={qrUploading}
+                        onClick={() => qrFileRef.current?.click()}
+                        style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '8px 12px', fontSize: 13, borderRadius: 8, cursor: 'pointer', flex: '0 0 auto' }}
+                      >
+                        {qrUploading ? <ImageIcon size={14} /> : <Upload size={14} />}
+                        <span>{qrUploading ? 'Processing…' : 'Upload'}</span>
+                      </button>
+                      {form.qrUrl && (
+                        <button
+                          type="button"
+                          className="btn-secondary"
+                          onClick={() => set('qrUrl', '')}
+                          title="Remove QR code"
+                          aria-label="Remove QR code"
+                          style={{ display: 'flex', alignItems: 'center', padding: '8px 10px', borderRadius: 8, cursor: 'pointer', flex: '0 0 auto' }}
+                        >
+                          <X size={14} />
+                        </button>
+                      )}
+                    </div>
+                    {errors.qr && <div style={{ color: '#ef4444', fontSize: 11, marginTop: 4 }}>{errors.qr}</div>}
+                    {form.qrUrl && (
+                      <input
+                        type="text"
+                        className="supporter-modal-input"
+                        placeholder="Caption above the QR (default: Scan QR code to pay)"
+                        maxLength={60}
+                        value={form.qrCaption}
+                        onChange={(e) => set('qrCaption', e.target.value)}
+                        style={{ marginTop: 8 }}
+                      />
+                    )}
+                  </div>
                 </>
               )}
 
@@ -707,6 +853,94 @@ export default function SupportMethodsManager({ methods, saving, onSave }: Props
                   Square images work best. Uploads are resized to 128&times;128. Without an icon, the first letter of the name is used.
                 </div>
               </div>
+
+              {isDetailsForm && (
+                <div>
+                  <label className="supporter-modal-label-sm">Popup banner gradient</label>
+                  <div
+                    style={{
+                      background: bannerPreview.background,
+                      color: bannerPreview.textColor,
+                      borderRadius: 14,
+                      padding: '14px 16px',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 12,
+                      marginBottom: 10,
+                    }}
+                  >
+                    <div
+                      style={{
+                        width: 40,
+                        height: 40,
+                        flex: '0 0 40px',
+                        borderRadius: 12,
+                        background: 'rgba(255, 255, 255, 0.22)',
+                        display: 'grid',
+                        placeItems: 'center',
+                        overflow: 'hidden',
+                      }}
+                    >
+                      <MethodIcon key={form.iconUrl} src={form.iconUrl} name={form.name || '?'} color={bannerPreview.textColor} size={24} />
+                    </div>
+                    <div style={{ minWidth: 0 }}>
+                      <div style={{ ...ellipsis, fontWeight: 700, fontSize: 15 }}>{form.name.trim() || 'Method name'}</div>
+                      <div style={{ ...ellipsis, fontSize: 12, opacity: 0.88 }}>{form.detail.trim() || 'Short description'}</div>
+                    </div>
+                  </div>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, alignItems: 'end' }}>
+                    <div>
+                      <label className="supporter-modal-label-sm">End color (optional)</label>
+                      <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                        <input
+                          type="color"
+                          value={colorEndForPicker}
+                          onChange={(e) => set('colorEnd', e.target.value)}
+                          aria-label="Gradient end color"
+                          style={{ width: 42, height: 36, padding: 2, border: '1px solid var(--cx-border)', borderRadius: 8, background: 'var(--cx-surface)', cursor: 'pointer', flex: '0 0 auto' }}
+                        />
+                        <input
+                          type="text"
+                          className="supporter-modal-input"
+                          value={form.colorEnd}
+                          maxLength={7}
+                          onChange={(e) => set('colorEnd', e.target.value)}
+                          placeholder="Auto (darker shade)"
+                          style={{ minWidth: 0 }}
+                        />
+                        {form.colorEnd && (
+                          <button
+                            type="button"
+                            className="btn-secondary"
+                            onClick={() => set('colorEnd', '')}
+                            title="Back to automatic end color"
+                            aria-label="Reset end color to automatic"
+                            style={{ display: 'flex', alignItems: 'center', padding: '8px 10px', borderRadius: 8, cursor: 'pointer', flex: '0 0 auto' }}
+                          >
+                            <X size={14} />
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                    <div>
+                      <label className="supporter-modal-label-sm">Angle: {form.gradientAngle}&deg;</label>
+                      <input
+                        type="range"
+                        min={0}
+                        max={360}
+                        step={5}
+                        value={form.gradientAngle}
+                        onChange={(e) => set('gradientAngle', Number(e.target.value))}
+                        aria-label="Gradient angle"
+                        style={{ width: '100%' }}
+                      />
+                    </div>
+                  </div>
+                  <div style={{ fontSize: 11, color: 'var(--cx-text-subtle)', marginTop: 4 }}>
+                    The gradient starts from the accent color below.
+                  </div>
+                </div>
+              )}
 
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, alignItems: 'end' }}>
                 <div>
@@ -760,7 +994,7 @@ export default function SupportMethodsManager({ methods, saving, onSave }: Props
                 type="button"
                 className="btn-teal"
                 onClick={handleSaveForm}
-                disabled={saving || uploading}
+                disabled={saving || uploading || qrUploading}
                 style={{ padding: '8px 18px', borderRadius: 8, cursor: 'pointer', fontWeight: 600 }}
               >
                 {saving ? 'Saving...' : editingId === 'new' ? 'Add Method' : 'Save Changes'}

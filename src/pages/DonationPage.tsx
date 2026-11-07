@@ -13,6 +13,9 @@ import {
   ChevronDown,
   Star,
   ShieldCheck,
+  Hash,
+  Phone,
+  Globe,
 } from 'lucide-react';
 import SiteFooter from '../components/SiteFooter';
 import SiteHeader from '../components/SiteHeader';
@@ -28,6 +31,7 @@ import {
   DEFAULT_SITE_SETTINGS,
   DEFAULT_SUPPORT_METHODS,
   getSupporterDisplayTime,
+  getSupportMethodBanner,
   type SupportMethod,
   type DonationSupporter,
   type SiteSettings,
@@ -52,13 +56,6 @@ function hexToRgb(hex: string): [number, number, number] {
 function readableTextOn(hex: string): string {
   const [r, g, b] = hexToRgb(hex);
   return (r * 299 + g * 587 + b * 114) / 1000 > 165 ? '#000000' : '#ffffff';
-}
-
-/** Slightly darker shade, used for the end of the popup banner gradient. */
-function darken(hex: string, amount = 0.18): string {
-  const [r, g, b] = hexToRgb(hex);
-  const k = 1 - amount;
-  return `rgb(${Math.round(r * k)}, ${Math.round(g * k)}, ${Math.round(b * k)})`;
 }
 
 /** Method logo with a first-letter fallback when the image is missing or fails to load. */
@@ -623,6 +620,12 @@ export default function DonationPage() {
       {activeModalMethod && (() => {
         const accent = activeModalMethod.color;
         const onAccent = readableTextOn(accent);
+        const banner = getSupportMethodBanner(activeModalMethod);
+        const valueLabel = activeModalMethod.valueLabel || 'Address';
+        const ValueIcon =
+          (activeModalMethod.valueIcon ?? (/number|phone|mobile/i.test(valueLabel) ? 'phone' : 'hash')) === 'phone'
+            ? Phone
+            : Hash;
         return (
           <div
             className="miyomi-modal-overlay"
@@ -636,10 +639,10 @@ export default function DonationPage() {
             >
               <div
                 className="modal-header-banner"
-                style={{ background: `linear-gradient(135deg, ${accent}, ${darken(accent)})`, color: onAccent }}
+                style={{ background: banner.background, color: banner.textColor }}
               >
                 <div className="modal-header-icon">
-                  <MethodIcon key={activeModalMethod.iconUrl} src={activeModalMethod.iconUrl} name={activeModalMethod.name} color={onAccent} />
+                  <MethodIcon key={activeModalMethod.iconUrl} src={activeModalMethod.iconUrl} name={activeModalMethod.name} color={banner.textColor} />
                 </div>
                 <div>
                   <h3 className="modal-header-title">{activeModalMethod.name}</h3>
@@ -662,40 +665,56 @@ export default function DonationPage() {
                   </p>
                 )}
 
-                {activeModalMethod.accountName && (
-                  <div className="modal-copy-field">
-                    <div className="modal-field-info">
-                      <div className="modal-field-label">Account Name</div>
-                      <div className="modal-field-val">{activeModalMethod.accountName}</div>
-                    </div>
-                  </div>
-                )}
-
-                {activeModalMethod.network && (
-                  <div className="modal-copy-field">
-                    <div className="modal-field-info">
-                      <div className="modal-field-label">Network</div>
-                      <div className="modal-field-val">{activeModalMethod.network}</div>
-                    </div>
-                  </div>
-                )}
-
                 <div className="modal-copy-field">
+                  <ValueIcon className="modal-field-icon" size={18} aria-hidden="true" />
                   <div className="modal-field-info">
-                    <div className="modal-field-label">
-                      {activeModalMethod.valueLabel || 'Address / Account ID'}
-                    </div>
+                    <div className="modal-field-label">{valueLabel}</div>
                     <div className="modal-field-val">{activeModalMethod.addressOrUrl}</div>
                   </div>
                   <button
                     type="button"
                     className={`modal-copy-trigger${copied ? ' is-copied' : ''}`}
                     onClick={() => handleCopy(activeModalMethod.addressOrUrl)}
+                    aria-label={copied ? 'Copied' : `Copy ${valueLabel.toLowerCase()}`}
+                    title={copied ? 'Copied!' : 'Copy'}
                   >
-                    {copied ? <Check size={14} /> : <Copy size={14} />}
-                    <span>{copied ? 'Copied!' : 'Copy'}</span>
+                    {copied ? <Check size={18} /> : <Copy size={18} />}
                   </button>
                 </div>
+
+                {activeModalMethod.network && (
+                  <div className="modal-copy-field">
+                    <Globe className="modal-field-icon" size={18} aria-hidden="true" />
+                    <div className="modal-field-info">
+                      <div className="modal-field-label">Network</div>
+                      <div className="modal-field-val is-plain">{activeModalMethod.network}</div>
+                    </div>
+                  </div>
+                )}
+
+                {activeModalMethod.accountName && (
+                  <div className="modal-copy-field">
+                    <Users className="modal-field-icon" size={18} aria-hidden="true" />
+                    <div className="modal-field-info">
+                      <div className="modal-field-label">Account Name</div>
+                      <div className="modal-field-val is-plain">{activeModalMethod.accountName}</div>
+                    </div>
+                  </div>
+                )}
+
+                {activeModalMethod.qrUrl && (
+                  <div className="modal-qr-card">
+                    <div className="modal-qr-caption">{activeModalMethod.qrCaption || 'Scan QR code to pay'}</div>
+                    <img
+                      src={activeModalMethod.qrUrl}
+                      alt={`${activeModalMethod.name} QR code`}
+                      className="modal-qr-img"
+                    />
+                    {activeModalMethod.accountName && (
+                      <div className="modal-qr-name">{activeModalMethod.accountName}</div>
+                    )}
+                  </div>
+                )}
 
                 {activeModalMethod.kind === 'link' && (
                   <a

@@ -137,8 +137,18 @@ export type SupportMethod = {
   instructions?: string;
   network?: string;
   accountName?: string;
-  /** Label above the copyable value in the popup (default "Address / Account ID"). */
+  /** Label above the copyable value in the popup (default "Address"). */
   valueLabel?: string;
+  /** Gradient end colour (hex) for the popup banner. Empty → a darker shade of `color`. */
+  colorEnd?: string;
+  /** Popup banner gradient direction in degrees (default 135). */
+  gradientAngle?: number;
+  /** Icon beside the copyable value in the popup. Empty → guessed from `valueLabel`. */
+  valueIcon?: 'hash' | 'phone';
+  /** Optional QR code image: https:// URL, /relative path or data:image/... URL. */
+  qrUrl?: string;
+  /** Caption shown above the QR code. */
+  qrCaption?: string;
   enabled: boolean;
 };
 
@@ -173,6 +183,7 @@ export const DEFAULT_SUPPORT_METHODS: SupportMethod[] = [
     addressOrUrl: '1A1zP1eP5QGefi2DMPTfTL5SLmv7DivfNa',
     iconUrl: 'https://upload.wikimedia.org/wikipedia/commons/4/46/Bitcoin.svg',
     color: '#F7931A',
+    colorEnd: '#E07B0A',
     network: 'Bitcoin Native (SegWit / Legacy)',
     instructions: 'Please double-check the recipient address and confirm the Bitcoin network before sending.',
     enabled: true,
@@ -185,6 +196,7 @@ export const DEFAULT_SUPPORT_METHODS: SupportMethod[] = [
     addressOrUrl: 'TYDzsYUEpvnYmQk4zGP9sWWcTEd36AmyWK',
     iconUrl: 'https://cryptologos.cc/logos/tether-usdt-logo.svg',
     color: '#26A17B',
+    colorEnd: '#1E8A68',
     network: 'TRON (TRC20 ONLY)',
     instructions: 'Important: Only send TRC20 USDT to this address. Sending funds via ERC20, BSC, or other networks may result in permanent loss.',
     enabled: true,
@@ -197,6 +209,8 @@ export const DEFAULT_SUPPORT_METHODS: SupportMethod[] = [
     addressOrUrl: '0917-XXX-XXXX',
     iconUrl: 'https://upload.wikimedia.org/wikipedia/commons/5/52/GCash_logo.svg',
     color: '#007DFE',
+    colorEnd: '#0062D6',
+    valueIcon: 'phone',
     accountName: 'Clydee Admin',
     valueLabel: 'Mobile Number',
     instructions: 'Fast mobile wallet transfer in the Philippines via GCash Send Money / Express Send.',
@@ -209,8 +223,10 @@ export const DEFAULT_SUPPORT_METHODS: SupportMethod[] = [
     kind: 'details',
     addressOrUrl: '382910482',
     iconUrl: 'https://cryptologos.cc/logos/binance-coin-bnb-logo.svg',
-    color: '#F3BA2F',
+    color: '#5B9BD5',
+    colorEnd: '#EC6AA9',
     accountName: 'Clydee Pay',
+    qrCaption: 'Scan with Binance App to pay',
     instructions: 'Instant transfer with 0 gas fees between Binance accounts using Binance Pay ID.',
     enabled: true,
   },
@@ -269,10 +285,51 @@ export function parseSupportMethods(value: unknown): SupportMethod[] {
       network: str(raw.network) || undefined,
       accountName: str(raw.accountName) || undefined,
       valueLabel: str(raw.valueLabel) || undefined,
+      colorEnd: /^#[0-9a-f]{6}$/i.test(str(raw.colorEnd)) ? str(raw.colorEnd) : undefined,
+      gradientAngle:
+        typeof raw.gradientAngle === 'number' && Number.isFinite(raw.gradientAngle)
+          ? Math.min(360, Math.max(0, Math.round(raw.gradientAngle)))
+          : undefined,
+      valueIcon: raw.valueIcon === 'phone' ? 'phone' : raw.valueIcon === 'hash' ? 'hash' : undefined,
+      qrUrl: str(raw.qrUrl) && isSafeIconUrl(str(raw.qrUrl)) ? str(raw.qrUrl) : undefined,
+      qrCaption: str(raw.qrCaption) || undefined,
       enabled: raw.enabled !== false,
     });
   }
   return list;
+}
+
+function parseHexColor(hex: string): [number, number, number] | null {
+  const match = /^#?([0-9a-f]{6})$/i.exec(hex);
+  if (!match) return null;
+  const n = parseInt(match[1], 16);
+  return [(n >> 16) & 255, (n >> 8) & 255, n & 255];
+}
+
+/**
+ * Banner gradient + readable text colour for a support method's payment popup.
+ * With no `colorEnd`, the gradient ends on a slightly darker shade of `color`.
+ */
+export function getSupportMethodBanner(method: {
+  color: string;
+  colorEnd?: string;
+  gradientAngle?: number;
+}): { background: string; textColor: string } {
+  const start: [number, number, number] = parseHexColor(method.color) ?? [220, 38, 38];
+  const end: [number, number, number] =
+    (method.colorEnd ? parseHexColor(method.colorEnd) : null) ??
+    [Math.round(start[0] * 0.82), Math.round(start[1] * 0.82), Math.round(start[2] * 0.82)];
+  const angle =
+    typeof method.gradientAngle === 'number' && Number.isFinite(method.gradientAngle)
+      ? method.gradientAngle
+      : 135;
+  const css = (c: [number, number, number]) => `rgb(${c[0]}, ${c[1]}, ${c[2]})`;
+  const mid = [(start[0] + end[0]) / 2, (start[1] + end[1]) / 2, (start[2] + end[2]) / 2];
+  const luminance = (mid[0] * 299 + mid[1] * 587 + mid[2] * 114) / 1000;
+  return {
+    background: `linear-gradient(${angle}deg, ${css(start)}, ${css(end)})`,
+    textColor: luminance > 165 ? '#000000' : '#ffffff',
+  };
 }
 
 export function parseSupporters(value: unknown): DonationSupporter[] {
