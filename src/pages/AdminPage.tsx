@@ -2993,25 +2993,18 @@ function ComixDashboard({
                           <span className="comix-avatar-edit-text">EDIT</span>
                         </span>
                       </button>
-                      <div className="comix-avatar-actions">
-                        <button
-                          type="button"
-                          className="comix-avatar-action-btn"
-                          onClick={() => avatarFileInputRef.current?.click()}
-                        >
-                          Upload image
-                        </button>
-                        {profileAvatarUrl && (
+                      {profileAvatarUrl && (
+                        <div className="comix-avatar-actions">
                           <button
                             type="button"
                             className="comix-avatar-action-btn"
                             onClick={() => setProfileAvatarUrl('')}
                             style={{ color: '#ef4444' }}
                           >
-                            Remove
+                            Remove avatar
                           </button>
-                        )}
-                      </div>
+                        </div>
+                      )}
                     </div>
                   </div>
                 </div>
