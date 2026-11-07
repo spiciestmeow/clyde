@@ -119,25 +119,59 @@ type SidebarTab =
   | 'donation-supporters'
   | 'settings';
 
-const mobileSidebarItems = [
-  { id: 'edit-profile', label: 'Edit Profile', Icon: UserCheck },
-  { id: 'followed-titles', label: 'Followed Titles', Icon: Bookmark },
-  { id: 'followed-users', label: 'Followed Users', Icon: Users },
-  { id: 'followed-groups', label: 'Followed Groups', Icon: Users },
-  { id: 'read-history', label: 'Read History', Icon: History },
-  { id: 'collections', label: 'Collections', Icon: FolderKanban },
-  { id: 'feed', label: 'Feed', Icon: Rss },
-  { id: 'notifications', label: 'Notifications', Icon: Bell },
-  { id: 'comments', label: 'Comments', Icon: MessageSquare },
-  { id: 'posts', label: 'Posts', Icon: FileText },
-  { id: 'uploads', label: 'Uploaded Chapters', Icon: Upload },
-  { id: 'hero-slides', label: 'Hero Slides', Icon: LayoutTemplate },
-  { id: 'featured-series', label: 'Featured Series', Icon: ImageIcon },
-  { id: 'import-export', label: 'Import / Export', Icon: Database },
-  { id: 'blocked-users', label: 'Blocked Users', Icon: UserX },
-  { id: 'donation-supporters', label: 'Donation Supporters', Icon: Heart },
-  { id: 'settings', label: 'Settings', Icon: Settings },
-] satisfies { id: SidebarTab; label: string; Icon: typeof UserCheck }[];
+interface SidebarItemDef {
+  id: SidebarTab;
+  label: string;
+  Icon: typeof UserCheck;
+  badgeType?: 'uploads' | 'supporters';
+}
+
+interface SidebarSectionDef {
+  category: string;
+  items: SidebarItemDef[];
+}
+
+const sidebarSections: SidebarSectionDef[] = [
+  {
+    category: 'Content',
+    items: [
+      { id: 'uploads', label: 'Uploaded Chapters', Icon: Upload, badgeType: 'uploads' },
+      { id: 'hero-slides', label: 'Hero Slides', Icon: LayoutTemplate },
+      { id: 'featured-series', label: 'Featured Series', Icon: ImageIcon },
+      { id: 'import-export', label: 'Import / Export', Icon: Database },
+    ],
+  },
+  {
+    category: 'Monetization & Community',
+    items: [
+      { id: 'donation-supporters', label: 'Donation Supporters', Icon: Heart, badgeType: 'supporters' },
+      { id: 'comments', label: 'Comments', Icon: MessageSquare },
+      { id: 'posts', label: 'Posts', Icon: FileText },
+      { id: 'blocked-users', label: 'Blocked Users', Icon: UserX },
+    ],
+  },
+  {
+    category: 'My Account',
+    items: [
+      { id: 'edit-profile', label: 'Edit Profile', Icon: UserCheck },
+      { id: 'notifications', label: 'Notifications', Icon: Bell },
+      { id: 'followed-titles', label: 'Followed Titles', Icon: Bookmark },
+      { id: 'read-history', label: 'Read History', Icon: History },
+      { id: 'collections', label: 'Collections', Icon: FolderKanban },
+      { id: 'feed', label: 'Feed', Icon: Rss },
+      { id: 'followed-users', label: 'Followed Users', Icon: Users },
+      { id: 'followed-groups', label: 'Followed Groups', Icon: Users },
+    ],
+  },
+  {
+    category: 'System',
+    items: [
+      { id: 'settings', label: 'Settings', Icon: Settings },
+    ],
+  },
+];
+
+const allSidebarItems = sidebarSections.flatMap((s) => s.items);
 
 const homepageVisibilityOptions: { key: keyof HomepageVisibility; label: string; description: string; group: string }[] = [
   { key: 'featuredSpotlight', label: 'Featured Series spotlight', description: 'Animated series spotlight at the top of the homepage.', group: 'Featured content' },
@@ -1502,7 +1536,7 @@ function ComixDashboard({
               onClick={() => setMobileNavOpen((open) => !open)}
             >
               {(() => {
-                const selected = mobileSidebarItems.find((item) => item.id === activeTab) ?? mobileSidebarItems[10];
+                const selected = allSidebarItems.find((item) => item.id === activeTab) ?? allSidebarItems[0];
                 const SelectedIcon = selected.Icon;
                 return <><SelectedIcon size={16} /><span>{selected.label}</span></>;
               })()}
@@ -1510,173 +1544,60 @@ function ComixDashboard({
             </button>
             {mobileNavOpen && (
               <div className="comix-mobile-nav-list">
-                {mobileSidebarItems.map(({ id, label, Icon }) => (
-                  <button
-                    type="button"
-                    key={id}
-                    className={`comix-mobile-nav-option ${activeTab === id ? 'is-active' : ''}`}
-                    onClick={() => {
-                      setActiveTab(id);
-                      setMobileNavOpen(false);
-                    }}
-                  >
-                    <Icon size={16} />
-                    <span>{label}</span>
-                    {id === 'uploads' && <span className="nav-badge">{catalogCountQuery.isPending ? '…' : totalTitleCount}</span>}
-                  </button>
+                {sidebarSections.map((section) => (
+                  <div key={section.category} className="comix-mobile-nav-section">
+                    <div className="comix-sidebar-heading">{section.category}</div>
+                    {section.items.map(({ id, label, Icon, badgeType }) => (
+                      <button
+                        type="button"
+                        key={id}
+                        className={`comix-mobile-nav-option ${activeTab === id ? 'is-active' : ''}`}
+                        onClick={() => {
+                          setActiveTab(id);
+                          setMobileNavOpen(false);
+                        }}
+                      >
+                        <Icon size={16} />
+                        <span>{label}</span>
+                        {badgeType === 'uploads' && (
+                          <span className="nav-badge">{catalogCountQuery.isPending ? '…' : totalTitleCount}</span>
+                        )}
+                        {badgeType === 'supporters' && (
+                          <span className="nav-badge">{supportersDraft.length}</span>
+                        )}
+                      </button>
+                    ))}
+                  </div>
                 ))}
               </div>
             )}
           </div>
-          {/* Left Sidebar */}
+
+          {/* Left Sidebar (Grouped & Categorized) */}
           <aside className="comix-sidebar">
-            <button
-              type="button"
-              className={`comix-nav-item ${activeTab === 'edit-profile' ? 'is-active' : ''}`}
-              onClick={() => setActiveTab('edit-profile')}
-            >
-              <UserCheck size={16} className="nav-icon" />
-              <span>Edit Profile</span>
-            </button>
-            <button
-              type="button"
-              className={`comix-nav-item ${activeTab === 'followed-titles' ? 'is-active' : ''}`}
-              onClick={() => setActiveTab('followed-titles')}
-            >
-              <Bookmark size={16} className="nav-icon" />
-              <span>Followed Titles</span>
-            </button>
-            <button
-              type="button"
-              className={`comix-nav-item ${activeTab === 'followed-users' ? 'is-active' : ''}`}
-              onClick={() => setActiveTab('followed-users')}
-            >
-              <Users size={16} className="nav-icon" />
-              <span>Followed Users</span>
-            </button>
-            <button
-              type="button"
-              className={`comix-nav-item ${activeTab === 'followed-groups' ? 'is-active' : ''}`}
-              onClick={() => setActiveTab('followed-groups')}
-            >
-              <Users size={16} className="nav-icon" />
-              <span>Followed Groups</span>
-            </button>
-            <button
-              type="button"
-              className={`comix-nav-item ${activeTab === 'read-history' ? 'is-active' : ''}`}
-              onClick={() => setActiveTab('read-history')}
-            >
-              <History size={16} className="nav-icon" />
-              <span>Read History</span>
-            </button>
-            <button
-              type="button"
-              className={`comix-nav-item ${activeTab === 'collections' ? 'is-active' : ''}`}
-              onClick={() => setActiveTab('collections')}
-            >
-              <FolderKanban size={16} className="nav-icon" />
-              <span>Collections</span>
-            </button>
-            <button
-              type="button"
-              className={`comix-nav-item ${activeTab === 'feed' ? 'is-active' : ''}`}
-              onClick={() => setActiveTab('feed')}
-            >
-              <Rss size={16} className="nav-icon" />
-              <span>Feed</span>
-            </button>
-            <button
-              type="button"
-              className={`comix-nav-item ${activeTab === 'notifications' ? 'is-active' : ''}`}
-              onClick={() => setActiveTab('notifications')}
-            >
-              <Bell size={16} className="nav-icon" />
-              <span>Notifications</span>
-            </button>
-            <button
-              type="button"
-              className={`comix-nav-item ${activeTab === 'comments' ? 'is-active' : ''}`}
-              onClick={() => setActiveTab('comments')}
-            >
-              <MessageSquare size={16} className="nav-icon" />
-              <span>Comments</span>
-            </button>
-            <button
-              type="button"
-              className={`comix-nav-item ${activeTab === 'posts' ? 'is-active' : ''}`}
-              onClick={() => setActiveTab('posts')}
-            >
-              <FileText size={16} className="nav-icon" />
-              <span>Posts</span>
-            </button>
-
-            {/* Active primary tab: Uploaded Chapters / Uploads */}
-            <button
-              type="button"
-              className={`comix-nav-item ${activeTab === 'uploads' ? 'is-active' : ''}`}
-              onClick={() => setActiveTab('uploads')}
-            >
-              <Upload size={16} className="nav-icon" />
-              <span>Uploaded Chapters</span>
-              <span className="nav-badge">{catalogCountQuery.isPending ? '…' : totalTitleCount}</span>
-            </button>
-
-            <button
-              type="button"
-              className={`comix-nav-item ${activeTab === 'hero-slides' ? 'is-active' : ''}`}
-              onClick={() => setActiveTab('hero-slides')}
-            >
-              <LayoutTemplate size={16} className="nav-icon" />
-              <span>Hero Slides</span>
-            </button>
-
-            <button
-              type="button"
-              className={`comix-nav-item ${activeTab === 'featured-series' ? 'is-active' : ''}`}
-              onClick={() => setActiveTab('featured-series')}
-            >
-              <ImageIcon size={16} className="nav-icon" />
-              <span>Featured Series</span>
-            </button>
-
-            <button
-              type="button"
-              className={`comix-nav-item ${activeTab === 'import-export' ? 'is-active' : ''}`}
-              onClick={() => setActiveTab('import-export')}
-            >
-              <Database size={16} className="nav-icon" />
-              <span>Import / Export</span>
-            </button>
-            <button
-              type="button"
-              className={`comix-nav-item ${activeTab === 'blocked-users' ? 'is-active' : ''}`}
-              onClick={() => setActiveTab('blocked-users')}
-            >
-              <UserX size={16} className="nav-icon" />
-              <span>Blocked Users</span>
-            </button>
-
-            <div className="comix-sidebar-divider" />
-
-            <button
-              type="button"
-              className={`comix-nav-item ${activeTab === 'donation-supporters' ? 'is-active' : ''}`}
-              onClick={() => setActiveTab('donation-supporters')}
-            >
-              <Heart size={16} className="nav-icon" />
-              <span>Donation Supporters</span>
-              <span className="nav-badge">{supportersDraft.length}</span>
-            </button>
-
-            <button
-              type="button"
-              className={`comix-nav-item ${activeTab === 'settings' ? 'is-active' : ''}`}
-              onClick={() => setActiveTab('settings')}
-            >
-              <Settings size={16} className="nav-icon" />
-              <span>Settings</span>
-            </button>
+            {sidebarSections.map((section, idx) => (
+              <div key={section.category} className="comix-sidebar-section">
+                <div className="comix-sidebar-heading">{section.category}</div>
+                {section.items.map(({ id, label, Icon, badgeType }) => (
+                  <button
+                    type="button"
+                    key={id}
+                    className={`comix-nav-item ${activeTab === id ? 'is-active' : ''}`}
+                    onClick={() => setActiveTab(id)}
+                  >
+                    <Icon size={16} className="nav-icon" />
+                    <span>{label}</span>
+                    {badgeType === 'uploads' && (
+                      <span className="nav-badge">{catalogCountQuery.isPending ? '…' : totalTitleCount}</span>
+                    )}
+                    {badgeType === 'supporters' && (
+                      <span className="nav-badge">{supportersDraft.length}</span>
+                    )}
+                  </button>
+                ))}
+                {idx < sidebarSections.length - 1 && <div className="comix-sidebar-divider" />}
+              </div>
+            ))}
           </aside>
 
           {/* Right Main Content */}
