@@ -151,11 +151,20 @@
     border-color: #1a1a20;
   }
 
-  /* Center Elevated Homepage Button */
+  /* Empty slot inside the bar that keeps the side items spaced around the center button */
+  .mobile-bottom-nav__home-spacer {
+    flex: 0 0 84px;
+    height: 100%;
+    pointer-events: none;
+  }
+
+  /* Center Elevated Homepage Button (sibling of the bar, centered over it) */
   .mobile-bottom-nav__home-btn {
-    flex: 0 0 auto;
-    position: relative;
-    margin-top: -24px;
+    position: absolute;
+    left: 50%;
+    top: -22px;
+    transform: translateX(-50%);
+    pointer-events: auto;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -166,36 +175,38 @@
   }
 
   .mobile-bottom-nav__home-btn:active {
-    transform: scale(0.92);
+    transform: translateX(-50%) scale(0.92);
   }
 
   .mobile-bottom-nav__home-circle {
-    width: 66px;
-    height: 66px;
+    width: 76px;
+    height: 76px;
     border-radius: 50%;
-    background: #f6f3ef;
-    border: 3px solid rgba(255, 255, 255, 0.65);
+    background: rgba(255, 255, 255, 0.55);
+    backdrop-filter: blur(28px) saturate(190%);
+    -webkit-backdrop-filter: blur(28px) saturate(190%);
+    border: 1px solid rgba(255, 255, 255, 0.65);
     box-shadow: 0 12px 34px -4px rgba(0, 0, 0, 0.13), 0 1px 3px rgba(0, 0, 0, 0.05);
     display: flex;
     align-items: center;
     justify-content: center;
     overflow: hidden;
-    transition: box-shadow 0.2s ease, border-color 0.2s ease;
+    transition: box-shadow 0.2s ease;
   }
 
-  /* Dark Theme: match the navbar glass tone (solid tone, because nested blur renders pure black) */
+  /* Dark Theme Glass */
   html:not(.theme-light) .mobile-bottom-nav__home-circle {
-    background: #1c1c22;
-    backdrop-filter: none;
-    -webkit-backdrop-filter: none;
-    border-color: rgba(255, 255, 255, 0.12);
-    box-shadow: 0 16px 40px -4px rgba(0, 0, 0, 0.58), 0 0 1px 1px rgba(255, 255, 255, 0.06);
+    background: rgba(20, 20, 26, 0.55);
+    backdrop-filter: blur(28px) saturate(190%);
+    -webkit-backdrop-filter: blur(28px) saturate(190%);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    box-shadow: 0 16px 40px -4px rgba(0, 0, 0, 0.58);
   }
 
   .mobile-bottom-nav__home-logo {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
+    width: 80%;
+    height: 80%;
+    object-fit: contain;
     display: block;
     pointer-events: none;
   }

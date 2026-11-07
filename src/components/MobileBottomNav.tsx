@@ -105,23 +105,8 @@ export default function MobileBottomNav() {
           </div>
         </Link>
 
-        {/* 3. Center Elevated Button - Homepage (Web Logo) */}
-        <Link
-          href="/"
-          className="mobile-bottom-nav__home-btn"
-          aria-label="Homepage"
-          title="Home"
-        >
-          <div className="mobile-bottom-nav__home-circle">
-            <img
-              src="/clydee-logo.png"
-              alt="Clydee"
-              className="mobile-bottom-nav__home-logo"
-              width={34}
-              height={34}
-            />
-          </div>
-        </Link>
+        {/* 3. Spacer reserving room for the center button (button itself sits outside the glass bar) */}
+        <div className="mobile-bottom-nav__home-spacer" aria-hidden="true" />
 
         {/* 4. Notifications */}
         <Link
@@ -160,6 +145,25 @@ export default function MobileBottomNav() {
           </div>
         </Link>
       </div>
+
+      {/* Center Elevated Button - Homepage (Web Logo).
+          Sibling of the glass bar (not a child) so its own backdrop-filter can blur the page. */}
+      <Link
+        href="/"
+        className="mobile-bottom-nav__home-btn"
+        aria-label="Homepage"
+        title="Home"
+      >
+        <div className="mobile-bottom-nav__home-circle">
+          <img
+            src="/clydee-logo.png"
+            alt="Clydee"
+            className="mobile-bottom-nav__home-logo"
+            width={34}
+            height={34}
+          />
+        </div>
+      </Link>
     </nav>
   );
 }
