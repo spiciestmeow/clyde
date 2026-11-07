@@ -1,5 +1,6 @@
 import type { IncomingMessage, ServerResponse } from 'node:http';
 import { createClient } from '@supabase/supabase-js';
+import { handleCors } from './_lib/cors.js';
 import { fetchScanlationSources } from './sync-sources.js';
 import { scrapeDirectSources } from './sync-direct-sources.js';
 
@@ -33,12 +34,7 @@ export default async function handler(
   request: ApiRequest,
   response: ApiResponse,
 ): Promise<void> {
-  response.setHeader('Access-Control-Allow-Origin', '*');
-  response.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
-  response.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
-
-  if (request.method === 'OPTIONS') {
-    response.status(204).json({});
+  if (handleCors(request, response, { methods: ['GET', 'POST', 'OPTIONS'], allowedHeaders: ['Content-Type', 'Authorization'] })) {
     return;
   }
 
