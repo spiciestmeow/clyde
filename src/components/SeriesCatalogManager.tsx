@@ -212,7 +212,7 @@ function formatDetectedSourceAge(timestamp?: string, sourceName?: string): strin
   if (elapsedMinutes < 60) return `${elapsedMinutes} min${elapsedMinutes === 1 ? '' : 's'} ago`;
   const elapsedHours = Math.floor(elapsedMinutes / 60);
   if (elapsedHours < 24) return `${elapsedHours} hr${elapsedHours === 1 ? '' : 's'} ago`;
-  const elapsedDays = Math.floor(elapsedHours / 24);
+  const elapsedDays = Math.max(1, Math.round(elapsedHours / 24));
   if (/lagoon/i.test(sourceName || '') && elapsedDays >= 30 && elapsedDays < 365) {
     const roundedMonths = Math.max(1, Math.round(elapsedDays / 30));
     return `${roundedMonths} month${roundedMonths > 1 ? 's' : ''} ago`;
@@ -265,7 +265,7 @@ function getAdminTitleReleaseAge(series: SeriesRecord): string {
   if (elapsedMinutes < 60) return `${elapsedMinutes}m ago`;
   const elapsedHours = Math.floor(elapsedMinutes / 60);
   if (elapsedHours < 24) return `${elapsedHours}h ago`;
-  const elapsedDays = Math.floor(elapsedHours / 24);
+  const elapsedDays = Math.max(1, Math.round(elapsedHours / 24));
   if (elapsedDays === 1) return 'Yesterday';
   if (elapsedDays < 7) return `${elapsedDays}d ago`;
   const elapsedWeeks = Math.floor(elapsedDays / 7);

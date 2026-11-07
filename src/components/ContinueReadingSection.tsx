@@ -15,7 +15,7 @@ function formatViewedTime(timestamp: number): string {
   if (elapsedMinutes < 60) return `${elapsedMinutes}m ago`;
   const elapsedHours = Math.floor(elapsedMinutes / 60);
   if (elapsedHours < 24) return `${elapsedHours}h ago`;
-  const elapsedDays = Math.floor(elapsedHours / 24);
+  const elapsedDays = Math.max(1, Math.round(elapsedHours / 24));
   if (elapsedDays < 7) return `${elapsedDays}d ago`;
   return new Date(timestamp).toLocaleDateString();
 }

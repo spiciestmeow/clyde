@@ -256,7 +256,7 @@ function formatRelativeTime(timestamp: number, sourceName?: string): string {
   if (diffMin < 60) return `${diffMin} min ago`;
   const diffHours = Math.floor(diffMin / 60);
   if (diffHours < 24) return `${diffHours} hour${diffHours > 1 ? 's' : ''} ago`;
-  const diffDays = Math.floor(diffHours / 24);
+  const diffDays = Math.max(1, Math.round(diffHours / 24));
   if (diffDays === 1) return 'Yesterday';
   if (diffDays < 7) return `${diffDays} days ago`;
   const diffWeeks = Math.floor(diffDays / 7);
