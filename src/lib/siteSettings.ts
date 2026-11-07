@@ -115,6 +115,166 @@ export type DonationSupporter = {
 
 export const DEFAULT_SUPPORTERS: DonationSupporter[] = [];
 
+/**
+ * A payment / support option shown in the "Support method" grid on /donate.
+ * - kind 'link'    → card opens `addressOrUrl` in a new tab.
+ * - kind 'details' → card opens a popup showing the address / account with a copy button.
+ */
+export type SupportMethodKind = 'link' | 'details';
+
+export type SupportMethod = {
+  id: string;
+  name: string;
+  /** Short description shown under the name on the card. */
+  detail: string;
+  kind: SupportMethodKind;
+  /** URL for 'link' methods, address / account number for 'details' methods. */
+  addressOrUrl: string;
+  /** https:// URL, /relative path or data:image/... URL. Empty → letter fallback. */
+  iconUrl: string;
+  /** Hex accent colour used for the card tint and popup banner. */
+  color: string;
+  instructions?: string;
+  network?: string;
+  accountName?: string;
+  /** Label above the copyable value in the popup (default "Address / Account ID"). */
+  valueLabel?: string;
+  enabled: boolean;
+};
+
+export const DEFAULT_SUPPORT_METHODS: SupportMethod[] = [
+  {
+    id: 'paypal',
+    name: 'PayPal',
+    detail: 'Send via PayPal (International)',
+    kind: 'link',
+    addressOrUrl: 'https://paypal.me/clydee',
+    iconUrl: 'https://upload.wikimedia.org/wikipedia/commons/b/b7/PayPal_Logo_Icon_2014.svg',
+    color: '#003087',
+    instructions: 'Send money easily from anywhere with PayPal balance, linked bank account, or debit/credit card.',
+    enabled: true,
+  },
+  {
+    id: 'kofi',
+    name: 'Ko-fi',
+    detail: 'Buy us a coffee',
+    kind: 'link',
+    addressOrUrl: 'https://ko-fi.com/clydee',
+    iconUrl: 'https://storage.ko-fi.com/cdn/cup-border.png',
+    color: '#FF5E5B',
+    instructions: 'Support Clydee with 0% platform fees. One-time or monthly coffees help keep servers running.',
+    enabled: true,
+  },
+  {
+    id: 'bitcoin',
+    name: 'Bitcoin (BTC)',
+    detail: 'Send BTC directly',
+    kind: 'details',
+    addressOrUrl: '1A1zP1eP5QGefi2DMPTfTL5SLmv7DivfNa',
+    iconUrl: 'https://upload.wikimedia.org/wikipedia/commons/4/46/Bitcoin.svg',
+    color: '#F7931A',
+    network: 'Bitcoin Native (SegWit / Legacy)',
+    instructions: 'Please double-check the recipient address and confirm the Bitcoin network before sending.',
+    enabled: true,
+  },
+  {
+    id: 'usdt',
+    name: 'USDT (Tether)',
+    detail: 'Send USDT (TRC20 ONLY)',
+    kind: 'details',
+    addressOrUrl: 'TYDzsYUEpvnYmQk4zGP9sWWcTEd36AmyWK',
+    iconUrl: 'https://cryptologos.cc/logos/tether-usdt-logo.svg',
+    color: '#26A17B',
+    network: 'TRON (TRC20 ONLY)',
+    instructions: 'Important: Only send TRC20 USDT to this address. Sending funds via ERC20, BSC, or other networks may result in permanent loss.',
+    enabled: true,
+  },
+  {
+    id: 'gcash',
+    name: 'GCash',
+    detail: 'Send via GCash (Philippines)',
+    kind: 'details',
+    addressOrUrl: '0917-XXX-XXXX',
+    iconUrl: 'https://upload.wikimedia.org/wikipedia/commons/5/52/GCash_logo.svg',
+    color: '#007DFE',
+    accountName: 'Clydee Admin',
+    valueLabel: 'Mobile Number',
+    instructions: 'Fast mobile wallet transfer in the Philippines via GCash Send Money / Express Send.',
+    enabled: true,
+  },
+  {
+    id: 'binance',
+    name: 'Binance',
+    detail: 'Send via Binance Pay',
+    kind: 'details',
+    addressOrUrl: '382910482',
+    iconUrl: 'https://cryptologos.cc/logos/binance-coin-bnb-logo.svg',
+    color: '#F3BA2F',
+    accountName: 'Clydee Pay',
+    instructions: 'Instant transfer with 0 gas fees between Binance accounts using Binance Pay ID.',
+    enabled: true,
+  },
+  {
+    id: 'reward',
+    name: 'Claim Your Reward',
+    detail: 'Thank you for your support!',
+    kind: 'link',
+    addressOrUrl: 'https://discord.gg/clydee',
+    iconUrl: 'https://assets-global.website-files.com/6257adef93867e50d84d30e2/636e0a6a49cf127bf92de1e2_icon_clyde_blurple_RGB.png',
+    color: '#5865F2',
+    instructions: 'Join our Discord server and submit your donation screenshot or txhash to claim your Supporter role & badge!',
+    enabled: true,
+  },
+];
+
+function isSafeIconUrl(value: string): boolean {
+  return /^https?:\/\//i.test(value) || value.startsWith('/') || /^data:image\/(png|jpe?g|webp|gif|svg\+xml|avif);/i.test(value);
+}
+
+function isSafeLinkUrl(value: string): boolean {
+  return /^https?:\/\//i.test(value);
+}
+
+export function parseSupportMethods(value: unknown): SupportMethod[] {
+  if (!Array.isArray(value)) return DEFAULT_SUPPORT_METHODS.map((m) => ({ ...m }));
+  const list: SupportMethod[] = [];
+  const seen = new Set<string>();
+  for (let idx = 0; idx < value.length; idx++) {
+    const item = value[idx];
+    if (!item || typeof item !== 'object') continue;
+    const raw = item as Record<string, unknown>;
+    const str = (v: unknown) => (typeof v === 'string' ? v.trim() : '');
+    const name = str(raw.name);
+    if (!name) continue;
+    let id = str(raw.id) || `method_${Date.now()}_${idx}`;
+    if (seen.has(id)) id = `${id}_${idx}`;
+    seen.add(id);
+    const kind: SupportMethodKind = raw.kind === 'details' ? 'details' : 'link';
+    let addressOrUrl = str(raw.addressOrUrl);
+    if (kind === 'link' && addressOrUrl && !isSafeLinkUrl(addressOrUrl)) {
+      // Allow bare domains like "ko-fi.com/me" but never javascript:, data:, etc.
+      addressOrUrl = /^[a-z][a-z0-9+.-]*:/i.test(addressOrUrl) ? '' : `https://${addressOrUrl}`;
+    }
+    const iconRaw = str(raw.iconUrl);
+    const colorRaw = str(raw.color);
+    list.push({
+      id,
+      name,
+      detail: str(raw.detail),
+      kind,
+      addressOrUrl,
+      iconUrl: iconRaw && isSafeIconUrl(iconRaw) ? iconRaw : '',
+      color: /^#[0-9a-f]{6}$/i.test(colorRaw) ? colorRaw : '#dc2626',
+      instructions: str(raw.instructions) || undefined,
+      network: str(raw.network) || undefined,
+      accountName: str(raw.accountName) || undefined,
+      valueLabel: str(raw.valueLabel) || undefined,
+      enabled: raw.enabled !== false,
+    });
+  }
+  return list;
+}
+
 export function parseSupporters(value: unknown): DonationSupporter[] {
   if (!Array.isArray(value)) return [];
   const list: DonationSupporter[] = [];
@@ -247,6 +407,12 @@ export type SiteSettings = {
   accentTheme: AccentTheme;
   announcement: AnnouncementSettings;
   supporters: DonationSupporter[];
+  /**
+   * Loaded from the dedicated `support_methods` table (see supabase/support-methods.sql), falling back to
+   * a legacy `support_methods` key in site_settings, then to DEFAULT_SUPPORT_METHODS. Optional so older
+   * cached/constructed settings keep working; readers fall back to DEFAULT_SUPPORT_METHODS.
+   */
+  supportMethods?: SupportMethod[];
 };
 
 export const DEFAULT_CUSTOM_SOURCE_NAMES = [
@@ -453,8 +619,32 @@ function parseSiteSettings(value: unknown): SiteSettings | null {
 
   const customSourceNames = parseCustomSourceNames(stored.custom_source_names);
   const supporters = parseSupporters(stored.supporters);
+  const supportMethods = stored.support_methods !== undefined
+    ? parseSupportMethods(stored.support_methods)
+    : DEFAULT_SUPPORT_METHODS.map((m) => ({ ...m }));
 
-  return { header, homepage, seriesPage, seriesFilters, heroSlides, featuredSpotlightItems, newSeriesOrder, customSourceNames, facebookUrl, accentTheme: parseAccentTheme(stored.accent_theme), announcement, supporters };
+  return { header, homepage, seriesPage, seriesFilters, heroSlides, featuredSpotlightItems, newSeriesOrder, customSourceNames, facebookUrl, accentTheme: parseAccentTheme(stored.accent_theme), announcement, supporters, supportMethods };
+}
+
+const SUPPORT_METHODS_TABLE = 'support_methods';
+
+/**
+ * Reads the support methods row. Returns null when the table/row doesn't exist yet (SQL not run,
+ * nothing saved) or can't be read, so callers fall back to legacy data / defaults instead of failing.
+ */
+async function fetchStoredSupportMethods(): Promise<SupportMethod[] | null> {
+  if (!supabase) return null;
+  try {
+    const { data, error } = await supabase
+      .from(SUPPORT_METHODS_TABLE)
+      .select('methods')
+      .eq('id', 'global')
+      .maybeSingle();
+    if (error || !data) return null;
+    return parseSupportMethods(data.methods);
+  } catch {
+    return null;
+  }
 }
 
 export const SITE_SETTINGS_CACHE_KEY = 'vortex-site-settings';
@@ -499,8 +689,11 @@ export function getCachedSiteSettings(): SiteSettings | null {
     };
 
     const supporters = parseSupporters(cached.supporters);
+    const supportMethods = cached.supportMethods !== undefined
+      ? parseSupportMethods(cached.supportMethods)
+      : DEFAULT_SUPPORT_METHODS.map((m) => ({ ...m }));
 
-    const settings = { header, homepage, seriesPage, seriesFilters, heroSlides, featuredSpotlightItems, newSeriesOrder, customSourceNames, facebookUrl, accentTheme: parseAccentTheme(cached.accentTheme), announcement, supporters };
+    const settings = { header, homepage, seriesPage, seriesFilters, heroSlides, featuredSpotlightItems, newSeriesOrder, customSourceNames, facebookUrl, accentTheme: parseAccentTheme(cached.accentTheme), announcement, supporters, supportMethods };
     applyAccentTheme(settings.accentTheme);
     return settings;
   } catch {
@@ -570,6 +763,7 @@ export async function getSiteSettings(forceRefresh = false): Promise<SiteSetting
         return cached;
       }
 
+      const storedMethodsPromise = fetchStoredSupportMethods();
       const { data, error } = await supabase
         .from('site_settings')
         .select('header_visibility')
@@ -581,6 +775,8 @@ export async function getSiteSettings(forceRefresh = false): Promise<SiteSetting
 
       const settings = parseSiteSettings(data.header_visibility);
       if (!settings) throw new Error('The saved header settings are invalid.');
+      const storedMethods = await storedMethodsPromise;
+      if (storedMethods) settings.supportMethods = storedMethods;
       inMemorySettings = settings;
       lastSettingsFetchedAt = Date.now();
       cacheSiteSettings(settings);
@@ -622,8 +818,39 @@ export async function saveSiteSettings(settings: SiteSettings): Promise<SiteSett
   if (error) throw error;
   const savedSettings = parseSiteSettings(data.header_visibility);
   if (!savedSettings) throw new Error('Supabase returned invalid header settings.');
+  // Support methods live in their own table, so carry them over instead of re-deriving from this row.
+  if (settings.supportMethods) savedSettings.supportMethods = settings.supportMethods;
   inMemorySettings = savedSettings;
   lastSettingsFetchedAt = Date.now();
   cacheSiteSettings(savedSettings);
   return savedSettings;
+}
+
+/**
+ * Saves the full support methods list to the dedicated `support_methods` table (admin only, enforced by
+ * RLS) and refreshes the in-memory + localStorage settings cache so /donate updates immediately.
+ */
+export async function saveSupportMethods(methods: SupportMethod[]): Promise<SupportMethod[]> {
+  if (!supabase) throw new Error('Supabase is not configured.');
+
+  const { data, error } = await supabase
+    .from(SUPPORT_METHODS_TABLE)
+    .upsert(
+      { id: 'global', methods: parseSupportMethods(methods), updated_at: new Date().toISOString() },
+      { onConflict: 'id' },
+    )
+    .select('methods')
+    .single();
+
+  if (error) throw error;
+  const saved = parseSupportMethods(data.methods);
+
+  const current = inMemorySettings ?? getCachedSiteSettings();
+  if (current) {
+    const next: SiteSettings = { ...current, supportMethods: saved };
+    inMemorySettings = next;
+    lastSettingsFetchedAt = Date.now();
+    cacheSiteSettings(next);
+  }
+  return saved;
 }

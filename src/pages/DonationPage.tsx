@@ -26,7 +26,9 @@ import {
   getSiteSettings,
   SITE_SETTINGS_UPDATED_EVENT,
   DEFAULT_SITE_SETTINGS,
+  DEFAULT_SUPPORT_METHODS,
   getSupporterDisplayTime,
+  type SupportMethod,
   type DonationSupporter,
   type SiteSettings,
 } from '../lib/siteSettings';
@@ -36,128 +38,41 @@ import './donation-page.css';
 type Asset = { src: string; alt: string };
 const manifest = assets as Asset[];
 
-// Method colors & config matching Miyomi
-const METHOD_CONFIG: Record<
-  string,
-  { bg: string; accent: string; text: string; logoUrl: string }
-> = {
-  paypal: {
-    bg: '#003087',
-    accent: '#002266',
-    text: '#ffffff',
-    logoUrl: 'https://upload.wikimedia.org/wikipedia/commons/b/b7/PayPal_Logo_Icon_2014.svg',
-  },
-  kofi: {
-    bg: '#FF5E5B',
-    accent: '#E04845',
-    text: '#ffffff',
-    logoUrl: 'https://storage.ko-fi.com/cdn/cup-border.png',
-  },
-  bitcoin: {
-    bg: '#F7931A',
-    accent: '#D97F15',
-    text: '#ffffff',
-    logoUrl: 'https://upload.wikimedia.org/wikipedia/commons/4/46/Bitcoin.svg',
-  },
-  usdt: {
-    bg: '#26A17B',
-    accent: '#1E8264',
-    text: '#ffffff',
-    logoUrl: 'https://cryptologos.cc/logos/tether-usdt-logo.svg',
-  },
-  gcash: {
-    bg: '#007DFE',
-    accent: '#0065CC',
-    text: '#ffffff',
-    logoUrl: 'https://upload.wikimedia.org/wikipedia/commons/5/52/GCash_logo.svg',
-  },
-  binance: {
-    bg: '#F3BA2F',
-    accent: '#E0A820',
-    text: '#000000',
-    logoUrl: 'https://cryptologos.cc/logos/binance-coin-bnb-logo.svg',
-  },
-  reward: {
-    bg: '#5865F2',
-    accent: '#4752C4',
-    text: '#ffffff',
-    logoUrl: 'https://assets-global.website-files.com/6257adef93867e50d84d30e2/636e0a6a49cf127bf92de1e2_icon_clyde_blurple_RGB.png',
-  },
-};
+// Support methods are managed in Admin → Donation Supporters → Support Methods
+// (stored in site settings; defaults live in lib/siteSettings.ts).
 
-type PaymentMethod = {
-  id: string;
-  name: string;
-  detail: string;
-  isUrl: boolean;
-  addressOrUrl: string;
-  instructions?: string;
-  network?: string;
-  accountName?: string;
-};
+function hexToRgb(hex: string): [number, number, number] {
+  const match = /^#?([0-9a-f]{6})$/i.exec(hex);
+  if (!match) return [220, 38, 38];
+  const n = parseInt(match[1], 16);
+  return [(n >> 16) & 255, (n >> 8) & 255, n & 255];
+}
 
-const PAYMENT_METHODS: PaymentMethod[] = [
-  {
-    id: 'paypal',
-    name: 'PayPal',
-    detail: 'Send via PayPal (International)',
-    isUrl: true,
-    addressOrUrl: 'https://paypal.me/clydee',
-    instructions: 'Send money easily from anywhere with PayPal balance, linked bank account, or debit/credit card.',
-  },
-  {
-    id: 'kofi',
-    name: 'Ko-fi',
-    detail: 'Buy us a coffee',
-    isUrl: true,
-    addressOrUrl: 'https://ko-fi.com/clydee',
-    instructions: 'Support Clydee with 0% platform fees. One-time or monthly coffees help keep servers running.',
-  },
-  {
-    id: 'bitcoin',
-    name: 'Bitcoin (BTC)',
-    detail: 'Send BTC directly',
-    isUrl: false,
-    addressOrUrl: '1A1zP1eP5QGefi2DMPTfTL5SLmv7DivfNa',
-    network: 'Bitcoin Native (SegWit / Legacy)',
-    instructions: 'Please double-check the recipient address and confirm the Bitcoin network before sending.',
-  },
-  {
-    id: 'usdt',
-    name: 'USDT (Tether)',
-    detail: 'Send USDT (TRC20 ONLY)',
-    isUrl: false,
-    addressOrUrl: 'TYDzsYUEpvnYmQk4zGP9sWWcTEd36AmyWK',
-    network: 'TRON (TRC20 ONLY)',
-    instructions: 'Important: Only send TRC20 USDT to this address. Sending funds via ERC20, BSC, or other networks may result in permanent loss.',
-  },
-  {
-    id: 'gcash',
-    name: 'GCash',
-    detail: 'Send via GCash (Philippines)',
-    isUrl: false,
-    addressOrUrl: '0917-XXX-XXXX',
-    accountName: 'Clydee Admin',
-    instructions: 'Fast mobile wallet transfer in the Philippines via GCash Send Money / Express Send.',
-  },
-  {
-    id: 'binance',
-    name: 'Binance',
-    detail: 'Send via Binance Pay',
-    isUrl: false,
-    addressOrUrl: '382910482',
-    accountName: 'Clydee Pay',
-    instructions: 'Instant transfer with 0 gas fees between Binance accounts using Binance Pay ID.',
-  },
-  {
-    id: 'reward',
-    name: 'Claim Your Reward',
-    detail: 'Thank you for your support!',
-    isUrl: true,
-    addressOrUrl: 'https://discord.gg/clydee',
-    instructions: 'Join our Discord server and submit your donation screenshot or txhash to claim your Supporter role & badge!',
-  },
-];
+/** Black or white, whichever is readable on the given hex background. */
+function readableTextOn(hex: string): string {
+  const [r, g, b] = hexToRgb(hex);
+  return (r * 299 + g * 587 + b * 114) / 1000 > 165 ? '#000000' : '#ffffff';
+}
+
+/** Slightly darker shade, used for the end of the popup banner gradient. */
+function darken(hex: string, amount = 0.18): string {
+  const [r, g, b] = hexToRgb(hex);
+  const k = 1 - amount;
+  return `rgb(${Math.round(r * k)}, ${Math.round(g * k)}, ${Math.round(b * k)})`;
+}
+
+/** Method logo with a first-letter fallback when the image is missing or fails to load. */
+function MethodIcon({ src, name, color }: { src: string; name: string; color: string }) {
+  const [failed, setFailed] = useState(false);
+  if (!src || failed) {
+    return (
+      <span style={{ color, fontWeight: 800, fontSize: 18, lineHeight: 1 }}>
+        {(name.trim()[0] || '?').toUpperCase()}
+      </span>
+    );
+  }
+  return <img src={src} alt={name} onError={() => setFailed(true)} />;
+}
 
 // DiceBear avatar generator matching Miyomi exactly
 function getDiceBearAvatar(name: string): string {
@@ -187,6 +102,7 @@ export default function DonationPage() {
     };
   }, []);
 
+  const supportMethods = (siteSettings.supportMethods ?? DEFAULT_SUPPORT_METHODS).filter((m) => m.enabled);
   const donateEnabled = siteSettings.header?.donate ?? false;
   const adminOnly = siteSettings.header?.donateAdminOnly ?? false;
   const isBlocked = !checkingAuth && !isAdmin && (adminOnly || !donateEnabled);
@@ -199,7 +115,7 @@ export default function DonationPage() {
   const searchItems = toSiteSearchItems(catalogQuery.items);
   const trendingItems = toTrendingSiteSearchItems(catalogQuery.items);
 
-  const [activeModalMethod, setActiveModalMethod] = useState<PaymentMethod | null>(null);
+  const [activeModalMethod, setActiveModalMethod] = useState<SupportMethod | null>(null);
   const [copied, setCopied] = useState(false);
   const [displayCount, setDisplayCount] = useState(20);
   const [nowTick, setNowTick] = useState(() => Date.now());
@@ -517,17 +433,23 @@ export default function DonationPage() {
               Optional support. No paywalls, no premium access — ever.
             </p>
 
+            {supportMethods.length === 0 && (
+              <p className="card-header-desc">
+                No support methods are available right now. Please check back soon.
+              </p>
+            )}
+
             <div className="methods-grid">
-              {PAYMENT_METHODS.map((method) => {
-                const cfg = METHOD_CONFIG[method.id] || METHOD_CONFIG.paypal;
+              {supportMethods.map((method) => {
+                const isUrl = method.kind === 'link';
                 return (
                   <button
                     key={method.id}
                     type="button"
                     className="method-card-btn"
-                    style={{ borderColor: `${cfg.bg}22` }}
+                    style={{ borderColor: `${method.color}22` }}
                     onClick={() => {
-                      if (method.isUrl) {
+                      if (isUrl) {
                         window.open(method.addressOrUrl, '_blank', 'noopener,noreferrer');
                       } else {
                         setActiveModalMethod(method);
@@ -536,15 +458,15 @@ export default function DonationPage() {
                   >
                     <div
                       className="method-icon-container"
-                      style={{ background: `${cfg.bg}14` }}
+                      style={{ background: `${method.color}14` }}
                     >
-                      <img src={cfg.logoUrl} alt={method.name} />
+                      <MethodIcon key={method.iconUrl} src={method.iconUrl} name={method.name} color={method.color} />
                     </div>
                     <div className="method-info-copy">
                       <span className="method-label-title">{method.name}</span>
                       <span className="method-label-desc">{method.detail}</span>
                     </div>
-                    {method.isUrl && (
+                    {isUrl && (
                       <ExternalLink
                         size={14}
                         style={{ color: 'var(--text-secondary)', flexShrink: 0, opacity: 0.6 }}
@@ -699,7 +621,8 @@ export default function DonationPage() {
 
       {/* ── Payment Details Modal ───────────────────────────── */}
       {activeModalMethod && (() => {
-        const cfg = METHOD_CONFIG[activeModalMethod.id] || METHOD_CONFIG.paypal;
+        const accent = activeModalMethod.color;
+        const onAccent = readableTextOn(accent);
         return (
           <div
             className="miyomi-modal-overlay"
@@ -713,10 +636,10 @@ export default function DonationPage() {
             >
               <div
                 className="modal-header-banner"
-                style={{ background: `linear-gradient(135deg, ${cfg.bg}, ${cfg.accent})` }}
+                style={{ background: `linear-gradient(135deg, ${accent}, ${darken(accent)})`, color: onAccent }}
               >
                 <div className="modal-header-icon">
-                  <img src={cfg.logoUrl} alt={activeModalMethod.name} />
+                  <MethodIcon key={activeModalMethod.iconUrl} src={activeModalMethod.iconUrl} name={activeModalMethod.name} color={onAccent} />
                 </div>
                 <div>
                   <h3 className="modal-header-title">{activeModalMethod.name}</h3>
@@ -760,7 +683,7 @@ export default function DonationPage() {
                 <div className="modal-copy-field">
                   <div className="modal-field-info">
                     <div className="modal-field-label">
-                      {activeModalMethod.id === 'gcash' ? 'Mobile Number' : 'Address / Account ID'}
+                      {activeModalMethod.valueLabel || 'Address / Account ID'}
                     </div>
                     <div className="modal-field-val">{activeModalMethod.addressOrUrl}</div>
                   </div>
@@ -774,13 +697,13 @@ export default function DonationPage() {
                   </button>
                 </div>
 
-                {activeModalMethod.isUrl && (
+                {activeModalMethod.kind === 'link' && (
                   <a
                     href={activeModalMethod.addressOrUrl}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="modal-ext-link-btn"
-                    style={{ background: cfg.bg }}
+                    style={{ background: accent, color: onAccent }}
                   >
                     <ExternalLink size={15} />
                     <span>Open {activeModalMethod.name}</span>

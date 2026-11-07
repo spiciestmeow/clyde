@@ -50,6 +50,7 @@ import SeriesCatalogManager from '../components/SeriesCatalogManager';
 import HeroSlidesManager from '../components/HeroSlidesManager';
 import FeaturedSpotlightManager from '../components/FeaturedSpotlightManager';
 import AdminGuideModal from '../components/AdminGuideModal';
+import SupportMethodsManager from '../components/SupportMethodsManager';
 import CloudflareTurnstile from '../components/CloudflareTurnstile';
 import {
   DEFAULT_ANNOUNCEMENT,
@@ -68,6 +69,9 @@ import {
   type SeriesPageVisibility,
   type SiteSettings,
   type DonationSupporter,
+  DEFAULT_SUPPORT_METHODS,
+  saveSupportMethods as persistSupportMethods,
+  type SupportMethod,
 } from '../lib/siteSettings';
 import { supabase, supabaseConfigReady } from '../lib/supabase';
 import { getSeriesCatalog, getSeriesCatalogCount, getSeriesCatalogCoverSamples, SERIES_CATALOG_QUERY_KEY } from '../lib/seriesCatalog';
@@ -665,6 +669,7 @@ function ComixDashboard({
   const [supporterToDelete, setSupporterToDelete] = useState<DonationSupporter | null>(null);
   const [amountError, setAmountError] = useState('');
   const [nameError, setNameError] = useState('');
+  const [donationTab, setDonationTab] = useState<'supporters' | 'methods'>('supporters');
   const [nowTick, setNowTick] = useState(() => Date.now());
 
   // Dynamic live clock ticker so all relative timers advance and move in real time
@@ -895,6 +900,24 @@ function ComixDashboard({
       }
     }
     return max + 1;
+  };
+
+  const saveSupportMethods = async (newList: SupportMethod[]) => {
+    if (!settings || savingSettings) return;
+    setSavingSettings(true);
+    setSaveMessage('Saving support methods...');
+    try {
+      const savedMethods = await persistSupportMethods(newList);
+      setSettings({ ...settings, supportMethods: savedMethods });
+      setSaveMessage('Support methods saved');
+    } catch (err) {
+      console.error('Failed to save support methods:', err);
+      alert(
+        'Failed to save support methods. If you have not yet, run supabase/support-methods.sql in the Supabase SQL editor (and make sure you are signed in as the admin).',
+      );
+    } finally {
+      setSavingSettings(false);
+    }
   };
 
   const saveSupporters = async (newList: DonationSupporter[]) => {
@@ -1956,6 +1979,48 @@ function ComixDashboard({
 
             {/* DONATION SUPPORTERS */}
             {activeTab === 'donation-supporters' && (
+              <div
+                className="comix-tab-pill-row"
+                style={{ border: '1px solid var(--cx-border)', borderRadius: 12, marginBottom: 16, background: 'var(--cx-surface)', padding: '10px 12px' }}
+                role="tablist"
+                aria-label="Donation page sections"
+              >
+                <button
+                  type="button"
+                  role="tab"
+                  aria-selected={donationTab === 'supporters'}
+                  className={`comix-sub-tab ${donationTab === 'supporters' ? 'is-active' : ''}`}
+                  style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}
+                  onClick={() => setDonationTab('supporters')}
+                >
+                  <Users size={14} />
+                  <span>Supporters</span>
+                  <span className="comix-order-count">{supportersDraft.length}</span>
+                </button>
+                <button
+                  type="button"
+                  role="tab"
+                  aria-selected={donationTab === 'methods'}
+                  className={`comix-sub-tab ${donationTab === 'methods' ? 'is-active' : ''}`}
+                  style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}
+                  onClick={() => setDonationTab('methods')}
+                >
+                  <Heart size={14} />
+                  <span>Support Methods</span>
+                  <span className="comix-order-count">{(settings?.supportMethods ?? DEFAULT_SUPPORT_METHODS).length}</span>
+                </button>
+              </div>
+            )}
+
+            {activeTab === 'donation-supporters' && donationTab === 'methods' && (
+              <SupportMethodsManager
+                methods={settings?.supportMethods ?? DEFAULT_SUPPORT_METHODS}
+                saving={savingSettings}
+                onSave={saveSupportMethods}
+              />
+            )}
+
+            {activeTab === 'donation-supporters' && donationTab === 'supporters' && (
               <div className="comix-settings-card">
                 <div className="comix-setting-group">
                     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 12, marginBottom: 16 }}>
