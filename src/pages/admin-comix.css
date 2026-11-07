@@ -698,6 +698,39 @@
   margin-bottom: 14px;
 }
 
+/* Admin login: show/hide password toggle */
+.comix-login-password-wrap {
+  position: relative;
+  display: block;
+}
+
+.comix-login-password-toggle {
+  position: absolute;
+  top: 50%;
+  right: 8px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  padding: 0;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--cx-text-subtle);
+  cursor: pointer;
+  transform: translateY(-50%);
+}
+
+.comix-login-password-toggle:hover {
+  color: var(--cx-text);
+}
+
+.comix-login-password-toggle:focus-visible {
+  outline: 2px solid var(--cx-teal);
+  outline-offset: 1px;
+}
+
 .comix-setting-group-title h4 {
   margin: 0 0 5px;
   color: var(--cx-text);

@@ -316,6 +316,7 @@ function ComixLoginScreen({
 }) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [formError, setFormError] = useState('');
@@ -422,15 +423,28 @@ function ComixLoginScreen({
 
             <div className="comix-login-field">
               <label htmlFor="login-password">Password</label>
-              <input
-                id="login-password"
-                type="password"
-                className="comix-login-input"
-                placeholder="Enter your password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
-              />
+              <div className="comix-login-password-wrap">
+                <input
+                  id="login-password"
+                  type={showPassword ? 'text' : 'password'}
+                  className="comix-login-input"
+                  style={{ paddingRight: 48 }}
+                  placeholder="Enter your password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  autoComplete="current-password"
+                  required
+                />
+                <button
+                  type="button"
+                  className="comix-login-password-toggle"
+                  onClick={() => setShowPassword((visible) => !visible)}
+                  aria-label={showPassword ? 'Hide password' : 'Show password'}
+                  aria-pressed={showPassword}
+                >
+                  {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                </button>
+              </div>
             </div>
 
             <div style={{ margin: '14px 0 6px', display: 'flex', justifyContent: 'center' }}>
