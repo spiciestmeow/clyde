@@ -477,7 +477,7 @@
   justify-content: center;
   font-size: 28px;
   font-weight: 800;
-  box-shadow: 0 4px 12px rgba(157, 23, 77, 0.25);
+  box-shadow: 0 4px 12px color-mix(in srgb, var(--cx-avatar-bg) 25%, transparent);
 }
 
 .comix-profile-details h2 {
@@ -1905,12 +1905,12 @@
   overflow: hidden;
   transition: all 0.18s ease;
   padding: 0;
-  box-shadow: 0 4px 14px rgba(157, 23, 77, 0.35);
+  box-shadow: 0 4px 14px color-mix(in srgb, var(--cx-avatar-bg) 35%, transparent);
 }
 
 .comix-avatar-preview-btn:hover {
   transform: scale(1.05);
-  box-shadow: 0 4px 16px rgba(157, 23, 77, 0.5);
+  box-shadow: 0 4px 16px color-mix(in srgb, var(--cx-avatar-bg) 50%, transparent);
 }
 
 .comix-avatar-initial {

@@ -78,6 +78,7 @@ import {
   type SupportMethod,
 } from '../lib/siteSettings';
 import { supabase, supabaseConfigReady } from '../lib/supabase';
+import { getAvatarColor } from '../lib/avatarColor';
 import { getSeriesCatalog, getSeriesCatalogCount, getSeriesCatalogCoverSamples, SERIES_CATALOG_QUERY_KEY } from '../lib/seriesCatalog';
 import './admin-comix.css';
 
@@ -3138,6 +3139,8 @@ function ComixDashboard({
           </main>
         </div>
       </div>
+      {/* Same per-user avatar color the comments use (seeded by user id) */}
+      <style>{`.comix-admin-wrapper,.comix-admin-wrapper.theme-light{--cx-avatar-bg:${getAvatarColor(session.user.id)};}`}</style>
       <AdminGuideModal userId={session.user.id} catalogItems={catalogItems} />
     </div>
   );

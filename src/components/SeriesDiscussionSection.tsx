@@ -34,6 +34,7 @@ import {
   Flag,
 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
+import { getAvatarStyle } from '../lib/avatarColor';
 import {
   fetchSeriesComments,
   reportSeriesComment,
@@ -555,7 +556,7 @@ export function SeriesDiscussionSection({ seriesSlug, seriesTitle, isAdminPrevie
       >
         {/* Left column: avatar + vertical thread line */}
         <div className="comment-avatar-col">
-          <div className="comment-avatar">
+          <div className="comment-avatar" style={getAvatarStyle(item.user_id || item.user_name)}>
             {item.user_avatar ? (
               <img src={item.user_avatar} alt="" />
             ) : (
@@ -930,7 +931,7 @@ export function SeriesDiscussionSection({ seriesSlug, seriesTitle, isAdminPrevie
       {/* 2. Rich Text Composer Box */}
       <div className="discussion-composer-wrap">
         {/* Left User Avatar */}
-        <div className="composer-avatar">
+        <div className="composer-avatar" style={getAvatarStyle(currentUserId || currentUserName)}>
           {currentUserAvatar ? <img src={currentUserAvatar} alt="" /> : userInitial}
         </div>
 

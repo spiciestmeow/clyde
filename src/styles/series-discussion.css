@@ -165,16 +165,17 @@
   width: 22px;
   height: 22px;
   border-radius: 50%;
-  background: #e2452b;
+  background: var(--avatar-bg, #be185d);
   color: #ffffff;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-weight: 700;
+  font-weight: 800;
   font-size: 9px;
   flex-shrink: 0;
   overflow: hidden;
   user-select: none;
+  box-shadow: 0 2px 6px color-mix(in srgb, var(--avatar-bg, #be185d) 32%, transparent);
 }
 
 .composer-avatar img {
@@ -426,17 +427,17 @@
   width: 24px;
   height: 24px;
   border-radius: 50%;
-  background: #3f3f46;
+  background: var(--avatar-bg, #be185d);
   color: #ffffff;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-weight: 700;
+  font-weight: 800;
   font-size: 9px;
   flex-shrink: 0;
   overflow: hidden;
   user-select: none;
-  box-shadow: 0 0 0 1px var(--sd-line);
+  box-shadow: 0 2px 6px color-mix(in srgb, var(--avatar-bg, #be185d) 32%, transparent);
 }
 
 .comment-avatar img {
