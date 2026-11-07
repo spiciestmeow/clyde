@@ -396,7 +396,7 @@ function isYakshaComicsHost(hostname: string): boolean {
 }
 
 function isWebDexScansHost(hostname: string): boolean {
-  return /(^|\.)webdexscans\.com$/i.test(hostname);
+  return /(^|\.)webdex(?:scans)?\.[a-z]+$/i.test(hostname);
 }
 
 function isMangaFireHost(hostname: string): boolean {
@@ -697,9 +697,47 @@ function extractWebDexScansChapters(
   pageUrl: URL,
 ): DetectedChapterItem[] {
   const seriesPath = pageUrl.pathname.replace(/\/+$/, '');
-  if (!seriesPath || !/^\/series\//i.test(seriesPath)) return [];
+  if (!seriesPath || !/^\/(?:series|manga|comic)\//i.test(seriesPath)) return [];
 
   const chapters = new Map<number, DetectedChapterItem>();
+
+  // 1. JSON-LD structured data (if available)
+  const jsonLdRegex = /<script\b[^>]*type=["']application\/ld\+json["'][^>]*>([\s\S]*?)<\/script>/gi;
+  let jsonMatch: RegExpExecArray | null;
+  while ((jsonMatch = jsonLdRegex.exec(html)) !== null) {
+    try {
+      const data = JSON.parse(jsonMatch[1]);
+      const parts = Array.isArray(data?.hasPart) ? data.hasPart : null;
+      if (parts) {
+        for (const part of parts) {
+          let chNum: number | null = null;
+          if (typeof part.position === 'number' && Number.isFinite(part.position)) chNum = part.position;
+          else if (typeof part.position === 'string') {
+            const p = parseFloat(part.position);
+            if (Number.isFinite(p)) chNum = p;
+          }
+          if (chNum === null && typeof part.name === 'string') {
+            const m = part.name.match(/\bChapter\s*(\d+(?:\.\d+)?)/i);
+            if (m) chNum = parseFloat(m[1]);
+          }
+          if (chNum === null || chNum < 0 || chNum >= 5000) continue;
+          let relAt: string | undefined;
+          if (part.datePublished) {
+            const t = Date.parse(part.datePublished);
+            if (!Number.isNaN(t)) relAt = new Date(t).toISOString();
+          }
+          chapters.set(chNum, {
+            number: chNum,
+            title: `Chapter ${chNum}`,
+            url: typeof part.url === 'string' ? part.url : pageUrl.pathname,
+            releasedAt: relAt,
+          });
+        }
+      }
+    } catch {}
+  }
+
+  // 2. HTML anchor cards
   const anchorRegex = /<a\b([^>]*)>([\s\S]*?)<\/a>/gi;
   let anchorMatch: RegExpExecArray | null;
 

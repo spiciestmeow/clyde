@@ -127,64 +127,108 @@ export async function scrapeDirectSources(
         continue;
       }
 
-      const res = await fetchPublicPage(src.url);
+      let chapters: DetectedChapterItem[] = [];
+      let detectedRating: number | null = null;
 
-      if (!res.ok) {
-        sourceIssues.push({ name: sourceName, url: src.url, reason: `Site returned HTTP ${res.status}.` });
-        continue;
-      }
-      const html = res.text;
-
-      // Parse relative chapter URLs against the final URL after redirects.
-      // Some scan sites switch between www and apex hosts or canonicalize
-      // their series route before serving the chapter list.
-      const resolvedSourceUrl = res.url || src.url;
-      const sourceHostname = new URL(resolvedSourceUrl).hostname;
-      const usesAdjacentRelativeTimes = /(^|\.)drakecomic\.net$/i.test(sourceHostname)
-        || /(^|\.)elftoon\.net$/i.test(sourceHostname)
-        || /(^|\.)witchtoons\.net$/i.test(sourceHostname);
-      const chapters = usesAdjacentRelativeTimes
-        ? extractChaptersWithRelativeRowTimes(html, resolvedSourceUrl)
-        : extractChaptersFromHtml(html, resolvedSourceUrl, title);
-      if (chapters.length === 0) {
-        sourceIssues.push({
-          name: sourceName,
-          url: src.url,
-          reason: 'Page loaded, but no supported chapter links were found. The page may render chapters with JavaScript or use a layout the scraper does not recognize.',
-        });
-        continue;
-      }
-      // Lagoon's detail page shows calendar dates, while its homepage cards
-      // can expose a more precise relative age. Only replace the detail-page
-      // value when the matching series card and same chapter are found.
-      if (/lagoon/i.test(sourceHostname) && chapters[0]) {
-        try {
-          const homepageUrl = new URL('/', resolvedSourceUrl).toString();
-          const homepageResponse = await fetchPublicPage(homepageUrl);
-          if (homepageResponse.ok) {
-            const homepageTimestamp = extractLagoonHomepageChapterTimestamp(
-              homepageResponse.text,
-              homepageResponse.url || homepageUrl,
-              resolvedSourceUrl,
-              chapters[0].number,
-              title,
+      // Handle MangaDex directly via public API (100% reliable, SPA-friendly, never Cloudflare-blocked)
+      if (/(^|\.)mangadex\.org$/i.test(parsed.hostname)) {
+        const mangaMatch = parsed.pathname.match(/\/(?:title|manga)\/([a-f0-9-]+)/i);
+        if (mangaMatch) {
+          const mangaId = mangaMatch[1];
+          try {
+            const mdRes = await fetch(
+              `https://api.mangadex.org/chapter?manga=${mangaId}&translatedLanguage[]=en&order[chapter]=desc&limit=100`,
+              {
+                headers: { 'User-Agent': 'VortexScans/1.0' },
+                signal: AbortSignal.timeout(6000),
+              },
             );
-            if (homepageTimestamp) chapters[0].releasedAt = homepageTimestamp;
+            if (mdRes.ok) {
+              const mdJson = (await mdRes.json()) as any;
+              const seen = new Set<number>();
+              if (Array.isArray(mdJson?.data)) {
+                for (const item of mdJson.data) {
+                  const chRaw = item.attributes?.chapter;
+                  if (!chRaw) continue;
+                  const num = parseFloat(chRaw);
+                  if (Number.isNaN(num) || num < 0 || seen.has(num)) continue;
+                  seen.add(num);
+                  chapters.push({
+                    number: num,
+                    title: `Chapter ${chRaw}`,
+                    url: `https://mangadex.org/chapter/${item.id}`,
+                    releasedAt: item.attributes?.publishAt || undefined,
+                  });
+                }
+              }
+            }
+          } catch {
+            // fall through to public fetch if api call fails
           }
-        } catch {
-          // Keep the timestamp from the series page if the optional homepage
-          // lookup fails or Lagoon changes its homepage markup.
         }
       }
-      if (chapters.length > 0 && !chapters[0].releasedAt) {
-        const pageLastUpdate = extractPageLastUpdate(html);
-        if (pageLastUpdate) {
-          chapters[0].releasedAt = new Date(pageLastUpdate).toISOString();
-        }
-      }
-      anySourceWorked = true;
 
-      const detectedRating = extractRatingFromHtml(html, res.url || src.url);
+      if (chapters.length === 0) {
+        const res = await fetchPublicPage(src.url);
+
+        if (!res.ok) {
+          sourceIssues.push({ name: sourceName, url: src.url, reason: `Site returned HTTP ${res.status}.` });
+          continue;
+        }
+        const html = res.text;
+
+        // Parse relative chapter URLs against the final URL after redirects.
+        // Some scan sites switch between www and apex hosts or canonicalize
+        // their series route before serving the chapter list.
+        const resolvedSourceUrl = res.url || src.url;
+        const sourceHostname = new URL(resolvedSourceUrl).hostname;
+        const usesAdjacentRelativeTimes = /(^|\.)drakecomic\.net$/i.test(sourceHostname)
+          || /(^|\.)elftoon\.net$/i.test(sourceHostname)
+          || /(^|\.)witchtoons\.net$/i.test(sourceHostname);
+        chapters = usesAdjacentRelativeTimes
+          ? extractChaptersWithRelativeRowTimes(html, resolvedSourceUrl)
+          : extractChaptersFromHtml(html, resolvedSourceUrl, title);
+        if (chapters.length === 0) {
+          sourceIssues.push({
+            name: sourceName,
+            url: src.url,
+            reason: 'Page loaded, but no supported chapter links were found. The page may render chapters with JavaScript or use a layout the scraper does not recognize.',
+          });
+          continue;
+        }
+        // Lagoon's detail page shows calendar dates, while its homepage cards
+        // can expose a more precise relative age. Only replace the detail-page
+        // value when the matching series card and same chapter are found.
+        if (/lagoon/i.test(sourceHostname) && chapters[0]) {
+          try {
+            const homepageUrl = new URL('/', resolvedSourceUrl).toString();
+            const homepageResponse = await fetchPublicPage(homepageUrl);
+            if (homepageResponse.ok) {
+              const homepageTimestamp = extractLagoonHomepageChapterTimestamp(
+                homepageResponse.text,
+                homepageResponse.url || homepageUrl,
+                resolvedSourceUrl,
+                chapters[0].number,
+                title,
+              );
+              if (homepageTimestamp) chapters[0].releasedAt = homepageTimestamp;
+            }
+          } catch {
+            // Keep the timestamp from the series page if the optional homepage
+            // lookup fails or Lagoon changes its homepage markup.
+          }
+        }
+        if (chapters.length > 0 && !chapters[0].releasedAt) {
+          const pageLastUpdate = extractPageLastUpdate(html);
+          if (pageLastUpdate) {
+            chapters[0].releasedAt = new Date(pageLastUpdate).toISOString();
+          }
+        }
+
+        detectedRating = extractRatingFromHtml(html, res.url || src.url);
+      }
+
+      anySourceWorked = true;
 
       sourceResults.push({
         name: sourceName,
