@@ -2879,7 +2879,25 @@ export default function SeriesCatalogManager({
 
       {/* Main Content Area: Empty State or Grid */}
       {mainTab === 'titles' ? (
-        !titlePageQuery.isPending && filteredTitleCount === 0 ? (
+        titlePageQuery.isError ? (
+          <div className="uploads-empty-state" style={{ padding: '40px 20px', textAlign: 'center' }}>
+            <div className="empty-icon-outline" style={{ color: '#ef4444', borderColor: '#ef4444' }}>
+              <AlertCircle size={32} strokeWidth={1.5} />
+            </div>
+            <h3 className="empty-title" style={{ color: '#ef4444' }}>Failed to load titles</h3>
+            <p className="empty-subtitle" style={{ maxWidth: 500, margin: '8px auto 16px' }}>
+              {(titlePageQuery.error as Error)?.message || 'An error occurred while fetching titles from the database.'}
+            </p>
+            <button
+              type="button"
+              className="btn-teal"
+              style={{ margin: '0 auto', display: 'inline-flex', alignItems: 'center', gap: 6 }}
+              onClick={() => titlePageQuery.refetch()}
+            >
+              <RefreshCw size={14} /> Retry
+            </button>
+          </div>
+        ) : !titlePageQuery.isPending && filteredTitleCount === 0 ? (
           <div className="uploads-empty-state">
             <div className="empty-icon-outline">
               <FileText size={32} strokeWidth={1.5} />

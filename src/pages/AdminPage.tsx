@@ -274,11 +274,25 @@ export default function AdminPage() {
       return;
     }
 
+    const client = supabase;
     let active = true;
-    void supabase.auth
+    void client.auth
       .getSession()
-      .then(({ data }) => {
-        if (active) setSession(data.session ?? null);
+      .then(async ({ data }) => {
+        if (!active) return;
+        if (data.session) {
+          // Verify session token is valid with Supabase
+          const { error: userError } = await client.auth.getUser();
+          if (userError) {
+            console.warn('Stored admin session is invalid, clearing session:', userError.message);
+            await client.auth.signOut();
+            if (active) setSession(null);
+            return;
+          }
+          if (active) setSession(data.session);
+        } else {
+          if (active) setSession(null);
+        }
       })
       .finally(() => {
         if (active) setCheckingSession(false);
@@ -286,7 +300,7 @@ export default function AdminPage() {
 
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, currentSession) => {
+    } = client.auth.onAuthStateChange((_event, currentSession) => {
       setSession(currentSession);
     });
 
@@ -382,64 +396,42 @@ function ComixLoginScreen({
     setBusy(true);
     setFormError('');
     try {
-      // Vite's local dev server does not serve Vercel API routes. Keep local
-      // admin sign-in working through Supabase Auth; deployed sign-in uses the
-      // server endpoint so failed attempts are rate-limited.
-      if (import.meta.env.DEV) {
-        const { data, error } = await supabase.auth.signInWithPassword({
-          email: email.trim(),
-          password,
+      // Deployed sign-in uses the server endpoint first so failed attempts are rate-limited
+      // and the server-side admin cookie is set.
+      if (!import.meta.env.DEV) {
+        const response = await fetch('/api/admin/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email: email.trim(), password }),
         });
-        if (error || !data.session) {
-          setFormError('Sign in failed. Check your admin email and password.');
+        const result = await response.json().catch(() => ({}));
+        if (typeof result.retryAfterSeconds === 'number' && result.retryAfterSeconds > 0) {
+          setLockoutSeconds(Math.ceil(result.retryAfterSeconds));
+        }
+        if (!response.ok) {
+          setFormError(result.retryAfterSeconds ? '' : result.error || 'Sign in failed. Check your admin email and password.');
           return;
         }
-        onSignedIn(data.session);
-        return;
       }
 
-      const response = await fetch('/api/admin/login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email: email.trim(), password }),
-      });
-      const result = await response.json().catch(() => ({}));
-      if (typeof result.retryAfterSeconds === 'number' && result.retryAfterSeconds > 0) {
-        setLockoutSeconds(Math.ceil(result.retryAfterSeconds));
-      }
-      if (!response.ok || !result.session?.access_token || !result.session?.refresh_token) {
-        setFormError(result.retryAfterSeconds ? '' : result.error || 'Sign in failed. Check your admin email and password.');
-        return;
-      }
-
-      let signedInSession = null;
-      const { data, error } = await supabase.auth.setSession({
-        access_token: result.session.access_token,
-        refresh_token: result.session.refresh_token,
+      // Sign in directly with the client's Supabase instance.
+      // This establishes a 100% native, properly signed, and refreshed session in the browser,
+      // matching the exact behavior that works in local development.
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email: email.trim(),
+        password,
       });
 
-      if (!error && data.session) {
-        signedInSession = data.session;
-      } else {
-        console.warn('Admin sign-in: setSession failed, attempting direct signInWithPassword fallback:', error?.message);
-        const directAuth = await supabase.auth.signInWithPassword({
-          email: email.trim(),
-          password,
-        });
-        if (!directAuth.error && directAuth.data.session) {
-          signedInSession = directAuth.data.session;
-        } else {
-          console.error('Admin direct sign-in fallback failed:', directAuth.error?.message ?? error?.message);
-        }
-      }
-
-      if (!signedInSession) {
-        setFormError(error?.message || 'Sign in failed. Please try again.');
+      if (error || !data.session) {
+        console.error('Supabase admin sign-in failed:', error);
+        setFormError(error?.message || 'Sign in failed. Check your admin email and password.');
         return;
       }
+
       setLockoutSeconds(0);
-      onSignedIn(signedInSession);
-    } catch {
+      onSignedIn(data.session);
+    } catch (err) {
+      console.error('Sign-in error:', err);
       setFormError('Could not reach the sign-in service. Please try again.');
     } finally {
       setBusy(false);

@@ -526,7 +526,10 @@ export async function getSeriesCatalogPage(options: SeriesCatalogPageOptions): P
     .order('id', { ascending: options.sortOrder === 'oldest' })
     .range(from, to);
 
-  if (error) throw error;
+  if (error) {
+    console.error('getSeriesCatalogPage error:', error.message || error);
+    throw error;
+  }
   return { totalCount: count ?? 0, items: (data ?? []).map(toSeriesRecord) };
 }
 
@@ -882,7 +885,10 @@ export async function getSeriesCatalogByIds(ids: number[]): Promise<SeriesRecord
 export async function getSeriesCatalogCount(): Promise<number> {
   const client = requireSupabase();
   const { count, error } = await client.from('series').select('id', { count: 'exact', head: true });
-  if (error) throw error;
+  if (error) {
+    console.error('getSeriesCatalogCount error:', error.message || error);
+    throw error;
+  }
   return count ?? 0;
 }
 
