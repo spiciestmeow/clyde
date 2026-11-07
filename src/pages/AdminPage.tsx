@@ -6,6 +6,7 @@ import {
   Bell,
   BookOpen,
   Bookmark,
+  Camera,
   Check,
   ChevronDown,
   Clock,
@@ -1248,7 +1249,7 @@ function ComixDashboard({
   // User display name & initial dynamically reflected
   const userInitial = (profileDisplayName?.[0] || session.user.email?.[0] || 'C').toUpperCase();
   const displayName = profileDisplayName || session.user.user_metadata?.full_name || 'Clyde Bustamante';
-  const publicProfileId = session.user.id ? session.user.id.slice(0, 8) : 'jd9gdd';
+  const publicProfileId = session.user.id || '';
 
   const handleSaveProfile = async (e: FormEvent) => {
     e.preventDefault();
@@ -2985,8 +2986,12 @@ function ComixDashboard({
                         {profileAvatarUrl ? (
                           <img src={profileAvatarUrl} alt="Avatar Preview" />
                         ) : (
-                          userInitial
+                          <span className="comix-avatar-initial">{userInitial}</span>
                         )}
+                        <span className="comix-avatar-hover-overlay" aria-hidden="true">
+                          <Camera size={15} className="comix-avatar-camera-icon" />
+                          <span className="comix-avatar-edit-text">EDIT</span>
+                        </span>
                       </button>
                       <div className="comix-avatar-actions">
                         <button

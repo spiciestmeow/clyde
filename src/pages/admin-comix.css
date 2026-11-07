@@ -1866,13 +1866,13 @@
 }
 
 .comix-avatar-preview-btn {
-  width: 60px;
-  height: 60px;
+  width: 64px;
+  height: 64px;
   border-radius: 50%;
-  background: #2dd4bf;
-  color: #042f2e;
+  background-color: var(--cx-avatar-bg);
+  color: var(--cx-avatar-text);
   font-size: 26px;
-  font-weight: 700;
+  font-weight: 800;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1882,11 +1882,19 @@
   overflow: hidden;
   transition: all 0.18s ease;
   padding: 0;
+  box-shadow: 0 4px 14px rgba(157, 23, 77, 0.35);
 }
 
 .comix-avatar-preview-btn:hover {
   transform: scale(1.05);
-  box-shadow: 0 0 0 3px rgba(45, 212, 191, 0.4);
+  box-shadow: 0 4px 16px rgba(157, 23, 77, 0.5);
+}
+
+.comix-avatar-initial {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: opacity 0.18s ease;
 }
 
 .comix-avatar-preview-btn img {
@@ -1894,6 +1902,46 @@
   height: 100%;
   object-fit: cover;
   border-radius: 50%;
+  transition: opacity 0.18s ease;
+}
+
+/* Hover overlay matching reference: Camera on top, C in center, EDIT on bottom */
+.comix-avatar-hover-overlay {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  background: rgba(16, 28, 25, 0.88);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: space-between;
+  padding: 9px 0 7px;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.18s ease;
+}
+
+.comix-avatar-preview-btn:hover .comix-avatar-hover-overlay {
+  opacity: 1;
+}
+
+.comix-avatar-preview-btn:hover .comix-avatar-initial,
+.comix-avatar-preview-btn:hover img {
+  opacity: 0.32;
+}
+
+.comix-avatar-camera-icon {
+  color: #ffffff;
+  stroke-width: 2.2;
+}
+
+.comix-avatar-edit-text {
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  color: #ffffff;
+  text-transform: uppercase;
+  line-height: 1;
 }
 
 .comix-avatar-actions {
@@ -1944,7 +1992,7 @@
   border-radius: 8px;
   padding: 10px 24px;
   font-size: 14px;
-  font-weight: 600;
+  font-weight: 400; /* normal font weight */
   cursor: pointer;
   transition: background 0.15s ease, transform 0.1s ease, box-shadow 0.15s ease;
 }
