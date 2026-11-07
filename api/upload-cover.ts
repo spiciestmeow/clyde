@@ -12,9 +12,13 @@
 //
 // The route is protected: only authenticated admins (session cookie) may upload.
 
-import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { S3Client, PutObjectCommand } from '@aws-sdk/client-s3';
-import { isAdminAuthenticated, setNoStore } from './_lib/auth.js';
+import {
+  isAdminAuthenticated,
+  setNoStore,
+  type AdminApiRequest,
+  type AdminApiResponse,
+} from './_lib/auth.js';
 
 // ─── R2 client (singleton per warm Lambda invocation) ────────────────────────
 let _r2: S3Client | null = null;
@@ -49,19 +53,21 @@ interface UploadBody {
   fileBase64: string;
 }
 
-export default async function handler(req: VercelRequest, res: VercelResponse) {
+export default async function handler(req: AdminApiRequest, res: AdminApiResponse) {
   setNoStore(res);
 
   if (req.method !== 'POST') {
-    return res.status(405).json({ error: 'Method not allowed.' });
+    res.status(405).json({ error: 'Method not allowed.' });
+    return;
   }
 
   // ── Auth guard ─────────────────────────────────────────────────────────────
   // Accepts admin cookie or Supabase JWT token from Authorization header
-  const authHeader = req.headers.authorization;
+  const rawAuthHeader = req.headers['authorization'] ?? req.headers['Authorization'];
+  const authHeader = Array.isArray(rawAuthHeader) ? rawAuthHeader[0] : rawAuthHeader;
   const token = authHeader?.replace(/^Bearer\s+/i, '').trim();
 
-  let isAuthorized = isAdminAuthenticated(req as Parameters<typeof isAdminAuthenticated>[0]);
+  let isAuthorized = isAdminAuthenticated(req);
 
   if (!isAuthorized && token) {
     const adminEmail = (process.env.ADMIN_EMAIL || 'clydhex@gmail.com').trim().toLowerCase();
@@ -71,7 +77,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       try {
         const { createClient } = await import('@supabase/supabase-js');
         const supabase = createClient(supabaseUrl, anonKey, { auth: { persistSession: false } });
-        const { data: { user } } = await supabase.auth.getUser(token);
+        const { data: { user } = { user: null } } = await (supabase.auth as any).getUser(token);
         if (user && user.email?.trim().toLowerCase() === adminEmail) {
           isAuthorized = true;
         }
@@ -82,7 +88,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   }
 
   if (!isAuthorized) {
-    return res.status(401).json({ error: 'Unauthorized. Log in as admin first.' });
+    res.status(401).json({ error: 'Unauthorized. Log in as admin first.' });
+    return;
   }
 
   // ── Validate body ──────────────────────────────────────────────────────────
@@ -90,19 +97,23 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   const { fileName, contentType, fileBase64 } = body ?? {};
 
   if (!fileName || typeof fileName !== 'string' || fileName.includes('/') || fileName.includes('..')) {
-    return res.status(400).json({ error: 'Invalid fileName.' });
+    res.status(400).json({ error: 'Invalid fileName.' });
+    return;
   }
   if (!contentType || typeof contentType !== 'string' || !contentType.startsWith('image/')) {
-    return res.status(400).json({ error: 'Invalid contentType — must be an image/* MIME type.' });
+    res.status(400).json({ error: 'Invalid contentType — must be an image/* MIME type.' });
+    return;
   }
   if (!fileBase64 || typeof fileBase64 !== 'string') {
-    return res.status(400).json({ error: 'Missing fileBase64.' });
+    res.status(400).json({ error: 'Missing fileBase64.' });
+    return;
   }
 
   // ── Size guard (10 MB max before base64 overhead) ─────────────────────────
   const buffer = Buffer.from(fileBase64, 'base64');
   if (buffer.length > 10 * 1024 * 1024) {
-    return res.status(413).json({ error: 'File exceeds the 10 MB limit.' });
+    res.status(413).json({ error: 'File exceeds the 10 MB limit.' });
+    return;
   }
 
   // ── Upload to R2 ───────────────────────────────────────────────────────────
@@ -110,13 +121,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   const publicBase = process.env.R2_PUBLIC_URL?.replace(/\/$/, '');
 
   if (!publicBase) {
-    return res.status(500).json({ error: 'R2_PUBLIC_URL is not configured.' });
+    res.status(500).json({ error: 'R2_PUBLIC_URL is not configured.' });
+    return;
   }
 
   try {
     const r2 = getR2();
 
-    await r2.send(
+    await (r2 as any).send(
       new PutObjectCommand({
         Bucket: bucket,
         Key: fileName,
@@ -127,9 +139,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     );
 
     const publicUrl = `${publicBase}/${fileName}`;
-    return res.status(200).json({ publicUrl });
+    res.status(200).json({ publicUrl });
+    return;
   } catch (err) {
     console.error('[upload-cover] R2 upload error:', err);
-    return res.status(500).json({ error: 'Upload to R2 failed. Check server logs.' });
+    res.status(500).json({ error: 'Upload to R2 failed. Check server logs.' });
+    return;
   }
 }

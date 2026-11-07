@@ -54,7 +54,7 @@ export default async function handler(
     }
     try {
       const authClient = createClient(SUPABASE_URL, SUPABASE_KEY, { auth: { persistSession: false } });
-      const { data, error } = await authClient.auth.getUser(bearerToken);
+      const { data, error } = await (authClient.auth as any).getUser(bearerToken);
       if (error || data.user?.email?.trim().toLowerCase() !== ADMIN_EMAIL) {
         response.status(401).json({ error: 'Admin sign-in required.' });
         return;

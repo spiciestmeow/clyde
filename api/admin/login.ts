@@ -70,7 +70,7 @@ export default async function handler(
   }
 
   const authClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, { auth: { persistSession: false } });
-  const { data, error } = await authClient.auth.signInWithPassword({ email, password });
+  const { data, error } = await (authClient.auth as any).signInWithPassword({ email, password });
   if (error || !data.session || data.user.email?.trim().toLowerCase() !== ADMIN_EMAIL) {
     const { data: retryAfterSeconds, error: recordError } = await serverClient.rpc('record_admin_login_failure', {
       p_requester_hash: requesterHash,
