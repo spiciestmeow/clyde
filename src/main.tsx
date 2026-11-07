@@ -7,6 +7,24 @@ import { queryClient } from './lib/queryClient';
 
 import './index.css';
 
+// Automatically recover from stale chunk errors when a new deployment is published.
+// Timestamp guard prevents reload loops if a chunk is genuinely missing.
+if (typeof window !== 'undefined') {
+  window.addEventListener('vite:preloadError', (event) => {
+    event.preventDefault();
+    try {
+      const reloadKey = 'clydee_chunk_reload';
+      const last = Number(sessionStorage.getItem(reloadKey) || 0);
+      if (Date.now() - last > 10_000) {
+        sessionStorage.setItem(reloadKey, String(Date.now()));
+        window.location.reload();
+      }
+    } catch {
+      window.location.reload();
+    }
+  });
+}
+
 // Prevent right-click, dragging, and mobile long-press menus on images
 if (typeof window !== 'undefined') {
   const isImageOrCover = (target: HTMLElement | null) => {

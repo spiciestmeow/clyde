@@ -256,11 +256,21 @@ export default defineConfig(({ mode }) => {
         manifest: false,
         workbox: {
           // Cache static assets (JS, CSS, fonts, images) with cache-first
-          // Exclude large assets (logo, seasonal images) from precache - they're served normally
-          globPatterns: ['**/*.{js,css,html,ico,png,svg,woff,woff2}'],
-          globIgnores: ['**/clydee-logo.png', '**/trick_pumpkin.webp', '**/pwa-*.png'],
+          // Exclude index.html from precache so users always receive fresh chunk references on deployment
+          globPatterns: ['**/*.{js,css,ico,png,svg,woff,woff2}'],
+          globIgnores: ['**/index.html', '**/clydee-logo.png', '**/trick_pumpkin.webp', '**/pwa-*.png'],
           maximumFileSizeToCacheInBytes: 3 * 1024 * 1024, // 3 MiB
+          cleanupOutdatedCaches: true,
           runtimeCaching: [
+            // HTML Navigations — NetworkFirst (fresh HTML on every deploy; fallback when offline)
+            {
+              urlPattern: ({ request }) => request.mode === 'navigate',
+              handler: 'NetworkFirst',
+              options: {
+                cacheName: 'html-cache',
+                networkTimeoutSeconds: 3,
+              },
+            },
             // Supabase API — network-first (always fresh data)
             {
               urlPattern: /^https:\/\/.*\.supabase\.co\/.*/i,
@@ -299,16 +309,14 @@ export default defineConfig(({ mode }) => {
               },
             },
           ],
-          // Show offline fallback page when navigation fails
-          navigateFallback: '/index.html',
-          navigateFallbackDenylist: [/^\/api\//],
+          // Offline fallback is handled by the NetworkFirst navigation rule above.
+          // (navigateFallback needs index.html precached, which we intentionally avoid.)
+          navigateFallback: null,
           skipWaiting: true,
           clientsClaim: true,
         },
         devOptions: {
-          // Enable PWA in dev mode for testing
-          enabled: true,
-          type: 'module',
+          enabled: false,
         },
       }),
     ],
