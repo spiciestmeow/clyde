@@ -1124,7 +1124,8 @@ export function SeriesDiscussionSection({ seriesSlug, seriesTitle, isAdminPrevie
             <div className="discussion-empty-icon">
               <MessageSquare size={22} strokeWidth={1.5} />
             </div>
-            <p>No comments yet. What are your thoughts?</p>
+            <p className="discussion-empty-title">No comments yet</p>
+            <p className="discussion-empty-hint">Be the first to share your thoughts.</p>
           </div>
         )}
       </div>
