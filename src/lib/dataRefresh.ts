@@ -1,5 +1,5 @@
 import { queryClient } from './queryClient';
-import { SERIES_CATALOG_QUERY_KEY } from './seriesCatalog';
+import { invalidateCatalogCache, SERIES_CATALOG_QUERY_KEY } from './seriesCatalog';
 import { getSiteSettings, SITE_SETTINGS_UPDATED_EVENT } from './siteSettings';
 
 let refreshPromise: Promise<void> | null = null;
@@ -11,12 +11,13 @@ export async function refreshActiveData(): Promise<void> {
 
   refreshPromise = (async () => {
     try {
+      invalidateCatalogCache();
       await Promise.allSettled([
         queryClient.invalidateQueries({
           queryKey: SERIES_CATALOG_QUERY_KEY,
           refetchType: 'active',
         }),
-        getSiteSettings().then((settings) => {
+        getSiteSettings(true).then((settings) => {
           window.dispatchEvent(
             new CustomEvent(SITE_SETTINGS_UPDATED_EVENT, { detail: settings })
           );

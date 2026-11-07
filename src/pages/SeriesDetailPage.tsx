@@ -378,7 +378,7 @@ export default function SeriesDetailPage() {
     retry: 3,
     retryDelay: (attempt) => Math.min(1000 * (2 ** attempt), 8_000),
     refetchOnReconnect: true,
-    refetchOnWindowFocus: true,
+    refetchOnWindowFocus: false,
   });
   useEffect(() => {
     if (!series || !seriesPageVisibility.similarSeries || !relatedQuery.isPending || relatedQuery.fetchStatus !== 'idle') return;

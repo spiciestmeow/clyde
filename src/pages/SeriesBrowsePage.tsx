@@ -1,5 +1,5 @@
-import { useCallback, useEffect, useMemo, useRef, useState, type KeyboardEvent as ReactKeyboardEvent, type SyntheticEvent } from 'react';
-import { keepPreviousData, useQuery } from '@tanstack/react-query';
+﻿import { useCallback, useEffect, useMemo, useRef, useState, type KeyboardEvent as ReactKeyboardEvent, type SyntheticEvent } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { Link, useLocation, useSearch } from 'wouter';
 import {
   ArrowDownAZ,
@@ -47,12 +47,15 @@ import './series-browse.css';
 
 import {
   DEFAULT_SERIES_COVER,
-  getSeriesBrowseFacets,
-  getSeriesBrowsePage,
+  applyBrowseFiltersClientSide,
+  sortBrowseResultsClientSide,
   getSiteSearchHighlights,
   searchSiteCatalog,
   SERIES_CATALOG_QUERY_KEY,
+  type SeriesBrowseFacets,
+  type SeriesRecord,
 } from '../lib/seriesCatalog';
+import { useSeriesCatalog } from '../hooks/useSeriesCatalog';
 
 const assetList = assets as { src: string; alt: string }[];
 const PAGE_SIZE = 36;
@@ -135,11 +138,7 @@ function pageNumbers(pageCount: number, current: number) {
 
 export default function SeriesBrowsePage() {
   const { dark, toggleTheme } = useThemeMode();
-  const facetsQuery = useQuery({
-    queryKey: [...SERIES_CATALOG_QUERY_KEY, 'series-browse-facets'],
-    queryFn: getSeriesBrowseFacets,
-    staleTime: 2 * 60 * 1000,
-  });
+  const { items: allCatalogItems, isLoading, isError, refetch } = useSeriesCatalog();
   const highlightsQuery = useQuery({
     queryKey: [...SERIES_CATALOG_QUERY_KEY, 'series-browse-search-highlights'],
     queryFn: () => getSiteSearchHighlights(4),
@@ -362,13 +361,30 @@ export default function SeriesBrowsePage() {
     sort,
     direction: sortDirection,
   }), [page, settledQuery, status, selectedTypes, includedGenres.join('|'), excludedGenres.join('|'), minChapters, maxChapters, createdAfter, createdBefore, availability, sort, sortDirection, seriesFilterVisibility]);
-  const pageQuery = useQuery({
-    queryKey: [...SERIES_CATALOG_QUERY_KEY, 'series-browse-page', browseOptions],
-    queryFn: () => getSeriesBrowsePage(browseOptions),
-    placeholderData: keepPreviousData,
-    staleTime: 2 * 60 * 1000,
-  });
-  const totalCount = pageQuery.data?.totalCount ?? 0;
+  // Derive facets from the shared catalog cache � zero extra Supabase reads.
+  const facets = useMemo<SeriesBrowseFacets>(() => {
+    const genres = new Set<string>();
+    const categories = new Set<string>();
+    for (const item of allCatalogItems) {
+      for (const genre of item.genres ?? []) if (typeof genre === 'string' && genre.trim()) genres.add(genre.trim());
+      if (typeof item.category === 'string' && item.category.trim()) categories.add(item.category.trim());
+    }
+    return {
+      genres: [...genres].sort((a, b) => a.localeCompare(b)),
+      categories: [...categories].sort((a, b) => a.localeCompare(b)),
+    };
+  }, [allCatalogItems]);
+  // Filter, sort and paginate entirely in-memory � no additional Supabase request per interaction.
+  const filteredAndPagedItems = useMemo<{ totalCount: number; items: SeriesRecord[] }>(() => {
+    if (allCatalogItems.length === 0) return { totalCount: 0, items: [] };
+    const filtered = applyBrowseFiltersClientSide(allCatalogItems, browseOptions);
+    const sorted = sortBrowseResultsClientSide(filtered, browseOptions.sort ?? 'latest', browseOptions.direction ?? 'desc');
+    const pageNum = Math.max(1, browseOptions.page ?? 1);
+    const pageSize = Math.max(1, browseOptions.pageSize ?? PAGE_SIZE);
+    const from = (pageNum - 1) * pageSize;
+    return { totalCount: sorted.length, items: sorted.slice(from, from + pageSize) };
+  }, [allCatalogItems, browseOptions]);
+  const totalCount = filteredAndPagedItems.totalCount;
   const pageCount = Math.max(1, Math.ceil(totalCount / PAGE_SIZE));
   const currentPage = Math.min(page, pageCount);
   const goToPage = (nextPage: number) => {
@@ -378,12 +394,11 @@ export default function SeriesBrowsePage() {
   useEffect(() => {
     if (page > pageCount) setPage(pageCount);
   }, [page, pageCount]);
-  const visibleItems = pageQuery.data?.items ?? [];
+  const visibleItems = filteredAndPagedItems.items;
   const pages = pageNumbers(pageCount, currentPage);
   const mobilePages = getMobilePaginationItems(pageCount, currentPage);
-  const facets = facetsQuery.data;
   const visibleGenres = useMemo(() => {
-    const list = [...new Set([...seriesGenres, ...(facets?.genres ?? [])])]
+    const list = [...new Set([...seriesGenres, ...(facets.genres)])]
       .filter((genre) => genre.toLocaleLowerCase().includes(genreSearch.trim().toLocaleLowerCase()));
 
     return list.sort((a, b) => {
@@ -394,7 +409,7 @@ export default function SeriesBrowsePage() {
       if (aRank !== bRank) return bRank - aRank;
       return a.localeCompare(b);
     });
-  }, [facets?.genres, genreSearch, genreModes]);
+  }, [facets.genres, genreSearch, genreModes]);
 
   const genresFilterCount = seriesFilterVisibility.genres ? Object.keys(genreModes).length : 0;
   const statusFilterCount = seriesFilterVisibility.status && status !== 'All' ? 1 : 0;
@@ -402,7 +417,7 @@ export default function SeriesBrowsePage() {
   const typeFilterCount = seriesFilterVisibility.type ? selectedTypes.length : 0;
   const chapterCountFilterCount = seriesFilterVisibility.chapterCount ? Number(minChapters !== '') + Number(maxChapters !== '') : 0;
   const releaseDateFilterCount = seriesFilterVisibility.releaseDate ? Number(createdAfter !== '') + Number(createdBefore !== '') : 0;
-  const visibleTypes = [...new Set([...seriesTypes, ...(facets?.categories ?? [])])];
+  const visibleTypes = [...new Set([...seriesTypes, ...(facets.categories)])];
   const toggleFilterSection = (section: FilterSection) => {
     setFilterSectionsOpen((current) => ({ ...current, [section]: !current[section] }));
   };
@@ -473,9 +488,9 @@ export default function SeriesBrowsePage() {
         <h1><SeriesBooksIcon size={30} className="catalog-title-svg" /> Series</h1>
         <p>Explore a vast array of distinctive and exclusive works on our platform</p>
       </header>
-      {pageQuery.isLoading && <BrowsePageSkeleton count={PAGE_SIZE} />}
-      {pageQuery.isError && <CatalogErrorState compactMobile onRetry={() => void pageQuery.refetch()} />}
-      {!pageQuery.isLoading && (!pageQuery.isError || pageQuery.data) && <>
+      {isLoading && <BrowsePageSkeleton count={PAGE_SIZE} />}
+      {isError && <CatalogErrorState compactMobile onRetry={() => void refetch()} />}
+      {!isLoading && (!isError || allCatalogItems.length > 0) && <>
       <div className="catalog-search">
         <Search size={17} aria-hidden="true" />
         <input
@@ -802,9 +817,9 @@ export default function SeriesBrowsePage() {
           </div>
           <div className="catalog-filter-apply"><button type="button" onClick={() => setFiltersOpen(false)}>Show {totalCount} {totalCount === 1 ? 'result' : 'results'}</button></div>
           </aside>
-          {pageQuery.isError && <div className="catalog-empty"><CatalogErrorState compactMobile onRetry={() => void pageQuery.refetch()} /></div>}
-          {pageQuery.isFetching && <BrowsePageSkeleton count={PAGE_SIZE} />}
-          {!pageQuery.isFetching && !pageQuery.isError && visibleItems.length > 0 ? <div className="catalog-grid">
+          {isError && <div className="catalog-empty"><CatalogErrorState compactMobile onRetry={() => void refetch()} /></div>}
+          {isLoading && <BrowsePageSkeleton count={PAGE_SIZE} />}
+          {!isLoading && !isError && visibleItems.length > 0 ? <div className="catalog-grid">
             {visibleItems.map((item) => (
               <LatestReleaseCard
                 key={item.href}
@@ -813,7 +828,7 @@ export default function SeriesBrowsePage() {
                 variant="series"
               />
             ))}
-          </div> : !pageQuery.isFetching && !pageQuery.isError && <div className="catalog-empty">
+          </div> : !isLoading && !isError && <div className="catalog-empty">
             <span className="catalog-empty-icon"><Search size={21} /></span>
             <h2>No series found</h2>
             <p>Try another title or reset your filters to see more of the library.</p>

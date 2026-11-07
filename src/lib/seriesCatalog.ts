@@ -400,14 +400,28 @@ export function getSeriesCreatedTimestamp(item: Pick<SeriesRecord, 'createdAt' |
 
 const CATALOG_CACHE_KEY = 'vortex-series-catalog-cache';
 
+let inFlightCatalogPromise: Promise<SeriesCatalogResponse> | null = null;
+let lastCatalogFetchedAt = 0;
+let inMemoryCatalog: SeriesCatalogResponse | null = null;
+const CATALOG_CACHE_TTL_MS = 5 * 60 * 1000; // 5 minutes in-memory cache to prevent redundant Supabase queries
+
+export function invalidateCatalogCache(): void {
+  inMemoryCatalog = null;
+  lastCatalogFetchedAt = 0;
+}
+
 export function getCachedSeriesCatalog(): SeriesCatalogResponse | null {
+  if (inMemoryCatalog && Array.isArray(inMemoryCatalog.items) && inMemoryCatalog.items.length > 0) {
+    return inMemoryCatalog;
+  }
   if (typeof window === 'undefined') return null;
   try {
     const raw = window.localStorage.getItem(CATALOG_CACHE_KEY);
     if (!raw) return null;
     const parsed = JSON.parse(raw);
     if (parsed && Array.isArray(parsed.items) && parsed.items.length > 0) {
-      return parsed as SeriesCatalogResponse;
+      inMemoryCatalog = parsed as SeriesCatalogResponse;
+      return inMemoryCatalog;
     }
   } catch {
     // ignore storage errors
@@ -416,6 +430,8 @@ export function getCachedSeriesCatalog(): SeriesCatalogResponse | null {
 }
 
 export function cacheSeriesCatalog(data: SeriesCatalogResponse): void {
+  inMemoryCatalog = data;
+  lastCatalogFetchedAt = Date.now();
   if (typeof window === 'undefined') return;
   try {
     window.localStorage.setItem(CATALOG_CACHE_KEY, JSON.stringify(data));
@@ -424,25 +440,52 @@ export function cacheSeriesCatalog(data: SeriesCatalogResponse): void {
   }
 }
 
-export async function getSeriesCatalog(): Promise<SeriesCatalogResponse> {
-  const client = requireSupabase();
-  const { data, error } = await client
-    .from('series')
-    .select(
-      'id, slug, title, href, cover, category, rating, status, pinned, chapters, ' +
-      'alternate_titles, synopsis, author, artist, publishers, content_rating, year, ' +
-      'original_language, demographics, genres, formats, tags, trackers, sources, ' +
-      'facts, favorites, views, review_count, page_number, page_order, created_at, updated_at',
-    )
-    .order('page_number', { ascending: true })
-    .order('page_order', { ascending: true })
-    .order('title', { ascending: true });
+export async function getSeriesCatalog(forceRefresh?: boolean | unknown): Promise<SeriesCatalogResponse> {
+  const isForce = typeof forceRefresh === 'boolean' ? forceRefresh : false;
+  const now = Date.now();
+  if (!isForce && inMemoryCatalog && (now - lastCatalogFetchedAt < CATALOG_CACHE_TTL_MS)) {
+    return inMemoryCatalog;
+  }
 
-  if (error) throw error;
-  const items = (data ?? []).map(toSeriesRecord);
-  const result = { totalCount: items.length, items };
-  cacheSeriesCatalog(result);
-  return result;
+  if (!isForce && inFlightCatalogPromise) {
+    return inFlightCatalogPromise;
+  }
+
+  if (!isForce && !inMemoryCatalog) {
+    const cached = getCachedSeriesCatalog();
+    if (cached) {
+      inMemoryCatalog = cached;
+      lastCatalogFetchedAt = now;
+      return cached;
+    }
+  }
+
+  inFlightCatalogPromise = (async () => {
+    try {
+      const client = requireSupabase();
+      const { data, error } = await client
+        .from('series')
+        .select(
+          'id, slug, title, href, cover, category, rating, status, pinned, chapters, ' +
+          'alternate_titles, synopsis, author, artist, publishers, content_rating, year, ' +
+          'original_language, demographics, genres, formats, tags, trackers, sources, ' +
+          'facts, favorites, views, review_count, page_number, page_order, created_at, updated_at',
+        )
+        .order('page_number', { ascending: true })
+        .order('page_order', { ascending: true })
+        .order('title', { ascending: true });
+
+      if (error) throw error;
+      const items = (data ?? []).map(toSeriesRecord);
+      const result = { totalCount: items.length, items };
+      cacheSeriesCatalog(result);
+      return result;
+    } finally {
+      inFlightCatalogPromise = null;
+    }
+  })();
+
+  return inFlightCatalogPromise;
 }
 
 export async function getSeriesCatalogPage(options: SeriesCatalogPageOptions): Promise<SeriesCatalogResponse> {
@@ -500,12 +543,11 @@ export async function getNewSeriesCatalogIndex(): Promise<NewSeriesCatalogIndexI
 }
 
 export async function getSeriesBrowseFacets(): Promise<SeriesBrowseFacets> {
-  const client = requireSupabase();
-  const { data, error } = await client.from('series').select('genres, category');
-  if (error) throw error;
+  const cached = inMemoryCatalog ?? getCachedSeriesCatalog();
+  const items = cached ? cached.items : (await getSeriesCatalog()).items;
   const genres = new Set<string>();
   const categories = new Set<string>();
-  for (const row of data ?? []) {
+  for (const row of items) {
     for (const genre of row.genres ?? []) if (typeof genre === 'string' && genre.trim()) genres.add(genre.trim());
     const category = row.category;
     if (typeof category === 'string' && category.trim()) categories.add(category.trim());
@@ -612,7 +654,7 @@ function seriesMatchesGenre(item: SeriesRecord, genre: string): boolean {
 }
 
 // Apply all browse filters client-side on a full result set.
-function applyBrowseFiltersClientSide(
+export function applyBrowseFiltersClientSide(
   items: SeriesRecord[],
   options: SeriesBrowsePageOptions,
 ): SeriesRecord[] {
@@ -687,7 +729,7 @@ function applyBrowseFiltersClientSide(
 }
 
 // Sort a filtered result set client-side, mirroring the RPC sort options.
-function sortBrowseResultsClientSide(
+export function sortBrowseResultsClientSide(
   items: SeriesRecord[],
   sort: string,
   direction: 'asc' | 'desc',
@@ -723,31 +765,9 @@ function sortBrowseResultsClientSide(
 }
 
 export async function getSeriesBrowsePage(options: SeriesBrowsePageOptions): Promise<{ totalCount: number; items: SeriesRecord[] }> {
-  const client = requireSupabase();
-
-  let request = client
-    .from('series')
-    .select(
-      'id, slug, title, href, cover, category, rating, status, pinned, chapters, ' +
-      'alternate_titles, synopsis, author, artist, publishers, content_rating, year, ' +
-      'original_language, demographics, genres, formats, tags, trackers, sources, ' +
-      'facts, favorites, views, review_count, page_number, page_order, created_at, updated_at',
-    );
-
-  // Server-side pre-filters to optimize payload
-  if (options.statuses?.length) request = (request as any).in('status', options.statuses);
-  if (options.categories?.length) request = (request as any).in('category', options.categories);
-
-  const searchTerm = options.search?.trim();
-  if (searchTerm) {
-    const escaped = searchTerm.replace(/[\\%_,()]/g, (c) => `\\${c}`);
-    request = (request as any).or(`title.ilike.%${escaped}%,slug.ilike.%${escaped}%`);
-  }
-
-  const { data, error } = await request;
-  if (error) throw error;
-
-  const allItems = (data ?? []).map(toSeriesRecord);
+  // Reuse the cached/deduplicated catalog so browsing and paginating causes 0 extra Supabase egress
+  const catalog = await getSeriesCatalog();
+  const allItems = catalog.items;
 
   // Apply accurate client-side filtering (genres, tags, chapter count, dates)
   let filtered = applyBrowseFiltersClientSide(allItems, options);
@@ -829,6 +849,17 @@ export async function getHomeNewSeriesIndex(): Promise<HomeNewSeriesIndexItem[]>
 
 export async function getSeriesCatalogByIds(ids: number[]): Promise<SeriesRecord[]> {
   if (ids.length === 0) return [];
+  const cached = inMemoryCatalog ?? getCachedSeriesCatalog();
+  if (cached && Array.isArray(cached.items) && cached.items.length > 0) {
+    const byId = new Map(cached.items.map((item) => [item.id, item]));
+    if (ids.every((id) => byId.has(id))) {
+      return ids.flatMap((id) => {
+        const item = byId.get(id);
+        return item ? [item] : [];
+      });
+    }
+  }
+
   const client = requireSupabase();
   const { data, error } = await client
     .from('series')
@@ -869,6 +900,19 @@ export async function getSeriesCatalogCoverSamples(): Promise<string[]> {
 }
 
 export async function getHomeCatalogHighlights(limit = 60): Promise<SeriesRecord[]> {
+  const cached = inMemoryCatalog ?? getCachedSeriesCatalog();
+  if (cached && Array.isArray(cached.items) && cached.items.length > 0) {
+    return [...cached.items]
+      .sort((a, b) => {
+        if (a.pinned !== b.pinned) return a.pinned ? -1 : 1;
+        const ratingA = parseFloat(a.rating ?? '0') || 0;
+        const ratingB = parseFloat(b.rating ?? '0') || 0;
+        if (ratingB !== ratingA) return ratingB - ratingA;
+        return Date.parse(b.createdAt) - Date.parse(a.createdAt);
+      })
+      .slice(0, limit);
+  }
+
   const client = requireSupabase();
   const { data, error } = await client
     .from('series')
@@ -890,6 +934,43 @@ export async function getSeriesRecommendations(
   limit = 7,
   signal?: AbortSignal,
 ): Promise<SeriesRecommendation[]> {
+  const cached = inMemoryCatalog ?? getCachedSeriesCatalog();
+  if (cached && Array.isArray(cached.items) && cached.items.length > 0) {
+    const normalize = (value: string) => value.trim().toLocaleLowerCase();
+    const currentGenres = new Set(currentSeries.genres.map(normalize));
+    const currentTags = new Set(currentSeries.tags.map(normalize));
+    const currentAuthor = normalize(currentSeries.author ?? '');
+    const currentArtist = normalize(currentSeries.artist ?? '');
+    const recommendations = cached.items
+      .filter((item) => item.id !== currentSeries.id)
+      .map((row) => {
+        const sharedGenres = (row.genres ?? []).filter((genre: string) => currentGenres.has(normalize(genre))).length;
+        const sharedTags = (row.tags ?? []).filter((tag: string) => currentTags.has(normalize(tag))).length;
+        const sharesCreator = Boolean((currentAuthor && normalize(row.author ?? '') === currentAuthor)
+          || (currentArtist && normalize(row.artist ?? '') === currentArtist));
+        const sharesCategory = normalize(row.category || String(row.facts?.type ?? '')) === normalize(currentSeries.category);
+        const rating = Number.parseFloat(String(getHighestSeriesRating(row.rating) ?? '0')) || 0;
+        const similarityScore = sharedGenres * 4 + sharedTags * 2 + Number(sharesCategory) * 3
+          + Number(sharesCreator) * 2 + rating / 10;
+        const latestChapter = row.facts?.latest_chapter_number || row.facts?.last_chapter_number;
+        const parsedChapter = Number.parseFloat(String(latestChapter ?? '').replace(/^ch(?:apter)?\.?\s*/i, ''));
+        return { row, similarityScore, rating, chapterCount: Number.isFinite(parsedChapter) ? parsedChapter : null };
+      });
+    return recommendations
+      .sort((left, right) => right.similarityScore - left.similarityScore
+        || Number(right.row.pinned) - Number(left.row.pinned)
+        || right.rating - left.rating
+        || Date.parse(right.row.createdAt) - Date.parse(left.row.createdAt))
+      .slice(0, limit)
+      .map(({ row, chapterCount }) => ({
+        title: row.title,
+        href: row.href,
+        cover: row.cover ?? '',
+        rating: getHighestSeriesRating(row.rating),
+        chapterCount,
+      }));
+  }
+
   const client = requireSupabase();
   let request = client
     .from('series')
@@ -898,7 +979,7 @@ export async function getSeriesRecommendations(
     .order('pinned', { ascending: false })
     .order('rating', { ascending: false, nullsFirst: false })
     .order('created_at', { ascending: false })
-    .limit(80);
+    .limit(50);
   if (signal) request = request.abortSignal(signal);
   const { data, error } = await request;
   if (error) throw error;
@@ -948,6 +1029,17 @@ export async function getHomeLatestReleasePage(page: number, pageSize: number, s
 export async function getSeriesBySlugs(slugs: string[]): Promise<SeriesRecord[]> {
   const normalizedSlugs = [...new Set(slugs.map((slug) => slug.trim().toLocaleLowerCase()).filter(Boolean))];
   if (normalizedSlugs.length === 0) return [];
+  const cached = inMemoryCatalog ?? getCachedSeriesCatalog();
+  if (cached && Array.isArray(cached.items) && cached.items.length > 0) {
+    const bySlug = new Map(cached.items.map((item) => [item.slug.toLowerCase(), item]));
+    if (normalizedSlugs.every((slug) => bySlug.has(slug))) {
+      return normalizedSlugs.flatMap((slug) => {
+        const series = bySlug.get(slug);
+        return series ? [series] : [];
+      });
+    }
+  }
+
   const client = requireSupabase();
   const { data, error } = await client
     .from('series')
@@ -1059,6 +1151,7 @@ export async function createSeriesRecord(input: CreateSeriesRequest): Promise<Se
     .single();
 
   if (error) throw error;
+  invalidateCatalogCache();
   return toSeriesRecord(data);
 }
 
@@ -1121,6 +1214,7 @@ export async function updateSeriesRecord(input: UpdateSeriesRequest): Promise<Se
 
   if (error) throw error;
   if (!data) throw new Error('Series not found or update returned no rows. Please ensure the Supabase UPDATE policy is executed.');
+  invalidateCatalogCache();
   return toSeriesRecord(data);
 }
 
@@ -1178,6 +1272,7 @@ export async function addSeriesChapter(input: AddSeriesChapterInput): Promise<Se
 
   if (error) throw error;
   if (!data) throw new Error('Failed to add chapter.');
+  invalidateCatalogCache();
   return toSeriesRecord(data);
 }
 
@@ -1189,6 +1284,7 @@ export async function deleteSeriesRecord(id: number): Promise<void> {
     .eq('id', id);
 
   if (error) throw error;
+  invalidateCatalogCache();
 }
 
 export async function incrementSeriesViews(seriesId: number): Promise<number | null> {
