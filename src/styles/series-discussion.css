@@ -12,8 +12,10 @@
   --sd-accent: #ef4444;
 
   margin-top: 14px;
+  padding-top: 12px;
   background: transparent;
   border: none;
+  border-top: 1px solid var(--sd-line);
   box-shadow: none;
   color: var(--series-ink, #29262a);
   font-family: inherit;
@@ -154,13 +156,14 @@
 .discussion-composer-wrap {
   display: flex;
   align-items: flex-start;
-  gap: 8px;
-  margin-bottom: 14px;
+  gap: 9px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--sd-line);
 }
 
 .composer-avatar {
-  width: 24px;
-  height: 24px;
+  width: 22px;
+  height: 22px;
   border-radius: 50%;
   background: #e2452b;
   color: #ffffff;
@@ -168,7 +171,7 @@
   align-items: center;
   justify-content: center;
   font-weight: 700;
-  font-size: 9.5px;
+  font-size: 9px;
   flex-shrink: 0;
   overflow: hidden;
   user-select: none;
@@ -188,11 +191,17 @@
 }
 
 .composer-box {
-  background: var(--series-card, #ffffff);
+  background: #ffffff;
   border: 1px solid var(--sd-line);
-  border-radius: 6px;
+  border-radius: 7px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
   overflow: hidden;
   transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.series-page.theme-dark .composer-box {
+  background: #18181b;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.35);
 }
 
 .composer-box:focus-within {
@@ -205,8 +214,8 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 6px;
-  padding: 3px 7px;
+  gap: 8px;
+  padding: 5px 9px;
   border-bottom: 1px solid var(--sd-line);
   background: transparent;
   user-select: none;
@@ -229,9 +238,9 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 17px;
-  height: 17px;
-  border-radius: 4px;
+  width: 19px;
+  height: 19px;
+  border-radius: 5px;
   border: none;
   background: transparent;
   color: var(--series-muted, #77737a);
@@ -259,9 +268,14 @@
 
 .toolbar-divider {
   width: 1px;
-  height: 9px;
+  height: 11px;
   background: var(--sd-line);
-  margin: 0 3px;
+  margin: 0 4px;
+}
+
+.toolbar-btn svg {
+  width: 10.5px;
+  height: 10.5px;
 }
 
 .toolbar-gif-text {
@@ -277,12 +291,12 @@
 .composer-textarea {
   display: block;
   width: 100%;
-  min-height: 48px;
-  padding: 7px 9px;
+  min-height: 62px;
+  padding: 9px 11px;
   border: none;
   background: transparent;
   font-family: inherit;
-  font-size: 8.5px;
+  font-size: 9px;
   line-height: 1.5;
   color: var(--series-ink, #29262a);
   outline: none;
@@ -302,8 +316,8 @@
 .composer-counter-row {
   display: flex;
   justify-content: flex-end;
-  padding: 3px 2px 0;
-  font-size: 7px;
+  padding: 5px 2px 0;
+  font-size: 7.5px;
   color: var(--series-faint, #9a959b);
   user-select: none;
 }
@@ -319,13 +333,13 @@
 .composer-post-btn {
   display: inline-flex;
   align-items: center;
-  gap: 4px;
-  height: 20px;
-  padding: 0 11px;
+  gap: 5px;
+  height: 23px;
+  padding: 0 14px;
   border-radius: 9999px;
   background: #f87171;
   color: #ffffff;
-  font-size: 8px;
+  font-size: 8.5px;
   font-weight: 600;
   border: none;
   cursor: pointer;
@@ -373,7 +387,7 @@
    3. Comments feed & threading
    ========================================================================== */
 .discussion-comments-list {
-  margin-top: 2px;
+  margin-top: 12px;
 }
 
 .comment-item {
@@ -599,8 +613,9 @@
 .comment-actions {
   display: flex;
   align-items: center;
-  gap: 9px;
-  margin-top: 5px;
+  gap: 3px;
+  margin-top: 3px;
+  margin-left: -6px; /* the hover background of the first button sticks out, text stays aligned */
   flex-wrap: wrap;
 }
 
@@ -609,18 +624,29 @@
   display: inline-flex;
   align-items: center;
   gap: 3px;
-  padding: 0;
+  padding: 3px 6px;
   border: none;
+  border-radius: 6px;
   background: transparent;
   font-size: 7.5px;
   font-weight: 600;
   color: var(--series-muted, #77737a);
   cursor: pointer;
   line-height: 1;
-  transition: color 0.1s ease;
+  transition: color 0.1s ease, background-color 0.1s ease, box-shadow 0.1s ease;
 }
 
 .action-like-btn:hover,
+.action-reply-btn:hover,
+.action-admin-btn:hover {
+  background: var(--series-card, #ffffff);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+}
+
+.action-like-btn:hover {
+  color: var(--series-ink, #29262a);
+}
+
 .action-like-btn.is-liked {
   color: var(--sd-accent);
 }
@@ -655,31 +681,26 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 9px;
-  height: 9px;
+  width: 10px;
+  height: 10px;
+  margin-left: -3px;
   border-radius: 50%;
-  margin-left: -2.5px;
-  border: 1px solid var(--series-card, #ffffff);
-  color: #ffffff;
-  font-size: 5.5px;
-  line-height: 1;
-  box-sizing: content-box;
+  box-shadow: 0 0 0 1.5px var(--series-card, #ffffff);
+  background: var(--series-card, #ffffff);
+  overflow: hidden;
+  flex-shrink: 0;
 }
 
 .reaction-dot:first-child {
   margin-left: 0;
 }
 
-.dot-like {
-  background: #3b82f6;
-}
-
-.dot-love {
-  background: #ef4444;
-}
-
-.dot-emoji {
-  background: #fcd34d;
+.reaction-dot img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  pointer-events: none;
 }
 
 .reaction-count {
@@ -693,13 +714,15 @@
 .action-admin-btn {
   display: inline-flex;
   align-items: center;
-  padding: 0;
+  padding: 4px;
   border: none;
+  border-radius: 6px;
   background: transparent;
   color: var(--series-faint, #9a959b);
   cursor: pointer;
   opacity: 0.7;
   line-height: 1;
+  transition: color 0.1s ease, background-color 0.1s ease, box-shadow 0.1s ease, opacity 0.1s ease;
 }
 
 .action-admin-btn:hover {
@@ -753,6 +776,253 @@
 .replies-thread {
   position: relative;
   margin-top: 1px;
+}
+
+/* ==========================================================================
+   Hover reaction picker (like / love / haha / wow / sad / angry)
+   ========================================================================== */
+.reaction-picker-wrap {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+}
+
+.action-like-icon {
+  width: 10px;
+  height: 10px;
+  object-fit: contain;
+  pointer-events: none;
+}
+
+.action-like-btn.is-reacted {
+  font-weight: 700;
+}
+
+/* Positioned wrapper has bottom padding so there is no hover gap to the button */
+/* The fixed left/right rails use z-index 31 in the same stacking context as the comments,
+   so the picker must sit above that to render over the sidebar. */
+.reaction-picker-pos {
+  position: absolute;
+  bottom: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  padding-bottom: 6px;
+  z-index: 40;
+}
+
+.series-page.theme-dark .reaction-picker {
+  --sd-picker-bg: #25252b;
+}
+
+.reaction-picker {
+  --sd-picker-bg: #ffffff;
+  display: flex;
+  align-items: center;
+  gap: 13px;
+  padding: 10px 13px;
+  border-radius: 9px;
+  background: var(--sd-picker-bg);
+  border: 1px solid var(--sd-line);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.13), 0 1px 3px rgba(0, 0, 0, 0.06);
+  transform-origin: bottom center;
+  animation: sd-picker-in 0.16s cubic-bezier(0.2, 0.9, 0.3, 1.2) both;
+}
+
+@keyframes sd-picker-in {
+  from {
+    opacity: 0;
+    transform: translateY(4px) scale(0.92);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.reaction-picker-btn {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  padding: 0;
+  border: none;
+  border-radius: 50%;
+  background: transparent;
+  cursor: pointer;
+  transition: transform 0.14s cubic-bezier(0.2, 0.9, 0.3, 1.3);
+}
+
+.reaction-picker-btn img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  pointer-events: none;
+}
+
+.reaction-picker-btn:hover,
+.reaction-picker-btn:focus-visible {
+  transform: translateY(-3px) scale(1.28);
+  outline: none;
+}
+
+.reaction-picker-btn.is-selected {
+  box-shadow: 0 0 0 1.5px var(--sd-accent);
+}
+
+/* Small label that appears above the hovered reaction */
+.reaction-picker-tip {
+  position: absolute;
+  bottom: calc(100% + 4px);
+  left: 50%;
+  padding: 2px 5px;
+  border-radius: 9999px;
+  background: rgba(24, 24, 27, 0.92);
+  color: #ffffff;
+  font-size: 6.5px;
+  font-weight: 600;
+  line-height: 1;
+  white-space: nowrap;
+  pointer-events: none;
+  opacity: 0;
+  transform: translateX(-50%) translateY(2px);
+  transition: opacity 0.12s ease, transform 0.12s ease;
+}
+
+.reaction-picker-btn:hover .reaction-picker-tip,
+.reaction-picker-btn:focus-visible .reaction-picker-tip {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+}
+
+/* ==========================================================================
+   Comment "..." menu (top right of every comment) + blocked-users note
+   ========================================================================== */
+.comment-main {
+  position: relative;
+}
+
+.comment-header {
+  padding-right: 22px;
+}
+
+.comment-menu-wrap {
+  position: absolute;
+  top: -3px;
+  right: 0;
+  z-index: 30;
+}
+
+.comment-menu-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  padding: 0;
+  border: none;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--series-faint, #9a959b);
+  cursor: pointer;
+  transition: background-color 0.1s ease, color 0.1s ease;
+}
+
+.comment-menu-btn:hover,
+.comment-menu-btn.is-open {
+  background: var(--sd-soft);
+  color: var(--series-ink, #29262a);
+}
+
+.comment-menu {
+  --cm-bg: #ffffff;
+  position: absolute;
+  top: calc(100% + 4px);
+  right: 0;
+  min-width: 104px;
+  padding: 3px 0;
+  border-radius: 7px;
+  background: var(--cm-bg);
+  border: 1px solid var(--sd-line);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.13), 0 1px 3px rgba(0, 0, 0, 0.06);
+  transform-origin: top right;
+  animation: sd-menu-in 0.14s ease-out both;
+}
+
+.series-page.theme-dark .comment-menu {
+  --cm-bg: #25252b;
+}
+
+@keyframes sd-menu-in {
+  from {
+    opacity: 0;
+    transform: translateY(-3px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.comment-menu-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+  padding: 6px 10px;
+  border: none;
+  background: transparent;
+  color: var(--series-ink, #29262a);
+  font: inherit;
+  font-size: 8px;
+  font-weight: 500;
+  line-height: 1;
+  text-align: left;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.comment-menu-item + .comment-menu-item {
+  border-top: 1px solid var(--sd-line);
+}
+
+.comment-menu-item:hover {
+  background: var(--sd-soft);
+}
+
+.comment-menu-item svg {
+  flex-shrink: 0;
+  color: var(--series-muted, #77737a);
+}
+
+.comment-menu-item.is-danger,
+.comment-menu-item.is-danger svg {
+  color: #ef5a2d;
+}
+
+.discussion-blocked-note {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 8px;
+  padding: 4px 8px;
+  border-radius: 6px;
+  background: var(--sd-soft);
+  color: var(--series-muted, #77737a);
+  font-size: 7.5px;
+}
+
+.discussion-blocked-note button {
+  padding: 0;
+  border: none;
+  background: transparent;
+  color: var(--sd-accent);
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
 }
 
 /* Empty state */
@@ -831,6 +1101,23 @@
     font-size: 10.5px;
   }
 
+  .action-like-btn,
+  .action-reply-btn {
+    padding: 5px 9px;
+    border-radius: 9px;
+  }
+
+  .action-admin-btn {
+    padding: 6px;
+    border-radius: 9px;
+  }
+
+  .comment-actions {
+    gap: 4px;
+    margin-top: 4px;
+    margin-left: -9px;
+  }
+
   .reaction-count {
     font-size: 10px;
   }
@@ -846,8 +1133,26 @@
   }
 
   .toolbar-btn {
-    width: 24px;
-    height: 24px;
+    width: 26px;
+    height: 26px;
+  }
+
+  .toolbar-btn svg {
+    width: 15px;
+    height: 15px;
+  }
+
+  .composer-toolbar {
+    padding: 6px 12px;
+  }
+
+  .composer-textarea {
+    min-height: 88px;
+    padding: 12px 14px;
+  }
+
+  .composer-textarea--inline {
+    min-height: 44px;
   }
 
   .composer-counter-row {
@@ -862,5 +1167,73 @@
 
   .comment-item {
     gap: 9px;
+  }
+
+  /* Narrow screens: centering would run off the left edge, so open toward the right */
+  .reaction-picker-pos {
+    left: -8px;
+    transform: none;
+  }
+
+  .reaction-picker {
+    transform-origin: bottom left;
+    gap: 8px;
+    padding: 10px 12px;
+    border-radius: 14px;
+  }
+
+  .reaction-picker-btn {
+    width: 26px;
+    height: 26px;
+  }
+
+  .reaction-picker-tip {
+    font-size: 10px;
+    padding: 3px 7px;
+  }
+
+  .action-like-icon {
+    width: 14px;
+    height: 14px;
+  }
+
+  .comment-header {
+    padding-right: 30px;
+  }
+
+  .comment-menu-wrap {
+    top: -4px;
+  }
+
+  .comment-menu-btn {
+    width: 26px;
+    height: 26px;
+  }
+
+  .comment-menu-btn svg {
+    width: 16px;
+    height: 16px;
+  }
+
+  .comment-menu {
+    min-width: 170px;
+    padding: 4px 0;
+    border-radius: 12px;
+  }
+
+  .comment-menu-item {
+    gap: 10px;
+    padding: 11px 14px;
+    font-size: 12.5px;
+  }
+
+  .comment-menu-item svg {
+    width: 15px;
+    height: 15px;
+  }
+
+  .discussion-blocked-note {
+    padding: 6px 10px;
+    font-size: 11px;
   }
 }
