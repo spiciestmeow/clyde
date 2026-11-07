@@ -1715,3 +1715,288 @@
   border-color: var(--cx-teal);
   color: #fff;
 }
+
+/* ====================================================
+   COMIX EDIT PROFILE (COMICK / MANGADEX 2-COLUMN STYLE)
+   ==================================================== */
+.comix-edit-profile-card {
+  background-color: var(--cx-surface);
+  border: 1px solid var(--cx-border);
+  border-radius: 12px;
+  padding: 32px;
+}
+
+.comix-edit-profile-header {
+  margin-bottom: 24px;
+}
+
+.comix-edit-profile-header h2 {
+  font-size: 24px;
+  font-weight: 700;
+  margin: 0 0 6px;
+  color: var(--cx-text);
+  letter-spacing: -0.02em;
+}
+
+.comix-edit-profile-header p {
+  margin: 0;
+  font-size: 14px;
+  color: var(--cx-text-muted);
+}
+
+.comix-edit-profile-row {
+  display: flex;
+  gap: 36px;
+  padding: 24px 0;
+  border-top: 1px solid var(--cx-border);
+}
+
+.comix-edit-profile-meta {
+  width: 250px;
+  flex-shrink: 0;
+}
+
+.comix-edit-profile-meta h3 {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--cx-text);
+  margin: 0 0 4px;
+}
+
+.comix-edit-profile-meta p {
+  font-size: 13px;
+  color: var(--cx-text-muted);
+  line-height: 1.45;
+  margin: 0;
+}
+
+.comix-edit-profile-fields {
+  flex: 1;
+  min-width: 0;
+}
+
+.comix-edit-profile-grid-2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+.comix-field-wrap {
+  display: flex;
+  flex-direction: column;
+}
+
+.comix-field-label {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: var(--cx-text-muted);
+  margin-bottom: 7px;
+}
+
+.comix-field-input-box {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.comix-field-input-icon {
+  position: absolute;
+  left: 12px;
+  color: var(--cx-text-muted);
+  pointer-events: none;
+}
+
+.comix-field-input-prefix {
+  position: absolute;
+  left: 12px;
+  color: var(--cx-text-muted);
+  font-size: 14px;
+  pointer-events: none;
+  user-select: none;
+}
+
+.comix-field-input-box input,
+.comix-field-input-box textarea {
+  width: 100%;
+  background: var(--cx-input-bg);
+  border: 1px solid var(--cx-input-border);
+  border-radius: 8px;
+  padding: 10px 14px;
+  font-size: 14px;
+  color: var(--cx-text);
+  outline: none;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.comix-input-with-icon {
+  padding-left: 36px !important;
+}
+
+.comix-input-with-prefix {
+  padding-left: 30px !important;
+}
+
+.comix-field-input-box textarea {
+  min-height: 100px;
+  resize: vertical;
+  line-height: 1.5;
+}
+
+.comix-field-input-box input:focus,
+.comix-field-input-box textarea:focus {
+  border-color: #2dd4bf;
+  box-shadow: 0 0 0 3px rgba(45, 212, 191, 0.15);
+}
+
+.comix-field-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 5px;
+  font-size: 12px;
+  color: var(--cx-text-subtle);
+}
+
+.comix-avatar-container {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.comix-avatar-preview-btn {
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  background: #2dd4bf;
+  color: #042f2e;
+  font-size: 26px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  cursor: pointer;
+  position: relative;
+  overflow: hidden;
+  transition: all 0.18s ease;
+  padding: 0;
+}
+
+.comix-avatar-preview-btn:hover {
+  transform: scale(1.05);
+  box-shadow: 0 0 0 3px rgba(45, 212, 191, 0.4);
+}
+
+.comix-avatar-preview-btn img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 50%;
+}
+
+.comix-avatar-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.comix-avatar-action-btn {
+  background: var(--cx-surface-hover);
+  border: 1px solid var(--cx-border);
+  color: var(--cx-text);
+  font-size: 12px;
+  font-weight: 600;
+  padding: 6px 12px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.comix-avatar-action-btn:hover {
+  border-color: var(--cx-text-muted);
+}
+
+.comix-copy-btn {
+  position: absolute;
+  right: 8px;
+  background: transparent;
+  border: none;
+  color: var(--cx-text-muted);
+  cursor: pointer;
+  padding: 6px;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: color 0.15s, background 0.15s;
+}
+
+.comix-copy-btn:hover {
+  color: var(--cx-text);
+  background: var(--cx-surface-hover);
+}
+
+.comix-save-profile-btn {
+  background: #2dd4bf;
+  color: #042f2e;
+  border: none;
+  border-radius: 8px;
+  padding: 10px 24px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s ease, transform 0.1s ease, box-shadow 0.15s ease;
+}
+
+.comix-save-profile-btn:hover:not(:disabled) {
+  background: #14b8a6;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(45, 212, 191, 0.25);
+}
+
+.comix-save-profile-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.comix-profile-feedback {
+  padding: 12px 16px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 500;
+  margin-bottom: 20px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.comix-profile-feedback.is-success {
+  background: rgba(45, 212, 191, 0.12);
+  border: 1px solid rgba(45, 212, 191, 0.35);
+  color: #2dd4bf;
+}
+
+.comix-profile-feedback.is-error {
+  background: rgba(239, 68, 68, 0.12);
+  border: 1px solid rgba(239, 68, 68, 0.35);
+  color: #f87171;
+}
+
+@media (max-width: 860px) {
+  .comix-edit-profile-card {
+    padding: 24px 16px;
+  }
+  .comix-edit-profile-row {
+    flex-direction: column;
+    gap: 14px;
+    padding: 18px 0;
+  }
+  .comix-edit-profile-meta {
+    width: 100%;
+  }
+  .comix-edit-profile-grid-2 {
+    grid-template-columns: 1fr;
+  }
+}
+

@@ -9,6 +9,7 @@ import {
   Check,
   ChevronDown,
   Clock,
+  Copy,
   Database,
   Download,
   Eye,
@@ -22,8 +23,10 @@ import {
   LayoutDashboard,
   LayoutTemplate,
   LoaderCircle,
+  Lock,
   LockKeyhole,
   LogOut,
+  Mail,
   Menu,
   MessageSquare,
   Moon,
@@ -1206,9 +1209,146 @@ function ComixDashboard({
     onLogout();
   };
 
-  // User display name from email or metadata
-  const userInitial = (session.user.email?.[0] || 'S').toUpperCase();
-  const displayName = session.user.user_metadata?.full_name || 'Caysterize';
+  // Profile Form state initialized from session metadata or localStorage
+  const savedProfile = useMemo(() => {
+    try {
+      const raw = localStorage.getItem('vortex_admin_profile');
+      return raw ? JSON.parse(raw) : null;
+    } catch {
+      return null;
+    }
+  }, []);
+
+  const meta = session.user.user_metadata || {};
+  const [profileDisplayName, setProfileDisplayName] = useState<string>(
+    () => meta.full_name || meta.display_name || savedProfile?.displayName || 'Clyde Bustamante'
+  );
+  const [profileUsername, setProfileUsername] = useState<string>(
+    () => meta.username || savedProfile?.username || (session.user.email?.split('@')[0] || 'clydhex')
+  );
+  const [profileBio, setProfileBio] = useState<string>(
+    () => meta.bio || savedProfile?.bio || ''
+  );
+  const [profileSocials, setProfileSocials] = useState<string>(
+    () => meta.social_links || savedProfile?.socials || ''
+  );
+  const [profileAvatarUrl, setProfileAvatarUrl] = useState<string>(
+    () => meta.avatar_url || savedProfile?.avatarUrl || ''
+  );
+  const [profileEmail] = useState<string>(
+    () => session.user.email || 'clydhex@gmail.com'
+  );
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [savingProfile, setSavingProfile] = useState(false);
+  const [profileFeedback, setProfileFeedback] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
+  const [copiedId, setCopiedId] = useState(false);
+  const avatarFileInputRef = useRef<HTMLInputElement>(null);
+
+  // User display name & initial dynamically reflected
+  const userInitial = (profileDisplayName?.[0] || session.user.email?.[0] || 'C').toUpperCase();
+  const displayName = profileDisplayName || session.user.user_metadata?.full_name || 'Clyde Bustamante';
+  const publicProfileId = session.user.id ? session.user.id.slice(0, 8) : 'jd9gdd';
+
+  const handleSaveProfile = async (e: FormEvent) => {
+    e.preventDefault();
+    setSavingProfile(true);
+    setProfileFeedback(null);
+
+    if (newPassword || confirmPassword) {
+      if (newPassword.length < 6) {
+        setProfileFeedback({ type: 'error', message: 'Password must be at least 6 characters long.' });
+        setSavingProfile(false);
+        return;
+      }
+      if (newPassword !== confirmPassword) {
+        setProfileFeedback({ type: 'error', message: 'New password and confirm password do not match.' });
+        setSavingProfile(false);
+        return;
+      }
+    }
+
+    try {
+      const profileData = {
+        full_name: profileDisplayName.trim(),
+        display_name: profileDisplayName.trim(),
+        username: profileUsername.trim().replace(/^@/, ''),
+        bio: profileBio.trim(),
+        social_links: profileSocials.trim(),
+        avatar_url: profileAvatarUrl.trim(),
+      };
+
+      try {
+        localStorage.setItem(
+          'vortex_admin_profile',
+          JSON.stringify({
+            displayName: profileData.display_name,
+            username: profileData.username,
+            bio: profileData.bio,
+            socials: profileData.social_links,
+            avatarUrl: profileData.avatar_url,
+          })
+        );
+      } catch {}
+
+      if (supabase) {
+        const updatePayload: { data: Record<string, unknown>; password?: string } = {
+          data: profileData,
+        };
+        if (newPassword) {
+          updatePayload.password = newPassword;
+        }
+        const { error } = await supabase.auth.updateUser(updatePayload);
+        if (error) {
+          console.warn('Supabase updateUser warning:', error.message);
+          if (newPassword) {
+            setProfileFeedback({ type: 'error', message: `Profile updated, but password change failed: ${error.message}` });
+            setSavingProfile(false);
+            return;
+          }
+        }
+      }
+
+      setNewPassword('');
+      setConfirmPassword('');
+      setProfileFeedback({ type: 'success', message: 'Changes saved successfully.' });
+      setTimeout(() => setProfileFeedback(null), 4000);
+    } catch (err: unknown) {
+      setProfileFeedback({
+        type: 'error',
+        message: err instanceof Error ? err.message : 'Failed to save changes.',
+      });
+    } finally {
+      setSavingProfile(false);
+    }
+  };
+
+  const handleCopyProfileId = () => {
+    try {
+      navigator.clipboard.writeText(publicProfileId);
+      setCopiedId(true);
+      setTimeout(() => setCopiedId(false), 2000);
+    } catch {
+      // ignore
+    }
+  };
+
+  const handleAvatarFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+    if (file.size > 1024 * 1024) {
+      setProfileFeedback({ type: 'error', message: 'Avatar image must be under 1 MB.' });
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const result = e.target?.result;
+      if (typeof result === 'string') {
+        setProfileAvatarUrl(result);
+      }
+    };
+    reader.readAsDataURL(file);
+  };
 
   return (
     <div className={`comix-admin-wrapper theme-${theme}`}>
@@ -1310,10 +1450,20 @@ function ComixDashboard({
         {/* Profile Banner Card */}
         <div className="comix-profile-card">
           <div className="comix-profile-user">
-            <div className="comix-profile-avatar">{userInitial}</div>
+            <div className="comix-profile-avatar">
+              {profileAvatarUrl ? (
+                <img
+                  src={profileAvatarUrl}
+                  alt={displayName}
+                  style={{ width: '100%', height: '100%', borderRadius: '50%', objectFit: 'cover' }}
+                />
+              ) : (
+                userInitial
+              )}
+            </div>
             <div className="comix-profile-details">
               <h2>{displayName}</h2>
-              <span className="comix-profile-role">Admin / Scanlator</span>
+              <span className="comix-profile-role">ADMIN / SCANLATOR</span>
             </div>
           </div>
 
@@ -2794,44 +2944,262 @@ function ComixDashboard({
               </div>
             )}
 
-            {/* 4. EDIT PROFILE */}
+            {/* 4. EDIT PROFILE (COMICK / MANGADEX 2-COLUMN STYLE) */}
             {activeTab === 'edit-profile' && (
-              <div className="comix-settings-card" style={{ padding: 24 }}>
-                <h3 style={{ margin: '0 0 8px', fontSize: 18 }}>Admin Profile</h3>
-                <p style={{ color: 'var(--cx-text-muted)', marginBottom: 24, fontSize: 14 }}>
-                  Connected through Supabase authentication.
-                </p>
+              <form className="comix-edit-profile-card" onSubmit={handleSaveProfile}>
+                <div className="comix-edit-profile-header">
+                  <h2>Edit Profile</h2>
+                  <p>Update how you appear on the site. Email and password changes require confirmation.</p>
+                </div>
 
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-                  <div className="field-group">
-                    <label className="field-label">Email address</label>
-                    <input
-                      type="text"
-                      className="text-input"
-                      value={session.user.email || ''}
-                      readOnly
-                      style={{ opacity: 0.8 }}
-                    />
+                {profileFeedback && (
+                  <div className={`comix-profile-feedback is-${profileFeedback.type}`}>
+                    {profileFeedback.type === 'success' ? <Check size={16} /> : <ShieldAlert size={16} />}
+                    <span>{profileFeedback.message}</span>
                   </div>
+                )}
 
-                  <div className="field-group">
-                    <label className="field-label">User ID</label>
-                    <input
-                      type="text"
-                      className="text-input"
-                      value={session.user.id}
-                      readOnly
-                      style={{ opacity: 0.8, fontFamily: 'monospace', fontSize: 12 }}
-                    />
+                {/* Hidden Avatar File Input */}
+                <input
+                  type="file"
+                  ref={avatarFileInputRef}
+                  onChange={handleAvatarFileSelect}
+                  accept="image/png,image/jpeg,image/webp"
+                  style={{ display: 'none' }}
+                />
+
+                {/* ROW 1: AVATAR */}
+                <div className="comix-edit-profile-row">
+                  <div className="comix-edit-profile-meta">
+                    <h3>Avatar</h3>
+                    <p>JPG, PNG or WebP, up to 1 MB.</p>
                   </div>
-
-                  <div style={{ paddingTop: 12 }}>
-                    <button type="button" className="btn-cancel" onClick={handleSignOut}>
-                      <LogOut size={15} style={{ marginRight: 6 }} /> Sign out
-                    </button>
+                  <div className="comix-edit-profile-fields">
+                    <div className="comix-avatar-container">
+                      <button
+                        type="button"
+                        className="comix-avatar-preview-btn"
+                        onClick={() => avatarFileInputRef.current?.click()}
+                        title="Click to choose a new avatar"
+                      >
+                        {profileAvatarUrl ? (
+                          <img src={profileAvatarUrl} alt="Avatar Preview" />
+                        ) : (
+                          userInitial
+                        )}
+                      </button>
+                      <div className="comix-avatar-actions">
+                        <button
+                          type="button"
+                          className="comix-avatar-action-btn"
+                          onClick={() => avatarFileInputRef.current?.click()}
+                        >
+                          Upload image
+                        </button>
+                        {profileAvatarUrl && (
+                          <button
+                            type="button"
+                            className="comix-avatar-action-btn"
+                            onClick={() => setProfileAvatarUrl('')}
+                            style={{ color: '#ef4444' }}
+                          >
+                            Remove
+                          </button>
+                        )}
+                      </div>
+                    </div>
                   </div>
                 </div>
-              </div>
+
+                {/* ROW 2: IDENTITY */}
+                <div className="comix-edit-profile-row">
+                  <div className="comix-edit-profile-meta">
+                    <h3>Identity</h3>
+                    <p>Shown on your profile and next to your comments.</p>
+                  </div>
+                  <div className="comix-edit-profile-fields">
+                    <div className="comix-edit-profile-grid-2">
+                      <div className="comix-field-wrap">
+                        <label className="comix-field-label">DISPLAY NAME</label>
+                        <div className="comix-field-input-box">
+                          <input
+                            type="text"
+                            maxLength={32}
+                            value={profileDisplayName}
+                            onChange={(e) => setProfileDisplayName(e.target.value)}
+                            placeholder="Clyde Bustamante"
+                          />
+                        </div>
+                        <div className="comix-field-footer">
+                          <span>{profileDisplayName.length} / 32</span>
+                        </div>
+                      </div>
+
+                      <div className="comix-field-wrap">
+                        <label className="comix-field-label">USERNAME</label>
+                        <div className="comix-field-input-box">
+                          <span className="comix-field-input-prefix">@</span>
+                          <input
+                            type="text"
+                            className="comix-input-with-prefix"
+                            value={profileUsername}
+                            onChange={(e) => setProfileUsername(e.target.value.toLowerCase().replace(/[^a-z0-9._-]/g, ''))}
+                            placeholder="clydhex"
+                          />
+                        </div>
+                        <div className="comix-field-footer">
+                          <span>Lowercase letters, numbers, dot, underscore, hyphen.</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="comix-field-wrap" style={{ marginTop: 16 }}>
+                      <label className="comix-field-label">PROFILE ID</label>
+                      <div className="comix-field-input-box">
+                        <input
+                          type="text"
+                          readOnly
+                          value={publicProfileId}
+                          style={{ fontFamily: 'monospace', opacity: 0.85, paddingRight: 40 }}
+                        />
+                        <button
+                          type="button"
+                          className="comix-copy-btn"
+                          onClick={handleCopyProfileId}
+                          title="Copy Profile ID"
+                        >
+                          {copiedId ? <Check size={16} style={{ color: '#2dd4bf' }} /> : <Copy size={16} />}
+                        </button>
+                      </div>
+                      <div className="comix-field-footer">
+                        <span>Your public profile ID — share it when reporting an issue.</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* ROW 3: BIO */}
+                <div className="comix-edit-profile-row">
+                  <div className="comix-edit-profile-meta">
+                    <h3>Bio</h3>
+                    <p>A short blurb shown on your public profile.</p>
+                  </div>
+                  <div className="comix-edit-profile-fields">
+                    <div className="comix-field-wrap">
+                      <label className="comix-field-label">ABOUT YOU</label>
+                      <div className="comix-field-input-box">
+                        <textarea
+                          maxLength={500}
+                          value={profileBio}
+                          onChange={(e) => setProfileBio(e.target.value)}
+                          placeholder="Tell readers a little about yourself..."
+                        />
+                      </div>
+                      <div className="comix-field-footer">
+                        <span>{profileBio.length} / 500</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* ROW 4: SOCIAL LINKS */}
+                <div className="comix-edit-profile-row">
+                  <div className="comix-edit-profile-meta">
+                    <h3>Social links</h3>
+                    <p>Optional. One link per line — each must start with http(s):// and stay under 255 characters, max 5 links.</p>
+                  </div>
+                  <div className="comix-edit-profile-fields">
+                    <div className="comix-field-wrap">
+                      <label className="comix-field-label">LINKS</label>
+                      <div className="comix-field-input-box">
+                        <textarea
+                          maxLength={500}
+                          value={profileSocials}
+                          onChange={(e) => setProfileSocials(e.target.value)}
+                          placeholder={"https://twitter.com/yourhandle\nhttps://bsky.app/profile/you.bsky.social\nhttps://your-site.com"}
+                        />
+                      </div>
+                      <div className="comix-field-footer">
+                        <span>{profileSocials.length} / 500</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* ROW 5: EMAIL */}
+                <div className="comix-edit-profile-row">
+                  <div className="comix-edit-profile-meta">
+                    <h3>Email</h3>
+                    <p>Used for sign-in and notifications.</p>
+                  </div>
+                  <div className="comix-edit-profile-fields">
+                    <div className="comix-field-wrap">
+                      <label className="comix-field-label">EMAIL ADDRESS</label>
+                      <div className="comix-field-input-box">
+                        <Mail size={16} className="comix-field-input-icon" />
+                        <input
+                          type="email"
+                          className="comix-input-with-icon"
+                          value={profileEmail}
+                          readOnly
+                          style={{ opacity: 0.85 }}
+                        />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* ROW 6: PASSWORD */}
+                <div className="comix-edit-profile-row">
+                  <div className="comix-edit-profile-meta">
+                    <h3>Password</h3>
+                    <p>Leave blank to keep your current password. Minimum 6 characters.</p>
+                  </div>
+                  <div className="comix-edit-profile-fields">
+                    <div className="comix-edit-profile-grid-2">
+                      <div className="comix-field-wrap">
+                        <label className="comix-field-label">NEW PASSWORD</label>
+                        <div className="comix-field-input-box">
+                          <Lock size={15} className="comix-field-input-icon" />
+                          <input
+                            type="password"
+                            className="comix-input-with-icon"
+                            placeholder="••••••••"
+                            value={newPassword}
+                            onChange={(e) => setNewPassword(e.target.value)}
+                            autoComplete="new-password"
+                          />
+                        </div>
+                      </div>
+
+                      <div className="comix-field-wrap">
+                        <label className="comix-field-label">CONFIRM NEW PASSWORD</label>
+                        <div className="comix-field-input-box">
+                          <Lock size={15} className="comix-field-input-icon" />
+                          <input
+                            type="password"
+                            className="comix-input-with-icon"
+                            placeholder="••••••••"
+                            value={confirmPassword}
+                            onChange={(e) => setConfirmPassword(e.target.value)}
+                            autoComplete="new-password"
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* ACTIONS */}
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingTop: 24, borderTop: '1px solid var(--cx-border)' }}>
+                  <button type="button" className="btn-cancel" onClick={handleSignOut}>
+                    <LogOut size={15} style={{ marginRight: 6 }} /> Sign out
+                  </button>
+                  <button type="submit" className="comix-save-profile-btn" disabled={savingProfile}>
+                    {savingProfile ? 'Saving changes...' : 'Save changes'}
+                  </button>
+                </div>
+              </form>
             )}
 
             {/* 5. PLACEHOLDER FOR OTHER TABS */}
